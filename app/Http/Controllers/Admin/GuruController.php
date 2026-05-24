@@ -1,0 +1,594 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Guru;
+use App\Models\User;
+use App\Models\Kelas;
+use App\Traits\LogsActivity;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\GuruImport;
+use App\Imports\GuruBulkUpdateImport;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Illuminate\Support\Facades\Storage;
+
+class GuruController extends Controller
+{
+    use LogsActivity;
+    
+    /**
+     * Menampilkan daftar semua Guru.
+     */
+    public function index()
+    {
+        $gurus = Guru::with('user')->get();
+        return view('admin.gurus.index', compact('gurus'));
+    }
+
+    /**
+     * Menampilkan form untuk membuat Guru baru.
+     */
+    public function create()
+    {
+        return view('admin.gurus.create');
+    }
+
+    /**
+     * Menyimpan Guru baru (TANPA FOTO PROFIL)
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'nip' => 'nullable|string|max:255|unique:gurus,nip',
+            'username' => 'required|string|max:255|unique:users,name',
+            'password' => 'required|string|min:8|confirmed',
+        ], [
+            'username.unique' => 'Username ini sudah digunakan. Silakan pilih username lain.',
+            'password.min' => 'Password minimal harus 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Smart capitalize
+            $name = $this->smartCapitalizeName(trim($validated['name']));
+
+            // Buat user tanpa foto
+            $user = User::create([
+                'name' => $validated['username'], 
+                'role' => 'guru',
+                'password' => Hash::make($validated['password']),
+                'plain_password' => $validated['password'],
+            ]);
+
+            Guru::create([
+                'name' => $name,
+                'nip' => $validated['nip'],
+                'user_id' => $user->id,
+            ]);
+            
+            $guru = Guru::where('user_id', $user->id)->first();
+            $this->logCreate('guru', "{$guru->name}" . ($guru->nip ? " (NIP: {$guru->nip})" : ""), $guru);
+
+            DB::commit();
+
+            return redirect()->route('admin.gurus.index')
+                ->with('success', 'Guru dan akun login berhasil ditambahkan!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Gagal menambahkan Guru. ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Update Guru (TANPA FOTO PROFIL)
+     */
+    public function update(Request $request, Guru $guru)
+    {
+        $oldValues = $guru->only(['name', 'nip']);
+        $oldUsername = $guru->user?->name;
+        
+        $validatedGuru = $request->validate([
+            'name' => 'required|string|max:255',
+            'nip' => ['nullable', 'string', 'max:255', Rule::unique('gurus', 'nip')->ignore($guru->id)],
+        ]);
+
+        return DB::transaction(function () use ($request, $validatedGuru, $guru, $oldValues, $oldUsername) {
+            try {
+                $name = $this->smartCapitalizeName(trim($validatedGuru['name']));
+                
+                $guru->update([
+                    'name' => $name,
+                    'nip' => $validatedGuru['nip']
+                ]);
+
+                if ($guru->user) {
+                    $validatedUser = $request->validate([
+                        'username' => ['required', 'string', 'max:255', Rule::unique('users', 'name')->ignore($guru->user->id)],
+                    ], [
+                        'username.unique' => 'Username ini sudah digunakan. Silakan pilih username lain.',
+                    ]);
+                    
+                    $guru->user->update(['name' => $validatedUser['username']]);
+                }
+                
+                $this->logUpdate('guru', $guru->name, $guru, array_merge($oldValues, ['username' => $oldUsername]));
+
+                return redirect()->route('admin.gurus.index')
+                    ->with('updated', 'Data Guru dan akun login berhasil diperbarui!');
+
+            } catch (\Exception $e) {
+                \Log::error("Error updating Guru: " . $e->getMessage());
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Gagal memperbarui data Guru. ' . $e->getMessage());
+            }
+        });
+    }
+
+    /**
+     * Menghapus Guru dan akun User yang terkait.
+     */
+    public function destroy(Guru $guru)
+    {
+        try {
+            $name = $guru->name;
+            $oldValues = $guru->toArray();
+            
+            DB::beginTransaction();
+
+            // SET guru_id di kelas menjadi NULL (kelas tetap ada, guru dihapus)
+            Kelas::where('guru_id', $guru->id)->update(['guru_id' => null]);
+
+            // Hapus user terkait
+            if ($guru->user) {
+                $guru->user->delete();
+            }
+
+            // Hapus guru
+            $guru->delete();
+            
+            $this->logDelete('guru', $name, $oldValues);
+
+            DB::commit();
+
+            return redirect()->route('admin.gurus.index')
+                ->with('deleted', 'Guru berhasil dihapus! Kelas yang sebelumnya diajar guru ini tetap ada (tanpa guru).');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->with('error', 'Gagal menghapus Guru. ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Bulk delete guru
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $request->validate([
+            'guru_ids' => 'required|array|min:1',
+            'guru_ids.*' => 'exists:gurus,id',
+        ], [
+            'guru_ids.required' => 'Tidak ada guru yang dipilih.',
+            'guru_ids.min' => 'Minimal pilih 1 guru untuk dihapus.',
+        ]);
+
+        try {
+            $deletedCount = count($request->guru_ids);
+            $guruNames = Guru::whereIn('id', $request->guru_ids)->pluck('name')->toArray();
+            
+            DB::transaction(function () use ($request) {
+                // SET guru_id menjadi NULL di kelas
+                Kelas::whereIn('guru_id', $request->guru_ids)->update(['guru_id' => null]);
+                
+                $gurus = Guru::whereIn('id', $request->guru_ids)->with('user')->get();
+                
+                foreach ($gurus as $guru) {
+                    if ($guru->user) {
+                        $guru->user->delete();
+                    }
+                    $guru->delete();
+                }
+            });
+            
+            $this->logActivity(
+                'delete',
+                'guru',
+                "Bulk delete {$deletedCount} guru: " . implode(', ', array_slice($guruNames, 0, 3)) . ($deletedCount > 3 ? '...' : ''),
+                null,
+                ['ids' => $request->guru_ids, 'total' => $deletedCount],
+                null
+            );
+
+            return redirect()->route('admin.gurus.index')
+                ->with('deleted', "Berhasil menghapus {$deletedCount} guru! Kelas tetap ada.");
+                
+        } catch (\Exception $e) {
+            \Log::error("Error bulk deleting Guru: " . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Gagal menghapus data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download template Excel untuk import guru (TANPA FOTO)
+     */
+    public function downloadTemplate()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        // Headers (tanpa foto_profil)
+        $headers = ['nama_guru', 'nip', 'username', 'password'];
+        $sheet->fromArray($headers, NULL, 'A1');
+        
+        $sheet->getStyle('A1:D1')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '1F2937']],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'F3F4F6']
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+            ],
+            'borders' => [
+                'bottom' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
+                    'color' => ['rgb' => 'D1D5DB']
+                ]
+            ]
+        ]);
+        
+        // Set kolom B (NIP) sebagai TEXT
+        $sheet->getStyle('B:B')->getNumberFormat()
+            ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+        
+        $sheet->getStyle('A2:D3')->applyFromArray([
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'FFFBEB']
+            ],
+            'font' => ['size' => 9, 'color' => ['rgb' => '78716C'], 'italic' => true],
+            'borders' => [
+                'outline' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => 'FDE68A']
+                ]
+            ]
+        ]);
+        
+        // Data contoh
+        $exampleData = [
+            ['Ahmad Zainudin, S.Pd (Contoh)', '196501011990', 'ahmad.zainudin', 'pass12345678'],
+            ['Siti Nurhaliza, M.Pd (Contoh)', '197502011995', 'siti.nurhaliza', 'pass87654321'],
+        ];
+        
+        foreach ($exampleData as $rowIndex => $row) {
+            $actualRow = $rowIndex + 2;
+            $sheet->setCellValue('A' . $actualRow, $row[0]);
+            $sheet->setCellValueExplicit('B' . $actualRow, $row[1], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue('C' . $actualRow, $row[2]);
+            $sheet->setCellValue('D' . $actualRow, $row[3]);
+        }
+        
+        $sheet->getColumnDimension('A')->setWidth(30);
+        $sheet->getColumnDimension('B')->setWidth(18);
+        $sheet->getColumnDimension('C')->setWidth(20);
+        $sheet->getColumnDimension('D')->setWidth(18);
+        $sheet->getColumnDimension('E')->setWidth(2);
+        $sheet->getColumnDimension('F')->setWidth(2);
+        $sheet->getColumnDimension('G')->setWidth(48);
+        
+        // PETUNJUK IMPORT
+        $sheet->setCellValue('G1', 'PETUNJUK IMPORT GURU');
+        $sheet->setCellValue('G2', '1. Nama Guru: Huruf awal WAJIB kapital, sisanya bebas');
+        $sheet->setCellValue('G3', '2. NIP: Nomor Induk Pegawai (opsional)');
+        $sheet->setCellValue('G4', '3. Username: Untuk login ke sistem (harus unik)');
+        $sheet->setCellValue('G5', '4. Password: Minimal 8 karakter (huruf/angka)');
+        $sheet->setCellValue('G6', '');
+        $sheet->setCellValue('G7', 'CATATAN:');
+        $sheet->setCellValue('G8', '• Baris 2-3 adalah CONTOH, hapus sebelum import');
+        $sheet->setCellValue('G9', '• Username harus unik (tidak boleh sama)');
+        $sheet->setCellValue('G10', '• NIP boleh dikosongkan');
+        $sheet->setCellValue('G11', '• Pastikan semua data sudah benar sebelum import');
+        
+        // Style petunjuk
+        $sheet->getStyle('G1')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '2563EB']
+            ],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+        ]);
+        
+        $sheet->getStyle('G2:G11')->applyFromArray([
+            'font' => ['size' => 8, 'color' => ['rgb' => '374151']],
+        ]);
+        
+        $sheet->getStyle('G7')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'D97706']],
+        ]);
+        
+        $sheet->getStyle('G1:G11')->applyFromArray([
+            'borders' => [
+                'outline' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
+                    'color' => ['rgb' => '3B82F6']
+                ]
+            ]
+        ]);
+        
+        $sheet->getRowDimension(1)->setRowHeight(22);
+        $sheet->freezePane('A2');
+        
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'Template_Import_Guru_' . date('Y-m-d') . '.xlsx';
+        
+        return response()->streamDownload(function() use ($writer) {
+            $writer->save('php://output');
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    /**
+     * Export guru untuk di-edit (TANPA FOTO) - VERSI FINAL
+     */
+    public function exportForEdit()
+    {
+        $guruList = Guru::with('user')->orderBy('name', 'asc')->get();
+        
+        if ($guruList->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada data guru untuk diekspor.');
+        }
+
+        // ✅ LOG ACTIVITY - TAMBAHAN
+        $this->logExport('guru', 'Excel (Export for Edit)');
+        
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        // Headers (tanpa foto_profil)
+        $headers = ['no_urut', 'nama_guru', 'nip', 'username'];
+        $sheet->fromArray($headers, NULL, 'A1');
+        
+        $sheet->getStyle('A1:D1')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '1F2937']],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'F3F4F6']
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+            ],
+            'borders' => [
+                'bottom' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
+                    'color' => ['rgb' => 'D1D5DB']
+                ]
+            ]
+        ]);
+        
+        // Set kolom C (NIP) sebagai TEXT
+        $sheet->getStyle('C:C')->getNumberFormat()
+            ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+        
+        // Data guru
+        $row = 2;
+        $noUrut = 1;
+        foreach ($guruList as $guru) {
+            $sheet->setCellValue('A' . $row, $noUrut);
+            $sheet->setCellValue('B' . $row, $guru->name);
+            $sheet->setCellValueExplicit('C' . $row, $guru->nip, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValue('D' . $row, $guru->user->name ?? '');
+            
+            $sheet->getStyle('A' . $row)->applyFromArray([
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'F3F4F6']
+                ]
+            ]);
+            
+            $row++;
+            $noUrut++;
+        }
+        
+        $sheet->getColumnDimension('A')->setWidth(10);
+        $sheet->getColumnDimension('B')->setWidth(30);
+        $sheet->getColumnDimension('C')->setWidth(18);
+        $sheet->getColumnDimension('D')->setWidth(20);
+        $sheet->getColumnDimension('E')->setWidth(2);
+        $sheet->getColumnDimension('F')->setWidth(2);
+        $sheet->getColumnDimension('G')->setWidth(48);
+        
+        // PETUNJUK BULK UPDATE
+        $sheet->setCellValue('G1', '📋 PANDUAN BULK UPDATE');
+        $sheet->setCellValue('G2', '');
+        $sheet->setCellValue('G3', '⚠️ ATURAN PENTING:');
+        $sheet->setCellValue('G4', '• JANGAN ubah/hapus kolom NO URUT');
+        $sheet->setCellValue('G5', '• JANGAN tambah/hapus baris');
+        $sheet->setCellValue('G6', '• Password TIDAK bisa diubah via Excel');
+        $sheet->setCellValue('G7', '');
+        $sheet->setCellValue('G8', '📝 CARA UPDATE:');
+        $sheet->setCellValue('G9', '1. Edit data yang ingin diubah');
+        $sheet->setCellValue('G10', '2. Upload file Excel yang sudah diedit');
+        $sheet->setCellValue('G11', '');
+        $sheet->setCellValue('G12', 'CATATAN:');
+        $sheet->setCellValue('G13', '• Username harus tetap unik (tidak boleh sama)');
+        $sheet->setCellValue('G14', '• NIP boleh dikosongkan');
+        
+        // Style
+        $sheet->getStyle('G1')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '059669']
+            ],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+        ]);
+        
+        $sheet->getStyle('G3')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'DC2626']],
+        ]);
+        
+        $sheet->getStyle('G8')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '2563EB']],
+        ]);
+        
+        $sheet->getStyle('G12')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'D97706']],
+        ]);
+        
+        $sheet->getStyle('G2:G14')->applyFromArray([
+            'font' => ['size' => 8, 'color' => ['rgb' => '374151']],
+        ]);
+        
+        $sheet->getStyle('G1:G14')->applyFromArray([
+            'borders' => [
+                'outline' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
+                    'color' => ['rgb' => '059669']
+                ]
+            ]
+        ]);
+        
+        $sheet->getRowDimension(1)->setRowHeight(22);
+        $sheet->freezePane('A2');
+        
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'Edit_Guru_' . date('Y-m-d') . '.xlsx';
+        
+        return response()->streamDownload(function() use ($writer) {
+            $writer->save('php://output');
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    /**
+     * Bulk update guru (TANPA FOTO) - VERSI FINAL
+     */
+    public function bulkUpdate(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls|max:2048',
+        ], [
+            'file.required' => 'File Excel wajib diupload',
+            'file.mimes' => 'File harus berformat Excel (.xlsx atau .xls)',
+            'file.max' => 'Ukuran file maksimal 2MB',
+        ]);
+
+        try {
+            $import = new GuruBulkUpdateImport();
+            Excel::import($import, $request->file('file'));
+
+            $successCount = $import->getSuccessCount();
+            $failedCount = $import->getFailedCount();
+            $errors = $import->getErrors();
+
+            if ($failedCount > 0) {
+                $errorMessage = "Berhasil update: {$successCount} guru. Gagal: {$failedCount} guru.<br><br>";
+                $errorMessage .= "<strong>Detail Error:</strong><br>";
+                $errorMessage .= implode('<br>', $errors);
+                
+                return redirect()->route('admin.gurus.index')
+                    ->with('error', $errorMessage);
+            }
+
+            // ✅ LOG ACTIVITY - TAMBAHAN
+            $this->logActivity(
+                'update',
+                'guru',
+                "Bulk update {$successCount} data guru via Excel",
+                null,
+                null,
+                ['total_updated' => $successCount]
+            );
+
+            return redirect()->route('admin.gurus.index')
+                ->with('updated', "Berhasil mengupdate {$successCount} data guru!");
+
+        } catch (\Exception $e) {
+            \Log::error("Error bulk updating guru: " . $e->getMessage());
+            \Log::error("Stack trace: " . $e->getTraceAsString());
+            
+            return redirect()->back()
+                ->with('error', 'Gagal mengupdate data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Import guru dari Excel (TANPA FOTO)
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls|max:2048',
+        ], [
+            'file.required' => 'File Excel wajib diupload',
+            'file.mimes' => 'File harus berformat Excel (.xlsx atau .xls)',
+        ]);
+
+        try {
+            $import = new GuruImport();
+            Excel::import($import, $request->file('file'));
+
+            $successCount = $import->getSuccessCount();
+            $failedCount = $import->getFailedCount();
+            $errors = $import->getErrors();
+
+            if ($failedCount > 0) {
+                $errorMessage = "Berhasil import: {$successCount} guru. Gagal: {$failedCount} guru.<br><br>";
+                $errorMessage .= "<strong>Detail Error:</strong><br>";
+                $errorMessage .= implode('<br>', $errors);
+                
+                return redirect()->route('admin.gurus.index')
+                    ->with('error', $errorMessage);
+            }
+
+            // ✅ LOG ACTIVITY - TAMBAHAN
+            $this->logImport('guru', $successCount);
+
+            return redirect()->route('admin.gurus.index')
+                ->with('success', "Berhasil mengimport {$successCount} data guru!");
+
+        } catch (\Exception $e) {
+            \Log::error("Error importing guru: " . $e->getMessage());
+            \Log::error("Stack trace: " . $e->getTraceAsString());
+            
+            return redirect()->back()
+                ->with('error', 'Gagal mengimport data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Smart capitalize name - huruf pertama kapital, sisanya tetap seperti input
+     */
+    private function smartCapitalizeName($text)
+    {
+        $text = trim($text);
+        
+        // Capitalize huruf pertama saja
+        if (strlen($text) > 0) {
+            $text = strtoupper(substr($text, 0, 1)) . substr($text, 1);
+        }
+        
+        return $text;
+    }
+}
