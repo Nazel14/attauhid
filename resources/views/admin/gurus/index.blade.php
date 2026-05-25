@@ -26,14 +26,12 @@
         selectedGurus: [],
         selectAll: false,
 
-        // SESUDAH — hitung unik berdasarkan value (bukan jumlah elemen DOM)
 get isIndeterminate() {
     const total = this.totalGurus();
     return this.selectedGurus.length > 0 && this.selectedGurus.length < total;
 },
 
 totalGurus() {
-    // Ambil unique IDs dari semua .guru-checkbox
     const ids = [...new Set([...document.querySelectorAll('.guru-checkbox')].map(cb => cb.value))];
     return ids.length;
 },
@@ -205,7 +203,7 @@ updateMainCheckbox() {
             </div>
         </div>
 
-        {{-- ACTION BUTTONS: 2-col on mobile, flex on desktop --}}
+        {{-- ACTION BUTTONS --}}
         <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mb-4">
             <button @click="openTemplateModal()" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white border border-emerald-700 bg-emerald-700 hover:bg-emerald-600 hover:border-emerald-600 transition-all active:scale-95">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -253,9 +251,7 @@ updateMainCheckbox() {
             <template x-for="id in selectedGurus" :key="id"><input type="hidden" name="guru_ids[]" :value="id"></template>
         </form>
 
-        {{-- ====================================================== --}}
-        {{-- MOBILE CARDS (< lg) — NO TABLE, no horizontal scroll   --}}
-        {{-- ====================================================== --}}
+        {{-- MOBILE CARDS --}}
         <div class="lg:hidden space-y-2">
 
             @if($gurus->count() > 0)
@@ -271,14 +267,11 @@ updateMainCheckbox() {
             <div class="rounded-xl border overflow-hidden transition-all"
                  :class="selectedGurus.includes('{{ $guru->id }}') ? 'border-indigo-500/50 ring-1 ring-indigo-500/15 bg-indigo-950/10' : 'border-gray-800 bg-gray-900'">
 
-                {{-- Row 1: checkbox + avatar + name + number --}}
                 <div class="flex items-center gap-3 px-4 py-3">
                     <input type="checkbox" class="guru-checkbox w-4 h-4 rounded border-gray-600 bg-gray-700 text-indigo-600 flex-shrink-0 cursor-pointer"
                         value="{{ $guru->id }}"
                         :checked="selectedGurus.includes('{{ $guru->id }}')"
                         @change="toggleSelect('{{ $guru->id }}')">
-
-                    
 
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-bold text-white truncate">{{ $guru->name }}</p>
@@ -287,7 +280,6 @@ updateMainCheckbox() {
                     <span class="text-[11px] text-gray-700 flex-shrink-0">#{{ $index + 1 }}</span>
                 </div>
 
-                {{-- Row 2: 2-col info --}}
                 <div class="grid grid-cols-2 border-t border-gray-800/50">
                     <div class="px-3 py-2.5 text-center border-r border-gray-800/50">
                         <p class="text-[10px] text-gray-600 mb-1">Username</p>
@@ -308,7 +300,6 @@ updateMainCheckbox() {
                     </div>
                 </div>
 
-                {{-- Row 3: action buttons --}}
                 <div class="grid grid-cols-2 border-t border-gray-800/50">
                     <button @click="openEditModal({{ json_encode($guru) }}, '{{ $guru->user->name ?? '' }}')"
                         class="flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-indigo-400 hover:bg-indigo-950/50 active:bg-indigo-950/80 transition-colors border-r border-gray-800/50">
@@ -335,9 +326,7 @@ updateMainCheckbox() {
             @endforelse
         </div>
 
-        {{-- ====================================================== --}}
-        {{-- DESKTOP TABLE (≥ lg)                                    --}}
-        {{-- ====================================================== --}}
+        {{-- DESKTOP TABLE --}}
         <div class="hidden lg:block bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
             <table class="min-w-full">
                 <thead>
@@ -367,7 +356,6 @@ updateMainCheckbox() {
                         <td class="px-4 py-3 text-sm text-gray-500">{{ $index + 1 }}</td>
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-2.5">
-                                
                                 <span class="text-sm font-medium text-gray-200">{{ $guru->name }}</span>
                             </div>
                         </td>
@@ -410,11 +398,10 @@ updateMainCheckbox() {
             </table>
         </div>
 
-    </div>{{-- end max-w --}}
-
+    </div>
 
     {{-- ====================================================== --}}
-    {{-- MODAL: TAMBAH / EDIT GURU                               --}}
+    {{-- MODAL: TAMBAH / EDIT GURU (FIXED dengan password edit)  --}}
     {{-- ====================================================== --}}
     <div x-show="isOpen" class="modal-wrap" style="display:none;" x-cloak>
         <div class="modal-bg" @click="closeModal()"></div>
@@ -458,15 +445,21 @@ updateMainCheckbox() {
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
                         Data Akun Login
                     </h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="fi-lbl">Username <span class="text-red-400">*</span></label>
-                            <input name="username" type="text" required x-model="formData.username"
-                                placeholder="ahmad.zainudin"
-                                class="fi-inp">
-                            <p class="text-[10px] text-gray-600 mt-1">Untuk login ke sistem</p>
-                        </div>
-                        <div x-show="!isEdit" x-data="{ showPassword: false }">
+
+                    {{-- Username (selalu tampil) --}}
+                    <div class="mb-3">
+                        <label class="fi-lbl">Username <span class="text-red-400">*</span></label>
+                        <input name="username" type="text" required x-model="formData.username"
+                            placeholder="ahmad.zainudin"
+                            class="fi-inp">
+                        <p class="text-[10px] text-gray-600 mt-1">Untuk login ke sistem</p>
+                    </div>
+
+                    {{-- ============================================ --}}
+                    {{-- Password untuk CREATE mode (wajib)            --}}
+                    {{-- ============================================ --}}
+                    <div x-show="!isEdit" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div x-data="{ showPassword: false }">
                             <label class="fi-lbl">Password <span class="text-red-400">*</span></label>
                             <div class="relative">
                                 <input name="password" :type="showPassword ? 'text' : 'password'" x-bind:required="!isEdit"
@@ -478,40 +471,8 @@ updateMainCheckbox() {
                                 </button>
                             </div>
                         </div>
-                    </div>
-                    <div x-show="!isEdit" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3" x-data="{ showConfirmPassword: false }">
-                        {{-- ✅ TAMBAHAN: Password (opsional saat EDIT) --}}
-                        <div x-show="isEdit" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                            <div x-data="{ showEditPassword: false }">
-                                <label class="fi-lbl">
-                                    Password Baru 
-                                    <span class="text-gray-500 text-[10px] font-normal">(Kosongkan jika tidak diubah)</span>
-                                </label>
-                                <div class="relative">
-                                    <input name="password" :type="showEditPassword ? 'text' : 'password'"
-                                        placeholder="Minimal 8 karakter"
-                                        class="fi-inp pr-9">
-                                    <button type="button" @click="showEditPassword=!showEditPassword" class="eye-btn">
-                                        <svg x-show="!showEditPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                        <svg x-show="showEditPassword" class="w-4 h-4" style="display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
-                                    </button>
-                                </div>
-                                <p class="text-[10px] text-gray-600 mt-1">Minimal 8 karakter</p>
-                            </div>
-                            <div x-data="{ showEditConfirmPwd: false }">
-                                <label class="fi-lbl">Konfirmasi Password Baru</label>
-                                <div class="relative">
-                                    <input name="password_confirmation" :type="showEditConfirmPwd ? 'text' : 'password'"
-                                        placeholder="Ulangi password baru"
-                                        class="fi-inp pr-9">
-                                    <button type="button" @click="showEditConfirmPwd=!showEditConfirmPwd" class="eye-btn">
-                                        <svg x-show="!showEditConfirmPwd" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                        <svg x-show="showEditConfirmPwd" class="w-4 h-4" style="display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
-                                    </button>
-                                </div>
-                                <p class="text-[10px] text-gray-600 mt-1">Sama dengan password baru</p>
-                            </div>
-                        </div>
+                        <div x-data="{ showConfirmPassword: false }">
+                            <label class="fi-lbl">Konfirmasi Password <span class="text-red-400">*</span></label>
                             <div class="relative">
                                 <input name="password_confirmation" :type="showConfirmPassword ? 'text' : 'password'" x-bind:required="!isEdit"
                                     placeholder="Ulangi password"
@@ -521,6 +482,41 @@ updateMainCheckbox() {
                                     <svg x-show="showConfirmPassword" class="w-4 h-4" style="display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
                                 </button>
                             </div>
+                        </div>
+                    </div>
+
+                    {{-- ============================================ --}}
+                    {{-- ✅ Password untuk EDIT mode (opsional)        --}}
+                    {{-- ============================================ --}}
+                    <div x-show="isEdit" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div x-data="{ showEditPassword: false }">
+                            <label class="fi-lbl">
+                                Password Baru
+                                <span class="text-gray-500 text-[10px] font-normal">(Kosongkan jika tidak diubah)</span>
+                            </label>
+                            <div class="relative">
+                                <input name="password" :type="showEditPassword ? 'text' : 'password'"
+                                    placeholder="Minimal 8 karakter"
+                                    class="fi-inp pr-9">
+                                <button type="button" @click="showEditPassword=!showEditPassword" class="eye-btn">
+                                    <svg x-show="!showEditPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <svg x-show="showEditPassword" class="w-4 h-4" style="display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                                </button>
+                            </div>
+                            <p class="text-[10px] text-gray-600 mt-1">Minimal 8 karakter</p>
+                        </div>
+                        <div x-data="{ showEditConfirmPwd: false }">
+                            <label class="fi-lbl">Konfirmasi Password Baru</label>
+                            <div class="relative">
+                                <input name="password_confirmation" :type="showEditConfirmPwd ? 'text' : 'password'"
+                                    placeholder="Ulangi password baru"
+                                    class="fi-inp pr-9">
+                                <button type="button" @click="showEditConfirmPwd=!showEditConfirmPwd" class="eye-btn">
+                                    <svg x-show="!showEditConfirmPwd" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <svg x-show="showEditConfirmPwd" class="w-4 h-4" style="display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                                </button>
+                            </div>
+                            <p class="text-[10px] text-gray-600 mt-1">Sama dengan password baru</p>
                         </div>
                     </div>
                 </div>
@@ -679,14 +675,12 @@ updateMainCheckbox() {
         </div>
     </div>
 
-</div>{{-- end x-data --}}
+</div>
 
 <style>
     body { background:#030712; }
-
     .th { padding:12px 16px; text-align:left; font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.08em; }
     .chip { display:inline-flex; align-items:center; padding:2px 8px; border-radius:9999px; font-size:10px; font-weight:700; border-width:1px; border-style:solid; }
-
     .modal-wrap { position:fixed; inset:0; z-index:70; display:flex; flex-direction:column; justify-content:flex-end; }
     @media (min-width:640px) { .modal-wrap { justify-content:center; align-items:center; padding:16px; } }
     .modal-bg { position:absolute; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(4px); }
@@ -697,28 +691,23 @@ updateMainCheckbox() {
     .modal-header { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid #1f2937; }
     .modal-close-btn { width:28px; height:28px; border-radius:50%; background:#1f2937; display:flex; align-items:center; justify-content:center; color:#9ca3af; transition:background .15s; }
     .modal-close-btn:hover { background:#374151; }
-
     .fi-lbl { display:block; font-size:11px; font-weight:600; color:#9ca3af; margin-bottom:5px; }
     .fi-inp { width:100%; background:#0d1117; border:1px solid #374151; border-radius:10px; color:#e5e7eb; font-size:13px; padding:9px 12px; outline:none; transition:border-color .15s, box-shadow .15s; }
     .fi-inp:focus { border-color:#6366f1; box-shadow:0 0 0 2px rgba(99,102,241,.18); }
     .eye-btn { position:absolute; right:10px; top:50%; transform:translateY(-50%); color:#6b7280; transition:color .15s; }
     .eye-btn:hover { color:#d1d5db; }
-
     .btn-primary { padding:10px 0; background:#4f46e5; color:#fff; font-size:14px; font-weight:700; border-radius:12px; transition:background .15s; box-shadow:0 4px 14px rgba(79,70,229,.3); }
     .btn-primary:hover { background:#4338ca; }
     .btn-secondary { padding:10px 0; background:#1f2937; border:1px solid #374151; color:#d1d5db; font-size:14px; font-weight:600; border-radius:12px; transition:background .15s; }
     .btn-secondary:hover { background:#374151; }
-
     nav[role="navigation"] span, nav[role="navigation"] a { background:#111827 !important; border-color:#374151 !important; color:#9ca3af !important; }
     nav[role="navigation"] a:hover { background:#1f2937 !important; color:#e5e7eb !important; }
     nav[role="navigation"] [aria-current="page"] span { background:#4f46e5 !important; border-color:#4f46e5 !important; color:#fff !important; }
-
     input[type="checkbox"]:indeterminate {
         background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 16 16'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 8h8'/%3e%3c/svg%3e");
         background-color:rgb(79 70 229); border-color:rgb(79 70 229);
     }
     [x-cloak] { display:none !important; }
-
     ::-webkit-scrollbar { width:4px; height:4px; }
     ::-webkit-scrollbar-track { background:transparent; }
     ::-webkit-scrollbar-thumb { background:#374151; border-radius:99px; }
