@@ -17,7 +17,7 @@ use App\Http\Controllers\Admin\PresensiSesiController as AdminPresensiSesiContro
 use App\Http\Controllers\Admin\MonitoringController as AdminMonitoringController;
 use App\Http\Controllers\Admin\LogActivityController as AdminLogActivityController;
 use App\Http\Controllers\Admin\AdminController;
-use App\Http\Controllers\Admin\TahunAjaranController; // ← TAMBAHAN BARU
+use App\Http\Controllers\Admin\TahunAjaranController;
 
 // --- Imports Controller Guru ---
 use App\Http\Controllers\Guru\DashboardController as GuruDashboardController;
@@ -75,7 +75,7 @@ Route::middleware(['auth', 'role:super-admin,admin'])->prefix('admin')->name('ad
     Route::middleware('permission:kelola-admin')->group(function() {
         Route::resource('admins', AdminController::class)->except(['show']);
 
-        // ← TAMBAHAN BARU: Tahun Ajaran (hanya Super Admin)
+        // Tahun Ajaran (hanya Super Admin)
         Route::prefix('tahun-ajaran')->name('tahun-ajaran.')->group(function () {
             Route::get('/',                              [TahunAjaranController::class, 'index'])        ->name('index');
             Route::post('/',                             [TahunAjaranController::class, 'store'])        ->name('store');
@@ -443,3 +443,18 @@ Route::middleware(['auth'])->prefix('api')->name('api.')->group(function () {
         }
     })->name('presensi.hari-ini');
 });
+
+/* --------------------------------------
+ * 6. SERVE STORAGE FILES (Alternative to symlink)
+ * Untuk shared hosting Hostinger yang block fungsi symlink()
+ * Route ini handle akses ke /storage/* dan baca file dari storage/app/public/
+ * -------------------------------------- */
+Route::get('/storage/{path}', function ($path) {
+    $fullPath = storage_path('app/public/' . $path);
+    
+    if (!file_exists($fullPath)) {
+        abort(404, 'File not found: ' . $path);
+    }
+    
+    return response()->file($fullPath);
+})->where('path', '.*')->name('storage.serve');

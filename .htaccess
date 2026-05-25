@@ -1,0 +1,27 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # BLOKIR file sensitif
+    <FilesMatch "^\.env|composer\.(json|lock)|package\.(json|lock)$">
+        Require all denied
+    </FilesMatch>
+    
+    # BLOKIR folder sensitif Laravel
+    RedirectMatch 403 ^/\.git/.*$
+    RedirectMatch 403 ^/app/.*$
+    RedirectMatch 403 ^/bootstrap/.*$
+    RedirectMatch 403 ^/config/.*$
+    RedirectMatch 403 ^/database/.*$
+    RedirectMatch 403 ^/resources/.*$
+    RedirectMatch 403 ^/routes/.*$
+    RedirectMatch 403 ^/tests/.*$
+    RedirectMatch 403 ^/vendor/.*$
+    
+    # Catatan: /storage/ TIDAK di-block di sini karena kita pakai route Laravel
+    # untuk serve file upload via /storage/{path}
+    # Folder Laravel internal storage/ tetap aman karena tidak ada di public_html/
+    
+    # Redirect semua request ke folder public/
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L,QSA]
+</IfModule>

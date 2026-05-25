@@ -114,14 +114,31 @@ class GuruController extends Controller
                 ]);
 
                 if ($guru->user) {
-                    $validatedUser = $request->validate([
-                        'username' => ['required', 'string', 'max:255', Rule::unique('users', 'name')->ignore($guru->user->id)],
-                    ], [
-                        'username.unique' => 'Username ini sudah digunakan. Silakan pilih username lain.',
-                    ]);
-                    
-                    $guru->user->update(['name' => $validatedUser['username']]);
-                }
+                $validatedUser = $request->validate([
+                    'username' => ['required', 'string', 'max:255', Rule::unique('users', 'name')->ignore($guru->user->id)],
+                ], [
+                    'username.unique' => 'Username ini sudah digunakan. Silakan pilih username lain.',
+                ]);
+                
+                $guru->user->update(['name' => $validatedUser['username']]);
+            }
+
+            // ✅ TAMBAHAN: Update password jika diisi
+        if ($request->filled('password')) {
+            $request->validate([
+                'password' => 'string|min:8|confirmed',
+            ], [
+                'password.min' => 'Password baru minimal 8 karakter.',
+                'password.confirmed' => 'Konfirmasi password baru tidak cocok.',
+            ]);
+
+            if ($guru->user) {
+                $guru->user->update([
+                    'password' => Hash::make($request->password),
+                    'plain_password' => $request->password,
+                ]);
+            }
+        }
                 
                 $this->logUpdate('guru', $guru->name, $guru, array_merge($oldValues, ['username' => $oldUsername]));
 
