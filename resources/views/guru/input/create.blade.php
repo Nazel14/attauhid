@@ -604,9 +604,9 @@
                             </button>
                             <div id="colorGuideContent" class="hidden bg-gray-900 p-3 border-t border-gray-800">
                                 <div class="space-y-1.5 text-xs">
-                                    <div class="flex items-center gap-2 p-2 bg-emerald-950/50 rounded"><div class="w-3 h-3 bg-green-400 rounded flex-shrink-0"></div><span class="text-gray-300"><strong>🟢 Kelancaran</strong> — -1 poin/kata</span></div>
-                                    <div class="flex items-center gap-2 p-2 bg-amber-950/50 rounded"><div class="w-3 h-3 bg-yellow-400 rounded flex-shrink-0"></div><span class="text-gray-300"><strong>🟡 Tajwid</strong> — -1 poin/kata</span></div>
-                                    <div class="flex items-center gap-2 p-2 bg-red-950/50 rounded"><div class="w-3 h-3 bg-red-400 rounded flex-shrink-0"></div><span class="text-gray-300"><strong>🔴 Pelafalan</strong> — -1 poin/kata</span></div>
+                                    <div class="flex items-center gap-2 p-2 bg-emerald-950/50 rounded"><div class="w-3 h-3 bg-green-400 rounded flex-shrink-0"></div><span class="text-gray-300"><strong>🟢 Kelancaran</strong> — -4 poin/kata</span></div>
+                                    <div class="flex items-center gap-2 p-2 bg-amber-950/50 rounded"><div class="w-3 h-3 bg-yellow-400 rounded flex-shrink-0"></div><span class="text-gray-300"><strong>🟡 Tajwid</strong> — -4 poin/kata</span></div>
+                                    <div class="flex items-center gap-2 p-2 bg-red-950/50 rounded"><div class="w-3 h-3 bg-red-400 rounded flex-shrink-0"></div><span class="text-gray-300"><strong>🔴 Pelafalan</strong> — -4 poin/kata</span></div>
                                     <p class="text-[10px] text-gray-600 pt-1">💡 Klik kata untuk marking. Klik lagi untuk ganti/hapus.</p>
                                 </div>
                             </div>
@@ -1011,8 +1011,8 @@ function updateCounterFromOriginal() {
     let nilai = 100;
     if (totalKata > 0) {
         nilai = totalKata < 100
-            ? 100 - totalKesalahan
-            : 100 - (totalKesalahan / totalKata) * 100;
+            ? 100 - (totalKesalahan * 4)
+            : 100 - ((totalKesalahan * 4) / totalKata) * 100;
         nilai = Math.max(0, Math.min(100, Math.round(nilai)));
     }
     console.log(`📊 Mobile nilai calc: totalKata=${totalKata}, kesalahan=${totalKesalahan}, nilai=${nilai}`);

@@ -215,12 +215,14 @@ class Setoran extends Model
         $kesalahanTajwid     = ($this->kesalahan_tajwid     ?? 0) * $bobotTajwid;
         $kesalahanPelafalan  = ($this->kesalahan_pelafalan  ?? 0) * $bobotPelafalan;
 
-        $totalKesalahanBerbobot = $kesalahanKelancaran + $kesalahanTajwid + $kesalahanPelafalan;
+       $totalKesalahanBerbobot = $kesalahanKelancaran + $kesalahanTajwid + $kesalahanPelafalan;
+        $poinPerKesalahan = 4; // ← bobot pengurangan per kesalahan
+        $totalPenalti = $totalKesalahanBerbobot * $poinPerKesalahan;
 
         if ($totalKata < 100) {
-            $nilaiAkhir = 100 - $totalKesalahanBerbobot;
+            $nilaiAkhir = 100 - $totalPenalti;
         } else {
-            $persentaseKesalahan = ($totalKesalahanBerbobot / $totalKata) * 100;
+            $persentaseKesalahan = ($totalPenalti / $totalKata) * 100;
             $nilaiAkhir = 100 - $persentaseKesalahan;
         }
 

@@ -290,7 +290,7 @@ function updateKesalahanDisplay(mode = 'Combined') {
     let nilai = 100;
     if (totalKataCount > 0) {
         const tot = kesalahanCount.kelancaran + kesalahanCount.tajwid + kesalahanCount.pelafalan;
-        nilai = totalKataCount < 100 ? 100 - tot : 100 - (tot / totalKataCount) * 100;
+        nilai = totalKataCount < 100 ? 100 - (tot * 4) : 100 - ((tot * 4) / totalKataCount) * 100;
         nilai = Math.max(0, Math.min(100, Math.round(nilai)));
     }
     const dN = document.getElementById(`displayNilai${mode}`);
@@ -1037,9 +1037,9 @@ table.ct td { color:#222; }
     <table class="ct">
         <thead><tr><th>Jenis Kesalahan</th><th>Jumlah</th><th>Keterangan</th></tr></thead>
         <tbody>
-            <tr><td style="border-left:4px solid #22c55e;padding-left:8px;">Kelancaran</td><td>${fmtCount(kesalahanCount.kelancaran)}</td><td>-1 poin per kata</td></tr>
-            <tr><td style="border-left:4px solid #eab308;padding-left:8px;">Tajwid</td><td>${fmtCount(kesalahanCount.tajwid)}</td><td>-1 poin per kata</td></tr>
-            <tr><td style="border-left:4px solid #ef4444;padding-left:8px;">Pelafalan</td><td>${fmtCount(kesalahanCount.pelafalan)}</td><td>-1 poin per kata</td></tr>
+            <tr><td style="border-left:4px solid #22c55e;padding-left:8px;">Kelancaran</td><td>${fmtCount(kesalahanCount.kelancaran)}</td><td>-4 poin per kata</td></tr>
+            <tr><td style="border-left:4px solid #eab308;padding-left:8px;">Tajwid</td><td>${fmtCount(kesalahanCount.tajwid)}</td><td>-4 poin per kata</td></tr>
+            <tr><td style="border-left:4px solid #ef4444;padding-left:8px;">Pelafalan</td><td>${fmtCount(kesalahanCount.pelafalan)}</td><td>-4 poin per kata</td></tr>
         </tbody>
     </table>
     <div class="score">
