@@ -291,8 +291,16 @@ function updateErrorCounters() {
     if (displayTajwid)     displayTajwid.textContent     = tajwidCount;
     if (displayPelafalan)  displayPelafalan.textContent  = pelafalanCount;
 
+    
     const totalKesalahan = kelancaranCount + tajwidCount + pelafalanCount;
-    const nilai          = Math.max(0, 100 - totalKesalahan);
+    const totalKata = (document.getElementById('quranDisplay')?.querySelectorAll('.word-item').length) || 0;
+    let nilai = 100;
+    if (totalKata > 0) {
+        nilai = totalKata < 100
+            ? 100 - (totalKesalahan * 4)
+            : 100 - ((totalKesalahan * 4) / totalKata) * 100;
+        nilai = Math.max(0, Math.min(100, Math.round(nilai)));
+    }
 
     const nilaiInput   = document.getElementById(elementIds.nilai);
     const displayNilai = document.getElementById(elementIds.displayNilai);
