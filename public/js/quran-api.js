@@ -1,16 +1,14 @@
 /**
- * Quran API Integration - Amiri Quran Version - WAQAF FIXED FOR PDF
- * UPDATE: Multi-form support + Multi-Surah Display + Separated Boxes + WAQAF INLINE
- * Version: 3.8 - FIX: Double Total Kata (debounce + scoped count)
- *
- * PERUBAHAN v3.8:
- * - FIX KRITIS: countTotalWords() diberi debounce flag agar tidak bisa dipanggil
- *   dua kali dalam waktu 1 detik (mencegah double count total kata)
- * - Semua fungsi lain TIDAK diubah dari v3.7
+ * Quran API Integration - Amiri Quran Version
+ * Version: 4.0 - THEME AWARE: warna teks Arab pakai CSS var (--q-fg/--q-num/--q-box-border)
+ *                dgn fallback #fff → light/dark di layar, PDF tetap putih (var fallback).
  */
 
 const BASMALLAH_TEXT = 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
 const BASMALLAH_STANDARD = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
+
+// ✅ KONSTANTA: bobot pengurangan nilai per kesalahan
+const POIN_PER_KESALAHAN = 4;
 
 const surahMapping = {
     '1. Al-Fatihah': { number: 1, verses: 7 },
@@ -129,28 +127,17 @@ const surahMapping = {
     '114. An-Nas': { number: 114, verses: 6 }
 };
 
-/**
- * ✅ GET ELEMENT IDs BASED ON FORM CONTEXT
- */
 function getFormElementIds() {
     const context = window.currentFormContext || 'Combined';
 
-    console.log('🔍 Getting element IDs for context:', context);
-
     if (context === 'SetoranOnly') {
         return {
-            suratStart: 'suratStartSetoranOnly',
-            ayatStart: 'ayatStartSetoranOnly',
-            suratEnd: 'suratEndSetoranOnly',
-            ayatEnd: 'ayatEndSetoranOnly',
-            pageStart: 'pageStartSetoranOnly',
-            pageEnd: 'pageEndSetoranOnly',
-            pageStartPortion: 'pageStartPortionSetoranOnly',
-            pageEndPortion: 'pageEndPortionSetoranOnly',
+            suratStart: 'suratStartSetoranOnly', ayatStart: 'ayatStartSetoranOnly',
+            suratEnd: 'suratEndSetoranOnly', ayatEnd: 'ayatEndSetoranOnly',
+            pageStart: 'pageStartSetoranOnly', pageEnd: 'pageEndSetoranOnly',
+            pageStartPortion: 'pageStartPortionSetoranOnly', pageEndPortion: 'pageEndPortionSetoranOnly',
             totalPage: 'totalPageSetoranOnly',
-            juzStart: 'juzStartSetoranOnly',
-            juzEnd: 'juzEndSetoranOnly',
-            totalJuz: 'totalJuzSetoranOnly',
+            juzStart: 'juzStartSetoranOnly', juzEnd: 'juzEndSetoranOnly', totalJuz: 'totalJuzSetoranOnly',
             totalKata: 'totalKataSetoranOnly',
             kesalahanKelancaran: 'kesalahanKelancaranSetoranOnly',
             kesalahanTajwid: 'kesalahanTajwidSetoranOnly',
@@ -166,18 +153,12 @@ function getFormElementIds() {
         };
     } else {
         return {
-            suratStart: 'suratStartCombined',
-            ayatStart: 'ayatStartCombined',
-            suratEnd: 'suratEndCombined',
-            ayatEnd: 'ayatEndCombined',
-            pageStart: 'pageStartCombined',
-            pageEnd: 'pageEndCombined',
-            pageStartPortion: 'pageStartPortionCombined',
-            pageEndPortion: 'pageEndPortionCombined',
+            suratStart: 'suratStartCombined', ayatStart: 'ayatStartCombined',
+            suratEnd: 'suratEndCombined', ayatEnd: 'ayatEndCombined',
+            pageStart: 'pageStartCombined', pageEnd: 'pageEndCombined',
+            pageStartPortion: 'pageStartPortionCombined', pageEndPortion: 'pageEndPortionCombined',
             totalPage: 'totalPageCombined',
-            juzStart: 'juzStartCombined',
-            juzEnd: 'juzEndCombined',
-            totalJuz: 'totalJuzCombined',
+            juzStart: 'juzStartCombined', juzEnd: 'juzEndCombined', totalJuz: 'totalJuzCombined',
             totalKata: 'totalKataCombined',
             kesalahanKelancaran: 'kesalahanKelancaranCombined',
             kesalahanTajwid: 'kesalahanTajwidCombined',
@@ -194,9 +175,6 @@ function getFormElementIds() {
     }
 }
 
-/**
- * Remove Basmallah from ayah text
- */
 function removeBasmalahFromAyah(text, surahNumber, ayahNumber) {
     if (surahNumber === 1 || surahNumber === 9) return text;
     if (ayahNumber !== 1) return text;
@@ -214,19 +192,11 @@ function removeBasmalahFromAyah(text, surahNumber, ayahNumber) {
     return teksBersih.replace(/^[\u0610-\u061A\u064B-\u065F\u0671\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]+/, '').trim();
 }
 
-/**
- * ✅ WAQAF FIX: Let waqaf render naturally inline without span wrapping
- */
 function wrapWaqafSymbols(text) {
     return text;
 }
 
-/**
- * ✅ MARK WORD FUNCTION - SMOOTH & MODERN DESIGN V2
- */
 function markWord(element) {
-    console.log('🎨 SMOOTH MARKING V2 ACTIVE!');
-
     let currentState = parseInt(element.getAttribute('data-mark-state')) || 0;
     currentState = (currentState + 1) % 4;
     element.setAttribute('data-mark-state', currentState);
@@ -261,13 +231,16 @@ function markWord(element) {
 }
 
 /**
- * ✅ UPDATE ERROR COUNTERS
- * Scoped ke #quranDisplay agar tidak double-count
+ * ✅ UPDATE ERROR COUNTERS — RUMUS BARU: -4 POIN PER KESALAHAN
+ *
+ * Total kata < 100  → nilai = 100 - (totalKesalahan × 4)
+ * Total kata >= 100 → nilai = 100 - ((totalKesalahan × 4) / totalKata) × 100
+ *
+ * Hasil di-clamp ke range [0, 100]
  */
 function updateErrorCounters() {
     const elementIds = getFormElementIds();
 
-    // ✅ FIXED: scope ke #quranDisplay saja
     const quranDisplay = document.getElementById('quranDisplay');
     const scope = quranDisplay || document;
 
@@ -291,14 +264,16 @@ function updateErrorCounters() {
     if (displayTajwid)     displayTajwid.textContent     = tajwidCount;
     if (displayPelafalan)  displayPelafalan.textContent  = pelafalanCount;
 
-    
+    // ✅ HITUNG NILAI DENGAN BOBOT -4 POIN PER KESALAHAN
     const totalKesalahan = kelancaranCount + tajwidCount + pelafalanCount;
-    const totalKata = (document.getElementById('quranDisplay')?.querySelectorAll('.word-item').length) || 0;
+    const totalKata = quranDisplay ? quranDisplay.querySelectorAll('.word-item').length : 0;
+    const totalPenalti = totalKesalahan * POIN_PER_KESALAHAN;
+
     let nilai = 100;
     if (totalKata > 0) {
         nilai = totalKata < 100
-            ? 100 - (totalKesalahan * 4)
-            : 100 - ((totalKesalahan * 4) / totalKata) * 100;
+            ? 100 - totalPenalti
+            : 100 - (totalPenalti / totalKata) * 100;
         nilai = Math.max(0, Math.min(100, Math.round(nilai)));
     }
 
@@ -308,16 +283,17 @@ function updateErrorCounters() {
     if (nilaiInput)   nilaiInput.value        = nilai;
     if (displayNilai) displayNilai.textContent = nilai;
 
-    console.log('📊 Error counters updated:', { kelancaranCount, tajwidCount, pelafalanCount, nilai });
+    // Sync ke variabel global untuk PDF generation
+    if (typeof window.kesalahanCount !== 'undefined') {
+        window.kesalahanCount.kelancaran = kelancaranCount;
+        window.kesalahanCount.tajwid     = tajwidCount;
+        window.kesalahanCount.pelafalan  = pelafalanCount;
+    }
+
+    console.log('📊 Error counters updated:', { kelancaranCount, tajwidCount, pelafalanCount, totalKata, nilai });
 }
 
-/**
- * ✅ RESET ALL MARKINGS
- */
 function resetAllMarkings() {
-    console.log('🔄 Resetting all markings...');
-
-    // ✅ FIXED: scope ke #quranDisplay saja
     const quranDisplay = document.getElementById('quranDisplay');
     const scope = quranDisplay || document;
 
@@ -352,109 +328,53 @@ function resetAllMarkings() {
     if (displayTajwid)     displayTajwid.textContent     = '0';
     if (displayPelafalan)  displayPelafalan.textContent  = '0';
     if (displayNilai)      displayNilai.textContent      = '100';
-
-    console.log('✅ All markings reset');
 }
 
-/**
- * ✅ FIX v3.8 — countTotalWords() dengan DEBOUNCE FLAG
- *
- * ROOT CAUSE BUG DOUBLE KATA:
- * countTotalWords() dipanggil DUA KALI dalam waktu berdekatan:
- *   1. setTimeout(300ms) di loadQuran()
- *   2. triggerStatisticsUpdate() → dipanggil dari complete-quran-mapping-wrapper.js
- *      setelah autoFillPageFromAyat() di setTimeout(500ms)
- *
- * FIX: Debounce flag _countTotalWordsPending mencegah eksekusi kedua
- * dalam window 1000ms setelah pemanggilan pertama.
- *
- * JUGA FIX: Hanya hitung dari #quranDisplay (bukan document) agar tidak
- * terpengaruh clone quranDisplay yang ada di mobile drawer.
- */
-
-// ✅ Debounce flag — module-level (satu instance per halaman)
 let _countTotalWordsPending = false;
 
 function countTotalWords() {
-    // ✅ GUARD: Jika sudah dalam proses hitung, skip panggilan kedua
-    if (_countTotalWordsPending) {
-        console.warn('⚠️ countTotalWords() dipanggil dua kali dalam 1 detik — skip yang kedua');
-        return 0;
-    }
+    if (_countTotalWordsPending) return 0;
 
-    // Set flag & auto-reset setelah 1000ms
     _countTotalWordsPending = true;
     setTimeout(function () { _countTotalWordsPending = false; }, 1000);
 
-    console.log('🔍 countTotalWords() called — scoped to #quranDisplay');
-
-    // ✅ Selalu scope ke #quranDisplay (bukan document) agar clone di drawer tidak ikut terhitung
     const quranDisplay = document.getElementById('quranDisplay');
 
     if (!quranDisplay) {
-        console.error('❌ #quranDisplay not found!');
         _countTotalWordsPending = false;
         return 0;
     }
 
     let words = quranDisplay.querySelectorAll('.word-item');
-    console.log(`📊 Found ${words.length} .word-item inside #quranDisplay`);
-
     if (words.length === 0) {
         words = quranDisplay.querySelectorAll('[data-word]');
-        console.log(`📊 Fallback: Found ${words.length} [data-word] inside #quranDisplay`);
     }
 
     const elementIds = getFormElementIds();
     const totalWords = words.length;
 
-    console.log(`📊 FINAL Total kata (scoped): ${totalWords}`);
-
-    if (totalWords === 0) {
-        console.warn('⚠️ Total words = 0! quranDisplay innerHTML length:', quranDisplay.innerHTML.length);
-    }
-
-    // Update display global
     const globalDisplay = document.getElementById('displayTotalKata');
-    if (globalDisplay) {
-        globalDisplay.textContent = totalWords;
-        console.log(`✅ Updated displayTotalKata = ${totalWords}`);
-    }
+    if (globalDisplay) globalDisplay.textContent = totalWords;
 
-    // Update hidden input form
     const totalInput = document.getElementById(elementIds.totalKata);
-    if (totalInput) {
-        totalInput.value = totalWords;
-        console.log(`✅ Updated ${elementIds.totalKata} = ${totalWords}`);
-    } else {
-        console.warn(`⚠️ Input ${elementIds.totalKata} not found`);
-    }
+    if (totalInput) totalInput.value = totalWords;
 
     return totalWords;
 }
 
-/**
- * ✅ FETCH MULTIPLE SURAHS FROM API
- */
 async function loadMultipleSurahsFromAPI(surahStartName, ayatStart, surahEndName, ayatEnd) {
     const surahStartInfo = surahMapping[surahStartName];
     const surahEndInfo   = surahMapping[surahEndName];
 
-    if (!surahStartInfo || !surahEndInfo) {
-        throw new Error('Surah not found in mapping');
-    }
+    if (!surahStartInfo || !surahEndInfo) throw new Error('Surah not found in mapping');
 
     const startNumber = surahStartInfo.number;
     const endNumber   = surahEndInfo.number;
-
-    console.log(`📖 Loading surahs from ${startNumber} (${surahStartName}) to ${endNumber} (${surahEndName})`);
 
     let allAyahs   = [];
     let surahNames = [];
 
     for (let surahNum = startNumber; surahNum <= endNumber; surahNum++) {
-        console.log(`⏳ Fetching Surah ${surahNum}...`);
-
         const res  = await fetch(`https://api.alquran.cloud/v1/surah/${surahNum}`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
@@ -473,13 +393,10 @@ async function loadMultipleSurahsFromAPI(surahStartName, ayatStart, surahEndName
 
         if (surahNum === startNumber) {
             ayahsToAdd = surahData.ayahs.filter(a => a.numberInSurah >= ayatStart);
-            console.log(`✅ Surah ${surahNum}: ${ayahsToAdd.length} ayahs (from ayat ${ayatStart})`);
         } else if (surahNum === endNumber) {
             ayahsToAdd = surahData.ayahs.filter(a => a.numberInSurah <= ayatEnd);
-            console.log(`✅ Surah ${surahNum}: ${ayahsToAdd.length} ayahs (until ayat ${ayatEnd})`);
         } else {
             ayahsToAdd = surahData.ayahs;
-            console.log(`✅ Surah ${surahNum}: ${ayahsToAdd.length} ayahs (complete)`);
         }
 
         ayahsToAdd.forEach(ayah => {
@@ -495,8 +412,6 @@ async function loadMultipleSurahsFromAPI(surahStartName, ayatStart, surahEndName
         allAyahs = allAyahs.concat(ayahsToAdd);
     }
 
-    console.log(`✅ Total ayahs loaded: ${allAyahs.length} from ${surahNames.length} surah(s)`);
-
     return {
         success:         true,
         surahName:       surahNames.length === 1 ? surahNames[0].name : `${surahNames[0].name} - ${surahNames[surahNames.length - 1].name}`,
@@ -508,19 +423,17 @@ async function loadMultipleSurahsFromAPI(surahStartName, ayatStart, surahEndName
     };
 }
 
-/**
- * ✅ RENDER QURAN WITH MULTIPLE SURAHS - SEPARATED BOXES
- */
 function renderQuranText(data) {
     const display = document.getElementById('quranDisplay');
 
     const firstSurahName   = data.surahRange ? data.surahRange[0].name      : data.surahName;
     const firstSurahArabic = data.surahRange ? data.surahRange[0].nameArabic : data.surahNameArabic;
 
+    // ✅ THEME: warna pakai var(--q-fg,#fff) → terang/gelap di layar, putih saat PDF (fallback)
     let html = `
-        <div class="text-center mb-6 text-white" style="text-align: center;">
-            <p style="font-size: 38px; font-family: 'Amiri Quran', serif; margin-bottom: 8px;">${firstSurahArabic}</p>
-            <p style="font-size: 16px; opacity: 0.7; font-family: 'Amiri Quran', serif; margin-top: 8px;">${firstSurahName}</p>
+        <div class="text-center mb-6" style="text-align: center; color: var(--q-fg, #fff);">
+            <p style="font-size: 38px; font-family: 'Amiri Quran', serif; margin-bottom: 8px; color: var(--q-fg, #fff);">${firstSurahArabic}</p>
+            <p style="font-size: 16px; opacity: 0.7; font-family: 'Amiri Quran', serif; margin-top: 8px; color: var(--q-fg, #fff);">${firstSurahName}</p>
         </div>
     `;
 
@@ -541,12 +454,8 @@ function renderQuranText(data) {
     });
 
     display.innerHTML = html;
-    console.log('✅ Quran rendered with separated boxes per surah');
 }
 
-/**
- * ✅ RENDER SINGLE SURAH BOX
- */
 function renderSurahBox(ayahs) {
     if (!ayahs || ayahs.length === 0) return '';
 
@@ -558,15 +467,15 @@ function renderSurahBox(ayahs) {
     if (isNotFirstBox) {
         html += `
             <div style="margin: 30px 0 20px 0; text-align: center;">
-                <p style="font-size: 36px; font-family: 'Amiri Quran', serif; margin-bottom: 4px; color: #fff; font-weight: normal;">${firstAyah.surahNameArabic}</p>
-                <p style="font-size: 16px; opacity: 0.75; font-family: 'Amiri Quran', serif; color: #fff; margin: 0; font-weight: normal;">${firstAyah.surahName}</p>
+                <p style="font-size: 36px; font-family: 'Amiri Quran', serif; margin-bottom: 4px; color: var(--q-fg, #fff); font-weight: normal;">${firstAyah.surahNameArabic}</p>
+                <p style="font-size: 16px; opacity: 0.75; font-family: 'Amiri Quran', serif; color: var(--q-fg, #fff); margin: 0; font-weight: normal;">${firstAyah.surahName}</p>
             </div>
         `;
     }
 
     html += `
-        <div style="border: 1.5px solid rgba(255, 255, 255, 0.8); border-radius: 0px; padding: 25px; margin: ${isNotFirstBox ? '15px' : '0'} auto 20px auto; max-width: 1000px; background-color: transparent;">
-            <div id="quranText" style="font-size: 34px; color: #ffffff; line-height: 2.6; direction: rtl; text-align: justify; font-family: 'Amiri Quran', serif;">
+        <div style="border: 1.5px solid var(--q-box-border, rgba(255, 255, 255, 0.8)); border-radius: 0px; padding: 25px; margin: ${isNotFirstBox ? '15px' : '0'} auto 20px auto; max-width: 1000px; background-color: transparent;">
+            <div id="quranText" style="font-size: 34px; color: var(--q-fg, #ffffff); line-height: 2.6; direction: rtl; text-align: justify; font-family: 'Amiri Quran', serif;">
     `;
 
     ayahs.forEach((ayah) => {
@@ -582,12 +491,7 @@ function renderSurahBox(ayahs) {
         });
 
         html += `
-            <span style="display: inline;
-                         margin: 0 6px;
-                         vertical-align: middle;
-                         font-size: 24px;
-                         color: rgba(255,255,255,0.55);
-                         font-family: 'Amiri Quran', serif;">(${convertToArabicNumber(ayah.numberInSurah)})</span>
+            <span style="display: inline; margin: 0 6px; vertical-align: middle; font-size: 24px; color: var(--q-num, rgba(255,255,255,0.55)); font-family: 'Amiri Quran', serif;">(${convertToArabicNumber(ayah.numberInSurah)})</span>
         `;
     });
 
@@ -599,9 +503,6 @@ function renderSurahBox(ayahs) {
     return html;
 }
 
-/**
- * Add custom scrollbar styles
- */
 function addScrollbarStyles() {
     if (!document.getElementById('quran-scrollbar-style')) {
         const style = document.createElement('style');
@@ -618,21 +519,14 @@ function addScrollbarStyles() {
             .word-item:active { transform: translateY(0); }
         `;
         document.head.appendChild(style);
-        console.log('✅ Scrollbar styles applied');
     }
 }
 
-/**
- * Convert number to Arabic numerals
- */
 function convertToArabicNumber(num) {
     const ar = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
     return num.toString().split('').map(n => ar[n]).join('');
 }
 
-/**
- * Fetch Quran data from API (Single Surah)
- */
 async function loadQuranFromAPI(surahName, ayatStart, ayatEnd) {
     const surahInfo = surahMapping[surahName];
     if (!surahInfo) throw new Error(`Surah ${surahName} not found in mapping`);
@@ -661,17 +555,10 @@ async function loadQuranFromAPI(surahName, ayatStart, ayatEnd) {
     };
 }
 
-/**
- * ✅ MAIN FUNCTION - LOAD QURAN
- */
 async function loadQuran() {
-    console.log('📖 loadQuran() called');
-
-    // ✅ Reset debounce flag saat load baru dimulai
     _countTotalWordsPending = false;
 
     resetAllMarkings();
-    console.log('🔄 Auto-reset completed before loading new Quran');
 
     const elementIds = getFormElementIds();
 
@@ -681,7 +568,6 @@ async function loadQuran() {
     const ayatEndElement    = document.getElementById(elementIds.ayatEnd);
 
     if (!suratStartElement || !ayatStartElement || !suratEndElement || !ayatEndElement) {
-        console.error('❌ Required elements not found!');
         throw new Error('Required form elements not found');
     }
 
@@ -690,50 +576,37 @@ async function loadQuran() {
     const suratEnd   = suratEndElement.value;
     const ayatEnd    = parseInt(ayatEndElement.value);
 
-    console.log('📖 Loading Quran:', { suratStart, ayatStart, suratEnd, ayatEnd });
-
     if (!suratStart || !ayatStart || !suratEnd || !ayatEnd) {
         throw new Error('Missing required values');
     }
 
     try {
         const display     = document.getElementById('quranDisplay');
-        display.innerHTML = '<p class="text-center text-white" style="font-family: system-ui;">⏳ Memuat Al-Qur\'an...</p>';
+        display.innerHTML = '<p class="text-center" style="color: var(--q-fg, #fff); font-family: system-ui;">⏳ Memuat Al-Qur\'an...</p>';
 
         let data;
 
         if (suratStart === suratEnd) {
-            console.log('📖 Single Surah Mode');
             data = await loadQuranFromAPI(suratStart, ayatStart, ayatEnd);
         } else {
-            console.log('📖📖 Multi-Surah Mode');
             data = await loadMultipleSurahsFromAPI(suratStart, ayatStart, suratEnd, ayatEnd);
         }
 
         renderQuranText(data);
         addScrollbarStyles();
 
-        // ✅ FIX v3.8: Hanya 1 panggilan countTotalWords() di sini (300ms).
-        // Panggilan kedua yang datang dari triggerStatisticsUpdate() via wrapper
-        // akan di-block oleh debounce flag _countTotalWordsPending.
         setTimeout(() => {
-            console.log('🔄 Counting words (scoped to #quranDisplay)...');
-            const totalWords = countTotalWords();
-            console.log(`✅ Total kata final: ${totalWords}`);
+            countTotalWords();
             updateErrorCounters();
         }, 300);
 
         setTimeout(() => {
             if (typeof window.autoFillPageFromAyat === 'function') {
                 window.autoFillPageFromAyat();
-                console.log('✅ Auto-fill page & juz triggered');
             } else {
-                console.warn('⚠️ autoFillPageFromAyat not found - using fallback');
                 calculateFallbackStatistics(suratStart, ayatStart, suratEnd, ayatEnd);
             }
         }, 500);
-
-        console.log('✅ Quran loaded successfully');
 
     } catch (e) {
         console.error('❌ Error loading Quran:', e);
@@ -741,9 +614,6 @@ async function loadQuran() {
     }
 }
 
-/**
- * ✅ FALLBACK STATISTICS CALCULATION
- */
 function calculateFallbackStatistics(suratStart, ayatStart, suratEnd, ayatEnd) {
     const elementIds = getFormElementIds();
 
@@ -762,44 +632,18 @@ function calculateFallbackStatistics(suratStart, ayatStart, suratEnd, ayatEnd) {
     const estimatedPageStart = Math.floor(suratStartNumber * avgPagePerSurat);
     const estimatedPageEnd   = Math.floor(suratEndNumber * avgPagePerSurat) + Math.ceil((ayatEnd - ayatStart + 1) / 15);
 
-    const pageStartEl   = document.getElementById(elementIds.pageStart);
-    const pageEndEl     = document.getElementById(elementIds.pageEnd);
-    const displayPageEl = document.getElementById(elementIds.displayTotalPage);
+    const pageStartEl = document.getElementById(elementIds.pageStart);
+    const pageEndEl   = document.getElementById(elementIds.pageEnd);
 
-    if (pageStartEl)   pageStartEl.value         = estimatedPageStart;
-    if (pageEndEl)     pageEndEl.value            = estimatedPageEnd;
-
-    const totalPage = (estimatedPageEnd - estimatedPageStart + 1).toFixed(2);
-    if (displayPageEl) displayPageEl.textContent  = totalPage;
-
-    const estimatedJuzStart = Math.ceil(estimatedPageStart / 20);
-    const estimatedJuzEnd   = Math.ceil(estimatedPageEnd   / 20);
-
-    const juzStartEl   = document.getElementById(elementIds.juzStart);
-    const juzEndEl     = document.getElementById(elementIds.juzEnd);
-    const totalJuzEl   = document.getElementById(elementIds.totalJuz);
-    const displayJuzEl = document.getElementById(elementIds.displayTotalJuz);
-
-    if (juzStartEl)   juzStartEl.value         = estimatedJuzStart;
-    if (juzEndEl)     juzEndEl.value            = estimatedJuzEnd;
-
-    const totalJuz = ((estimatedPageEnd - estimatedPageStart + 1) / 20).toFixed(2);
-    if (totalJuzEl)   totalJuzEl.value          = totalJuz;
-    if (displayJuzEl) displayJuzEl.textContent  = totalJuz;
-
-    console.log('✅ Fallback statistics calculated:', {
-        totalWords, estimatedPageStart, estimatedPageEnd,
-        totalPage, estimatedJuzStart, estimatedJuzEnd, totalJuz
-    });
+    if (pageStartEl) pageStartEl.value = estimatedPageStart;
+    if (pageEndEl)   pageEndEl.value   = estimatedPageEnd;
 }
 
-// Load Amiri Quran font
 const link    = document.createElement('link');
 link.rel      = 'stylesheet';
 link.href     = 'https://fonts.googleapis.com/css2?family=Amiri+Quran&display=swap';
 document.head.appendChild(link);
 
-// ✅ EXPORT ALL FUNCTIONS TO WINDOW SCOPE
 window.loadQuran                   = loadQuran;
 window.loadQuranFromAPI            = loadQuranFromAPI;
 window.loadMultipleSurahsFromAPI   = loadMultipleSurahsFromAPI;
@@ -816,5 +660,6 @@ window.wrapWaqafSymbols            = wrapWaqafSymbols;
 window.getFormElementIds           = getFormElementIds;
 window.calculateFallbackStatistics = calculateFallbackStatistics;
 window.surahMapping                = surahMapping;
+window.POIN_PER_KESALAHAN          = POIN_PER_KESALAHAN;
 
-console.log('✅ quran-api.js v3.8 - FIX DOUBLE TOTAL KATA - LOADED');
+console.log('✅ quran-api.js v4.0 LOADED — theme aware (var --q-fg) + bobot -4 poin/kesalahan');

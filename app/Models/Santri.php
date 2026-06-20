@@ -19,10 +19,14 @@ class Santri extends Model
         'name',
         'gender',
         'target_juz',
+        'target_metode',
+        'target_jilid',
     ];
 
     protected $casts = [
-        'target_juz' => 'decimal:2',
+    'target_juz'    => 'decimal:2',
+    'target_jilid'  => 'integer',
+    'target_metode' => \App\Enums\MetodeTarget::class,
     ];
 
     // =====================================================
@@ -184,4 +188,77 @@ class Santri extends Model
 
         return round(min(($total / $target) * 100, 100), 1);
     }
+
+    public function getTargetDisplayAttribute(): string
+    {
+        return match ($this->target_metode) {
+            \App\Enums\MetodeTarget::Iqro  => 'Jilid ' . ($this->target_jilid ?? '-'),
+            default                        => rtrim(rtrim((string) $this->target_juz, '0'), '.') . ' Juz',
+        };
+    }
+
+    // =====================================================
+    // IQRO — DETEKSI NAIK JILID
+    // =====================================================
+
+    public function isIqro(): bool
+    {
+        return $this->target_metode === \App\Enums\MetodeTarget::Iqro;
+    }
+
+    /**
+     * Daftar halaman (unik) yang SUDAH disetor untuk satu jilid Iqro.
+     * Deteksi via label "Iqro Jilid X" di surat_start/surat_end.
+     */
+    public function halamanIqroTersetor(int $jilid): array
+    {
+        $label = 'Iqro Jilid ' . $jilid;
+
+        $rows = $this->setorans()
+            ->where(function ($q) use ($label) {
+                $q->where('surat_start', $label)->orWhere('surat_end', $label);
+            })
+            ->get(['ayat_start', 'ayat_end']);
+
+        $pages = [];
+        foreach ($rows as $r) {
+            $start = (int) $r->ayat_start;
+            $end   = (int) ($r->ayat_end ?: $r->ayat_start);
+            if ($start <= 0) continue;
+            if ($end < $start) { [$start, $end] = [$end, $start]; }
+            for ($p = $start; $p <= $end; $p++) {
+                $pages[$p] = true;
+            }
+        }
+
+        return array_keys($pages);
+    }
+
+    /**
+     * Apakah santri sudah menyelesaikan SEMUA halaman jilid target-nya
+     * dan siap naik ke jilid berikutnya. Tanpa syarat nilai.
+     */
+    public function isSiapNaikJilid(): bool
+    {
+        if (! $this->isIqro()) return false;
+
+        $jilid    = (int) $this->target_jilid;
+        $maxJilid = (int) config('iqro.max_jilid', 6);
+
+        if ($jilid < 1 || $jilid >= $maxJilid) return false;
+
+        $totalHal = config("iqro.halaman_per_jilid.$jilid");
+        if (! $totalHal) return false; // jumlah halaman belum diketahui → jangan tebak
+
+        $tersetor = $this->halamanIqroTersetor($jilid);
+
+        for ($p = 1; $p <= $totalHal; $p++) {
+            if (! in_array($p, $tersetor, true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 }

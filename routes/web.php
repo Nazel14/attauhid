@@ -166,6 +166,8 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
     
     // Dashboard
     Route::get('/dashboard', [GuruDashboardController::class, 'index'])->name('dashboard');
+    // Naik Jilid Iqro (konfirmasi guru)
+    Route::post('/naik-jilid', [GuruDashboardController::class, 'naikkanJilid'])->name('naik-jilid');
     
     // Manajemen Santri
     Route::controller(GuruSantriController::class)->prefix('santris')->name('santris.')->group(function () {
@@ -263,6 +265,48 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
 
         return response()->json($result);
     })->name('guru.hafalan-santri');
+
+    // Halaman Iqro yang sudah disetor santri (untuk indikator centang)
+    Route::get('/iqro-santri', function (\Illuminate\Http\Request $request) {
+        $santriId = $request->query('santri_id');
+        if (!$santriId) {
+            return response()->json([]);
+        }
+
+        // Ambil semua setoran Iqro santri (deteksi via label "Iqro Jilid X")
+        $rows = \App\Models\Setoran::where('santri_id', $santriId)
+            ->where(function ($q) {
+                $q->where('surat_start', 'like', 'Iqro Jilid %')
+                  ->orWhere('surat_end', 'like', 'Iqro Jilid %');
+            })
+            ->get(['surat_start', 'surat_end', 'ayat_start', 'ayat_end']);
+
+        // Hasil: { "1": [1,2,3,...], "2": [...] }  (jilid => daftar halaman)
+        $result = [];
+        foreach ($rows as $r) {
+            $label = $r->surat_start ?: $r->surat_end;
+            if (!preg_match('/Iqro Jilid (\d+)/', (string) $label, $m)) {
+                continue;
+            }
+            $jilid = (string) ((int) $m[1]);
+
+            $start = (int) $r->ayat_start;
+            $end   = (int) ($r->ayat_end ?: $r->ayat_start);
+            if ($start <= 0) continue;
+            if ($end < $start) { [$start, $end] = [$end, $start]; }
+
+            for ($p = $start; $p <= $end; $p++) {
+                $result[$jilid][] = $p;
+            }
+        }
+
+        foreach ($result as $jilid => &$list) {
+            $list = array_values(array_unique($list));
+            sort($list);
+        }
+
+        return response()->json($result);
+    })->name('guru.iqro-santri');
     
     // Unified Input
     Route::controller(UnifiedInputController::class)->prefix('input')->name('input.')->group(function () {

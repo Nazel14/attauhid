@@ -10,12 +10,21 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
+        <script>
+            (function () {
+                try {
+                    var t = localStorage.getItem('theme') || 'dark'; // default dark
+                    document.documentElement.classList.toggle('dark', t === 'dark');
+                } catch (e) { document.documentElement.classList.add('dark'); }
+        })();
+        </script>
+
         {{-- PASTIKAN @vite SUDAH BENAR UNTUK MEMANGGIL CSS & JS --}}
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles
     </head>
     <body class="font-sans antialiased">
-    <div class="min-h-screen" style="background:#030712;">
+    <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
         @include('layouts.navigation')
 
         @isset($header)

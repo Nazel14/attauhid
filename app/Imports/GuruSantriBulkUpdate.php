@@ -16,10 +16,25 @@ class GuruSantriBulkUpdate implements ToCollection, WithHeadingRow, SkipsEmptyRo
     protected $successCount = 0;
     protected $failedCount = 0;
     protected $guruId;
+    protected $totalSantri = 0;
+    protected $santrisByNoUrut = [];
 
     public function __construct($guruId)
     {
         $this->guruId = $guruId;
+        $this->totalSantri = Santri::where('guru_id', $guruId)->count();
+
+        // Bangun peta no_urut → santri SEKALI di awal, urutan SAMA seperti ekspor
+        // (where guru_id + orderBy name asc). Peta ini "beku": edit nama/NIS di
+        // tengah loop tidak menggeser posisi baris lain.
+        $santriList = Santri::where('guru_id', $guruId)
+            ->orderBy('name', 'asc')
+            ->get();
+        $noUrut = 1;
+        foreach ($santriList as $s) {
+            $this->santrisByNoUrut[$noUrut] = $s;
+            $noUrut++;
+        }
     }
 
     public function collection(Collection $rows)
@@ -34,27 +49,33 @@ class GuruSantriBulkUpdate implements ToCollection, WithHeadingRow, SkipsEmptyRo
             
             try {
                 DB::transaction(function () use ($row, $rowNumber) {
-                    // Cari santri berdasarkan no_urut dan guru_id
-                    $santri = Santri::where('guru_id', $this->guruId)
-                        ->orderBy('name', 'asc')
-                        ->skip($row['no_urut'] - 1)
-                        ->first();
-                    
-                    if (!$santri) {
-                        throw new \Exception("Santri dengan no urut {$row['no_urut']} tidak ditemukan");
+                    // Cocokkan santri lewat NO URUT (kolom yang dikunci, tidak boleh
+                    // diubah). Peta no_urut dibangun beku di constructor → posisi tidak
+                    // bergeser walau nama/NIS diedit di baris lain.
+                    $noUrut = (int) $row['no_urut'];
+                    if (!isset($this->santrisByNoUrut[$noUrut])) {
+                        throw new \Exception("No Urut {$noUrut} tidak ditemukan di kelas Anda.");
                     }
-                    
+
+                    $santri = $this->santrisByNoUrut[$noUrut];
+
                     // Persiapkan data update
                     $updateData = [];
-                    
-                    // Update NIS jika diisi
-                    if (!empty($row['nis']) && $row['nis'] !== $santri->nis) {
-                        // Cek apakah NIS baru sudah dipakai
-                        if (Santri::where('nis', $row['nis'])->where('id', '!=', $santri->id)->exists()) {
-                            throw new \Exception("NIS {$row['nis']} sudah digunakan santri lain");
+
+                    // NIS boleh diubah — cek keunikan terhadap santri lain
+                    if (isset($row['nis']) && trim((string) $row['nis']) !== '') {
+                        $nisBaru = trim((string) $row['nis']);
+                        if ($nisBaru !== (string) $santri->nis) {
+                            $nisDipakai = Santri::where('nis', $nisBaru)
+                                ->where('id', '!=', $santri->id)
+                                ->exists();
+                            if ($nisDipakai) {
+                                throw new \Exception("NIS {$nisBaru} sudah dipakai santri lain");
+                            }
+                            $updateData['nis'] = $nisBaru;
                         }
-                        $updateData['nis'] = $row['nis'];
                     }
+                    
                     
                     // Update Nama jika diisi
                     if (!empty($row['nama'])) {
@@ -86,13 +107,44 @@ class GuruSantriBulkUpdate implements ToCollection, WithHeadingRow, SkipsEmptyRo
                         $updateData['gender'] = $genderFull;
                     }
                     
-                    // Update Target Juz jika diisi
-                    if (isset($row['target_juz']) && $row['target_juz'] !== '') {
-                        $targetJuz = $row['target_juz'];
-                        if (!is_numeric($targetJuz) || $targetJuz < 0 || $targetJuz > 30) {
-                            throw new \Exception("Target Juz harus angka antara 0-30");
+                    // === METODE & TARGET (quran / iqro) ===
+                    $metodeInput = !empty($row['metode']) ? strtolower(trim($row['metode'])) : null;
+                    if ($metodeInput !== null && !in_array($metodeInput, ['quran', 'iqro'])) {
+                        throw new \Exception("Metode harus 'quran' atau 'iqro'");
+                    }
+
+                    // Metode efektif: input baru, atau metode lama santri
+                    $metodeEfektif = $metodeInput ?? ($santri->target_metode?->value ?? 'quran');
+
+                    if ($metodeInput !== null) {
+                        $updateData['target_metode'] = $metodeInput;
+                    }
+
+                    if ($metodeEfektif === 'iqro') {
+                        if (isset($row['target_jilid']) && $row['target_jilid'] !== '') {
+                            $jilid = (int) $row['target_jilid'];
+                            if ($jilid < 1 || $jilid > 6) {
+                                throw new \Exception("Target Jilid harus angka antara 1-6");
+                            }
+                            $updateData['target_jilid'] = $jilid;
+                        } elseif ($metodeInput === 'iqro') {
+                            throw new \Exception("Metode iqro wajib mengisi Target Jilid (1-6)");
                         }
-                        $updateData['target_juz'] = $targetJuz;
+                        if ($metodeInput === 'iqro') {
+                            $updateData['target_juz'] = null;
+                        }
+                    } else { // quran
+                        if (isset($row['target_juz']) && $row['target_juz'] !== '') {
+                            if (!is_numeric($row['target_juz']) || $row['target_juz'] < 0 || $row['target_juz'] > 30) {
+                                throw new \Exception("Target Juz harus angka antara 0-30");
+                            }
+                            $updateData['target_juz'] = $row['target_juz'];
+                        } elseif ($metodeInput === 'quran') {
+                            throw new \Exception("Metode quran wajib mengisi Target Juz (0-30)");
+                        }
+                        if ($metodeInput === 'quran') {
+                            $updateData['target_jilid'] = null;
+                        }
                     }
                     
                     // Update data santri jika ada perubahan

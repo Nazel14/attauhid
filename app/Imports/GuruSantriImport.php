@@ -59,11 +59,30 @@ class GuruSantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                         throw new \Exception("Gender harus L atau P");
                     }
                     
-                    $targetJuz = $row['target_juz'] ?? 1.00;
-                    if (!is_numeric($targetJuz) || $targetJuz < 0 || $targetJuz > 30) {
-                        throw new \Exception("Target Juz harus angka antara 0-30");
+                    // === METODE & TARGET (quran / iqro) ===
+                    $metode = strtolower(trim($row['metode'] ?? 'quran'));
+                    if (!in_array($metode, ['quran', 'iqro'])) {
+                        throw new \Exception("Metode harus 'quran' atau 'iqro'");
                     }
-                    
+
+                    $targetJuz   = null;
+                    $targetJilid = null;
+
+                    if ($metode === 'iqro') {
+                        if (!isset($row['target_jilid']) || $row['target_jilid'] === '') {
+                            throw new \Exception("Metode iqro wajib mengisi Target Jilid (1-6)");
+                        }
+                        $targetJilid = (int) $row['target_jilid'];
+                        if ($targetJilid < 1 || $targetJilid > 6) {
+                            throw new \Exception("Target Jilid harus angka antara 1-6");
+                        }
+                    } else { // quran
+                        $targetJuz = $row['target_juz'] ?? 1.00;
+                        if (!is_numeric($targetJuz) || $targetJuz < 0 || $targetJuz > 30) {
+                            throw new \Exception("Target Juz harus angka antara 0-30");
+                        }
+                    }
+
                     if (strlen($row['password']) < 4) {
                         throw new \Exception("Password minimal 4 karakter");
                     }
@@ -92,13 +111,15 @@ class GuruSantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                     ]);
                     
                     Santri::create([
-                        'user_id' => $santriUser->id,
-                        'kelas_id' => $kelas->id,
-                        'guru_id' => $this->guruId,
-                        'nis' => $row['nis'],
-                        'name' => $name,
-                        'gender' => $genderFull,
-                        'target_juz' => $targetJuz,
+                        'user_id'       => $santriUser->id,
+                        'kelas_id'      => $kelas->id,
+                        'guru_id'       => $this->guruId,
+                        'nis'           => $row['nis'],
+                        'name'          => $name,
+                        'gender'        => $genderFull,
+                        'target_metode' => $metode,
+                        'target_juz'    => $targetJuz,
+                        'target_jilid'  => $targetJilid,
                     ]);
                     
                     $this->successCount++;

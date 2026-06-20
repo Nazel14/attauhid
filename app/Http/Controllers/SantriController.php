@@ -16,30 +16,33 @@ class SantriController extends Controller
     /**
      * Mendapatkan default tanggal mulai dan akhir berdasarkan semester aktif
      */
-   private function getDefaultSemesterRange(): array
-{
-    $tahunAjaran = \App\Models\TahunAjaran::getAktif();
+    private function getDefaultSemesterRange(): array
+    {
+        $tahunAjaran = \App\Models\TahunAjaran::getAktif();
 
-    if ($tahunAjaran) {
+        if ($tahunAjaran) {
+            $tanggalMulai = Carbon::parse($tahunAjaran->tanggal_mulai)->format('Y-m-d');
+            $tanggalAkhirTa = Carbon::parse($tahunAjaran->tanggal_akhir);
+            // Default akhir = hari ini jika masih dalam periode, supaya data terbaru masuk
+            $tanggalAkhir = now()->lt($tanggalAkhirTa)
+                ? now()->format('Y-m-d')
+                : $tanggalAkhirTa->format('Y-m-d');
+            return [$tanggalMulai, $tanggalAkhir];
+        }
+
+        // Fallback tanpa tahun ajaran aktif
+        $bulan = now()->month;
+        if ($bulan <= 6) {
+            return [
+                now()->startOfYear()->format('Y-m-d'),
+                now()->format('Y-m-d'),
+            ];
+        }
         return [
-            $tahunAjaran->tanggal_mulai->format('Y-m-d'),
-            $tahunAjaran->tanggal_selesai->format('Y-m-d'),
+            now()->setMonth(7)->startOfMonth()->format('Y-m-d'),
+            now()->format('Y-m-d'),
         ];
     }
-
-    // Fallback jika tidak ada tahun ajaran aktif
-    $bulan = now()->month;
-    if ($bulan <= 6) {
-        return [
-            now()->startOfYear()->format('Y-m-d'),
-            now()->setMonth(6)->endOfMonth()->format('Y-m-d'),
-        ];
-    }
-    return [
-        now()->setMonth(7)->startOfMonth()->format('Y-m-d'),
-        now()->endOfYear()->format('Y-m-d'),
-    ];
-}
 
     /**
      * Dashboard Santri: Menampilkan data diri santri yang sedang login
@@ -82,18 +85,42 @@ class SantriController extends Controller
         $setoranMurajaah = $setorans->where('kategori_setoran', 'Murajaah');
         $setoranTilawah  = $setorans->where('kategori_setoran', 'Tilawah');
 
+        // Deteksi Iqro
+        $isIqro = ($santri->target_metode?->value ?? 'quran') === 'iqro';
+
+        // Hitung halaman Iqro jika perlu
+        $totalHalamanIqro  = 0;
+        $totalHalamanJilid = 0;
+        if ($isIqro) {
+            $targetJilid       = (int)($santri->target_jilid ?? 1);
+            foreach ($setoranHafalan as $s) {
+                // Hanya hitung halaman dari jilid target sekarang,
+                // agar progress reset ke nol saat santri naik jilid.
+                if (!preg_match('/^Iqro Jilid (\d+)/i', (string)$s->surat_start, $mj)) continue;
+                if ((int)$mj[1] !== $targetJilid) continue;
+                $h1 = (int)$s->ayat_start;
+                $h2 = (int)($s->ayat_end ?: $s->ayat_start);
+                if ($h1 > 0 && $h2 >= $h1) $totalHalamanIqro += ($h2 - $h1 + 1);
+            }
+            $totalHalamanJilid = (int)(config('iqro.halaman_per_jilid.' . $targetJilid) ?? 0);
+        }
+
         // Hitung statistik setoran
         $santri->stats_setoran = (object)[
-            'total_setoran'       => $setorans->count(),
-            'rata_nilai'          => round($setorans->avg('nilai') ?? 0, 1),
-            'total_juz'           => round($setorans->sum('total_juz') ?? 0, 2),
-            'total_juz_hafalan'   => round($setoranHafalan->sum('total_juz') ?? 0, 2),
-            'setoran_terakhir'    => $setorans->max('tanggal'),
-
-            // Rata-rata nilai per kategori
-            'rata_nilai_hafalan'  => round($setoranHafalan->avg('nilai') ?? 0, 1),
-            'rata_nilai_murajaah' => round($setoranMurajaah->avg('nilai') ?? 0, 1),
-            'rata_nilai_tilawah'  => round($setoranTilawah->avg('nilai') ?? 0, 1),
+            'total_setoran'        => $setorans->count(),
+            'rata_nilai'           => round($setorans->avg('nilai') ?? 0, 1),
+            'total_juz'            => round($setorans->sum('total_juz') ?? 0, 2),
+            'total_juz_hafalan'    => round($setoranHafalan->sum('total_juz') ?? 0, 2),
+            'setoran_terakhir'     => $setorans->max('tanggal'),
+            'rata_nilai_hafalan'   => round($setoranHafalan->avg('nilai') ?? 0, 1),
+            'rata_nilai_murajaah'  => round($setoranMurajaah->avg('nilai') ?? 0, 1),
+            'rata_nilai_tilawah'   => round($setoranTilawah->avg('nilai') ?? 0, 1),
+            // Iqro
+            'is_iqro'              => $isIqro,
+            'total_halaman_iqro'   => $totalHalamanIqro,
+            'total_halaman_jilid'  => $totalHalamanJilid,
+            'iqro_persen_diketahui' => $totalHalamanJilid > 0,
+            'target_jilid'         => $santri->target_jilid ?? 1,
         ];
 
         // ✅ Ambil presensi — filter tahun ajaran aktif
@@ -130,7 +157,7 @@ class SantriController extends Controller
     {
         $user = Auth::user();
         $santri = $user->santri()->with(['kelas', 'guru'])->first()
-                  ?? Santri::where('user_id', $user->id)->with(['kelas', 'guru'])->first();
+            ?? Santri::where('user_id', $user->id)->with(['kelas', 'guru'])->first();
 
         if (!$santri) {
             abort(404, 'Data santri tidak ditemukan.');
@@ -172,6 +199,23 @@ class SantriController extends Controller
             'total_juz'     => round($setoransAll->sum('total_juz') ?? 0, 2),
         ];
 
+        $isIqro = ($santri->target_metode?->value ?? 'quran') === 'iqro';
+
+        // Hitung total halaman Iqro untuk stat card
+        $totalHalamanIqro = 0;
+        if ($isIqro) {
+            $targetJilid = (int)($santri->target_jilid ?? 1);
+            foreach ($setoransAll->where('kategori_setoran', 'Hafalan') as $s) {
+                // Hanya hitung halaman dari jilid target sekarang,
+                // agar konsisten dengan progress yang reset saat naik jilid.
+                if (!preg_match('/^Iqro Jilid (\d+)/i', (string)$s->surat_start, $mj)) continue;
+                if ((int)$mj[1] !== $targetJilid) continue;
+                $h1 = (int)$s->ayat_start;
+                $h2 = (int)($s->ayat_end ?: $s->ayat_start);
+                if ($h1 > 0 && $h2 >= $h1) $totalHalamanIqro += ($h2 - $h1 + 1);
+            }
+        }
+
         return view('santri.setorans.detail', compact(
             'santri',
             'setoranHafalan',
@@ -181,7 +225,9 @@ class SantriController extends Controller
             'kategori',
             'tanggalMulai',
             'tanggalAkhir',
-            'tahunAjaranAktif'
+            'tahunAjaranAktif',
+            'isIqro',
+            'totalHalamanIqro'
         ));
     }
 
@@ -194,7 +240,7 @@ class SantriController extends Controller
     {
         $user = Auth::user();
         $santri = $user->santri()->with(['kelas', 'guru'])->first()
-                  ?? Santri::where('user_id', $user->id)->with(['kelas', 'guru'])->first();
+            ?? Santri::where('user_id', $user->id)->with(['kelas', 'guru'])->first();
 
         if (!$santri) {
             abort(404, 'Data santri tidak ditemukan.');
@@ -300,17 +346,46 @@ class SantriController extends Controller
             ? min(100, round(($totalJuzHafalan / $targetJuz) * 100, 1))
             : 0;
 
+        // Deteksi Iqro
+        $isIqro = ($santri->target_metode?->value ?? 'quran') === 'iqro';
+        $totalHalamanIqro  = 0;
+        $totalHalamanJilid = 0;
+        $progressIqro      = 0;
+        if ($isIqro) {
+            $targetJilid       = (int)($santri->target_jilid ?? 1);
+            foreach ($setoransRaw->where('kategori_setoran', 'Hafalan') as $s) {
+                // Hanya hitung halaman dari jilid target sekarang,
+                // agar progress reset ke nol saat santri naik jilid.
+                if (!preg_match('/^Iqro Jilid (\d+)/i', (string)$s->surat_start, $mj)) continue;
+                if ((int)$mj[1] !== $targetJilid) continue;
+                $h1 = (int)$s->ayat_start;
+                $h2 = (int)($s->ayat_end ?: $s->ayat_start);
+                if ($h1 > 0 && $h2 >= $h1) $totalHalamanIqro += ($h2 - $h1 + 1);
+            }
+            $totalHalamanJilid = (int)(config('iqro.halaman_per_jilid.' . $targetJilid) ?? 0);
+            $progressIqro      = $totalHalamanJilid > 0
+                ? min(100, round(($totalHalamanIqro / $totalHalamanJilid) * 100, 1))
+                : 0;
+        }
+
         $statistikSetoran = [
-            'total_setoran'     => $setoransRaw->count(),
-            'rata_nilai'        => round($setoransRaw->avg('nilai') ?? 0, 2),
-            'total_juz'         => round($setoransRaw->sum('total_juz') ?? 0, 2),
-            'total_juz_hafalan' => round($totalJuzHafalan, 2),
-            'total_kata'        => $setoransRaw->sum('total_kata') ?? 0,
-            'hafalan'           => $setoransRaw->where('kategori_setoran', 'Hafalan')->count(),
-            'murajaah'          => $setoransRaw->where('kategori_setoran', 'Murajaah')->count(),
-            'tilawah'           => $setoransRaw->where('kategori_setoran', 'Tilawah')->count(),
-            'target_juz'        => $targetJuz,
-            'persentase_target' => $persentaseTarget,
+            'total_setoran'         => $setoransRaw->count(),
+            'rata_nilai'            => round($setoransRaw->avg('nilai') ?? 0, 2),
+            'total_juz'             => round($setoransRaw->sum('total_juz') ?? 0, 2),
+            'total_juz_hafalan'     => round($totalJuzHafalan, 2),
+            'total_kata'            => $setoransRaw->sum('total_kata') ?? 0,
+            'hafalan'               => $setoransRaw->where('kategori_setoran', 'Hafalan')->count(),
+            'murajaah'              => $setoransRaw->where('kategori_setoran', 'Murajaah')->count(),
+            'tilawah'               => $setoransRaw->where('kategori_setoran', 'Tilawah')->count(),
+            'target_juz'            => $targetJuz,
+            'persentase_target'     => $persentaseTarget,
+            // Iqro
+            'is_iqro'               => $isIqro,
+            'total_halaman_iqro'    => $totalHalamanIqro,
+            'total_halaman_jilid'   => $totalHalamanJilid,
+            'progress_iqro'         => $progressIqro,
+            'target_jilid'          => $santri->target_jilid ?? 1,
+            'iqro_persen_diketahui' => $totalHalamanJilid > 0,
         ];
 
         $statistikPresensi = [
@@ -387,7 +462,7 @@ class SantriController extends Controller
     {
         $user = Auth::user();
         $santri = $user->santri()->with(['kelas', 'guru'])->first()
-                  ?? Santri::where('user_id', $user->id)->with(['kelas', 'guru'])->first();
+            ?? Santri::where('user_id', $user->id)->with(['kelas', 'guru'])->first();
 
         if (!$santri) {
             abort(404, 'Data santri tidak ditemukan.');

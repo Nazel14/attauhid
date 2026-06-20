@@ -116,6 +116,7 @@ class KelasBulkUpdateImport implements ToCollection, WithHeadingRow, SkipsEmptyR
         $this->errors[] = "Baris {$rowNumber} (No Urut: {$row['no_urut']}): " . $e->getMessage();
     }
 }
+}
     
     private function smartCapitalize($text)
     {

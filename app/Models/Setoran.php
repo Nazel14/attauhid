@@ -11,12 +11,13 @@ class Setoran extends Model
     use HasFactory;
 
     protected $fillable = [
-        'tahun_ajaran_id', // ← TAMBAHAN BARU
+        'tahun_ajaran_id', 
         'santri_id',
         'guru_id',
         'presensi_id',
         'tanggal',
         'kategori_setoran',
+        'metode',
         'surat_start',
         'ayat_start',
         'surat_end',

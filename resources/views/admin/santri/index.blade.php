@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen bg-gray-950 pb-10">
+<div class="min-h-screen pb-10">
 
     {{-- NOTIFICATIONS --}}
     @if(session('success'))
@@ -19,12 +19,12 @@
         {{-- TOP BAR --}}
         <div class="flex items-center gap-3 mb-4 sm:mb-6">
             <a href="{{ route('admin.dashboard') }}"
-               class="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-xs font-semibold text-gray-300 transition-colors">
+               class="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 transition-colors">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 <span class="hidden sm:inline">Kembali</span>
             </a>
             <div class="flex-1 min-w-0">
-                <h1 class="text-base sm:text-xl font-bold text-white truncate"> Management Santri per Kelas</h1>
+                <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate"> Management Santri per Kelas</h1>
                 <p class="text-[11px] text-gray-500 mt-0.5">Pilih kelas untuk melihat dan mengelola santri</p>
             </div>
         </div>
@@ -34,42 +34,38 @@
 
             @forelse($kelasWithStats as $kelas)
 
-            {{-- Tentukan warna berdasarkan gender_restriction --}}
             @php
                 $isAkhwat = $kelas['gender_restriction'] === 'akhwat';
                 $isIkhwan = $kelas['gender_restriction'] === 'ikhwan';
                 $isCampuran = $kelas['gender_restriction'] === 'campuran';
 
                 $headerGradient = $isCampuran
-                    ? 'from-indigo-900/80 to-purple-900/80'
-                    : ($isIkhwan ? 'from-blue-900/80 to-blue-800/80' : 'from-pink-900/80 to-pink-800/80');
+                    ? 'from-indigo-600 to-purple-600 dark:from-indigo-900/80 dark:to-purple-900/80'
+                    : ($isIkhwan ? 'from-blue-600 to-blue-500 dark:from-blue-900/80 dark:to-blue-800/80' : 'from-pink-600 to-pink-500 dark:from-pink-900/80 dark:to-pink-800/80');
 
                 $cardBorder = $isCampuran
-                    ? 'border-indigo-800/30'
-                    : ($isIkhwan ? 'border-blue-800/30' : 'border-pink-800/30');
+                    ? 'border-indigo-200 dark:border-indigo-800/30'
+                    : ($isIkhwan ? 'border-blue-200 dark:border-blue-800/30' : 'border-pink-200 dark:border-pink-800/30');
 
                 $accentColor = $isCampuran
                     ? 'text-indigo-400'
                     : ($isIkhwan ? 'text-blue-400' : 'text-pink-400');
 
                 $badgeBg = $isCampuran
-                    ? 'bg-purple-950/60 text-purple-300 border-purple-700/40'
-                    : ($isIkhwan ? 'bg-blue-950/60 text-blue-300 border-blue-700/40' : 'bg-pink-950/60 text-pink-300 border-pink-700/40');
+                    ? 'bg-white/15 text-white border-white/25 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-700/40'
+                    : ($isIkhwan ? 'bg-white/15 text-white border-white/25 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-700/40' : 'bg-white/15 text-white border-white/25 dark:bg-pink-950/60 dark:text-pink-300 dark:border-pink-700/40');
 
                 $btnColor = $isCampuran
-                    ? 'bg-indigo-700 hover:bg-indigo-600'
-                    : ($isIkhwan ? 'bg-blue-700 hover:bg-blue-600' : 'bg-pink-700 hover:bg-pink-600');
+                    ? 'bg-indigo-600 hover:bg-indigo-500 dark:bg-indigo-700 dark:hover:bg-indigo-600'
+                    : ($isIkhwan ? 'bg-blue-600 hover:bg-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600' : 'bg-pink-600 hover:bg-pink-500 dark:bg-pink-700 dark:hover:bg-pink-600');
 
                 $genderEmoji = $isCampuran ? ' Campuran' : ($isIkhwan ? ' Ikhwan' : ' Akhwat');
-
-                $countColor = $isCampuran ? 'text-indigo-300' : ($isIkhwan ? 'text-blue-300' : 'text-pink-300');
             @endphp
 
-            <div class="group bg-gray-900 border {{ $cardBorder }} rounded-xl overflow-hidden hover:border-opacity-60 transition-all duration-200 hover:shadow-xl hover:shadow-black/30 hover:-translate-y-0.5 flex flex-col">
+            <div class="group bg-white dark:bg-gray-800 border {{ $cardBorder }} rounded-xl overflow-hidden hover:border-opacity-60 transition-all duration-200 hover:shadow-xl hover:shadow-black/10 dark:hover:shadow-black/30 hover:-translate-y-0.5 flex flex-col shadow-sm dark:shadow-none">
 
                 {{-- Card Header --}}
                 <div class="bg-gradient-to-br {{ $headerGradient }} px-4 py-4 relative overflow-hidden">
-                    {{-- Decorative circle --}}
                     <div class="absolute top-0 right-0 w-24 h-24 rounded-full bg-white/5 -mr-12 -mt-12"></div>
 
                     <div class="relative z-10">
@@ -79,9 +75,8 @@
                                 {{ $genderEmoji }}
                             </span>
                         </div>
-                        <p class="text-[11px] {{ $accentColor }} opacity-80">{{ $kelas['guru_name'] ?? 'Belum ada guru' }}</p>
+                        <p class="text-[11px] text-white/80">{{ $kelas['guru_name'] ?? 'Belum ada guru' }}</p>
 
-                        {{-- Total santri --}}
                         <div class="mt-3">
                             <span class="text-3xl sm:text-4xl font-black text-white">{{ $kelas['total_santri'] }}</span>
                             <span class="text-xs text-white/60 ml-1">santri</span>
@@ -93,24 +88,24 @@
                 <div class="px-4 py-3 flex-1">
                     @if($isCampuran)
                     <div class="grid grid-cols-2 gap-2">
-                        <div class="bg-blue-950/40 border border-blue-800/30 rounded-lg px-3 py-2 text-center">
+                        <div class="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/30 rounded-lg px-3 py-2 text-center">
                             <p class="text-[10px] text-blue-500 mb-0.5"> Laki-laki</p>
-                            <p class="text-lg font-black text-blue-300">{{ $kelas['laki_laki'] }}</p>
+                            <p class="text-lg font-black text-blue-600 dark:text-blue-300">{{ $kelas['laki_laki'] }}</p>
                         </div>
-                        <div class="bg-pink-950/40 border border-pink-800/30 rounded-lg px-3 py-2 text-center">
+                        <div class="bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-800/30 rounded-lg px-3 py-2 text-center">
                             <p class="text-[10px] text-pink-500 mb-0.5"> Perempuan</p>
-                            <p class="text-lg font-black text-pink-300">{{ $kelas['perempuan'] }}</p>
+                            <p class="text-lg font-black text-pink-600 dark:text-pink-300">{{ $kelas['perempuan'] }}</p>
                         </div>
                     </div>
                     @elseif($isIkhwan)
-                    <div class="bg-blue-950/40 border border-blue-800/30 rounded-lg px-3 py-2.5 text-center">
+                    <div class="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/30 rounded-lg px-3 py-2.5 text-center">
                         <p class="text-[10px] text-blue-500 mb-0.5"> Khusus Ikhwan</p>
-                        <p class="text-xl font-black text-blue-300">{{ $kelas['laki_laki'] }} <span class="text-xs font-normal text-blue-500">santri</span></p>
+                        <p class="text-xl font-black text-blue-600 dark:text-blue-300">{{ $kelas['laki_laki'] }} <span class="text-xs font-normal text-blue-500">santri</span></p>
                     </div>
                     @else
-                    <div class="bg-pink-950/40 border border-pink-800/30 rounded-lg px-3 py-2.5 text-center">
+                    <div class="bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-800/30 rounded-lg px-3 py-2.5 text-center">
                         <p class="text-[10px] text-pink-500 mb-0.5"> Khusus Akhwat</p>
-                        <p class="text-xl font-black text-pink-300">{{ $kelas['perempuan'] }} <span class="text-xs font-normal text-pink-500">santriwati</span></p>
+                        <p class="text-xl font-black text-pink-600 dark:text-pink-300">{{ $kelas['perempuan'] }} <span class="text-xs font-normal text-pink-500">santriwati</span></p>
                     </div>
                     @endif
                 </div>
@@ -126,11 +121,11 @@
             </div>
 
             @empty
-            <div class="col-span-full bg-gray-900 border border-gray-800 rounded-xl py-20 text-center">
-                <div class="text-5xl mb-4"></div>
-                <p class="text-sm font-semibold text-gray-400">Belum ada kelas yang tersedia</p>
-                <p class="text-xs text-gray-600 mt-1.5">Silakan tambahkan kelas terlebih dahulu</p>
-                <a href="{{ route('admin.kelas.index') }}" class="inline-flex items-center gap-1.5 mt-4 px-4 py-2 bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg transition-colors">
+            <div class="col-span-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-20 text-center shadow-sm dark:shadow-none">
+                <div class="text-5xl mb-4">🏫</div>
+                <p class="text-sm font-semibold text-gray-600 dark:text-gray-400">Belum ada kelas yang tersedia</p>
+                <p class="text-xs text-gray-500 dark:text-gray-600 mt-1.5">Silakan tambahkan kelas terlebih dahulu</p>
+                <a href="{{ route('admin.kelas.index') }}" class="inline-flex items-center gap-1.5 mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition-colors">
                     + Tambah Kelas
                 </a>
             </div>
@@ -143,12 +138,12 @@
 </div>
 
 <style>
-    body { background:#030712; }
     @keyframes slide-in { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
     .animate-slide-in { animation:slide-in .25s ease-out; }
     ::-webkit-scrollbar { width:4px; height:4px; }
     ::-webkit-scrollbar-track { background:transparent; }
-    ::-webkit-scrollbar-thumb { background:#374151; border-radius:99px; }
+    ::-webkit-scrollbar-thumb { background:#9ca3af; border-radius:99px; }
+    html.dark ::-webkit-scrollbar-thumb { background:#374151; }
 </style>
 
 <script>

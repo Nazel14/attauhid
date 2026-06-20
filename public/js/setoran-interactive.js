@@ -301,13 +301,50 @@ function updateKesalahanDisplay(mode = 'Combined') {
 
 function clearMarking() {
     if (!confirm('⚠️ Yakin ingin menghapus semua marking?')) return;
-    document.querySelectorAll('#quranText span[data-word]').forEach(span => {
-        span.classList.remove('bg-green-200','bg-yellow-200','bg-red-200','dark:bg-green-800','dark:bg-yellow-800','dark:bg-red-800','border-l-4','border-green-500','border-yellow-500','border-red-500');
-        span.style.backgroundColor = '';
+
+    // ✅ FIX: Bersihkan SEMUA kata di SEMUA container (#quranDisplay + #quranDisplayDrawer mobile clone)
+    // Selector .word-item akan ketemu di kedua tempat sekaligus.
+    document.querySelectorAll('.word-item, #quranText span[data-word]').forEach(span => {
+        // Reset state attribute
+        span.setAttribute('data-mark-state', '0');
         span.dataset.markState = '0';
+
+        // Hapus class warna lama (legacy)
+        span.classList.remove(
+            'bg-green-200', 'bg-yellow-200', 'bg-red-200',
+            'bg-green-400', 'bg-yellow-400', 'bg-red-400', 'text-white',
+            'dark:bg-green-800', 'dark:bg-yellow-800', 'dark:bg-red-800',
+            'border-l-4', 'border-green-500', 'border-yellow-500', 'border-red-500'
+        );
+
+        // ✅ Hapus SEMUA inline style gradient marking (yang dipasang markWord & applyMarkStyleToClone)
+        span.style.removeProperty('background');
+        span.style.removeProperty('background-color');
+        span.style.removeProperty('border-radius');
+        span.style.removeProperty('padding');
+        span.style.removeProperty('box-shadow');
+        span.style.removeProperty('transform');
+
+        // Pastikan cursor & transition tetap (biar bisa di-klik lagi)
+        span.style.cursor     = 'pointer';
+        span.style.transition = 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
     });
+
+    // Reset counter global
     kesalahanCount = { kelancaran: 0, tajwid: 0, pelafalan: 0 };
-    updateKesalahanDisplay();
+
+    // ✅ Update display untuk KEDUA mode (Combined & SetoranOnly)
+    updateKesalahanDisplay('Combined');
+    updateKesalahanDisplay('SetoranOnly');
+
+    // ✅ Sync ke window global (jaga konsistensi dengan PDF generator)
+    if (typeof window.kesalahanCount !== 'undefined') {
+        window.kesalahanCount.kelancaran = 0;
+        window.kesalahanCount.tajwid     = 0;
+        window.kesalahanCount.pelafalan  = 0;
+    }
+
+    console.log('🗑️ clearMarking (setoran-interactive.js): semua marking & style dibersihkan dari quranDisplay + quranDisplayDrawer');
     alert('✅ Semua marking berhasil dihapus!');
 }
 
@@ -887,6 +924,24 @@ async function generatePDFContent(deviceType = 'desktop') {
 
         const formEl             = document.getElementById(activeMode === 'Combined' ? 'formCombined' : 'formSetoranOnly');
         const screenshotDataUrls = await captureQuranScreenshots(deviceType);
+        // ✅ Deteksi mode Iqro untuk PDF
+        const metodeVal = formEl?.querySelector('[name="metode"]')?.value || '';
+        const isIqro = (metodeVal === 'Iqro' || metodeVal === 'Ummi') ||
+                       !!document.getElementById('quranDisplay')?.querySelector('.iqro-page');
+         const iqroJilid    = formEl?.querySelector('[name="iqro_jilid"]')?.value
+                          || document.getElementById('iqroJilidHidden' + activeMode)?.value
+                          || (document.getElementById('displayJuzRange')?.textContent || '').replace(/\D+/g, '')
+                          || '1';
+        const iqroHalStart = formEl?.querySelector('[name="iqro_halaman"]')?.value
+                          || document.getElementById('iqroHalamanHidden' + activeMode)?.value
+                          || document.getElementById('displayPageStart')?.textContent
+                          || '-';
+        const iqroHalEnd   = formEl?.querySelector('[name="iqro_halaman_end"]')?.value
+                          || document.getElementById('iqroHalamanEndHidden' + activeMode)?.value
+                          || document.getElementById('displayPageEnd')?.textContent
+                          || iqroHalStart;
+        const iqroJumlahHal = (parseInt(iqroHalEnd) >= parseInt(iqroHalStart))
+            ? (parseInt(iqroHalEnd) - parseInt(iqroHalStart) + 1) : 1;
 
         console.log(`📄 Screenshot slices: ${screenshotDataUrls.length}`);
 
@@ -1025,6 +1080,14 @@ table.ct td { color:#222; }
     </div>
     <h2>Info Setoran</h2>
     <table class="info-table">
+        ${isIqro ? `
+        <tr><td>Nama Santri</td>  <td>${namaSantri}</td></tr>
+        <tr><td>Metode</td>       <td>${metodeVal || 'Iqro'}</td></tr>
+        <tr><td>Jilid</td>        <td>Jilid ${iqroJilid}</td></tr>
+        <tr><td>Halaman</td>      <td>${iqroHalStart} - ${iqroHalEnd} (Total: ${iqroJumlahHal})</td></tr>
+        <tr><td>Total Kata</td>   <td>${totalKata}</td></tr>
+        <tr><td>Catatan Guru</td> <td>${catatanGuru || '-'}</td></tr>
+        ` : `
         <tr><td>Nama Santri</td>  <td>${namaSantri}</td></tr>
         <tr><td>Surat</td>        <td>${suratStart} - ${suratEnd}</td></tr>
         <tr><td>Ayat</td>         <td>${ayatStart} - ${ayatEnd}</td></tr>
@@ -1032,6 +1095,7 @@ table.ct td { color:#222; }
         <tr><td>Total Juz</td>    <td>${totalJuz}</td></tr>
         <tr><td>Total Kata</td>   <td>${totalKata}</td></tr>
         <tr><td>Catatan Guru</td> <td>${catatanGuru || '-'}</td></tr>
+        `}
     </table>
     <h2>Detail Koreksi</h2>
     <table class="ct">
@@ -1127,11 +1191,14 @@ function setupNativeFormValidation() {
             if (!tanggal)   { e.preventDefault(); alert('⚠️ Pilih tanggal terlebih dahulu!'); return; }
             if (!sesi)      { e.preventDefault(); alert('⚠️ Pilih sesi terlebih dahulu!'); return; }
             if (!kategori)  { e.preventDefault(); alert('⚠️ Pilih kategori setoran!'); return; }
-            if (!suratStart || !ayatStart || !suratEnd || !ayatEnd) { e.preventDefault(); alert('⚠️ Lengkapi range surat dan ayat!'); return; }
+            const metodeVal = form.querySelector('[name="metode"]')?.value || '';
+            const isIqroMode = (metodeVal === 'Iqro' || metodeVal === 'Ummi');
+
+            if (!isIqroMode && (!suratStart || !ayatStart || !suratEnd || !ayatEnd)) { e.preventDefault(); alert('⚠️ Lengkapi range surat dan ayat!'); return; }
             const quranDisplay = document.getElementById('quranDisplay');
             if (!quranDisplay || quranDisplay.innerHTML.trim() === '') {
                 e.preventDefault();
-                alert("⚠️ Klik tombol \"Tampilkan Al-Qur'an\" terlebih dahulu sebelum menyimpan!");
+                alert(isIqroMode ? '⚠️ Klik tombol "Tampilkan Halaman Iqro" terlebih dahulu sebelum menyimpan!' : "⚠️ Klik tombol \"Tampilkan Al-Qur'an\" terlebih dahulu sebelum menyimpan!");
                 return;
             }
             e.preventDefault();

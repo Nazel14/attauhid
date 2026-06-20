@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen bg-gray-950 py-3 sm:py-6 lg:py-10">
+<div id="inputPage" class="min-h-screen py-3 sm:py-6 lg:py-10">
 
     {{-- ============================================================ --}}
     {{-- NOTIFICATIONS                                                  --}}
@@ -56,7 +56,7 @@
     @endif
 
     {{-- ============================================================ --}}
-    {{-- MOBILE: BOTTOM DRAWER (Presensi / Al-Quran)                   --}}
+    {{-- MOBILE: BOTTOM DRAWER (Presensi / Al-Quran) — TETAP DARK      --}}
     {{-- ============================================================ --}}
     <div id="mobileDrawerOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden lg:hidden" onclick="closeDrawer()"></div>
     <div id="mobileDrawer" class="fixed bottom-0 left-0 right-0 z-[160] lg:hidden translate-y-full transition-transform duration-300 ease-out">
@@ -83,7 +83,7 @@
         <div class="mb-4 sm:mb-6">
             <div class="flex items-center justify-between mb-3">
                 <a href="{{ route('guru.dashboard') }}"
-                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-xs font-medium text-gray-300 hover:bg-gray-700 transition-colors">
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                     Kembali
                 </a>
@@ -92,17 +92,17 @@
                 📊 Lihat Presensi
             </button>   
             </div>
-            <h1 class="text-lg sm:text-2xl font-bold text-white leading-tight"> Input Presensi & Setoran</h1>
-            <p class="text-xs text-gray-400 mt-1">
-                Kelas: <span class="text-indigo-400 font-medium">{{ $kelas->name }}</span>
+            <h1 class="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white leading-tight"> Input Presensi & Setoran</h1>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Kelas: <span class="text-indigo-600 dark:text-indigo-400 font-medium">{{ $kelas->name }}</span>
                 <span class="mx-1.5 opacity-30">|</span>
-                <span class="text-gray-300">{{ $tanggalHariIni }}</span>
+                <span class="text-gray-700 dark:text-gray-300">{{ $tanggalHariIni }}</span>
             </p>
             @if(isset($tahunAjaranAktif) && $tahunAjaranAktif)
-            <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-950/50 border border-indigo-800/40 rounded-xl text-xs mt-2">
-                <svg class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                <span class="text-white font-medium">{{ $tahunAjaranAktif->nama ?? $tahunAjaranAktif->name }}</span>
-                <span class="px-1.5 py-0.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-full text-[10px] font-semibold">Aktif</span>
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/40 rounded-xl text-xs mt-2">
+                <svg class="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <span class="text-gray-900 dark:text-white font-medium">{{ $tahunAjaranAktif->nama ?? $tahunAjaranAktif->name }}</span>
+                <span class="px-1.5 py-0.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-semibold">Aktif</span>
             </div>
             @endif
         </div>
@@ -117,42 +117,42 @@
                 <div class="lg:sticky lg:top-4 space-y-3">
 
                     {{-- MODE SELECTOR --}}
-                    <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 sm:p-4">
-                        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2.5">🎯 Pilih Mode Input</p>
+                    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 sm:p-4 shadow-sm dark:shadow-none">
+                        <p class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2.5">🎯 Pilih Mode Input</p>
                         <div class="grid grid-cols-3 gap-1.5 sm:gap-2">
                             <label class="mode-card cursor-pointer">
                                 <input type="radio" name="input_mode" value="combined" class="sr-only" onclick="toggleMode(this)" onchange="switchMode(this.value)">
-                                <div class="mode-card-inner border-2 border-gray-700 rounded-lg p-2 sm:p-3 text-center transition-all hover:border-indigo-500/50 hover:bg-indigo-500/5">
+                                <div class="mode-card-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2 sm:p-3 text-center transition-all hover:border-indigo-500/50 hover:bg-indigo-500/5">
                                     <div class="text-xl sm:text-2xl mb-1">🎯</div>
-                                    <div class="text-[10px] sm:text-xs font-semibold text-gray-300 leading-tight">Presensi<br>+ Setoran</div>
+                                    <div class="text-[10px] sm:text-xs font-semibold text-gray-700 dark:text-gray-300 leading-tight">Presensi<br>+ Setoran</div>
                                 </div>
                             </label>
                             <label class="mode-card cursor-pointer">
                                 <input type="radio" name="input_mode" value="presensi_only" class="sr-only" onclick="toggleMode(this)" onchange="switchMode(this.value)">
-                                <div class="mode-card-inner border-2 border-gray-700 rounded-lg p-2 sm:p-3 text-center transition-all hover:border-blue-500/50 hover:bg-blue-500/5">
+                                <div class="mode-card-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2 sm:p-3 text-center transition-all hover:border-blue-500/50 hover:bg-blue-500/5">
                                     <div class="text-xl sm:text-2xl mb-1">✅</div>
-                                    <div class="text-[10px] sm:text-xs font-semibold text-gray-300 leading-tight">Presensi<br>Saja</div>
+                                    <div class="text-[10px] sm:text-xs font-semibold text-gray-700 dark:text-gray-300 leading-tight">Presensi<br>Saja</div>
                                 </div>
                             </label>
                             <label class="mode-card cursor-pointer">
                                 <input type="radio" name="input_mode" value="setoran_only" class="sr-only" onclick="toggleMode(this)" onchange="switchMode(this.value)">
-                                <div class="mode-card-inner border-2 border-gray-700 rounded-lg p-2 sm:p-3 text-center transition-all hover:border-green-500/50 hover:bg-green-500/5">
+                                <div class="mode-card-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2 sm:p-3 text-center transition-all hover:border-green-500/50 hover:bg-green-500/5">
                                     <div class="text-xl sm:text-2xl mb-1">📖</div>
-                                    <div class="text-[10px] sm:text-xs font-semibold text-gray-300 leading-tight">Setoran<br>Tambahan</div>
+                                    <div class="text-[10px] sm:text-xs font-semibold text-gray-700 dark:text-gray-300 leading-tight">Setoran<br>Tambahan</div>
                                 </div>
                             </label>
                         </div>
                     </div>
 
-                    <div id="hintBelumPilih" class="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center">
-                        <div class="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center mx-auto mb-3">
-                            <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
+                    <div id="hintBelumPilih" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 text-center shadow-sm dark:shadow-none">
+                        <div class="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-6 h-6 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
                         </div>
-                        <p class="text-sm text-gray-400">Pilih mode input di atas</p>
-                        <p class="text-xs text-gray-600 mt-1">Form akan muncul di sini</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Pilih mode input di atas</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-600 mt-1">Form akan muncul di sini</p>
                     </div>
 
-                    <hr class="border-gray-800 hidden" id="hrDivider">
+                    <hr class="border-gray-200 dark:border-gray-800 hidden" id="hrDivider">
 
                     {{-- ============================================================ --}}
                     {{-- FORM: COMBINED                                               --}}
@@ -160,28 +160,31 @@
                     <form id="formCombined" action="{{ route('guru.input.store-combined') }}" method="POST" enctype="multipart/form-data" class="hidden space-y-3">
                         @csrf
 
-                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
+                            <h3 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                                 <span class="w-5 h-5 bg-indigo-600 rounded flex items-center justify-center text-[10px]">📋</span>
                                 Informasi Dasar
                             </h3>
                             <div class="space-y-3">
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Nama Santri <span class="text-red-400">*</span></label>
+                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Nama Santri <span class="text-red-500 dark:text-red-400">*</span></label>
                                     <select name="santri_id" id="santriSelectCombined" required class="form-select w-full">
                                         <option value="">-- Pilih Santri --</option>
                                         @foreach($santriList as $santri)
-                                            <option value="{{ $santri->id }}">{{ $santri->name }}</option>
+                                            <option value="{{ $santri->id }}"
+                                                    data-target-metode="{{ $santri->target_metode?->value ?? 'quran' }}"
+                                                    data-target-jilid="{{ $santri->target_jilid ?? '' }}">{{ $santri->name }}</option>
                                         @endforeach
                                     </select>
+                                     <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1.5">💡 Pilih nama santri dulu untuk menampilkan data setoran.</p>
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-400 mb-1.5">Tanggal <span class="text-red-400">*</span></label>
+                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Tanggal <span class="text-red-500 dark:text-red-400">*</span></label>
                                         <input type="date" name="tanggal" id="tanggalCombined" value="{{ $tanggalHariIni }}" required class="form-input w-full">
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-400 mb-1.5">Sesi <span class="text-red-400">*</span></label>
+                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Sesi <span class="text-red-500 dark:text-red-400">*</span></label>
                                         <select name="sesi" id="sesiSelectCombined" required class="form-select w-full">
                                             <option value="">-- Pilih --</option>
                                             @foreach($sesiList as $sesi)
@@ -195,14 +198,22 @@
 
                         <input type="hidden" name="status" value="Hadir">
 
-                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <div class="combined-after-santri hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
+                            <h3 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                                 <span class="w-5 h-5 bg-emerald-600 rounded flex items-center justify-center text-[10px]">📖</span>
                                 Data Setoran
                             </h3>
                             <div class="space-y-3">
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Kategori <span class="text-red-400">*</span></label>
+                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Metode <span class="text-red-500 dark:text-red-400">*</span></label>
+                                    <select name="metode" id="metodeCombined" required class="form-select w-full">
+                                        <option value="Al-Qur'an">📖 Al-Qur'an</option>
+                                        <option value="Iqro">🟢 Iqro</option>
+                                    </select>
+                                    <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1.5">🔒 Otomatis terisi sesuai target santri.</p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Kategori <span class="text-red-500 dark:text-red-400">*</span></label>
                                     <select name="kategori_setoran" id="kategoriSetoranCombined" required class="form-select w-full">
                                         <option value="">-- Pilih --</option>
                                         <option value="Hafalan">📚 Hafalan</option>
@@ -210,8 +221,9 @@
                                         <option value="Tilawah">📖 Tilawah</option>
                                     </select>
                                 </div>
-                                <div class="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
-                                    <p class="text-xs font-medium text-gray-400 mb-2">📖 Range Ayat</p>
+                                <div id="rangeAyatBlockCombined">
+                                <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-3">
+                                    <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">📖 Range Ayat</p>
                                     <div class="grid grid-cols-2 gap-2">
                                         <div>
                                             <label class="text-[10px] text-gray-500 mb-1 block">Surat Mulai *</label>
@@ -245,6 +257,42 @@
                                         📖 Tampilkan Al-Qur'an
                                     </button>
                                 </div>
+                                </div>
+
+                                <div id="iqroBlockCombined" class="hidden bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-3">
+                                    <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">📗 Pilih Halaman Iqro</p>
+                                    <div class="mb-2">
+                                        <label class="text-[10px] text-gray-500 mb-1 block">Jilid *</label>
+                                        <select id="iqroJilidCombined" class="form-select-sm w-full">
+                                            <option value="1">Jilid 1</option>
+                                            <option value="2">Jilid 2</option>
+                                            <option value="3">Jilid 3</option>
+                                            <option value="4">Jilid 4</option>
+                                            <option value="5">Jilid 5</option>
+                                            <option value="6">Jilid 6</option>
+                                            <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1">🔒 Otomatis terisi dari target santri.</p>
+                                        </select>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="text-[10px] text-gray-500 mb-1 block">Halaman Mulai *</label>
+                                            <select id="iqroHalamanStartCombined" class="form-select-sm w-full">
+                                                <option value="">-- Mulai --</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-[10px] text-gray-500 mb-1 block">Halaman Selesai *</label>
+                                            <select id="iqroHalamanEndCombined" class="form-select-sm w-full">
+                                                <option value="">-- Selesai --</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button type="button"
+                                            onclick="loadIqro('Combined'); if(window.innerWidth < 1024) openDrawer('quran');"
+                                            class="mt-2.5 w-full px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition flex items-center justify-center gap-1.5">
+                                        📗 Tampilkan Halaman Iqro
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -263,11 +311,14 @@
                         <input type="hidden" name="kesalahan_pelafalan"  id="kesalahanPelafalanCombined"  value="0">
                         <input type="hidden" name="nilai"                id="nilaiCombined">
                         <input type="hidden" name="pdf_html_content"     id="pdfHtmlDataCombined">
+                        <input type="hidden" name="iqro_jilid"   id="iqroJilidHiddenCombined">
+                        <input type="hidden" name="iqro_halaman" id="iqroHalamanHiddenCombined">
+                        <input type="hidden" name="iqro_halaman_end" id="iqroHalamanEndHiddenCombined">
 
                         {{-- Audio & Penilaian — Desktop: tampil di form kiri | Mobile: disembunyikan --}}
-                        <div class="mobile-hide-audio bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-                            <div class="flex items-center p-4 border-b border-gray-800">
-                                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                        <div class="combined-after-santri hidden mobile-hide-audio bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+                            <div class="flex items-center p-4 border-b border-gray-200 dark:border-gray-800">
+                                <span class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
                                     <span class="w-5 h-5 bg-blue-600 rounded flex items-center justify-center text-[10px]">🎤</span>
                                     Audio & Penilaian
                                 </span>
@@ -287,41 +338,41 @@
                                         ⏹️ Stop
                                     </button>
                                 </div>
-                                <div id="recordingTimerCombined" class="hidden text-xs font-bold text-blue-400 text-center py-2 bg-blue-950/50 rounded-lg border border-blue-800/50">⏱️ Durasi: 0:00</div>
+                                <div id="recordingTimerCombined" class="hidden text-xs font-bold text-blue-600 dark:text-blue-400 text-center py-2 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800/50">⏱️ Durasi: 0:00</div>
                                 <audio id="audioPlaybackCombined" controls class="w-full hidden rounded-lg"></audio>
                                 <button type="button" id="clearRecordingCombined" onclick="clearRecording('Combined')"
                                         class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg transition hidden flex items-center justify-center gap-1">
                                     🗑️ Hapus & Rekam Ulang
                                 </button>
                                 <input type="hidden" name="audio_data" id="audioDataCombined">
-                                <p class="text-[10px] text-gray-600 italic">💡 Gunakan Jeda untuk berhenti sementara</p>
+                                <p class="text-[10px] text-gray-500 dark:text-gray-600 italic">💡 Gunakan Jeda untuk berhenti sementara</p>
                                 <div class="grid grid-cols-2 gap-2 pt-1">
-                                    <div class="bg-gray-800 rounded-lg p-2.5 flex items-center justify-between col-span-2">
-                                        <span class="text-xs text-gray-400">🟢 Kelancaran</span>
-                                        <strong id="displayKelancaranCombined" class="text-base text-emerald-400">0</strong>
+                                    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between col-span-2">
+                                        <span class="text-xs text-gray-600 dark:text-gray-400">🟢 Kelancaran</span>
+                                        <strong id="displayKelancaranCombined" class="text-base text-emerald-600 dark:text-emerald-400">0</strong>
                                     </div>
-                                    <div class="bg-gray-800 rounded-lg p-2.5 flex items-center justify-between">
-                                        <span class="text-xs text-gray-400">🟡 Tajwid</span>
-                                        <strong id="displayTajwidCombined" class="text-base text-amber-400">0</strong>
+                                    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between">
+                                        <span class="text-xs text-gray-600 dark:text-gray-400">🟡 Tajwid</span>
+                                        <strong id="displayTajwidCombined" class="text-base text-amber-600 dark:text-amber-400">0</strong>
                                     </div>
-                                    <div class="bg-gray-800 rounded-lg p-2.5 flex items-center justify-between">
-                                        <span class="text-xs text-gray-400">🔴 Pelafalan</span>
-                                        <strong id="displayPelafalanCombined" class="text-base text-red-400">0</strong>
+                                    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between">
+                                        <span class="text-xs text-gray-600 dark:text-gray-400">🔴 Pelafalan</span>
+                                        <strong id="displayPelafalanCombined" class="text-base text-red-600 dark:text-red-400">0</strong>
                                     </div>
-                                    <div class="bg-indigo-950 border border-indigo-800/50 rounded-lg p-2.5 flex items-center justify-between col-span-2">
-                                        <span class="text-xs font-bold text-gray-300">📊 Nilai</span>
-                                        <strong id="displayNilaiCombined" class="text-2xl text-indigo-400">100</strong>
+                                    <div class="bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-2.5 flex items-center justify-between col-span-2">
+                                        <span class="text-xs font-bold text-gray-700 dark:text-gray-300">📊 Nilai</span>
+                                        <strong id="displayNilaiCombined" class="text-2xl text-indigo-600 dark:text-indigo-400">100</strong>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="mobile-hide-bottom bg-gray-900 border border-gray-800 rounded-xl p-4">
-                            <label class="block text-xs font-medium text-gray-400 mb-2">📝 Catatan Guru</label>
+                        <div class="combined-after-santri hidden mobile-hide-bottom bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
+                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">📝 Catatan Guru</label>
                             <textarea name="catatan_guru" id="catatanGuruCombined" rows="2" class="form-textarea w-full" placeholder="Tambahkan catatan..."></textarea>
                         </div>
 
-                        <button type="submit" id="submitBtnCombined" class="mobile-hide-bottom w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-indigo-900/30 transition">
+                        <button type="submit" id="submitBtnCombined" class="combined-after-santri hidden mobile-hide-bottom w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-indigo-900/30 transition">
                             💾 Simpan Presensi & Setoran
                         </button>
                     </form>
@@ -331,26 +382,27 @@
                     {{-- ============================================================ --}}
                     <form id="formPresensiOnly" action="{{ route('guru.input.store-presensi') }}" method="POST" class="hidden space-y-3">
                         @csrf
-                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
+                            <h3 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                                 <span class="w-5 h-5 bg-blue-600 rounded flex items-center justify-center text-[10px]">✅</span>
                                 Presensi Saja
                             </h3>
                             <div class="space-y-3">
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Nama Santri <span class="text-red-400">*</span></label>
+                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Nama Santri <span class="text-red-500 dark:text-red-400">*</span></label>
                                     <select name="santri_id" required class="form-select w-full">
                                         <option value="">-- Pilih Santri --</option>
                                         @foreach($santriList as $santri)<option value="{{ $santri->id }}">{{ $santri->name }}</option>@endforeach
                                     </select>
+                                    <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1.5">💡 Pilih nama santri terlebih dahulu untuk menampilkan data setoran.</p>
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-400 mb-1.5">Tanggal <span class="text-red-400">*</span></label>
+                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Tanggal <span class="text-red-500 dark:text-red-400">*</span></label>
                                         <input type="date" name="tanggal" value="{{ $tanggalHariIni }}" required class="form-input w-full">
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-400 mb-1.5">Sesi <span class="text-red-400">*</span></label>
+                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Sesi <span class="text-red-500 dark:text-red-400">*</span></label>
                                         <select name="sesi" required class="form-select w-full">
                                             <option value="">-- Pilih --</option>
                                             @foreach($sesiList as $sesi)<option value="{{ $sesi->sesi_name }}">{{ $sesi->sesi_name }}</option>@endforeach
@@ -358,16 +410,16 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-400 mb-2">Status Kehadiran <span class="text-red-400">*</span></label>
+                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Status Kehadiran <span class="text-red-500 dark:text-red-400">*</span></label>
                                     <div class="grid grid-cols-2 gap-1.5">
-                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Hadir" required class="sr-only"><div class="status-radio-inner border-2 border-gray-700 rounded-lg p-2.5 text-center hover:border-emerald-500/50 transition text-xs font-medium text-gray-300">✅ Hadir</div></label>
-                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Sakit" class="sr-only"><div class="status-radio-inner border-2 border-gray-700 rounded-lg p-2.5 text-center hover:border-orange-500/50 transition text-xs font-medium text-gray-300">🤒 Sakit</div></label>
-                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Izin" class="sr-only"><div class="status-radio-inner border-2 border-gray-700 rounded-lg p-2.5 text-center hover:border-amber-500/50 transition text-xs font-medium text-gray-300">📝 Izin</div></label>
-                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Alpha" class="sr-only"><div class="status-radio-inner border-2 border-gray-700 rounded-lg p-2.5 text-center hover:border-red-500/50 transition text-xs font-medium text-gray-300">❌ Alpha</div></label>
+                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Hadir" required class="sr-only"><div class="status-radio-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-center hover:border-emerald-500/50 transition text-xs font-medium text-gray-700 dark:text-gray-300">✅ Hadir</div></label>
+                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Sakit" class="sr-only"><div class="status-radio-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-center hover:border-orange-500/50 transition text-xs font-medium text-gray-700 dark:text-gray-300">🤒 Sakit</div></label>
+                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Izin" class="sr-only"><div class="status-radio-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-center hover:border-amber-500/50 transition text-xs font-medium text-gray-700 dark:text-gray-300">📝 Izin</div></label>
+                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Alpha" class="sr-only"><div class="status-radio-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-center hover:border-red-500/50 transition text-xs font-medium text-gray-700 dark:text-gray-300">❌ Alpha</div></label>
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-400 mb-1.5">📝 Keterangan <span class="text-gray-600 text-[10px]">(Opsional)</span></label>
+                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">📝 Keterangan <span class="text-gray-500 dark:text-gray-600 text-[10px]">(Opsional)</span></label>
                                     <textarea name="keterangan" rows="2" class="form-textarea w-full" placeholder="Contoh: Demam tinggi..."></textarea>
                                 </div>
                             </div>
@@ -380,37 +432,59 @@
                     {{-- ============================================================ --}}
                     <form id="formSetoranOnly" action="{{ route('guru.input.store-setoran') }}" method="POST" enctype="multipart/form-data" class="hidden space-y-3">
                         @csrf
-                        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
+                            <h3 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                                 <span class="w-5 h-5 bg-emerald-600 rounded flex items-center justify-center text-[10px]">📖</span>
                                 Setoran Tambahan
                             </h3>
-                            <div class="mb-3 px-3 py-2 bg-amber-950/50 border border-amber-800/30 rounded-lg">
-                                <p class="text-[10px] text-amber-300">⚠️ Santri harus sudah presensi <strong>HADIR</strong> di sesi yang sama.</p>
+                            <div class="mb-3 px-3 py-2 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/30 rounded-lg">
+                                <p class="text-[10px] text-amber-700 dark:text-amber-300">⚠️ Santri harus sudah presensi <strong>HADIR</strong> di sesi yang sama.</p>
                             </div>
                             <div class="space-y-3">
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Nama Santri <span class="text-red-400">*</span></label>
+                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Nama Santri <span class="text-red-500 dark:text-red-400">*</span></label>
                                     <select name="santri_id" id="santriSelectSetoranOnly" required class="form-select w-full">
                                         <option value="">-- Pilih Santri --</option>
-                                        @foreach($santriList as $santri)<option value="{{ $santri->id }}">{{ $santri->name }}</option>@endforeach
+                                        @foreach($santriList as $santri)
+                                            <option value="{{ $santri->id }}"
+                                                    data-target-metode="{{ $santri->target_metode?->value ?? 'quran' }}"
+                                                    data-target-jilid="{{ $santri->target_jilid ?? '' }}">{{ $santri->name }}</option>
+                                        @endforeach
                                     </select>
+                                     <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1.5">💡 Pilih nama santri dulu untuk menampilkan data setoran.</p>
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-400 mb-1.5">Tanggal <span class="text-red-400">*</span></label>
+                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Tanggal <span class="text-red-500 dark:text-red-400">*</span></label>
                                         <input type="date" name="tanggal" id="tanggalSetoranOnly" value="{{ $tanggalHariIni }}" required class="form-input w-full">
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-400 mb-1.5">Sesi <span class="text-red-400">*</span></label>
+                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Sesi <span class="text-red-500 dark:text-red-400">*</span></label>
                                         <select name="sesi" id="sesiSelectSetoranOnly" required class="form-select w-full">
                                             <option value="">-- Pilih --</option>
                                             @foreach($sesiList as $sesi)<option value="{{ $sesi->sesi_name }}">{{ $sesi->sesi_name }}</option>@endforeach
                                         </select>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="setoran-after-santri hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
+                            <h3 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <span class="w-5 h-5 bg-emerald-600 rounded flex items-center justify-center text-[10px]">📖</span>
+                                Data Setoran
+                            </h3>
+                            <div class="space-y-3">
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Kategori <span class="text-red-400">*</span></label>
+                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Metode <span class="text-red-500 dark:text-red-400">*</span></label>
+                                    <select name="metode" id="metodeSetoranOnly" required class="form-select w-full">
+                                        <option value="Al-Qur'an">📖 Al-Qur'an</option>
+                                        <option value="Iqro">🟢 Iqro</option>
+                                    </select>
+                                    <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1.5">🔒 Otomatis terisi sesuai target santri.</p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Kategori <span class="text-red-500 dark:text-red-400">*</span></label>
                                     <select name="kategori_setoran" id="kategoriSetoranOnly" required class="form-select w-full">
                                         <option value="">-- Pilih --</option>
                                         <option value="Hafalan">📚 Hafalan</option>
@@ -418,8 +492,9 @@
                                         <option value="Tilawah">📖 Tilawah</option>
                                     </select>
                                 </div>
-                                <div class="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
-                                    <p class="text-xs font-medium text-gray-400 mb-2">📖 Range Ayat</p>
+                                <div id="rangeAyatBlockSetoranOnly">
+                                <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-3">
+                                    <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">📖 Range Ayat</p>
                                     <div class="grid grid-cols-2 gap-2">
                                         <div>
                                             <label class="text-[10px] text-gray-500 mb-1 block">Surat Mulai *</label>
@@ -453,6 +528,43 @@
                                         📖 Tampilkan Al-Qur'an
                                     </button>
                                 </div>
+                                </div>
+
+                                <div id="iqroBlockSetoranOnly" class="hidden bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-3">
+                                    <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">📗 Pilih Halaman Iqro</p>
+                                    <div class="mb-2">
+                                        <label class="text-[10px] text-gray-500 mb-1 block">Jilid *</label>
+                                        <select id="iqroJilidSetoranOnly" class="form-select-sm w-full">
+                                            <option value="1">Jilid 1</option>
+                                            <option value="2">Jilid 2</option>
+                                            <option value="3">Jilid 3</option>
+                                            <option value="4">Jilid 4</option>
+                                            <option value="5">Jilid 5</option>
+                                            <option value="6">Jilid 6</option>
+                                        </select>
+                                        <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1">🔒 Otomatis terisi dari target santri.</p>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="text-[10px] text-gray-500 mb-1 block">Halaman Mulai *</label>
+                                            <select id="iqroHalamanStartSetoranOnly" class="form-select-sm w-full">
+                                                <option value="">-- Mulai --</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-[10px] text-gray-500 mb-1 block">Halaman Selesai *</label>
+                                            <select id="iqroHalamanEndSetoranOnly" class="form-select-sm w-full">
+                                                <option value="">-- Selesai --</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1.5">💡 Untuk 1 halaman saja, isi Mulai &amp; Selesai sama.</p>
+                                    <button type="button"
+                                            onclick="loadIqro('SetoranOnly'); if(window.innerWidth < 1024) openDrawer('quran');"
+                                            class="mt-2.5 w-full px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition flex items-center justify-center gap-1.5">
+                                        📗 Tampilkan Halaman Iqro
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -471,10 +583,13 @@
                         <input type="hidden" name="kesalahan_pelafalan"  id="kesalahanPelafalanSetoranOnly"  value="0">
                         <input type="hidden" name="nilai"                id="nilaiSetoranOnly">
                         <input type="hidden" name="pdf_html_content"     id="pdfHtmlDataSetoranOnly">
+                        <input type="hidden" name="iqro_jilid"       id="iqroJilidHiddenSetoranOnly">
+                        <input type="hidden" name="iqro_halaman"     id="iqroHalamanHiddenSetoranOnly">
+                        <input type="hidden" name="iqro_halaman_end" id="iqroHalamanEndHiddenSetoranOnly">
 
-                        <div class="mobile-hide-audio bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-                            <div class="flex items-center p-4 border-b border-gray-800">
-                                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                        <div class="setoran-after-santri hidden mobile-hide-audio bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+                            <div class="flex items-center p-4 border-b border-gray-200 dark:border-gray-800">
+                                <span class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
                                     <span class="w-5 h-5 bg-blue-600 rounded flex items-center justify-center text-[10px]">🎤</span>
                                     Audio & Penilaian
                                 </span>
@@ -485,38 +600,38 @@
                                     <button type="button" id="pauseRecordingSetoranOnly" onclick="pauseRecording('SetoranOnly')" class="hidden flex-1 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-xs font-medium rounded-lg transition items-center justify-center gap-1">⏸️ Jeda</button>
                                     <button type="button" id="stopRecordingSetoranOnly" onclick="stopRecording('SetoranOnly')" class="hidden flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition items-center justify-center gap-1">⏹️ Stop</button>
                                 </div>
-                                <div id="recordingTimerSetoranOnly" class="hidden text-xs font-bold text-blue-400 text-center py-2 bg-blue-950/50 rounded-lg border border-blue-800/50">⏱️ Durasi: 0:00</div>
+                                <div id="recordingTimerSetoranOnly" class="hidden text-xs font-bold text-blue-600 dark:text-blue-400 text-center py-2 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800/50">⏱️ Durasi: 0:00</div>
                                 <audio id="audioPlaybackSetoranOnly" controls class="w-full hidden rounded-lg"></audio>
                                 <button type="button" id="clearRecordingSetoranOnly" onclick="clearRecording('SetoranOnly')" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg transition hidden flex items-center justify-center gap-1">🗑️ Hapus & Rekam Ulang</button>
                                 <input type="hidden" name="audio_data" id="audioDataSetoranOnly">
-                                <p class="text-[10px] text-gray-600 italic">💡 Gunakan Jeda untuk berhenti sementara</p>
+                                <p class="text-[10px] text-gray-500 dark:text-gray-600 italic">💡 Gunakan Jeda untuk berhenti sementara</p>
                                 <div class="grid grid-cols-2 gap-2 pt-1">
-                                    <div class="bg-gray-800 rounded-lg p-2.5 flex items-center justify-between col-span-2">
-                                        <span class="text-xs text-gray-400">🟢 Kelancaran</span>
-                                        <strong id="displayKelancaranSetoranOnly" class="text-base text-emerald-400">0</strong>
+                                    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between col-span-2">
+                                        <span class="text-xs text-gray-600 dark:text-gray-400">🟢 Kelancaran</span>
+                                        <strong id="displayKelancaranSetoranOnly" class="text-base text-emerald-600 dark:text-emerald-400">0</strong>
                                     </div>
-                                    <div class="bg-gray-800 rounded-lg p-2.5 flex items-center justify-between">
-                                        <span class="text-xs text-gray-400">🟡 Tajwid</span>
-                                        <strong id="displayTajwidSetoranOnly" class="text-base text-amber-400">0</strong>
+                                    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between">
+                                        <span class="text-xs text-gray-600 dark:text-gray-400">🟡 Tajwid</span>
+                                        <strong id="displayTajwidSetoranOnly" class="text-base text-amber-600 dark:text-amber-400">0</strong>
                                     </div>
-                                    <div class="bg-gray-800 rounded-lg p-2.5 flex items-center justify-between">
-                                        <span class="text-xs text-gray-400">🔴 Pelafalan</span>
-                                        <strong id="displayPelafalanSetoranOnly" class="text-base text-red-400">0</strong>
+                                    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between">
+                                        <span class="text-xs text-gray-600 dark:text-gray-400">🔴 Pelafalan</span>
+                                        <strong id="displayPelafalanSetoranOnly" class="text-base text-red-600 dark:text-red-400">0</strong>
                                     </div>
-                                    <div class="bg-indigo-950 border border-indigo-800/50 rounded-lg p-2.5 flex items-center justify-between col-span-2">
-                                        <span class="text-xs font-bold text-gray-300">📊 Nilai</span>
-                                        <strong id="displayNilaiSetoranOnly" class="text-2xl text-indigo-400">100</strong>
+                                    <div class="bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-2.5 flex items-center justify-between col-span-2">
+                                        <span class="text-xs font-bold text-gray-700 dark:text-gray-300">📊 Nilai</span>
+                                        <strong id="displayNilaiSetoranOnly" class="text-2xl text-indigo-600 dark:text-indigo-400">100</strong>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="mobile-hide-bottom bg-gray-900 border border-gray-800 rounded-xl p-4">
-                            <label class="block text-xs font-medium text-gray-400 mb-1.5">📝 Catatan Guru</label>
+                        <div class="setoran-after-santri hidden mobile-hide-bottom bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
+                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">📝 Catatan Guru</label>
                             <textarea name="catatan_guru" id="catatanGuruSetoranOnly" rows="2" class="form-textarea w-full" placeholder="Tambahkan catatan..."></textarea>
                         </div>
 
-                        <button type="submit" id="submitBtnSetoranOnly" class="mobile-hide-bottom w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-900/30 transition">
+                        <button type="submit" id="submitBtnSetoranOnly" class="setoran-after-santri hidden mobile-hide-bottom w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-900/30 transition">
                             💾 Simpan Setoran Tambahan
                         </button>
                     </form>
@@ -526,114 +641,116 @@
 
             {{-- ============================================================ --}}
             {{-- RIGHT PANEL (col-span-3): Presensi / Al-Quran               --}}
+            {{-- Catatan: area reader (Presensi & Al-Qur'an/Iqro) sengaja     --}}
+            {{-- dipertahankan GELAP di kedua mode karena teks Arab putih.    --}}
             {{-- ============================================================ --}}
             <div class="hidden lg:block lg:col-span-3">
-                <div class="lg:sticky lg:top-4 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                <div class="lg:sticky lg:top-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
 
-                    {{-- PANEL: Petunjuk --}}
+                    {{-- PANEL: Petunjuk (theme-aware) --}}
                     <div id="panelPetunjuk" class="p-6">
                         <div class="text-center mb-6">
-                            <div class="w-14 h-14 bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl">📋</div>
-                            <h3 class="text-lg font-bold text-white mb-1">Petunjuk Penggunaan</h3>
+                            <div class="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl">📋</div>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Petunjuk Penggunaan</h3>
                             <p class="text-xs text-gray-500">Pilih mode input di kiri untuk memulai</p>
                         </div>
                         <div class="space-y-3">
-                            <div class="flex items-start gap-3 p-3 bg-gray-800/50 rounded-xl border border-indigo-800/20">
+                            <div class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-indigo-200 dark:border-indigo-800/20">
                                 <div class="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0 text-base">🎯</div>
-                                <div><h4 class="text-sm font-semibold text-white">Presensi + Setoran</h4><p class="text-xs text-gray-400 mt-0.5">Catat kehadiran & setoran sekaligus dalam 1 submit.</p></div>
+                                <div><h4 class="text-sm font-semibold text-gray-900 dark:text-white">Presensi + Setoran</h4><p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Catat kehadiran & setoran sekaligus dalam 1 submit.</p></div>
                             </div>
-                            <div class="flex items-start gap-3 p-3 bg-gray-800/50 rounded-xl border border-blue-800/20">
+                            <div class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-blue-200 dark:border-blue-800/20">
                                 <div class="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 text-base">✅</div>
-                                <div><h4 class="text-sm font-semibold text-white">Presensi Saja</h4><p class="text-xs text-gray-400 mt-0.5">Untuk Hadir tanpa setoran, atau Sakit / Izin / Alpha.</p></div>
+                                <div><h4 class="text-sm font-semibold text-gray-900 dark:text-white">Presensi Saja</h4><p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Untuk Hadir tanpa setoran, atau Sakit / Izin / Alpha.</p></div>
                             </div>
-                            <div class="flex items-start gap-3 p-3 bg-gray-800/50 rounded-xl border border-emerald-800/20">
+                            <div class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-emerald-200 dark:border-emerald-800/20">
                                 <div class="w-9 h-9 bg-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0 text-base">📖</div>
-                                <div><h4 class="text-sm font-semibold text-white">Setoran Tambahan</h4><p class="text-xs text-gray-400 mt-0.5">Setoran ke-2, ke-3, dst. Santri harus sudah hadir.</p></div>
+                                <div><h4 class="text-sm font-semibold text-gray-900 dark:text-white">Setoran Tambahan</h4><p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Setoran ke-2, ke-3, dst. Santri harus sudah hadir.</p></div>
                             </div>
                         </div>
                     </div>
 
-                    {{-- PANEL: Presensi Hari Ini --}}
+                    {{-- PANEL: Presensi Hari Ini (zona DARK di kedua mode) --}}
                     <div id="defaultView" class="hidden p-4">
                         <div class="flex items-center justify-between mb-3">
-                            <h4 class="font-bold text-sm text-white flex items-center gap-2">📊 Presensi — {{ $tanggalHariIni }}</h4>
-                            <button type="button" onclick="loadPresensiHariIni()" class="px-2.5 py-1 text-xs bg-gray-800 hover:bg-gray-700 text-indigo-400 rounded-lg transition font-medium border border-gray-700">🔄 Refresh</button>
+                            <h4 class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">📊 Presensi — {{ $tanggalHariIni }}</h4>
+                            <button type="button" onclick="loadPresensiHariIni()" class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-indigo-600 dark:text-indigo-400 rounded-lg transition font-medium border border-gray-200 dark:border-gray-700">🔄 Refresh</button>
                         </div>
                         <div class="grid grid-cols-4 gap-2 mb-4">
-                            <div class="bg-emerald-950/50 border border-emerald-900/30 rounded-lg p-2.5 text-center"><div class="text-xl font-bold text-emerald-400" id="statHadir">0</div><div class="text-[10px] text-gray-500">✅ Hadir</div></div>
-                            <div class="bg-orange-950/50 border border-orange-900/30 rounded-lg p-2.5 text-center"><div class="text-xl font-bold text-orange-400" id="statSakit">0</div><div class="text-[10px] text-gray-500">🤒 Sakit</div></div>
-                            <div class="bg-amber-950/50 border border-amber-900/30 rounded-lg p-2.5 text-center"><div class="text-xl font-bold text-amber-400" id="statIzin">0</div><div class="text-[10px] text-gray-500">📝 Izin</div></div>
-                            <div class="bg-red-950/50 border border-red-900/30 rounded-lg p-2.5 text-center"><div class="text-xl font-bold text-red-400" id="statAlpha">0</div><div class="text-[10px] text-gray-500">❌ Alpha</div></div>
+                            <div class="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900/30 rounded-lg p-2.5 text-center"><div class="text-xl font-bold text-emerald-600 dark:text-emerald-400" id="statHadir">0</div><div class="text-[10px] text-gray-500 dark:text-gray-500 flex items-center justify-center gap-1"><span class="w-2 h-2 rounded-full" style="background-color:#10b981;"></span>Hadir</div></div>
+                            <div class="bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-900/30 rounded-lg p-2.5 text-center"><div class="text-xl font-bold text-orange-600 dark:text-orange-400" id="statSakit">0</div><div class="text-[10px] text-gray-500 dark:text-gray-500 flex items-center justify-center gap-1"><span class="w-2 h-2 rounded-full" style="background-color:#f97316;"></span>Sakit</div></div>
+                            <div class="bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900/30 rounded-lg p-2.5 text-center"><div class="text-xl font-bold text-amber-600 dark:text-amber-400" id="statIzin">0</div><div class="text-[10px] text-gray-500 dark:text-gray-500 flex items-center justify-center gap-1"><span class="w-2 h-2 rounded-full" style="background-color:#f59e0b;"></span>Izin</div></div>
+                            <div class="bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/30 rounded-lg p-2.5 text-center"><div class="text-xl font-bold text-red-600 dark:text-red-400" id="statAlpha">0</div><div class="text-[10px] text-gray-500 dark:text-gray-500 flex items-center justify-center gap-1"><span class="w-2 h-2 rounded-full" style="background-color:#ef4444;"></span>Alpha</div></div>
                         </div>
                         <div class="flex flex-wrap gap-2 mb-3">
                             <div class="flex items-center gap-1 text-[10px] text-gray-500"><div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>Hadir</div>
                             <div class="flex items-center gap-1 text-[10px] text-gray-500"><div class="w-2.5 h-2.5 rounded-full bg-orange-500"></div>Sakit</div>
                             <div class="flex items-center gap-1 text-[10px] text-gray-500"><div class="w-2.5 h-2.5 rounded-full bg-amber-500"></div>Izin</div>
                             <div class="flex items-center gap-1 text-[10px] text-gray-500"><div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>Alpha</div>
-                            <div class="flex items-center gap-1 text-[10px] text-gray-500"><span class="px-1 bg-indigo-950 text-indigo-400 rounded text-[9px] ">📖</span>Setoran</div>
+                            <div class="flex items-center gap-1 text-[10px] text-gray-500"><span class="px-1 bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400 rounded text-[9px] ">📖</span>Setoran</div>
                         </div>
-                        <div id="daftarPresensiHariIni" class="max-h-[420px] overflow-y-auto overflow-x-auto custom-scrollbar rounded-lg border border-gray-800">
+                        <div id="daftarPresensiHariIni" class="max-h-[420px] overflow-y-auto overflow-x-auto custom-scrollbar rounded-lg border border-gray-200 dark:border-gray-800">
                             <table class="w-full text-xs min-w-max">
-                                <thead class="bg-gray-800 sticky top-0">
-                                    <tr id="tableHeaderRow" class="border-b border-gray-700">
-                                        <th class="px-2 py-2 text-center text-gray-400 font-medium w-10">No</th>
-                                        <th class="px-2 py-2 text-left text-gray-400 font-medium">Nama Santri</th>
+                                <thead class="bg-gray-100 dark:bg-gray-800 sticky top-0">
+                                    <tr id="tableHeaderRow" class="border-b border-gray-200 dark:border-gray-700">
+                                        <th class="px-2 py-2 text-center text-gray-600 dark:text-gray-400 font-medium w-10">No</th>
+                                        <th class="px-2 py-2 text-left text-gray-600 dark:text-gray-400 font-medium">Nama Santri</th>
                                     </tr>
                                 </thead>
-                                <tbody id="tableBodyPresensi" class="divide-y divide-gray-800/50">
-                                    <tr><td colspan="7" class="text-center py-6 text-gray-600 italic">Memuat data...</td></tr>
+                                <tbody id="tableBodyPresensi" class="divide-y divide-gray-200 dark:divide-gray-800/50">
+                                    <tr><td colspan="7" class="text-center py-6 text-gray-500 dark:text-gray-600 italic">Memuat data...</td></tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
-                    {{-- PANEL: Al-Qur'an --}}
-                    <div id="quranPanel" class="hidden p-4">
-                        <div class="hidden md:flex items-center justify-between mb-3 pb-3 border-b border-gray-800">
-                            <h3 class="text-sm font-semibold text-white">🕌 Al-Qur'an Digital</h3>
+                    {{-- PANEL: Al-Qur'an / Iqro (theme-aware light + dark) --}}
+                    <div id="quranPanel" class="hidden p-4 bg-white dark:bg-gray-900">
+                        <div class="hidden md:flex items-center justify-between mb-3 pb-3 border-b border-gray-200 dark:border-gray-800">
+                            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">🕌 Al-Qur'an Digital</h3>
                             <div class="flex gap-2">
-                                <button type="button" onclick="clearMarking()" class="px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded-lg transition">🗑️ Reset</button>
+                                <button type="button" onclick="clearMarking()" class="px-2.5 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded-lg transition border border-gray-200 dark:border-transparent">🗑️ Reset</button>
                                 <button type="button" onclick="backToDefaultView()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-lg transition">← Kembali</button>
                             </div>
                         </div>
 
-                        <div class="mb-3 border border-gray-800 rounded-lg overflow-hidden">
-                            <button type="button" onclick="toggleColorGuide(this)" class="w-full px-3 py-2.5 bg-gray-800 hover:bg-gray-750 text-left flex justify-between items-center transition">
-                                <span class="text-xs font-medium text-gray-400">🎨 Panduan Warna Marking</span>
+                        <div class="mb-3 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+                            <button type="button" onclick="toggleColorGuide(this)" class="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-750 text-left flex justify-between items-center transition">
+                                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">🎨 Panduan Warna Marking</span>
                                 <svg id="colorGuideIcon" class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             </button>
-                            <div id="colorGuideContent" class="hidden bg-gray-900 p-3 border-t border-gray-800">
+                            <div id="colorGuideContent" class="hidden bg-white dark:bg-gray-900 p-3 border-t border-gray-200 dark:border-gray-800">
                                 <div class="space-y-1.5 text-xs">
-                                    <div class="flex items-center gap-2 p-2 bg-emerald-950/50 rounded"><div class="w-3 h-3 bg-green-400 rounded flex-shrink-0"></div><span class="text-gray-300"><strong>🟢 Kelancaran</strong> — -4 poin/kata</span></div>
-                                    <div class="flex items-center gap-2 p-2 bg-amber-950/50 rounded"><div class="w-3 h-3 bg-yellow-400 rounded flex-shrink-0"></div><span class="text-gray-300"><strong>🟡 Tajwid</strong> — -4 poin/kata</span></div>
-                                    <div class="flex items-center gap-2 p-2 bg-red-950/50 rounded"><div class="w-3 h-3 bg-red-400 rounded flex-shrink-0"></div><span class="text-gray-300"><strong>🔴 Pelafalan</strong> — -4 poin/kata</span></div>
-                                    <p class="text-[10px] text-gray-600 pt-1">💡 Klik kata untuk marking. Klik lagi untuk ganti/hapus.</p>
+                                    <div class="flex items-center gap-2 p-2 bg-emerald-50 dark:bg-emerald-950/50 rounded"><div class="w-3 h-3 bg-green-400 rounded flex-shrink-0"></div><span class="text-gray-700 dark:text-gray-300"><strong>🟢 Kelancaran</strong> — -4 poin/kata</span></div>
+                                    <div class="flex items-center gap-2 p-2 bg-amber-50 dark:bg-amber-950/50 rounded"><div class="w-3 h-3 bg-yellow-400 rounded flex-shrink-0"></div><span class="text-gray-700 dark:text-gray-300"><strong>🟡 Tajwid</strong> — -4 poin/kata</span></div>
+                                    <div class="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-950/50 rounded"><div class="w-3 h-3 bg-red-400 rounded flex-shrink-0"></div><span class="text-gray-700 dark:text-gray-300"><strong>🔴 Pelafalan</strong> — -4 poin/kata</span></div>
+                                    <p class="text-[10px] text-gray-500 dark:text-gray-600 pt-1">💡 Klik kata untuk marking. Klik lagi untuk ganti/hapus.</p>
                                 </div>
                             </div>
                         </div>
 
                         <div id="quranDisplay"
-                             class="bg-gray-800/50 border border-gray-700/50 p-4 text-right overflow-y-auto custom-scrollbar mb-3 rounded-xl"
+                             class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 p-4 text-right overflow-y-auto custom-scrollbar mb-3 rounded-xl"
                              style="font-family: 'Amiri', 'Traditional Arabic', serif; min-height: 280px; max-height: 380px;">
                         </div>
 
-                        <div class="bg-gray-800/50 border border-gray-700/50 p-3 rounded-xl">
-                            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">📊 Statistik Setoran</h4>
+                        <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 p-3 rounded-xl">
+                            <h4 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">📊 Statistik Setoran</h4>
                             <div class="grid grid-cols-3 gap-2 mb-3">
-                                <div class="bg-gray-900 p-2.5 rounded-lg"><div class="text-[10px] text-gray-500 mb-0.5">Total Kata</div><div class="text-xl font-bold text-blue-400" id="displayTotalKata">0</div></div>
-                                <div class="bg-gray-900 p-2.5 rounded-lg"><div class="text-[10px] text-gray-500 mb-0.5">Juz Range</div><div class="text-lg font-bold text-purple-400" id="displayJuzRange">-</div></div>
-                                <div class="bg-gray-900 p-2.5 rounded-lg"><div class="text-[10px] text-gray-500 mb-0.5">Total Juz</div><div class="text-xl font-bold text-white" id="displayTotalJuz">0.00</div></div>
+                                <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-transparent p-2.5 rounded-lg"><div class="text-[10px] text-gray-500 mb-0.5">Total Kata</div><div class="text-xl font-bold text-blue-600 dark:text-blue-400" id="displayTotalKata">0</div></div>
+                                <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-transparent p-2.5 rounded-lg"><div class="text-[10px] text-gray-500 mb-0.5">Juz Range</div><div class="text-lg font-bold text-purple-600 dark:text-purple-400" id="displayJuzRange">-</div></div>
+                                <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-transparent p-2.5 rounded-lg"><div class="text-[10px] text-gray-500 mb-0.5">Total Juz</div><div class="text-xl font-bold text-gray-900 dark:text-white" id="displayTotalJuz">0.00</div></div>
                             </div>
-                            <div class="bg-gray-900 p-2.5 rounded-lg">
+                            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-transparent p-2.5 rounded-lg">
                                 <div class="flex items-center justify-between mb-2">
                                     <span class="text-[10px] text-gray-500 font-medium">📄 Halaman Mushaf Madinah</span>
-                                    <span class="text-[10px] text-gray-600">⚙️ Otomatis</span>
+                                    <span class="text-[10px] text-gray-500 dark:text-gray-600">⚙️ Otomatis</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <div class="flex-1 bg-gray-800 px-2.5 py-2 rounded-lg border border-gray-700"><div class="text-[10px] text-gray-500">Mulai</div><div class="text-base font-bold text-orange-400" id="displayPageStart">-</div></div>
-                                    <div class="text-gray-600">→</div>
-                                    <div class="flex-1 bg-gray-800 px-2.5 py-2 rounded-lg border border-gray-700"><div class="text-[10px] text-gray-500">Selesai</div><div class="text-base font-bold text-orange-400" id="displayPageEnd">-</div></div>
-                                    <div class="flex-1 bg-orange-950/50 px-2.5 py-2 rounded-lg border border-orange-900/30"><div class="text-[10px] text-gray-500">Total</div><div class="text-base font-bold text-orange-400" id="displayTotalPage">0.00</div></div>
+                                    <div class="flex-1 bg-gray-100 dark:bg-gray-800 px-2.5 py-2 rounded-lg border border-gray-200 dark:border-gray-700"><div class="text-[10px] text-gray-500">Mulai</div><div class="text-base font-bold text-orange-600 dark:text-orange-400" id="displayPageStart">-</div></div>
+                                    <div class="text-gray-400 dark:text-gray-600">→</div>
+                                    <div class="flex-1 bg-gray-100 dark:bg-gray-800 px-2.5 py-2 rounded-lg border border-gray-200 dark:border-gray-700"><div class="text-[10px] text-gray-500">Selesai</div><div class="text-base font-bold text-orange-600 dark:text-orange-400" id="displayPageEnd">-</div></div>
+                                    <div class="flex-1 bg-orange-50 dark:bg-orange-950/50 px-2.5 py-2 rounded-lg border border-orange-200 dark:border-orange-900/30"><div class="text-[10px] text-gray-500">Total</div><div class="text-base font-bold text-orange-600 dark:text-orange-400" id="displayTotalPage">0.00</div></div>
                                 </div>
                             </div>
                         </div>
@@ -659,30 +776,49 @@
 {{-- ============================================================ --}}
 {{-- STYLES                                                        --}}
 {{-- ============================================================ --}}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Amiri+Quran&display=swap" rel="stylesheet">
 <style>
-    body { background: #030712; }
+    body { background: #f3f4f6; }
+    html.dark body { background: #030712; }
+    /* Box panel sedikit lebih gelap dari gray-900 di dark mode */
+    html.dark #inputPage .dark\:bg-gray-900 { background-color: #161c28 !important; }
+
+    /* Badge setoran — ikut tema otomatis tanpa render ulang */
+.setoran-badge { background-color: #e0e7ff; color: #4338ca; }
+html.dark .setoran-badge { background-color: #312e81; color: #a5b4fc; }
+
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+
+    /* Form fields — terang default, gelap saat html.dark */
     .form-input, .form-select, .form-select-sm, .form-textarea {
-        background: #111827; border: 1px solid #374151; color: #e5e7eb;
+        background: #ffffff; border: 1px solid #d1d5db; color: #111827;
         border-radius: 0.5rem; font-size: 0.8125rem; padding: 0.5rem 0.625rem;
         transition: border-color 0.15s;
+    }
+    html.dark .form-input, html.dark .form-select, html.dark .form-select-sm, html.dark .form-textarea {
+        background: #111827; border: 1px solid #374151; color: #e5e7eb;
     }
     .form-select-sm { padding: 0.4rem 0.5rem; font-size: 0.75rem; }
     .form-input:focus, .form-select:focus, .form-select-sm:focus, .form-textarea:focus {
         outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
     }
     .form-textarea { resize: vertical; }
-    input[type="date"]::-webkit-calendar-picker-indicator {
-        filter: invert(1); cursor: pointer; opacity: 0.7;
-    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; }
+    html.dark input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.7; }
     input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
     .mode-card input:checked ~ .mode-card-inner { border-color: #6366f1; background: rgba(99,102,241,0.1); }
     .mode-card input[value="presensi_only"]:checked ~ .mode-card-inner { border-color: #3b82f6; background: rgba(59,130,246,0.08); }
     .mode-card input[value="setoran_only"]:checked ~ .mode-card-inner { border-color: #10b981; background: rgba(16,185,129,0.08); }
-    .status-radio-label input:checked ~ .status-radio-inner { border-color: #6366f1; background: rgba(99,102,241,0.1); color: #a5b4fc; }
+    .status-radio-label input:checked ~ .status-radio-inner { border-color: #6366f1; background: rgba(99,102,241,0.1); color: #4f46e5; }
+    html.dark .status-radio-label input:checked ~ .status-radio-inner { color: #a5b4fc; }
+
     @keyframes fade-in { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
     .animate-fade-in { animation: fade-in 0.25s ease-out; }
     .section-open .section-chevron { transform: rotate(180deg); }
@@ -693,15 +829,17 @@
         .mobile-hide-bottom { display: none !important; }
     }
 
+    /* Custom select widget — terang default, gelap saat html.dark */
     .cs-wrap { position: relative; width: 100%; }
     .cs-btn {
         width: 100%; text-align: left; padding: 7px 10px;
-        border: 1px solid #374151; border-radius: 0.5rem;
-        background: #111827; color: #e5e7eb; font-size: 0.8125rem;
+        border: 1px solid #d1d5db; border-radius: 0.5rem;
+        background: #ffffff; color: #111827; font-size: 0.8125rem;
         cursor: pointer; display: flex; justify-content: space-between; align-items: center;
         min-height: 36px; box-sizing: border-box; transition: border-color 0.15s;
         font-family: inherit; line-height: 1.25;
     }
+    html.dark .cs-btn { background: #111827; color: #e5e7eb; border-color: #374151; }
     .cs-btn:hover, .cs-btn.open { border-color: #6366f1; }
     .cs-btn.cs-disabled { opacity: 0.4; cursor: not-allowed; }
     .cs-btn .cs-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; font-size: 0.8125rem; }
@@ -710,25 +848,29 @@
     .cs-btn.open .cs-arr { transform: rotate(180deg); }
     .cs-drop {
         display: none; position: absolute; top: calc(100% + 2px); left: 0; right: 0;
-        z-index: 99999; background: #1f2937;
-        border: 1px solid #374151; border-radius: 0.5rem;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.6); overflow: hidden;
+        z-index: 99999; background: #ffffff;
+        border: 1px solid #d1d5db; border-radius: 0.5rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.18); overflow: hidden;
     }
+    html.dark .cs-drop { background: #1f2937; border-color: #374151; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
     .cs-drop.open { display: block; }
     .cs-search {
         width: 100%; padding: 7px 10px; border: none;
-        border-bottom: 1px solid #374151; outline: none; font-size: 0.75rem;
-        background: #111827; color: #f3f4f6; box-sizing: border-box; font-family: inherit;
+        border-bottom: 1px solid #e5e7eb; outline: none; font-size: 0.75rem;
+        background: #ffffff; color: #111827; box-sizing: border-box; font-family: inherit;
     }
+    html.dark .cs-search { background: #111827; color: #f3f4f6; border-bottom-color: #374151; }
     .cs-search::placeholder { color: #6b7280; }
     .cs-list {
         max-height: 180px; overflow-y: auto; margin: 0; padding: 2px 0; list-style: none;
-        scrollbar-width: thin; scrollbar-color: #374151 transparent;
+        scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;
     }
+    html.dark .cs-list { scrollbar-color: #374151 transparent; }
     .cs-list li {
-        padding: 6px 10px; font-size: 0.75rem; cursor: pointer; color: #e5e7eb;
+        padding: 6px 10px; font-size: 0.75rem; cursor: pointer; color: #111827;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background 0.1s;
     }
+    html.dark .cs-list li { color: #e5e7eb; }
     .cs-list li:hover, .cs-list li.cs-hi { background: #6366f1 !important; color: white !important; }
     .cs-list li.cs-ph { color: #6b7280; font-style: italic; }
     .cs-list li.cs-gone { display: none; }
@@ -757,6 +899,21 @@
 #quranDisplayDrawer #quranText {
     word-spacing: -4px !important;     /* ← rapatkan spasi HTML antar span */
 }
+
+        /* ✅ IQRO di drawer mobile — sel Iqro JANGAN ikut aturan word-item Al-Qur'an.
+           Tanpa ini sel Iqro kena font-size:24px (kekecilan) + display:inline-block,
+           sedangkan tingginya tetap 100px inline → huruf kecil di kotak besar.
+           Selector .iqro-page .word-item lebih spesifik → menang. */
+        #quranDisplayDrawer .iqro-page .word-item {
+            font-size: 32px !important;
+            height: 64px !important;
+            padding: 0 6px !important;
+            margin: 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            line-height: 1.4 !important;
+        }
 
         /* Nomor ayat dalam tanda kurung Arab */
         #quranDisplayDrawer #quranText > span:not(.word-item) {
@@ -788,6 +945,45 @@
             max-height: 50vh !important;     /* 50% tinggi layar */
         }
     }
+
+    /* ============================================================ */
+/* READER (Al-Qur'an & Iqro) — token warna teks Arab            */
+/* Default GELAP; di light mode (html bukan .dark) jadi terang. */
+/* PDF Iqro tidak terpengaruh (di-handle di iqro-handler.js).   */
+/* ============================================================ */
+#quranPanel, #quranPanelDrawer, #quranDisplay, #quranDisplayDrawer {
+    --q-fg: #ffffff;
+    --q-num: rgba(255,255,255,0.55);
+    --q-box-border: rgba(255,255,255,0.85);
+    --q-line: rgba(255,255,255,0.30);
+    --q-nav-bg: rgba(17,24,39,0.96);
+    --q-nav-btn: #374151;
+    --q-nav-btn-fg: #e5e7eb;
+    --q-nav-label: #cbd5e1;
+}
+html:not(.dark) #quranPanel,
+html:not(.dark) #quranPanelDrawer,
+html:not(.dark) #quranDisplay,
+html:not(.dark) #quranDisplayDrawer {
+    --q-fg: #1f2937;
+    --q-num: rgba(31,41,55,0.55);
+    --q-box-border: rgba(31,41,55,0.55);
+    --q-line: rgba(31,41,55,0.22);
+    --q-nav-bg: #eef2ff;
+    --q-nav-btn: #e0e7ff;
+    --q-nav-btn-fg: #3730a3;
+    --q-nav-label: #4f46e5;
+}
+
+/* ============================================================ */
+/* FONT READER IQRO  */
+/* ============================================================ */
+
+#quranDisplay .iqro-page, #quranDisplay .iqro-page *,
+#quranDisplayDrawer .iqro-page, #quranDisplayDrawer .iqro-page *,
+.iqro-cap .iqro-page, .iqro-cap .iqro-page * {
+    font-family: 'Amiri', 'Amiri Quran', serif !important;
+}
 
     /* Progress bar notif — countdown 10 detik */
 .success-notification > div,
@@ -1564,18 +1760,21 @@ async function loadPresensiHariIniToTarget(target) {
             tableHeaderRow.appendChild(th);
         });
         const tableBody = getEl('tableBodyPresensi');
+        const isDark = document.documentElement.classList.contains('dark');
+        const setoranBg  = isDark ? '#312e81' : '#e0e7ff';
+        const setoranFg  = isDark ? '#a5b4fc' : '#4338ca';
         if (data.santri_list && data.santri_list.length > 0) {
             tableBody.innerHTML = data.santri_list.map((santri, index) => {
                 const sesiCells = sesiHeaders.map(sesi => {
                     const p = santri.sesi_data && santri.sesi_data[sesi];
                     if (p) {
-                        const colorMap = { Hadir:'bg-emerald-500', Sakit:'bg-orange-500', Izin:'bg-amber-500', Alpha:'bg-red-500' };
-                        const colorClass = colorMap[p.status] || 'bg-gray-500';
+                        // Inline hex agar warna titik status TIDAK bergantung pada purge Tailwind
+                        const colorMap = { Hadir:'#10b981', Sakit:'#f97316', Izin:'#f59e0b', Alpha:'#ef4444' };
+                        const dotColor = colorMap[p.status] || '#6b7280';
                         const jumlahSetoran = p.jumlah_setoran || 0;
                         const waktu = p.waktu || '';
-                        return `<td class="px-1 py-2"><div class="flex flex-col items-center gap-0.5"><div class="flex items-center gap-1"><div class="w-4 h-4 rounded-full ${colorClass}" title="${p.status}${waktu ? ' - ' + waktu : ''}"></div>${jumlahSetoran > 0 ? `<span class="text-[9px] bg-indigo-950 text-indigo-400 rounded px-0.5">📖${jumlahSetoran}</span>` : ''}</div>${waktu ? `<span class="text-[8px] text-gray-600 font-mono">${waktu}</span>` : ''}</div></td>`;
-                    }
-                    return `<td class="px-1 py-2"><div class="flex justify-center"><div class="w-4 h-4 rounded-full border border-gray-700"></div></div></td>`;
+return `<td class="px-1 py-2"><div class="flex flex-col items-center gap-0.5"><div class="flex items-center gap-1"><div class="w-4 h-4 rounded-full" style="background-color:${dotColor};" title="${p.status}${waktu ? ' - ' + waktu : ''}"></div>${jumlahSetoran > 0 ? `<span class="setoran-badge text-[9px] rounded px-0.5">📖${jumlahSetoran}</span>` : ''}</div>${waktu ? `<span class="text-[8px] text-gray-500 font-mono">${waktu}</span>` : ''}</div></td>`;                    }
+                    return `<td class="px-1 py-2"><div class="flex justify-center"><div class="w-4 h-4 rounded-full" style="border:1px solid #9ca3af;"></div></div></td>`;
                 }).join('');
                 return `<tr class="hover:bg-gray-800/30 transition-colors"><td class="px-2 py-2 text-gray-500 text-center">${index + 1}</td><td class="px-2 py-2 text-gray-300 font-medium">${santri.name}</td>${sesiCells}</tr>`;
             }).join('');
@@ -1612,55 +1811,37 @@ document.addEventListener('DOMContentLoaded', function () {
     // ============================================================
     function setupNotificationHandler() {
         document.querySelectorAll('.success-notification, .error-notification, .warning-notification').forEach(alert => {
- 
-            // Cegah double-attach
             if (alert._notifHandlerAttached) return;
             alert._notifHandlerAttached = true;
- 
-            // Pastikan notifikasi terlihat (force display)
+
             alert.style.display = '';
             alert.style.opacity = '1';
             alert.style.visibility = 'visible';
- 
-            // Pastikan notifikasi di atas semua elemen lain
-            // (z-index inline untuk override apapun)
             alert.style.zIndex = '300';
- 
-           const closeBtn = alert.querySelector('.close-notification');
 
-            // Auto-hide untuk SEMUA jenis notifikasi setelah 10 detik
-            const autoHideTimer = setTimeout(() => {
-                if (!alert.isConnected) return; // sudah di-remove manual
+            // Auto-hide SEMUA notif setelah 10 detik
+            alert._autoHideTimer = setTimeout(() => {
+                if (!alert.isConnected) return;
                 alert.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
                 alert.style.opacity = '0';
                 alert.style.transform = 'translateY(-20px)';
-                setTimeout(() => {
-                    if (alert.isConnected) alert.remove();
-                }, 500);
+                setTimeout(() => { if (alert.isConnected) alert.remove(); }, 500);
             }, 10000);
- 
-            // Tombol close manual
+
+            const closeBtn = alert.querySelector('.close-notification');
             if (closeBtn) {
                 closeBtn.addEventListener('click', () => {
-                    if (autoHideTimer) clearTimeout(autoHideTimer);
+                    if (alert._autoHideTimer) clearTimeout(alert._autoHideTimer);
                     alert.style.transition = 'opacity 0.3s';
                     alert.style.opacity = '0';
-                    setTimeout(() => {
-                        if (alert.isConnected) alert.remove();
-                    }, 300);
+                    setTimeout(() => { if (alert.isConnected) alert.remove(); }, 300);
                 }, { once: true });
             }
         });
     }
- 
-    // ✅ Jalankan SEKARANG (DOM sudah ready)
+
     setupNotificationHandler();
- 
-    // ✅ Jalankan lagi setelah 100ms (jaga-jaga kalau ada notifikasi yang
-    //    di-inject lewat JS sedikit telat, misalnya dari error handler)
     setTimeout(setupNotificationHandler, 100);
- 
-    // ✅ Jalankan lagi setelah 500ms (jaga-jaga untuk slow render di mobile)
     setTimeout(setupNotificationHandler, 500);
  
     // Handler tanggal change untuk refresh presensi
@@ -1714,11 +1895,35 @@ function toggleColorGuide(triggerBtn) {
 }
 
 function clearMarking() {
+    // ✅ FIX: Bersihkan SEMUA style marking di SEMUA elemen (asli + clone drawer mobile)
+    // Selector mencakup #quranDisplay (desktop) DAN #quranDisplayDrawer (mobile clone)
     document.querySelectorAll('.word-item, .quran-word').forEach(word => {
-        word.classList.remove('bg-green-400', 'bg-yellow-400', 'bg-red-400', 'text-white');
-        word.style.backgroundColor = '';
-        if (word.dataset.markState !== undefined) word.dataset.markState = '0';
+        // Reset state
+        word.setAttribute('data-mark-state', '0');
+        word.dataset.markState = '0';
+
+        // Hapus class warna lama (legacy)
+        word.classList.remove(
+            'bg-green-400', 'bg-yellow-400', 'bg-red-400', 'text-white',
+            'bg-green-200', 'bg-yellow-200', 'bg-red-200',
+            'dark:bg-green-800', 'dark:bg-yellow-800', 'dark:bg-red-800',
+            'border-l-4', 'border-green-500', 'border-yellow-500', 'border-red-500'
+        );
+
+        // ✅ Hapus SEMUA inline style gradient marking (yang dipasang markWord & applyMarkStyleToClone)
+        word.style.removeProperty('background');
+        word.style.removeProperty('background-color');
+        word.style.removeProperty('border-radius');
+        word.style.removeProperty('padding');
+        word.style.removeProperty('box-shadow');
+        word.style.removeProperty('transform');
+
+        // Pastikan cursor & transition tetap (biar bisa di-klik lagi)
+        word.style.cursor     = 'pointer';
+        word.style.transition = 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
     });
+
+    // Reset counter di kedua mode
     [
         ['kesalahanKelancaranCombined',    'displayKelancaranCombined'],
         ['kesalahanTajwidCombined',        'displayTajwidCombined'],
@@ -1730,9 +1935,25 @@ function clearMarking() {
         const input   = document.getElementById(inputId);   if (input)   input.value = 0;
         const display = document.getElementById(displayId); if (display) display.textContent = '0';
     });
-    ['displayNilaiCombined','displayNilaiSetoranOnly'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '100'; });
-    ['nilaiCombined','nilaiSetoranOnly'].forEach(id => { const el = document.getElementById(id); if (el) el.value = '100'; });
+
+    // Reset nilai
+    ['displayNilaiCombined', 'displayNilaiSetoranOnly'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.textContent = '100';
+    });
+    ['nilaiCombined', 'nilaiSetoranOnly'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '100';
+    });
+
+    // ✅ Reset variabel global kesalahanCount (dipakai PDF)
+    if (typeof window.kesalahanCount !== 'undefined') {
+        window.kesalahanCount.kelancaran = 0;
+        window.kesalahanCount.tajwid     = 0;
+        window.kesalahanCount.pelafalan  = 0;
+    }
+
     if (typeof updateStatistikSetoran === 'function') updateStatistikSetoran();
+
+    console.log('🗑️ Semua marking & style telah dibersihkan dari quranDisplay + quranDisplayDrawer');
     alert('🗑️ Semua marking telah dihapus');
 }
 
@@ -1809,8 +2030,8 @@ function resetMarkingCounterForMode(mode) {
                     quranDisplay.dataset.loadedKey = newKey;
                     console.log(`💾 Quran loaded key saved: ${newKey}`);
                 }
-                // ✅ Reset sekali lagi setelah load selesai (jaga-jaga kalau ada race condition)
-                resetMarkingCounterForMode(mode);
+                // ❌ HAPUS: reset kedua di sini menyebabkan marking user hilang
+                // resetMarkingCounterForMode(mode);
             }, 500);
 
             return result;
@@ -1851,6 +2072,10 @@ function resetMarkingCounterForMode(mode) {
         'suratEndSetoranOnly':     { searchable: true,  placeholder: '-- Otomatis --', noResultText: '❌ Tidak ditemukan' },
         'ayatStartSetoranOnly':    { searchable: false, placeholder: '-- Pilih Surat --', live: true },
         'ayatEndSetoranOnly':      { searchable: false, placeholder: '-- Pilih Ayat --',  live: true },
+        'iqroHalamanStartCombined':{ searchable: false, placeholder: '-- Mulai --',   live: true },
+        'iqroHalamanEndCombined':  { searchable: false, placeholder: '-- Selesai --', live: true },
+        'iqroHalamanStartSetoranOnly':{ searchable: false, placeholder: '-- Mulai --',   live: true },
+        'iqroHalamanEndSetoranOnly':  { searchable: false, placeholder: '-- Selesai --', live: true },
     };
     const PLAIN_SELECTORS = ['#formPresensiOnly select[name="santri_id"]','#formPresensiOnly select[name="sesi"]'];
     const widgets = {};
@@ -1966,6 +2191,7 @@ function resetMarkingCounterForMode(mode) {
 (function () {
     'use strict';
     let hafalanData = {}, currentSantriId = null, fetchPending = false;
+    let iqroData = {}, iqroFetchPending = false;
     const TOTAL_AYAT = {
         "1. Al-Fatihah":7,"2. Al-Baqarah":286,"3. Ali 'Imran":200,"4. An-Nisa'":176,
         "5. Al-Ma'idah":120,"6. Al-An'am":165,"7. Al-A'raf":206,"8. Al-Anfal":75,
@@ -2009,6 +2235,51 @@ function resetMarkingCounterForMode(mode) {
         } catch (e) { hafalanData[santriId] = {}; }
         finally { fetchPending = false; applyAllIndicators(); }
     }
+    async function fetchIqroSantri(santriId) {
+        if (!santriId) { iqroData[null] = {}; return; }
+        if (iqroFetchPending) return;
+        if (iqroData[santriId]) { applyAllIqroIndicators(); return; }
+        iqroFetchPending = true;
+        try {
+            const res = await fetch(`/guru/iqro-santri?santri_id=${encodeURIComponent(santriId)}`, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            iqroData[santriId] = await res.json() || {};
+        } catch (e) { iqroData[santriId] = {}; }
+        finally { iqroFetchPending = false; applyAllIqroIndicators(); }
+    }
+
+    function isHalamanSelesai(jilid, halaman, santriId) {
+        const data = iqroData[santriId];
+        if (!data) return false;
+        const arr = data[String(parseInt(jilid))] || [];
+        return arr.map(Number).includes(Number(halaman));
+    }
+
+    function getJilidForMode(mode) {
+        return document.getElementById('iqroJilid' + mode)?.value || '';
+    }
+
+    function applyIqroIndicatorToWidget(widgetId, mode) {
+        const w = window._csWidgets?.[widgetId]; if (!w) return;
+        const santriId = currentSantriId;
+        const jilid    = getJilidForMode(mode);
+        Array.from(w.list.querySelectorAll('li')).forEach(li => {
+            li.querySelectorAll('.hi-indicator').forEach(el => el.remove());
+            if (!santriId || !jilid || li.classList.contains('cs-ph') || !li.dataset.value) return;
+            const halaman = parseInt(li.dataset.value);
+            if (!halaman || !isHalamanSelesai(jilid, halaman, santriId)) return;
+            const chk = document.createElement('span'); chk.className = 'hi-indicator'; chk.textContent = '✓';
+            chk.style.cssText = 'color:#22c55e;font-weight:bold;font-size:0.8rem;margin-right:4px;flex-shrink:0;';
+            li.style.display = 'flex'; li.style.alignItems = 'center'; li.insertBefore(chk, li.firstChild);
+        });
+    }
+
+    function applyAllIqroIndicators() {
+        ['Combined','SetoranOnly'].forEach(mode => {
+            ['iqroHalamanStart','iqroHalamanEnd'].forEach(prefix =>
+                applyIqroIndicatorToWidget(`${prefix}${mode}`, mode));
+        });
+    }
     function getActiveKategori(mode) { const id = mode === 'SetoranOnly' ? 'kategoriSetoranOnly' : 'kategoriSetoranCombined'; return document.getElementById(id)?.value || ''; }
     function isHafalanMode(mode) { return getActiveKategori(mode) === 'Hafalan'; }
     function getSuratStatus(suratName, santriId) {
@@ -2047,232 +2318,139 @@ function resetMarkingCounterForMode(mode) {
         });
     }
     function init() {
-        ['santriSelectCombined','santriSelectSetoranOnly'].forEach(id => {
+       ['santriSelectCombined','santriSelectSetoranOnly'].forEach(id => {
             document.getElementById(id)?.addEventListener('change', function() {
                 if (this.value === currentSantriId) return;
-                currentSantriId = this.value || null; applyAllIndicators();
-                if (currentSantriId) fetchHafalanSantri(currentSantriId);
+                currentSantriId = this.value || null; applyAllIndicators(); applyAllIqroIndicators();
+                if (currentSantriId) { fetchHafalanSantri(currentSantriId); fetchIqroSantri(currentSantriId); }
             });
         });
         ['kategoriSetoranCombined','kategoriSetoranOnly'].forEach(id => document.getElementById(id)?.addEventListener('change', applyAllIndicators));
+
+        // Iqro: jilid berubah → centang halaman jilid itu; dropdown halaman
+        // diisi dinamis (live) → pantau perubahan opsi lalu re-apply ✓
+        ['Combined','SetoranOnly'].forEach(mode => {
+            document.getElementById('iqroJilid' + mode)?.addEventListener('change',
+                () => setTimeout(() => applyAllIqroIndicators(), 200));
+            ['iqroHalamanStart','iqroHalamanEnd'].forEach(prefix => {
+                const el = document.getElementById(`${prefix}${mode}`);
+                if (el) new MutationObserver(() => applyIqroIndicatorToWidget(`${prefix}${mode}`, mode))
+                            .observe(el, { childList: true, subtree: true });
+            });
+        });
         ['Combined','SetoranOnly'].forEach(mode => {
             ['suratStart','suratEnd'].forEach(prefix => {
                 document.getElementById(`${prefix}${mode}`)?.addEventListener('change', () => setTimeout(() => { applyIndicatorToWidget(`ayatStart${mode}`, mode); applyIndicatorToWidget(`ayatEnd${mode}`, mode); }, 150));
             });
             ['ayatStart','ayatEnd'].forEach(prefix => {
-                const el = document.getElementById(`${prefix}${mode}`); if (!el) return;
-                new MutationObserver(() => setTimeout(() => applyIndicatorToWidget(`${prefix}${mode}`, mode), 50)).observe(el, { childList: true });
+                const el = document.getElementById(`${prefix}${mode}`);
+                // Ayat di-isi dinamis (auto-fill) → pantau perubahan opsi lalu re-apply ✓
+                if (el) new MutationObserver(() => applyIndicatorToWidget(`${prefix}${mode}`, mode))
+                            .observe(el, { childList: true, subtree: true });
             });
         });
-        console.log('✅ Hafalan Indicator ready');
     }
-    document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', () => setTimeout(init, 700)) : setTimeout(init, 700);
-    window._hafalanIndicator = { hafalanData, getSuratStatus, isAyatSelesai, applyAllIndicators };
+    document.readyState === 'loading'
+        ? document.addEventListener('DOMContentLoaded', () => setTimeout(init, 600))
+        : setTimeout(init, 600);
 })();
 </script>
 
+{{-- ============================================================ --}}
+{{-- JAVASCRIPT: AUTO-SET METODE & JILID DARI TARGET SANTRI       --}}
+{{-- ============================================================ --}}
 <script>
-// ============================================================
-// ✅ CLIENT-SIDE NOTIFICATION v4.1 — JAMINAN MUNCUL + CEGAH DOUBLE
-// ============================================================
-(function() {
+(function () {
     'use strict';
- 
-    const STORAGE_KEY = 'pendingNotification';
- 
-    function showClientNotification(message, type = 'success') {
-        document.querySelectorAll('.client-side-notif').forEach(el => el.remove());
- 
-        const colors = {
-            success: { bg: '#059669', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
-            error:   { bg: '#dc2626', icon: 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-            warning: { bg: '#d97706', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' }
-        };
-        const c = colors[type] || colors.success;
- 
-        const notif = document.createElement('div');
-        notif.className = 'client-side-notif';
-        notif.style.cssText = `
-            position: fixed; top: 12px; right: 12px; left: 12px;
-            z-index: 999999; max-width: 380px; margin-left: auto;
-            animation: notifSlideIn 0.3s ease-out;
-        `;
-        notif.innerHTML = `
-            <div style="
-                background: ${c.bg}; color: white; padding: 14px 16px;
-                border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.4);
-                display: flex; align-items: flex-start; gap: 12px;
-                font-family: system-ui, -apple-system, sans-serif;
-            ">
-                <svg style="width:20px;height:20px;flex-shrink:0;margin-top:2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${c.icon}"/>
-                </svg>
-                <div style="flex:1;min-width:0;">
-                    <p style="font-weight:500;font-size:14px;margin:0;line-height:1.4;">${message}</p>
-                    
-                </div>
-                <button type="button" style="background:none;border:none;color:white;opacity:0.7;cursor:pointer;padding:0;flex-shrink:0;">
-                    <svg style="width:18px;height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-            <style>
-                @keyframes notifSlideIn  { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
-                @keyframes notifSlideOut { from { opacity:1; transform:translateY(0); } to { opacity:0; transform:translateY(-20px); } }
-            </style>
-        `;
-        document.body.appendChild(notif);
- 
-        const closeBtn = notif.querySelector('button');
-        const removeNotif = () => {
-            notif.style.animation = 'notifSlideOut 0.3s ease-out forwards';
-            setTimeout(() => notif.remove(), 300);
-        };
-        closeBtn.addEventListener('click', removeNotif);
-        setTimeout(removeNotif, 10000);
+
+    // Tampilkan/sembunyikan blok setelah-santri (Data Setoran, Audio, Submit) di form Combined
+
+    function toggleCombinedSections(show) {
+        document.querySelectorAll('#formCombined .combined-after-santri').forEach(el => {
+            el.classList.toggle('hidden', !show);
+        });
     }
- 
-    function scheduleNotification(message, type = 'success') {
-        try {
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-                message: message, type: type, timestamp: Date.now()
-            }));
-            console.log('💾 Notifikasi dijadwalkan:', message);
-        } catch (e) {
-            console.warn('⚠️ sessionStorage tidak tersedia:', e);
+
+    // Tampilkan/sembunyikan blok setelah-santri di form Setoran Tambahan
+    function toggleSetoranSections(show) {
+        document.querySelectorAll('#formSetoranOnly .setoran-after-santri').forEach(el => {
+            el.classList.toggle('hidden', !show);
+        });
+    }
+
+    function applyTargetFor(mode) {
+        const santriId = mode === 'SetoranOnly' ? 'santriSelectSetoranOnly' : 'santriSelectCombined';
+        const santriEl = document.getElementById(santriId);
+        if (!santriEl) return;
+
+        const opt = santriEl.options[santriEl.selectedIndex];
+
+        // Combined / SetoranOnly: buka blok setelah santri dipilih, tutup saat dikosongkan
+        if (mode === 'Combined') {
+            toggleCombinedSections(!!(opt && opt.value));
         }
-    }
- 
-    function checkPendingNotification() {
-        try {
-            const raw = sessionStorage.getItem(STORAGE_KEY);
-            if (!raw) return;
- 
-            const data = JSON.parse(raw);
- 
-            // Buang yang basi (>60 detik)
-            if (Date.now() - (data.timestamp || 0) > 60000) {
-                sessionStorage.removeItem(STORAGE_KEY);
-                return;
-            }
- 
-            // ✅ FIX v4.1: Cek apakah flash session server SUDAH RENDER notifikasi.
-            // Kalau ada, JANGAN tampilkan client-side notif (cegah double).
-            const serverNotif = document.querySelector(
-                '.success-notification, .error-notification, .warning-notification'
-            );
- 
-            if (serverNotif && serverNotif.isConnected) {
-                console.log('ℹ️ Flash session sudah muncul → skip client-side notif (cegah double)');
-                sessionStorage.removeItem(STORAGE_KEY);
-                return;
-            }
- 
-            // Flash session TIDAK muncul → tampilkan client-side sebagai backup
-            sessionStorage.removeItem(STORAGE_KEY);
-            console.log('📢 Flash session tidak muncul → tampilkan client-side notif:', data.message);
-            showClientNotification(data.message, data.type || 'success');
-        } catch (e) {
-            console.warn('⚠️ Error membaca notifikasi:', e);
-            sessionStorage.removeItem(STORAGE_KEY);
+        if (mode === 'SetoranOnly') {
+            toggleSetoranSections(!!(opt && opt.value));
         }
-    }
-    // ☝️ INI "}" PENUTUP checkPendingNotification — JANGAN LUPA!
- 
-    // Export ke window
-    window.showClientNotification   = showClientNotification;
-    window.scheduleNotification     = scheduleNotification;
-    window.checkPendingNotification = checkPendingNotification;
- 
-    // ✅ FIX v4.1: Wrap auto-check dengan delay 300ms agar flash session
-    // server sempat ter-render dulu sebelum dicek.
-    function delayedCheckPendingNotification() {
-        setTimeout(checkPendingNotification, 300);
-    }
- 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', delayedCheckPendingNotification);
-    } else {
-        delayedCheckPendingNotification();
-    }
- 
-    // ✅ Pasang click handler langsung di tombol submit desktop
-    function attachDesktopSubmitButtonHandler() {
-        // Tombol submit form Combined
-        const btnCombined = document.getElementById('submitBtnCombined');
-        if (btnCombined && !btnCombined._notifClickAttached) {
-            btnCombined._notifClickAttached = true;
-            btnCombined.addEventListener('click', function() {
-                const form = document.getElementById('formCombined');
-                if (!form) return;
-                const santriId = form.querySelector('[name="santri_id"]')?.value;
-                const tanggal  = form.querySelector('[name="tanggal"]')?.value;
-                const sesi     = form.querySelector('[name="sesi"]')?.value;
-                if (!santriId || !tanggal || !sesi) return;
- 
-                window.scheduleNotification(' Presensi & setoran berhasil disimpan!', 'success');
-            }, true);
-            console.log('✅ Handler submit desktop Combined terpasang');
+
+        if (!opt || !opt.value) return;
+
+        const targetMetode = (opt.dataset.targetMetode || 'quran').toLowerCase();
+        const targetJilid  = opt.dataset.targetJilid || '';
+
+        const metodeEl = document.getElementById('metode' + mode);
+        if (metodeEl) {
+            metodeEl.value = (targetMetode === 'iqro' || targetMetode === 'ummi') ? 'Iqro' : "Al-Qur'an";
+            // Sinkronkan custom-select bila ada, lalu jalankan toggle blok Iqro/Quran
+            if (typeof window._csSyncFromNative === 'function') window._csSyncFromNative('metode' + mode);
+            if (typeof window.toggleMetode === 'function') window.toggleMetode(mode);
         }
- 
-        // Tombol submit form Setoran Only
-        const btnSetoran = document.getElementById('submitBtnSetoranOnly');
-        if (btnSetoran && !btnSetoran._notifClickAttached) {
-            btnSetoran._notifClickAttached = true;
-            btnSetoran.addEventListener('click', function() {
-                const form = document.getElementById('formSetoranOnly');
-                if (!form) return;
-                const santriId = form.querySelector('[name="santri_id"]')?.value;
-                const tanggal  = form.querySelector('[name="tanggal"]')?.value;
-                const sesi     = form.querySelector('[name="sesi"]')?.value;
-                if (!santriId || !tanggal || !sesi) return;
- 
-                window.scheduleNotification('✅ Setoran tambahan berhasil disimpan!', 'success');
-            }, true);
-            console.log('✅ Handler submit desktop SetoranOnly terpasang');
-        }
- 
-        // Form Presensi Only — submit native
-        const formPresensi = document.getElementById('formPresensiOnly');
-        if (formPresensi && !formPresensi._notifClickAttached) {
-            formPresensi._notifClickAttached = true;
-            const submitBtn = formPresensi.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.addEventListener('click', function() {
-                    const santriId = formPresensi.querySelector('[name="santri_id"]')?.value;
-                    const tanggal  = formPresensi.querySelector('[name="tanggal"]')?.value;
-                    const sesi     = formPresensi.querySelector('[name="sesi"]')?.value;
-                    const status   = formPresensi.querySelector('[name="status"]:checked');
-                    if (!santriId || !tanggal || !sesi || !status) return;
- 
-                    window.scheduleNotification(' Presensi berhasil disimpan!', 'success');
-                }, true);
-                console.log('✅ Handler submit desktop PresensiOnly terpasang');
+
+        // Iqro → set jilid & isi halaman
+        if ((targetMetode === 'iqro' || targetMetode === 'ummi') && targetJilid) {
+            const jilidEl = document.getElementById('iqroJilid' + mode);
+            if (jilidEl) {
+                // Pastikan opsi jilid target tersedia
+                if (![...jilidEl.options].some(o => o.value === String(targetJilid))) {
+                    const o = document.createElement('option');
+                    o.value = String(targetJilid);
+                    o.textContent = 'Jilid ' + targetJilid;
+                    jilidEl.appendChild(o);
+                }
+                jilidEl.value = String(targetJilid);
+                jilidEl.dispatchEvent(new Event('change', { bubbles: true }));
+                if (typeof window._csSyncFromNative === 'function') window._csSyncFromNative('iqroJilid' + mode);
             }
         }
     }
- 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', attachDesktopSubmitButtonHandler);
-    } else {
-        attachDesktopSubmitButtonHandler();
+
+    function init() {
+        ['Combined', 'SetoranOnly'].forEach(mode => {
+            const santriId = mode === 'SetoranOnly' ? 'santriSelectSetoranOnly' : 'santriSelectCombined';
+            document.getElementById(santriId)?.addEventListener('change', () => applyTargetFor(mode));
+        });
+        console.log('✅ Auto-set metode & jilid (target santri) ready');
     }
-    setTimeout(attachDesktopSubmitButtonHandler, 1000);
- 
-    console.log('✅ Client-side notification system v4.1 ready');
+
+    document.readyState === 'loading'
+        ? document.addEventListener('DOMContentLoaded', () => setTimeout(init, 650))
+        : setTimeout(init, 650);
 })();
 </script>
 
-{{-- JAVASCRIPT FILES (eksternal) --}}
-<script src="{{ asset('js/complete-quran-mapping.js') }}"></script>
-<script src="{{ asset('js/complete-quran-mapping-wrapper.js') }}"></script>
-<script src="{{ asset('js/auto-fill-page.js') }}"></script>
-<script src="{{ asset('js/page-juz-calculator.js') }}"></script>
-<script src="{{ asset('js/mode-handler.js') }}"></script>
-<script src="{{ asset('js/quran-api.js') }}"></script>
-<script src="{{ asset('js/setoran-interactive.js') }}"></script>
-<script src="{{ asset('js/audio-recorder.js') }}"></script>
-<script src="{{ asset('js/unified-input.js') }}"></script>
+{{-- ============================================================ --}}
+{{-- EXTERNAL JS (cache-busted via filemtime → auto-update saat file disimpan) --}}
+{{-- ============================================================ --}}
+<script src="{{ asset('js/complete-quran-mapping.js') }}?v={{ filemtime(public_path('js/complete-quran-mapping.js')) }}"></script>
+<script src="{{ asset('js/complete-quran-mapping-wrapper.js') }}?v={{ filemtime(public_path('js/complete-quran-mapping-wrapper.js')) }}"></script>
+<script src="{{ asset('js/auto-fill-page.js') }}?v={{ filemtime(public_path('js/auto-fill-page.js')) }}"></script>
+<script src="{{ asset('js/page-juz-calculator.js') }}?v={{ filemtime(public_path('js/page-juz-calculator.js')) }}"></script>
+<script src="{{ asset('js/mode-handler.js') }}?v={{ filemtime(public_path('js/mode-handler.js')) }}"></script>
+<script src="{{ asset('js/quran-api.js') }}?v={{ filemtime(public_path('js/quran-api.js')) }}"></script>
+<script src="{{ asset('js/setoran-interactive.js') }}?v={{ filemtime(public_path('js/setoran-interactive.js')) }}"></script>
+<script src="{{ asset('js/iqro-data.js') }}?v={{ filemtime(public_path('js/iqro-data.js')) }}"></script>
+<script src="{{ asset('js/iqro-handler.js') }}?v={{ filemtime(public_path('js/iqro-handler.js')) }}"></script>
+<script src="{{ asset('js/audio-recorder.js') }}?v={{ filemtime(public_path('js/audio-recorder.js')) }}"></script>
+<script src="{{ asset('js/unified-input.js') }}?v={{ filemtime(public_path('js/unified-input.js')) }}"></script>
 
 @endsection

@@ -725,4 +725,52 @@ class KelasController extends Controller
         
         return $result;
     }
+
+
+    /**
+     * Import kelas baru dari Excel
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls|max:2048',
+        ], [
+            'file.required' => 'File Excel wajib diupload',
+            'file.mimes' => 'File harus berformat Excel (.xlsx atau .xls)',
+            'file.max' => 'Ukuran file maksimal 2MB',
+        ]);
+
+        try {
+            $import = new KelasImport();
+            Excel::import($import, $request->file('file'));
+
+            $successCount = $import->getSuccessCount();
+            $failedCount = $import->getFailedCount();
+            $errors = $import->getErrors();
+
+            if ($failedCount > 0) {
+                $errorMessage = "Berhasil import: {$successCount} kelas. Gagal: {$failedCount} kelas.<br><br>";
+                $errorMessage .= "<strong>Detail Error:</strong><br>";
+                $errorMessage .= implode('<br>', $errors);
+
+                return redirect()->route('admin.kelas.index')->with('error', $errorMessage);
+            }
+
+            $this->logActivity(
+                'create',
+                'kelas',
+                "Import {$successCount} data kelas via Excel",
+                null,
+                null,
+                ['total_imported' => $successCount]
+            );
+
+            return redirect()->route('admin.kelas.index')
+                ->with('success', "Berhasil import {$successCount} data kelas!");
+
+        } catch (\Exception $e) {
+            \Log::error("Error importing kelas: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal import data: ' . $e->getMessage());
+        }
+    }
 }

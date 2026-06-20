@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use App\Enums\MetodeTarget;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\GuruSantriImport;
 use App\Imports\GuruSantriBulkUpdate;
@@ -43,14 +44,16 @@ class SantriController extends Controller
     $guru     = Guru::where('user_id', $guruUser->id)->firstOrFail();
 
     $validated = $request->validate([
-        'nis'        => 'required|string|unique:santris,nis',
-        'name'       => 'required|string|max:255|unique:users,name',
-        'gender'     => 'required|in:L,P',
-        'target_juz' => 'required|numeric|min:0|max:30',
-        'kelas_id'   => 'required|exists:kelas,id',
-        'password'   => 'required|string|min:4|confirmed',
+        'nis'           => 'required|string|unique:santris,nis',
+        'name'          => 'required|string|max:255|unique:users,name',
+        'gender'        => 'required|in:L,P',
+        'target_metode' => ['required', Rule::enum(MetodeTarget::class)],
+        'target_juz'    => ['nullable', 'required_if:target_metode,quran', 'numeric', 'min:0', 'max:30'],
+        'target_jilid'  => ['nullable', 'required_if:target_metode,iqro', 'integer', 'min:1', 'max:6'],
+        'kelas_id'      => 'required|exists:kelas,id',
+        'password'      => 'required|string|min:8|confirmed',
     ], [
-        'password.min'       => 'Password minimal 4 karakter.',
+        'password.min'       => 'Password minimal 8 karakter.',
         'password.confirmed' => 'Konfirmasi password tidak cocok.',
         'nis.unique'         => 'NIS sudah terdaftar.',
         'name.unique'        => 'Nama santri sudah terdaftar, gunakan nama lengkap yang berbeda (contoh: tambahkan nama ayah atau bin/binti).',
@@ -60,6 +63,13 @@ class SantriController extends Controller
         try {
             $name       = ucwords(strtolower(trim($validated['name'])));
             $genderFull = $validated['gender'] === 'L' ? 'Laki-laki' : 'Perempuan';
+
+            // Null-kan field yang tidak dipakai metode terpilih
+            if ($validated['target_metode'] === 'quran') {
+                $validated['target_jilid'] = null;
+            } else {
+                $validated['target_juz'] = null;
+            }
             
             $santriUser = User::create([
                 'name'           => $name,
@@ -69,13 +79,15 @@ class SantriController extends Controller
             ]);
             
             $santri = Santri::create([
-                'user_id'    => $santriUser->id,
-                'kelas_id'   => $validated['kelas_id'],
-                'guru_id'    => $guru->id,
-                'nis'        => $validated['nis'],
-                'name'       => $name,
-                'gender'     => $genderFull,
-                'target_juz' => $validated['target_juz'],
+                'user_id'       => $santriUser->id,
+                'kelas_id'      => $validated['kelas_id'],
+                'guru_id'       => $guru->id,
+                'nis'           => $validated['nis'],
+                'name'          => $name,
+                'gender'        => $genderFull,
+                'target_metode' => $validated['target_metode'],
+                'target_juz'    => $validated['target_juz'] ?? null,
+                'target_jilid'  => $validated['target_jilid'] ?? null,
             ]);
 
             try {
@@ -125,29 +137,39 @@ class SantriController extends Controller
         }
 
         $oldValues = $santri->only(['nis', 'name', 'gender', 'target_juz', 'kelas_id']);
-
         $validated = $request->validate([
-            'nis'        => ['required', 'string', Rule::unique('santris', 'nis')->ignore($santri->id)],
-            'name'       => 'required|string|max:255',
-            'gender'     => 'required|in:L,P',
-            'target_juz' => 'required|numeric|min:0|max:30',
-            'kelas_id'   => 'required|exists:kelas,id',
-            'password'   => 'nullable|string|min:4',
-        ], [
-            'password.min' => 'Password minimal 4 karakter.',
-        ]);
+                    'nis'           => ['required', 'string', Rule::unique('santris', 'nis')->ignore($santri->id)],
+                    'name'          => 'required|string|max:255',
+                    'gender'        => 'required|in:L,P',
+                    'target_metode' => ['required', Rule::enum(MetodeTarget::class)],
+                    'target_juz'    => ['nullable', 'required_if:target_metode,quran', 'numeric', 'min:0', 'max:30'],
+                    'target_jilid'  => ['nullable', 'required_if:target_metode,iqro', 'integer', 'min:1', 'max:6'],
+                    'kelas_id'      => 'required|exists:kelas,id',
+                    'password'      => 'nullable|string|min:8',
+                ], [
+                    'password.min' => 'Password minimal 8 karakter.',
+                ]);
 
         return DB::transaction(function () use ($validated, $santri, $oldValues, $request) {
             try {
                 $name       = ucwords(strtolower(trim($validated['name'])));
                 $genderFull = $validated['gender'] === 'L' ? 'Laki-laki' : 'Perempuan';
+
+                // Null-kan field yang tidak dipakai metode terpilih
+                if ($validated['target_metode'] === 'quran') {
+                    $validated['target_jilid'] = null;
+                } else {
+                    $validated['target_juz'] = null;
+                }
                 
                 $santri->update([
-                    'nis'        => $validated['nis'],
-                    'name'       => $name,
-                    'gender'     => $genderFull,
-                    'target_juz' => $validated['target_juz'],
-                    'kelas_id'   => $validated['kelas_id'],
+                    'nis'           => $validated['nis'],
+                    'name'          => $name,
+                    'gender'        => $genderFull,
+                    'target_metode' => $validated['target_metode'],
+                    'target_juz'    => $validated['target_juz'] ?? null,
+                    'target_jilid'  => $validated['target_jilid'] ?? null,
+                    'kelas_id'      => $validated['kelas_id'],
                 ]);
 
                 if ($santri->user) {
@@ -235,78 +257,92 @@ class SantriController extends Controller
         }
     }
 
-    public function downloadTemplate()
+   public function downloadTemplate()
     {
         $spreadsheet = new Spreadsheet();
         $sheet       = $spreadsheet->getActiveSheet();
-        
-        $headers = ['nis', 'nama', 'gender', 'target_juz', 'password'];
+
+        // 7 kolom: tambah metode & target_jilid
+        $headers = ['nis', 'nama', 'gender', 'metode', 'target_juz', 'target_jilid', 'password'];
         $sheet->fromArray($headers, NULL, 'A1');
-        
-        $sheet->getStyle('A1:E1')->applyFromArray([
+
+        $sheet->getStyle('A1:G1')->applyFromArray([
             'font'      => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '1F2937']],
             'fill'      => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F3F4F6']],
             'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
             'borders'   => ['bottom' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM, 'color' => ['rgb' => 'D1D5DB']]]
         ]);
-        
-        $sheet->getStyle('A2:E3')->applyFromArray([
+
+        $sheet->getStyle('A2:G3')->applyFromArray([
             'fill'    => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFBEB']],
             'font'    => ['size' => 9, 'color' => ['rgb' => '78716C'], 'italic' => true],
             'borders' => ['outline' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => 'FDE68A']]]
         ]);
-        
+
+        // Satu contoh quran, satu iqro
         $exampleData = [
-            ['12345 (Contoh)', 'Ahmad Zaki', 'L', '5.50', 'pass1234'],
-            ['12346 (Contoh)', 'Aisyah Rahmawati', 'P', '3.25', 'pass8765'],
+            ['12345 (Contoh)', 'Ahmad Zaki',       'L', 'quran', '5.50', '',  'pass1234'],
+            ['12346 (Contoh)', 'Aisyah Rahmawati', 'P', 'iqro',  '',     '3', 'pass8765'],
         ];
         foreach ($exampleData as $rowIndex => $row) {
             $actualRow = $rowIndex + 2;
-            $sheet->setCellValue('A' . $actualRow, $row[0]);
-            $sheet->setCellValue('B' . $actualRow, $row[1]);
-            $sheet->setCellValue('C' . $actualRow, $row[2]);
-            $sheet->setCellValue('D' . $actualRow, $row[3]);
-            $sheet->setCellValue('E' . $actualRow, $row[4]);
+            $col = 'A';
+            foreach ($row as $val) {
+                $sheet->setCellValue($col . $actualRow, $val);
+                $col++;
+            }
         }
-        
-        $sheet->getColumnDimension('A')->setWidth(16);
-        $sheet->getColumnDimension('B')->setWidth(30);
-        $sheet->getColumnDimension('C')->setWidth(8);
-        $sheet->getColumnDimension('D')->setWidth(12);
-        $sheet->getColumnDimension('E')->setWidth(18);
-        $sheet->getColumnDimension('H')->setWidth(40);
-        
-        $sheet->setCellValue('H1', 'PETUNJUK IMPORT SANTRI');
-        $sheet->setCellValue('H2', '1. NIS: Nomor Induk Santri (unik)');
-        $sheet->setCellValue('H3', '2. Nama: Nama lengkap santri');
-        $sheet->setCellValue('H4', '3. Gender: L (Laki-laki) atau P (Perempuan)');
-        $sheet->setCellValue('H5', '4. Target Juz: 0.00 - 30.00');
-        $sheet->setCellValue('H6', '5. Password: Minimal 4 karakter');
-        $sheet->setCellValue('H7', '');
-        $sheet->setCellValue('H8', 'CATATAN:');
-        $sheet->setCellValue('H9', '• Baris 2-3 adalah CONTOH, hapus sebelum import');
-        $sheet->setCellValue('H10', '• NIS yang diawali "(Contoh)" akan diabaikan');
-        $sheet->setCellValue('H11', '• Santri akan otomatis masuk ke kelas Anda');
-        $sheet->setCellValue('H12', '• Pastikan semua data sudah benar sebelum import');
-        
-        $sheet->getStyle('H1')->applyFromArray([
+
+        $sheet->getColumnDimension('A')->setWidth(16);  // nis
+        $sheet->getColumnDimension('B')->setWidth(28);  // nama
+        $sheet->getColumnDimension('C')->setWidth(8);   // gender
+        $sheet->getColumnDimension('D')->setWidth(10);  // metode
+        $sheet->getColumnDimension('E')->setWidth(11);  // target_juz
+        $sheet->getColumnDimension('F')->setWidth(11);  // target_jilid
+        $sheet->getColumnDimension('G')->setWidth(16);  // password
+        $sheet->getColumnDimension('H')->setWidth(2);   // spacing
+        $sheet->getColumnDimension('I')->setWidth(46);  // petunjuk
+
+        $sheet->setCellValue('I1', 'PETUNJUK IMPORT SANTRI');
+        $sheet->setCellValue('I2', '1. NIS: Nomor Induk Santri (unik)');
+        $sheet->setCellValue('I3', '2. Nama: Nama lengkap santri');
+        $sheet->setCellValue('I4', '3. Gender: L (Laki-laki) atau P (Perempuan)');
+        $sheet->setCellValue('I5', '4. Metode: quran atau iqro');
+        $sheet->setCellValue('I6', '5. Target Juz: 0.00 - 30.00 (isi bila metode quran)');
+        $sheet->setCellValue('I7', '6. Target Jilid: 1 - 6 (isi bila metode iqro)');
+        $sheet->setCellValue('I8', '7. Password: Minimal 4 karakter');
+        $sheet->setCellValue('I9', '');
+        $sheet->setCellValue('I10', 'CATATAN:');
+        $sheet->setCellValue('I11', '• Metode quran → isi Target Juz, kosongkan Target Jilid');
+        $sheet->setCellValue('I12', '• Metode iqro → isi Target Jilid, kosongkan Target Juz');
+        $sheet->setCellValue('I13', '• Baris 2-3 adalah CONTOH, hapus sebelum import');
+        $sheet->setCellValue('I14', '• NIS yang mengandung "(Contoh)" akan diabaikan');
+        $sheet->setCellValue('I15', '• Santri akan otomatis masuk ke kelas Anda');
+
+        $sheet->getStyle('I1')->applyFromArray([
             'font'      => ['bold' => true, 'size' => 11, 'color' => ['rgb' => 'FFFFFF']],
             'fill'      => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '2563EB']],
             'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
         ]);
-        $sheet->getStyle('H8')->applyFromArray([
+        $sheet->getStyle('I2:I8')->applyFromArray([
+            'font' => ['size' => 9, 'color' => ['rgb' => '374151']],
+        ]);
+        $sheet->getStyle('I10')->applyFromArray([
             'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'DC2626']],
         ]);
-        $sheet->getStyle('H1:H12')->applyFromArray([
+        $sheet->getStyle('I11:I15')->applyFromArray([
+            'font' => ['size' => 8, 'color' => ['rgb' => '374151']],
+        ]);
+        $sheet->getStyle('I1:I15')->applyFromArray([
             'borders' => ['outline' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM, 'color' => ['rgb' => '3B82F6']]]
         ]);
-        
+
         $sheet->getRowDimension(1)->setRowHeight(22);
         $sheet->freezePane('A2');
-        
+
         $writer   = new Xlsx($spreadsheet);
         $fileName = 'Template_Import_Santri_Guru_' . date('Y-m-d') . '.xlsx';
-        
+
         return response()->streamDownload(function() use ($writer) {
             $writer->save('php://output');
         }, $fileName, ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
@@ -316,12 +352,12 @@ class SantriController extends Controller
     {
         $guruUser = Auth::user();
         $guru     = Guru::where('user_id', $guruUser->id)->firstOrFail();
-        
+
         $santris = Santri::with(['kelas', 'guru', 'user'])
             ->where('guru_id', $guru->id)
             ->orderBy('name', 'asc')
             ->get();
-        
+
         if ($santris->isEmpty()) {
             return redirect()->back()->with('error', 'Tidak ada data santri untuk diekspor.');
         }
@@ -340,69 +376,94 @@ class SantriController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to log export activity: ' . $e->getMessage());
         }
-        
+
         $spreadsheet = new Spreadsheet();
         $sheet       = $spreadsheet->getActiveSheet();
-        
-        $headers = ['no_urut', 'nis', 'nama', 'gender', 'target_juz'];
+
+        // 7 kolom: tambah metode, target_juz, target_jilid
+        $headers = ['no_urut', 'nis', 'nama', 'gender', 'metode', 'target_juz', 'target_jilid'];
         $sheet->fromArray($headers, NULL, 'A1');
-        
-        $sheet->getStyle('A1:E1')->applyFromArray([
+
+        $sheet->getStyle('A1:G1')->applyFromArray([
             'font'      => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '1F2937']],
             'fill'      => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F3F4F6']],
             'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
             'borders'   => ['bottom' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM, 'color' => ['rgb' => 'D1D5DB']]]
         ]);
-        
+
         $row    = 2;
         $noUrut = 1;
         foreach ($santris as $santri) {
+            $metodeVal = $santri->target_metode?->value ?? 'quran';
+
             $sheet->setCellValue('A' . $row, $noUrut);
             $sheet->setCellValue('B' . $row, $santri->nis);
             $sheet->setCellValue('C' . $row, $santri->name);
             $sheet->setCellValue('D' . $row, $santri->gender === 'Laki-laki' ? 'L' : 'P');
-            $sheet->setCellValue('E' . $row, $santri->target_juz);
+            $sheet->setCellValue('E' . $row, $metodeVal);
+            $sheet->setCellValue('F' . $row, $metodeVal === 'iqro' ? '' : $santri->target_juz);
+            $sheet->setCellValue('G' . $row, $metodeVal === 'iqro' ? $santri->target_jilid : '');
             $sheet->getStyle('A' . $row)->applyFromArray([
                 'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F3F4F6']]
             ]);
             $row++;
             $noUrut++;
         }
-        
-        $sheet->getColumnDimension('A')->setWidth(10);
-        $sheet->getColumnDimension('B')->setWidth(16);
-        $sheet->getColumnDimension('C')->setWidth(30);
-        $sheet->getColumnDimension('D')->setWidth(8);
-        $sheet->getColumnDimension('E')->setWidth(12);
-        $sheet->getColumnDimension('H')->setWidth(42);
-        
-        $sheet->setCellValue('H1', '📋 PANDUAN BULK UPDATE');
-        $sheet->setCellValue('H2', '');
-        $sheet->setCellValue('H3', '⚠️ ATURAN PENTING:');
-        $sheet->setCellValue('H4', '• JANGAN ubah/hapus kolom NO URUT');
-        $sheet->setCellValue('H5', '• JANGAN tambah/hapus baris');
-        $sheet->setCellValue('H6', '• Kelas TIDAK bisa diubah via Excel');
-        $sheet->setCellValue('H7', '• Password tidak bisa diubah via Excel');
-        $sheet->setCellValue('H8', '');
-        $sheet->setCellValue('H9', '📝 CARA UPDATE:');
-        $sheet->setCellValue('H10', '1. Edit data yang ingin diubah');
-        $sheet->setCellValue('H11', '2. Upload file Excel yang sudah diedit');
-        
-        $sheet->getStyle('H1')->applyFromArray([
+
+        $sheet->getColumnDimension('A')->setWidth(10);  // no_urut
+        $sheet->getColumnDimension('B')->setWidth(16);  // nis
+        $sheet->getColumnDimension('C')->setWidth(28);  // nama
+        $sheet->getColumnDimension('D')->setWidth(8);   // gender
+        $sheet->getColumnDimension('E')->setWidth(10);  // metode
+        $sheet->getColumnDimension('F')->setWidth(11);  // target_juz
+        $sheet->getColumnDimension('G')->setWidth(11);  // target_jilid
+        $sheet->getColumnDimension('H')->setWidth(2);   // spacing
+        $sheet->getColumnDimension('I')->setWidth(46);  // petunjuk
+
+        $sheet->setCellValue('I1', '📋 PANDUAN BULK UPDATE');
+        $sheet->setCellValue('I2', '');
+        $sheet->setCellValue('I3', '⚠️ ATURAN PENTING:');
+        $sheet->setCellValue('I4', '• JANGAN ubah/hapus kolom NO URUT');
+        $sheet->setCellValue('I5', '• JANGAN tambah/hapus baris');
+        $sheet->setCellValue('I6', '• Kelas TIDAK bisa diubah via Excel');
+        $sheet->setCellValue('I7', '• Password tidak bisa diubah via Excel');
+        $sheet->setCellValue('I8', '');
+        $sheet->setCellValue('I9', '📝 METODE & TARGET:');
+        $sheet->setCellValue('I10', '• Metode: quran atau iqro');
+        $sheet->setCellValue('I11', '• quran → isi Target Juz (0-30), Jilid kosong');
+        $sheet->setCellValue('I12', '• iqro → isi Target Jilid (1-6), Juz kosong');
+        $sheet->setCellValue('I13', '');
+        $sheet->setCellValue('I14', '📝 CARA UPDATE:');
+        $sheet->setCellValue('I15', '1. Edit data yang ingin diubah');
+        $sheet->setCellValue('I16', '2. Upload file Excel yang sudah diedit');
+
+        $sheet->getStyle('I1')->applyFromArray([
             'font'      => ['bold' => true, 'size' => 11, 'color' => ['rgb' => 'FFFFFF']],
             'fill'      => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '059669']],
             'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
         ]);
-        $sheet->getStyle('H1:H11')->applyFromArray([
+        $sheet->getStyle('I3')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'DC2626']],
+        ]);
+        $sheet->getStyle('I9')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '2563EB']],
+        ]);
+        $sheet->getStyle('I14')->applyFromArray([
+            'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'D97706']],
+        ]);
+        $sheet->getStyle('I2:I16')->applyFromArray([
+            'font' => ['size' => 8, 'color' => ['rgb' => '374151']],
+        ]);
+        $sheet->getStyle('I1:I16')->applyFromArray([
             'borders' => ['outline' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM, 'color' => ['rgb' => '059669']]]
         ]);
-        
+
         $sheet->getRowDimension(1)->setRowHeight(22);
         $sheet->freezePane('A2');
-        
+
         $writer   = new Xlsx($spreadsheet);
         $fileName = 'Edit_Santri_Guru_' . str_replace(' ', '_', $guru->name) . '_' . date('Y-m-d') . '.xlsx';
-        
+
         return response()->streamDownload(function() use ($writer) {
             $writer->save('php://output');
         }, $fileName, ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen pb-10"
+<div class="pb-10"
      x-data="{ openEditModal: false, editData: {} }"
      x-effect="openEditModal ? document.body.classList.add('overflow-hidden') : document.body.classList.remove('overflow-hidden')">
 
@@ -30,67 +30,66 @@
         {{-- TOP BAR --}}
         <div class="flex items-center gap-3 mb-4">
             <a href="{{ route('guru.presensis.index') }}"
-               class="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-xs font-semibold text-gray-300 transition-colors">
+               class="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 transition-colors">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 <span class="hidden sm:inline">Kembali</span>
             </a>
             <div class="flex-1 min-w-0">
-                <h1 class="text-base sm:text-xl font-bold text-white truncate">🗓️ Detail Presensi — {{ $santri->name }}</h1>
+                <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate">🗓️ Detail Presensi — {{ $santri->name }}</h1>
                 <p class="text-[11px] text-gray-500 mt-0.5">{{ $santri->nis }}</p>
             </div>
             @if(isset($tahunAjaranAktif) && $tahunAjaranAktif)
-            <div class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-950/50 border border-indigo-800/40 rounded-xl text-[10px]">
-                <span class="text-white font-medium">{{ $tahunAjaranAktif->nama ?? $tahunAjaranAktif->name }}</span>
-                <span class="px-1.5 py-0.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-full text-[9px] font-bold">Aktif</span>
+            <div class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/40 rounded-xl text-[10px]">
+                <span class="text-gray-900 dark:text-white font-medium">{{ $tahunAjaranAktif->nama ?? $tahunAjaranAktif->name }}</span>
+                <span class="px-1.5 py-0.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-full text-[9px] font-bold">Aktif</span>
             </div>
             @endif
         </div>
 
         {{-- SANTRI INFO --}}
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-4">
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-4 shadow-sm dark:shadow-none">
             <div class="flex items-center gap-3">
-                
                 <div>
-                    <p class="text-sm font-bold text-white">{{ $santri->name }}</p>
+                    <p class="text-sm font-bold text-gray-900 dark:text-white">{{ $santri->name }}</p>
                     <p class="text-[11px] text-gray-500 font-mono">NIS: {{ $santri->nis }}</p>
                 </div>
             </div>
         </div>
 
-        {{-- STATISTIK --}}
+       {{-- STATISTIK --}}
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3 shadow-sm dark:shadow-none">
                 <div class="flex items-center justify-between mb-1">
                     <p class="text-[10px] text-gray-500 font-semibold uppercase">Hadir</p>
-                    <span class="text-base">✅</span>
+                    <span class="w-3 h-3 rounded-full" style="background-color:#10b981;"></span>
                 </div>
-                <p class="text-2xl font-bold text-emerald-400">{{ $statistik['total_hadir'] }}</p>
+                <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{{ $statistik['total_hadir'] }}</p>
             </div>
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3 shadow-sm dark:shadow-none">
                 <div class="flex items-center justify-between mb-1">
                     <p class="text-[10px] text-gray-500 font-semibold uppercase">Alpha</p>
-                    <span class="text-base">❌</span>
+                    <span class="w-3 h-3 rounded-full" style="background-color:#ef4444;"></span>
                 </div>
-                <p class="text-2xl font-bold text-red-400">{{ $statistik['total_alpha'] }}</p>
+                <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ $statistik['total_alpha'] }}</p>
             </div>
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3 shadow-sm dark:shadow-none">
                 <div class="flex items-center justify-between mb-1">
                     <p class="text-[10px] text-gray-500 font-semibold uppercase">Izin</p>
-                    <span class="text-base">📝</span>
+                    <span class="w-3 h-3 rounded-full" style="background-color:#f59e0b;"></span>
                 </div>
-                <p class="text-2xl font-bold text-amber-400">{{ $statistik['total_izin'] }}</p>
+                <p class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ $statistik['total_izin'] }}</p>
             </div>
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3 shadow-sm dark:shadow-none">
                 <div class="flex items-center justify-between mb-1">
                     <p class="text-[10px] text-gray-500 font-semibold uppercase">Sakit</p>
-                    <span class="text-base">🤒</span>
+                    <span class="w-3 h-3 rounded-full" style="background-color:#f97316;"></span>
                 </div>
-                <p class="text-2xl font-bold text-orange-400">{{ $statistik['total_sakit'] }}</p>
+                <p class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{ $statistik['total_sakit'] }}</p>
             </div>
         </div>
 
         {{-- FILTER --}}
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-4">
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-4 shadow-sm dark:shadow-none">
             <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-3">Filter Data</p>
             <form method="GET" action="{{ route('guru.presensis.detail', $santri->id) }}" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div>
@@ -125,29 +124,29 @@
             <div id="presensi_mobile" class="space-y-2">
                 @forelse($presensis as $index => $presensi)
                 @php $status = $presensi->status_presensi ?? $presensi->status; @endphp
-                <div class="pgrow-presensi-m bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                <div class="pgrow-presensi-m bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
                     <div class="flex items-center gap-3 px-4 py-3">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 mb-1">
-                                <span class="pg-no-m text-[10px] font-bold text-gray-600 bg-gray-800 px-1.5 py-0.5 rounded"></span>
-                                <p class="text-xs font-bold text-white">{{ \Carbon\Carbon::parse($presensi->tanggal)->format('d M Y') }}</p>
+                                <span class="pg-no-m text-[10px] font-bold text-gray-500 dark:text-gray-600 bg-gray-100 dark:bg-gray-900/40 px-1.5 py-0.5 rounded"></span>
+                                <p class="text-xs font-bold text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($presensi->tanggal)->format('d M Y') }}</p>
                             </div>
                             <div class="flex items-center gap-2 mt-1">
-                                <span class="chip bg-purple-950/50 text-purple-400 border-purple-800/30">{{ $presensi->sesi }}</span>
+                                <span class="chip bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-950/50 dark:text-purple-400 dark:border-purple-800/30">{{ $presensi->sesi }}</span>
                                 @if($status == 'Hadir')
-                                    <span class="chip bg-emerald-950/50 text-emerald-400 border-emerald-800/30">✅ Hadir</span>
+                                    <span class="chip bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/30">✅ Hadir</span>
                                 @elseif($status == 'Alpha')
-                                    <span class="chip bg-red-950/50 text-red-400 border-red-800/30">❌ Alpha</span>
+                                    <span class="chip bg-red-100 text-red-700 border-red-300 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800/30">❌ Alpha</span>
                                 @elseif($status == 'Izin')
-                                    <span class="chip bg-amber-950/50 text-amber-400 border-amber-800/30">📝 Izin</span>
+                                    <span class="chip bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800/30">📝 Izin</span>
                                 @elseif($status == 'Sakit')
-                                    <span class="chip bg-orange-950/50 text-orange-400 border-orange-800/30">🤒 Sakit</span>
+                                    <span class="chip bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950/50 dark:text-orange-400 dark:border-orange-800/30">🤒 Sakit</span>
                                 @else
-                                    <span class="chip bg-gray-800 text-gray-500 border-gray-700">— Tidak ada</span>
+                                    <span class="chip bg-gray-100 text-gray-500 border-gray-300 dark:bg-gray-800 dark:text-gray-500 dark:border-gray-700">— Tidak ada</span>
                                 @endif
                             </div>
                             @if($presensi->keterangan)
-                            <p class="text-[10px] text-gray-600 mt-1 truncate">{{ $presensi->keterangan }}</p>
+                            <p class="text-[10px] text-gray-500 dark:text-gray-600 mt-1 truncate">{{ $presensi->keterangan }}</p>
                             @endif
                         </div>
                         <div class="flex items-center gap-2 flex-shrink-0">
@@ -160,36 +159,36 @@
                                     keterangan: '{{ addslashes($presensi->keterangan ?? '') }}',
                                     update_url: '{{ route('guru.presensis.update', $presensi->id) }}'
                                 }; openEditModal = true;"
-                                class="px-2.5 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-600/30 text-indigo-400 text-[10px] font-bold rounded-lg transition-colors">
+                                class="px-2.5 py-1.5 bg-indigo-100 hover:bg-indigo-200 border border-indigo-300 text-indigo-700 dark:bg-indigo-600/20 dark:hover:bg-indigo-600/40 dark:border-indigo-600/30 dark:text-indigo-400 text-[10px] font-bold rounded-lg transition-colors">
                                 Edit
                             </button>
                             <form action="{{ route('guru.presensis.destroy', $presensi->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus?')">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="px-2.5 py-1.5 bg-red-950/30 hover:bg-red-950/60 border border-red-800/30 text-red-400 text-[10px] font-bold rounded-lg transition-colors">Hapus</button>
+                                <button type="submit" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 border border-red-300 text-red-600 dark:bg-red-950/30 dark:hover:bg-red-950/60 dark:border-red-800/30 dark:text-red-400 text-[10px] font-bold rounded-lg transition-colors">Hapus</button>
                             </form>
                         </div>
                     </div>
                 </div>
                 @empty
-                <div class="bg-gray-900 border border-gray-800 rounded-xl py-12 text-center">
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-12 text-center shadow-sm dark:shadow-none">
                     <div class="text-3xl mb-2">🗓️</div>
-                    <p class="text-sm font-semibold text-gray-400">Belum ada data presensi</p>
+                    <p class="text-sm font-semibold text-gray-600 dark:text-gray-400">Belum ada data presensi</p>
                 </div>
                 @endforelse
             </div>
             @if($presensis->count() > 0)
-            <div id="pg_presensi_mobile" class="mt-3 px-4 py-2 bg-gray-900 border border-gray-800 rounded-xl"></div>
+            <div id="pg_presensi_mobile" class="mt-3 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl"></div>
             @endif
         </div>
 
         {{-- DESKTOP TABLE (≥ lg) --}}
-        <div class="hidden lg:block bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-            <div class="px-4 py-3 border-b border-gray-800">
-                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Riwayat Presensi</h2>
+        <div class="hidden lg:block bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+            <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Riwayat Presensi</h2>
             </div>
             <table class="min-w-full">
                 <thead>
-                    <tr class="border-b border-gray-800 bg-gray-800/40">
+                    <tr class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
                         <th class="th">No</th>
                         <th class="th">Tanggal</th>
                         <th class="th">Sesi</th>
@@ -198,26 +197,26 @@
                         <th class="th">Aksi</th>
                     </tr>
                 </thead>
-                <tbody id="presensi_desktop" class="divide-y divide-gray-800/50">
+                <tbody id="presensi_desktop" class="divide-y divide-gray-200 dark:divide-gray-700/50">
                     @forelse($presensis as $index => $presensi)
                     @php $status = $presensi->status_presensi ?? $presensi->status; @endphp
-                    <tr class="pgrow-presensi hover:bg-gray-800/25 transition-colors">
+                    <tr class="pgrow-presensi hover:bg-gray-50 dark:hover:bg-gray-700/25 transition-colors">
                         <td class="px-4 py-3 text-sm text-gray-500"><span class="pg-no"></span></td>
-                        <td class="px-4 py-3 text-sm text-gray-300 whitespace-nowrap">{{ \Carbon\Carbon::parse($presensi->tanggal)->format('d M Y') }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{{ \Carbon\Carbon::parse($presensi->tanggal)->format('d M Y') }}</td>
                         <td class="px-4 py-3">
-                            <span class="chip bg-purple-950/50 text-purple-400 border-purple-800/30">{{ $presensi->sesi }}</span>
+                            <span class="chip bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-950/50 dark:text-purple-400 dark:border-purple-800/30">{{ $presensi->sesi }}</span>
                         </td>
                         <td class="px-4 py-3">
                             @if($status == 'Hadir')
-                                <span class="chip bg-emerald-950/50 text-emerald-400 border-emerald-800/30">✅ Hadir</span>
+                                <span class="chip bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/30">✅ Hadir</span>
                             @elseif($status == 'Alpha')
-                                <span class="chip bg-red-950/50 text-red-400 border-red-800/30">❌ Alpha</span>
+                                <span class="chip bg-red-100 text-red-700 border-red-300 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800/30">❌ Alpha</span>
                             @elseif($status == 'Izin')
-                                <span class="chip bg-amber-950/50 text-amber-400 border-amber-800/30">📝 Izin</span>
+                                <span class="chip bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800/30">📝 Izin</span>
                             @elseif($status == 'Sakit')
-                                <span class="chip bg-orange-950/50 text-orange-400 border-orange-800/30">🤒 Sakit</span>
+                                <span class="chip bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950/50 dark:text-orange-400 dark:border-orange-800/30">🤒 Sakit</span>
                             @else
-                                <span class="chip bg-gray-800 text-gray-500 border-gray-700">— Tidak ada</span>
+                                <span class="chip bg-gray-100 text-gray-500 border-gray-300 dark:bg-gray-800 dark:text-gray-500 dark:border-gray-700">— Tidak ada</span>
                             @endif
                         </td>
                         <td class="px-4 py-3 text-xs text-gray-500 max-w-xs truncate">{{ $presensi->keterangan ?? '-' }}</td>
@@ -232,12 +231,12 @@
                                         keterangan: '{{ addslashes($presensi->keterangan ?? '') }}',
                                         update_url: '{{ route('guru.presensis.update', $presensi->id) }}'
                                     }; openEditModal = true;"
-                                    class="px-2.5 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-600/30 text-indigo-400 text-xs font-semibold rounded-lg transition-colors">
+                                    class="px-2.5 py-1.5 bg-indigo-100 hover:bg-indigo-200 border border-indigo-300 text-indigo-700 dark:bg-indigo-600/20 dark:hover:bg-indigo-600/40 dark:border-indigo-600/30 dark:text-indigo-400 text-xs font-semibold rounded-lg transition-colors">
                                     Edit
                                 </button>
                                 <form action="{{ route('guru.presensis.destroy', $presensi->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus?')">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="px-2.5 py-1.5 bg-red-950/30 hover:bg-red-950/60 border border-red-800/30 text-red-400 text-xs font-semibold rounded-lg transition-colors">Hapus</button>
+                                    <button type="submit" class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 border border-red-300 text-red-600 dark:bg-red-950/30 dark:hover:bg-red-950/60 dark:border-red-800/30 dark:text-red-400 text-xs font-semibold rounded-lg transition-colors">Hapus</button>
                                 </form>
                             </div>
                         </td>
@@ -245,14 +244,14 @@
                     @empty
                     <tr><td colspan="6" class="py-16 text-center">
                         <div class="text-3xl mb-2">🗓️</div>
-                        <p class="text-sm font-semibold text-gray-400">Belum ada data presensi</p>
+                        <p class="text-sm font-semibold text-gray-600 dark:text-gray-400">Belum ada data presensi</p>
                     </td></tr>
                     @endforelse
                 </tbody>
             </table>
 
             @if($presensis->count() > 0)
-            <div id="pg_presensi_desktop" class="px-4 py-2 border-t border-gray-800 bg-gray-800/20"></div>
+            <div id="pg_presensi_desktop" class="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40"></div>
             @endif
         </div>
 
@@ -263,17 +262,17 @@
         <div x-show="openEditModal"
              x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
              x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-             class="fixed inset-0 bg-black/80 backdrop-blur-sm"
+             class="fixed inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm"
              @click="openEditModal = false"></div>
 
         <div x-show="openEditModal"
              x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
              x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-             class="relative bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-md">
+             class="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl w-full max-w-md">
 
-            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800">
-                <h3 class="text-sm font-bold text-white">✏️ Edit Presensi</h3>
-                <button @click="openEditModal = false" class="w-7 h-7 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 transition">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+                <h3 class="text-sm font-bold text-gray-900 dark:text-white">✏️ Edit Presensi</h3>
+                <button @click="openEditModal = false" class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
@@ -299,12 +298,32 @@
                 <div class="mb-4">
                     <label class="fi-lbl mb-2">Status</label>
                     <div class="grid grid-cols-4 gap-2">
-                        @foreach([['Hadir','✅','emerald'],['Izin','📝','amber'],['Sakit','🤒','orange'],['Alpha','❌','red']] as [$val,$emoji,$color])
+                        @php
+                            $statusOptions = [
+                                ['Hadir','✅','emerald'],
+                                ['Izin','📝','amber'],
+                                ['Sakit','🤒','orange'],
+                                ['Alpha','❌','red'],
+                            ];
+                            $activeLight = [
+                                'emerald'=>'border-emerald-500 bg-emerald-50',
+                                'amber'=>'border-amber-500 bg-amber-50',
+                                'orange'=>'border-orange-500 bg-orange-50',
+                                'red'=>'border-red-500 bg-red-50',
+                            ];
+                            $activeDark = [
+                                'emerald'=>'dark:border-emerald-500 dark:bg-emerald-950/40',
+                                'amber'=>'dark:border-amber-500 dark:bg-amber-950/40',
+                                'orange'=>'dark:border-orange-500 dark:bg-orange-950/40',
+                                'red'=>'dark:border-red-500 dark:bg-red-950/40',
+                            ];
+                        @endphp
+                        @foreach($statusOptions as [$val,$emoji,$color])
                         <label class="flex flex-col items-center p-2.5 border-2 rounded-xl cursor-pointer transition"
-                               :class="editData.status == '{{ $val }}' ? 'border-{{ $color }}-500 bg-{{ $color }}-950/40' : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'">
+                               :class="editData.status == '{{ $val }}' ? '{{ $activeLight[$color] }} {{ $activeDark[$color] }}' : 'border-gray-200 bg-gray-50 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800/50 dark:hover:border-gray-600'">
                             <input type="radio" name="status_presensi" value="{{ $val }}" x-model="editData.status" class="hidden">
                             <span class="text-lg mb-1">{{ $emoji }}</span>
-                            <span class="text-[10px] font-bold text-gray-300">{{ $val }}</span>
+                            <span class="text-[10px] font-bold text-gray-700 dark:text-gray-300">{{ $val }}</span>
                         </label>
                         @endforeach
                     </div>
@@ -319,7 +338,7 @@
 
                 <div class="flex justify-end gap-2">
                     <button type="button" @click="openEditModal = false"
-                            class="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-xs font-semibold rounded-xl transition">
+                            class="px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 dark:text-gray-300 text-xs font-semibold rounded-xl transition">
                         Batal
                     </button>
                     <button type="submit"
@@ -334,17 +353,17 @@
 </div>
 
 <style>
-    html, body { background:#030712; min-height:100%; }
     [x-cloak] { display: none !important; }
     .th { padding:12px 16px; text-align:left; font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.08em; }
     .chip { display:inline-flex; align-items:center; padding:2px 8px; border-radius:9999px; font-size:10px; font-weight:700; border-width:1px; border-style:solid; }
-    .fi-lbl { display:block; font-size:11px; font-weight:600; color:#9ca3af; margin-bottom:5px; }
+    .fi-lbl { display:block; font-size:11px; font-weight:600; color:#4b5563; margin-bottom:5px; }
+    html.dark .fi-lbl { color:#9ca3af; }
     .fi-inp {
         width:100%;
-        background:#1f2937;
-        border:1px solid #374151;
+        background:#fff;
+        border:1px solid #d1d5db;
         border-radius:10px;
-        color:#e5e7eb;
+        color:#111827;
         font-size:13px;
         padding:9px 12px;
         outline:none;
@@ -352,19 +371,20 @@
         appearance: auto;
         -webkit-appearance: auto;
     }
+    html.dark .fi-inp {
+        background:#1f2937;
+        border:1px solid #374151;
+        color:#e5e7eb;
+    }
     .fi-inp:focus { border-color:#6366f1; box-shadow:0 0 0 2px rgba(99,102,241,.18); }
 
-    /* Perbaikan kalender input date */
-    input[type="date"].fi-inp,
-    input[type="date"].fi-inp::-webkit-calendar-picker-indicator {
-        color-scheme: dark;
-    }
-    input[type="date"].fi-inp::-webkit-calendar-picker-indicator {
-        filter: invert(0.7);
-        cursor: pointer;
-    }
+    /* Kalender input date */
+    input[type="date"].fi-inp { color-scheme: light; }
+    html.dark input[type="date"].fi-inp { color-scheme: dark; }
+    input[type="date"].fi-inp::-webkit-calendar-picker-indicator { cursor: pointer; opacity:.6; }
+    html.dark input[type="date"].fi-inp::-webkit-calendar-picker-indicator { filter: invert(0.7); opacity:1; }
 
-    /* Perbaikan select dropdown arrow */
+    /* Select dropdown arrow */
     select.fi-inp {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
@@ -375,21 +395,20 @@
         -webkit-appearance: none;
         cursor: pointer;
     }
-    select.fi-inp option {
-        background: #1f2937;
-        color: #e5e7eb;
-    }
+    select.fi-inp option { background: #fff; color: #111827; }
+    html.dark select.fi-inp option { background: #1f2937; color: #e5e7eb; }
 
     @keyframes slide-in { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
     .animate-slide-in { animation:slide-in .25s ease-out; }
     ::-webkit-scrollbar { width:4px; height:4px; }
     ::-webkit-scrollbar-track { background:transparent; }
-    ::-webkit-scrollbar-thumb { background:#374151; border-radius:99px; }
+    ::-webkit-scrollbar-thumb { background:#9ca3af; border-radius:99px; }
+    html.dark ::-webkit-scrollbar-thumb { background:#374151; }
 </style>
 
 <script>
 // ============================================================
-// PAGINATION (sama seperti detail setoran)
+// PAGINATION
 // ============================================================
 var paginationConfig = [
     { tbodyId: 'presensi_desktop', mTblId: 'presensi_mobile', rowClass: 'pgrow-presensi', mRowClass: 'pgrow-presensi-m', pgId: 'pg_presensi_desktop', mPgId: 'pg_presensi_mobile', perPage: 13 }
@@ -454,18 +473,18 @@ function showPage(tbodyId, page) {
 }
 
 function pgMakeBtn(tbodyId, cp, p) {
-    var cls = p === cp ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:bg-gray-700';
+    var cls = p === cp ? 'bg-indigo-600 text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700';
     return '<button onclick="showPage(\'' + tbodyId + '\',' + p + ')" class="px-2.5 py-1 text-xs rounded-md font-medium ' + cls + '">' + p + '</button>';
 }
 
 function pgMakePrev(tbodyId, cp) {
-    if (cp > 1) return '<button onclick="showPage(\'' + tbodyId + '\',' + (cp - 1) + ')" class="px-2 py-1 text-xs text-gray-400 hover:bg-gray-700 rounded-md">&#8249;</button>';
-    return '<button disabled class="px-2 py-1 text-xs text-gray-700 rounded-md">&#8249;</button>';
+    if (cp > 1) return '<button onclick="showPage(\'' + tbodyId + '\',' + (cp - 1) + ')" class="px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md">&#8249;</button>';
+    return '<button disabled class="px-2 py-1 text-xs text-gray-300 dark:text-gray-700 rounded-md">&#8249;</button>';
 }
 
 function pgMakeNext(tbodyId, cp, tp) {
-    if (cp < tp) return '<button onclick="showPage(\'' + tbodyId + '\',' + (cp + 1) + ')" class="px-2 py-1 text-xs text-gray-400 hover:bg-gray-700 rounded-md">&#8250;</button>';
-    return '<button disabled class="px-2 py-1 text-xs text-gray-700 rounded-md">&#8250;</button>';
+    if (cp < tp) return '<button onclick="showPage(\'' + tbodyId + '\',' + (cp + 1) + ')" class="px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md">&#8250;</button>';
+    return '<button disabled class="px-2 py-1 text-xs text-gray-300 dark:text-gray-700 rounded-md">&#8250;</button>';
 }
 
 function renderPagination(tbodyId) {
@@ -477,7 +496,7 @@ function renderPagination(tbodyId) {
 
     var html;
     if (s.totalPages <= 1) {
-        html = '<div class="text-[11px] text-gray-600 text-center py-1">Menampilkan ' + s.totalRows + ' data</div>';
+        html = '<div class="text-[11px] text-gray-500 dark:text-gray-600 text-center py-1">Menampilkan ' + s.totalRows + ' data</div>';
     } else {
         var cp = s.currentPage;
         var tp = s.totalPages;
@@ -490,17 +509,17 @@ function renderPagination(tbodyId) {
         var btns = '';
         if (sp > 1) {
             btns += pgMakeBtn(tbodyId, cp, 1);
-            if (sp > 2) btns += '<span class="text-xs text-gray-700">&hellip;</span>';
+            if (sp > 2) btns += '<span class="text-xs text-gray-400 dark:text-gray-700">&hellip;</span>';
         }
         for (var i = sp; i <= ep; i++) btns += pgMakeBtn(tbodyId, cp, i);
         if (ep < tp) {
-            if (ep < tp - 1) btns += '<span class="text-xs text-gray-700">&hellip;</span>';
+            if (ep < tp - 1) btns += '<span class="text-xs text-gray-400 dark:text-gray-700">&hellip;</span>';
             btns += pgMakeBtn(tbodyId, cp, tp);
         }
 
         html =
             '<div class="flex items-center justify-between">' +
-                '<span class="text-[11px] text-gray-600">' + from + '&ndash;' + to + ' / ' + s.totalRows + '</span>' +
+                '<span class="text-[11px] text-gray-500 dark:text-gray-600">' + from + '&ndash;' + to + ' / ' + s.totalRows + '</span>' +
                 '<div class="flex items-center gap-1">' + pgMakePrev(tbodyId, cp) + btns + pgMakeNext(tbodyId, cp, tp) + '</div>' +
             '</div>';
     }

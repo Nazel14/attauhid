@@ -1,44 +1,119 @@
 <x-guest-layout>
 
 <style>
-    body, html { background: #0f1117 !important; min-height: 100vh; margin: 0; }
+    :root {
+        --bg-page: #f1f5f9;
+        --bg-card: #ffffff;
+        --bg-card-grad: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        --border-card: #e2e8f0;
+        --border-accent: rgba(99,102,241,0.4);
+        --bg-input: #f8fafc;
+        --border-input: #e2e8f0;
+        --text-input: #1e293b;
+        --text-title: #0f172a;
+        --text-sub: #64748b;
+        --text-label: #475569;
+        --icon-muted: #94a3b8;
+        --placeholder: #cbd5e1;
+        --logo-bg: linear-gradient(135deg, #eef2ff, #e0e7ff);
+        --logo-border: #c7d2fe;
+        --footer-border: #e2e8f0;
+        --footer-text: #94a3b8;
+        --ambient-1: rgba(79,70,229,0.06);
+        --ambient-2: rgba(79,70,229,0.04);
+    }
+    html.dark {
+        --bg-page: #1a1f2e;
+        --bg-card: #232838;
+        --bg-card-grad: linear-gradient(180deg, #252b3d 0%, rgba(35,40,56,0.9) 100%);
+        --border-card: #353b50;
+        --border-accent: rgba(99,102,241,0.5);
+        --bg-input: #1a1f2e;
+        --border-input: #353b50;
+        --text-input: #e5e7eb;
+        --text-title: #f3f4f6;
+        --text-sub: #8b93a7;
+        --text-label: #9ca3af;
+        --icon-muted: #6b7280;
+        --placeholder: #4b5366;
+        --logo-bg: linear-gradient(135deg, #2a2d4f, #353b6b);
+        --logo-border: #4338ca;
+        --footer-border: #353b50;
+        --footer-text: #6b7280;
+        --ambient-1: rgba(99,102,241,0.12);
+        --ambient-2: rgba(99,102,241,0.07);
+    }
+
+    body, html { background: var(--bg-page) !important; min-height: 100vh; margin: 0; }
 
     .wrap {
         min-height: 100vh;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #0f1117;
+        background: var(--bg-page);
         padding: 16px;
         position: relative;
         overflow: hidden;
     }
-
-    /* Ambient gradient halus untuk kedalaman, tetap minimalis */
     .wrap::before {
         content: '';
         position: absolute;
         inset: 0;
         background:
-            radial-gradient(circle at 20% 30%, rgba(79,70,229,0.10), transparent 45%),
-            radial-gradient(circle at 80% 70%, rgba(79,70,229,0.06), transparent 45%);
+            radial-gradient(circle at 20% 30%, var(--ambient-1), transparent 45%),
+            radial-gradient(circle at 80% 70%, var(--ambient-2), transparent 45%);
         pointer-events: none;
         z-index: 0;
     }
 
+    /* Theme toggle */
+    .theme-toggle {
+        position: absolute;
+        top: 18px; right: 18px;
+        z-index: 5;
+        width: 52px; height: 28px;
+        border-radius: 999px;
+        border: 1px solid var(--border-card);
+        background: var(--bg-card);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        padding: 0 4px;
+        transition: background 0.2s, border-color 0.2s;
+    }
+    .theme-toggle .knob {
+        width: 20px; height: 20px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        display: flex; align-items: center; justify-content: center;
+        color: #fff;
+        transition: transform 0.25s ease;
+        transform: translateX(0);
+    }
+    html.dark .theme-toggle .knob {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        transform: translateX(24px);
+    }
+    .theme-toggle .knob svg { width: 12px; height: 12px; }
+    .theme-toggle .sun  { display: flex; }
+    .theme-toggle .moon { display: none; }
+    html.dark .theme-toggle .sun  { display: none; }
+    html.dark .theme-toggle .moon { display: flex; }
+
     .card {
         position: relative;
         z-index: 1;
-        background: linear-gradient(180deg, #1a1d27 0%, rgba(22,25,33,0.85) 100%);
-        border: 1px solid #2a2d3a;
+        background: var(--bg-card-grad);
+        border: 1px solid var(--border-card);
         border-radius: 16px;
         width: 100%;
         max-width: 360px;
         padding: 28px 26px 22px;
-        box-shadow: 0 20px 50px -20px rgba(0,0,0,0.5);
+        box-shadow: 0 20px 50px -20px rgba(0,0,0,0.18);
     }
+    html.dark .card { box-shadow: 0 20px 50px -20px rgba(0,0,0,0.5); }
 
-    /* Garis aksen tipis di atas card */
     .card::before {
         content: '';
         position: absolute;
@@ -56,25 +131,23 @@
         text-align: center;
         margin-bottom: 24px;
     }
-
     .logo {
         width: 52px; height: 52px;
-        background: linear-gradient(135deg, #1e2035, #2a2d4f);
-        border: 1px solid #3730a3;
+        background: var(--logo-bg);
+        border: 1px solid var(--logo-border);
         border-radius: 14px;
         display: flex; align-items: center; justify-content: center;
         margin-bottom: 14px;
         flex-shrink: 0;
     }
-
-    .header h1 { color: #f3f4f6; font-size: 17px; font-weight: 600; margin: 0 0 4px; }
-    .header p  { color: #6b7280; font-size: 12px; margin: 0; }
+    .header h1 { color: var(--text-title); font-size: 17px; font-weight: 600; margin: 0 0 4px; }
+    .header p  { color: var(--text-sub); font-size: 12px; margin: 0; }
 
     .field { margin-bottom: 14px; }
     .field label {
         display: block;
         font-size: 11px;
-        color: #9ca3af;
+        color: var(--text-label);
         margin-bottom: 6px;
         font-weight: 500;
         letter-spacing: 0.3px;
@@ -87,17 +160,17 @@
         left: 12px;
         top: 50%;
         transform: translateY(-50%);
-        color: #4b5563;
+        color: var(--icon-muted);
         display: flex;
         pointer-events: none;
         transition: color 0.15s;
     }
     .field input {
         width: 100%;
-        background: #0f1117;
-        border: 1px solid #2a2d3a;
+        background: var(--bg-input);
+        border: 1px solid var(--border-input);
         border-radius: 10px;
-        color: #e5e7eb;
+        color: var(--text-input);
         font-size: 13px;
         padding: 11px 12px 11px 38px;
         outline: none;
@@ -108,11 +181,8 @@
         border-color: #4f46e5;
         box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
     }
-    .field input:focus + .icon-left,
-    .input-wrap:focus-within .icon-left {
-        color: #818cf8;
-    }
-    .field input::placeholder { color: #3d4154; }
+    .input-wrap:focus-within .icon-left { color: #818cf8; }
+    .field input::placeholder { color: var(--placeholder); }
     .field input.is-error { border-color: rgba(220,38,38,0.6); }
 
     .pw-wrap input { padding-right: 40px; }
@@ -120,12 +190,12 @@
         position: absolute; right: 10px; top: 50%;
         transform: translateY(-50%);
         background: none; border: none;
-        color: #4b5563; cursor: pointer;
+        color: var(--icon-muted); cursor: pointer;
         display: flex; align-items: center; padding: 4px;
         border-radius: 6px;
         transition: color 0.15s, background 0.15s;
     }
-    .pw-toggle:hover { color: #9ca3af; background: rgba(255,255,255,0.03); }
+    .pw-toggle:hover { color: var(--text-sub); }
 
     .alert-err {
         display: flex;
@@ -137,8 +207,9 @@
         padding: 7px 10px;
         margin-top: 6px;
         font-size: 11px;
-        color: #fca5a5;
+        color: #dc2626;
     }
+    html.dark .alert-err { color: #fca5a5; }
     .alert-err svg { flex-shrink: 0; }
 
     .btn-submit {
@@ -169,18 +240,19 @@
         border-radius: 8px;
         padding: 7px 10px;
         font-size: 11px;
-        color: #6ee7b7;
+        color: #059669;
         margin-bottom: 12px;
     }
+    html.dark .status-ok { color: #6ee7b7; }
 
     .footer-card {
         text-align: center;
         margin-top: 18px;
         padding-top: 16px;
-        border-top: 1px solid #2a2d3a;
+        border-top: 1px solid var(--footer-border);
     }
     .footer-card p {
-        color: #4b5563;
+        color: var(--footer-text);
         font-size: 10px;
         margin: 0;
         letter-spacing: 0.3px;
@@ -189,6 +261,14 @@
 </style>
 
 <div class="wrap">
+
+    <button type="button" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema">
+        <span class="knob">
+            <svg class="sun" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path stroke-linecap="round" d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            <svg class="moon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        </span>
+    </button>
+
     <div class="card">
 
         <div class="header">
@@ -277,37 +357,50 @@
 </div>
 
 <script>
-function togglePw() {
-    const input = document.getElementById('password');
-    const show = document.getElementById('eye-show');
-    const hide = document.getElementById('eye-hide');
-    const isPassword = input.type === 'password';
-    input.type = isPassword ? 'text' : 'password';
-    show.style.display = isPassword ? 'none' : '';
-    hide.style.display = isPassword ? '' : 'none';
-}
+    // Terapkan tema tersimpan saat halaman dimuat
+    (function () {
+        try {
+            var t = localStorage.getItem('theme') || 'light';
+            document.documentElement.classList.toggle('dark', t === 'dark');
+        } catch (e) {}
+    })();
 
-document.addEventListener('DOMContentLoaded', () => {
-    const alerts = document.querySelectorAll('.alert-err, .status-ok');
-    const errorInputs = document.querySelectorAll('.is-error');
-
-    if (alerts.length || errorInputs.length) {
-        setTimeout(() => {
-            alerts.forEach(alert => {
-                alert.style.transition = 'opacity 0.4s ease, max-height 0.4s ease, margin-top 0.4s ease, padding 0.4s ease';
-                alert.style.opacity = '0';
-                alert.style.maxHeight = '0';
-                alert.style.marginTop = '0';
-                alert.style.padding = '0';
-                alert.style.overflow = 'hidden';
-            });
-            errorInputs.forEach(input => {
-                input.style.transition = 'border-color 0.4s ease';
-                input.style.borderColor = '#2a2d3a';
-            });
-        }, 5000);
+    function toggleTheme() {
+        var isDark = document.documentElement.classList.toggle('dark');
+        try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
     }
-});
+
+    function togglePw() {
+        const input = document.getElementById('password');
+        const show = document.getElementById('eye-show');
+        const hide = document.getElementById('eye-hide');
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        show.style.display = isPassword ? 'none' : '';
+        hide.style.display = isPassword ? '' : 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const alerts = document.querySelectorAll('.alert-err, .status-ok');
+        const errorInputs = document.querySelectorAll('.is-error');
+
+        if (alerts.length || errorInputs.length) {
+            setTimeout(() => {
+                alerts.forEach(alert => {
+                    alert.style.transition = 'opacity 0.4s ease, max-height 0.4s ease, margin-top 0.4s ease, padding 0.4s ease';
+                    alert.style.opacity = '0';
+                    alert.style.maxHeight = '0';
+                    alert.style.marginTop = '0';
+                    alert.style.padding = '0';
+                    alert.style.overflow = 'hidden';
+                });
+                errorInputs.forEach(input => {
+                    input.style.transition = 'border-color 0.4s ease';
+                    input.style.borderColor = 'var(--border-input)';
+                });
+            }, 5000);
+        }
+    });
 </script>
 
 </x-guest-layout>

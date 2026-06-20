@@ -25,14 +25,14 @@ class UnifiedInputController extends Controller
     {
         $userId = Auth::id();
         $guru   = Guru::where('user_id', $userId)->first();
-        
+
         if (!$guru) {
             return redirect()->route('guru.dashboard')
                 ->with('error', 'Data guru tidak ditemukan.');
         }
 
         $kelas = Kelas::where('guru_id', $guru->id)->first();
-        
+
         if (!$kelas) {
             return redirect()->route('guru.dashboard')
                 ->with('error', 'Anda belum ditugaskan sebagai wali kelas.');
@@ -41,14 +41,14 @@ class UnifiedInputController extends Controller
         $santriList = Santri::where('kelas_id', $kelas->id)
             ->orderBy('name')
             ->get();
-        
+
         $tanggalHariIni = Carbon::now()->format('Y-m-d');
         $daftarSurat    = $this->getDaftarSurat();
-        
+
         $sesiList = PresensiSesiConfig::where('is_active', 1)
             ->orderBy('urutan', 'asc')
             ->get();
-        
+
         if ($sesiList->isEmpty()) {
             return redirect()->route('guru.dashboard')
                 ->with('error', 'Tidak ada sesi presensi yang aktif.');
@@ -91,7 +91,7 @@ class UnifiedInputController extends Controller
         }
 
         DB::beginTransaction();
-        
+
         try {
             $presensi = Presensi::create([
                 'santri_id'  => $request->santri_id,
@@ -127,14 +127,14 @@ class UnifiedInputController extends Controller
             } catch (\Exception $e) {
                 Log::error('Failed to log presensi activity: ' . $e->getMessage());
             }
-            
+
             return redirect()->route('guru.input.create')
                 ->with('success', " Presensi santri \"{$santri->name}\" ({$request->status}) berhasil disimpan!");
-                
+
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error save presensi: ' . $e->getMessage());
-            
+
             return redirect()->route('guru.input.create')
                 ->withInput()
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -148,10 +148,14 @@ class UnifiedInputController extends Controller
             'tanggal'              => 'required|date',
             'sesi'                 => 'required|string',
             'kategori_setoran'     => 'required|in:Hafalan,Murajaah,Tilawah',
-            'surat_start'          => 'required|string',
-            'ayat_start'           => 'required|integer',
-            'surat_end'            => 'required|string',
-            'ayat_end'             => 'required|integer',
+            'metode'               => 'nullable|string',
+            'surat_start'          => 'required_unless:metode,Iqro,Ummi|nullable|string',
+            'ayat_start'           => 'required_unless:metode,Iqro,Ummi|nullable|integer',
+            'surat_end'            => 'required_unless:metode,Iqro,Ummi|nullable|string',
+            'ayat_end'             => 'required_unless:metode,Iqro,Ummi|nullable|integer',
+            'iqro_jilid'           => 'nullable|string',
+            'iqro_halaman'         => 'nullable|integer',
+            'iqro_halaman_end'     => 'nullable|integer',
             'page_start'           => 'nullable|integer',
             'page_end'             => 'nullable|integer',
             'total_page'           => 'nullable|numeric',
@@ -182,8 +186,11 @@ class UnifiedInputController extends Controller
                 ->with('error', 'Santri harus presensi HADIR terlebih dahulu sebelum menambah setoran.');
         }
 
+        // Petakan field setoran (Iqro pakai ulang kolom surat/ayat)
+        $map = $this->mapSetoranFields($request);
+
         DB::beginTransaction();
-        
+
         try {
             $audioPath = null;
             if ($request->filled('audio_data')) {
@@ -201,16 +208,17 @@ class UnifiedInputController extends Controller
                 'presensi_id'          => $presensi->id,
                 'tanggal'              => $request->tanggal,
                 'kategori_setoran'     => $request->kategori_setoran,
-                'surat_start'          => $request->surat_start,
-                'ayat_start'           => $request->ayat_start,
-                'surat_end'            => $request->surat_end,
-                'ayat_end'             => $request->ayat_end,
-                'page_start'           => $request->page_start,
-                'page_end'             => $request->page_end,
-                'total_page'           => $request->total_page,
-                'juz_start'            => $request->juz_start,
-                'juz_end'              => $request->juz_end,
-                'total_juz'            => $request->total_juz,
+                'metode'               => $map['metode'],
+                'surat_start'          => $map['surat_start'],
+                'ayat_start'           => $map['ayat_start'],
+                'surat_end'            => $map['surat_end'],
+                'ayat_end'             => $map['ayat_end'],
+                'page_start'           => $map['page_start'],
+                'page_end'             => $map['page_end'],
+                'total_page'           => $map['total_page'],
+                'juz_start'            => $map['juz_start'],
+                'juz_end'              => $map['juz_end'],
+                'total_juz'            => $map['total_juz'],
                 'total_kata'           => $request->total_kata ?? 0,
                 'kesalahan_kelancaran' => $request->kesalahan_kelancaran ?? 0,
                 'kesalahan_tajwid'     => $request->kesalahan_tajwid ?? 0,
@@ -231,16 +239,17 @@ class UnifiedInputController extends Controller
                     'role'          => Auth::user()->role,
                     'activity_type' => 'submit',
                     'module'        => 'setoran',
-                    'description'   => "Submit setoran tambahan {$request->kategori_setoran} untuk {$santri->name} - {$request->surat_start} ayat {$request->ayat_start} s/d {$request->surat_end} ayat {$request->ayat_end} - Nilai: " . ($request->nilai ?? 100),
+                    'description'   => "Submit setoran tambahan {$request->kategori_setoran} untuk {$santri->name} - {$map['surat_start']} ({$map['ayat_start']} - {$map['ayat_end']}) - Nilai: " . ($request->nilai ?? 100),
                     'model_type'    => Setoran::class,
                     'model_id'      => $setoran->id,
                     'new_values'    => [
                         'santri_name' => $santri->name,
                         'kategori'    => $request->kategori_setoran,
-                        'surat_start' => $request->surat_start,
-                        'ayat_start'  => $request->ayat_start,
-                        'surat_end'   => $request->surat_end,
-                        'ayat_end'    => $request->ayat_end,
+                        'metode'      => $map['metode'],
+                        'surat_start' => $map['surat_start'],
+                        'ayat_start'  => $map['ayat_start'],
+                        'surat_end'   => $map['surat_end'],
+                        'ayat_end'    => $map['ayat_end'],
                         'nilai'       => $request->nilai ?? 100,
                         'has_audio'   => !is_null($audioPath),
                         'has_pdf'     => !is_null($pdfPath),
@@ -251,16 +260,16 @@ class UnifiedInputController extends Controller
             } catch (\Exception $e) {
                 Log::error('Failed to log setoran activity: ' . $e->getMessage());
             }
-            
+
             return redirect()->route('guru.input.create')
                 ->with('success', " Setoran Tambahan santri \"{$santri->name}\" berhasil disimpan!");
-                
+
         } catch (\Exception $e) {
             DB::rollBack();
             if (isset($audioPath) && $audioPath) Storage::disk('public')->delete($audioPath);
             if (isset($pdfPath) && $pdfPath) Storage::disk('public')->delete($pdfPath);
             Log::error('❌ Error save setoran: ' . $e->getMessage());
-            
+
             return redirect()->route('guru.input.create')
                 ->withInput()
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -275,10 +284,14 @@ class UnifiedInputController extends Controller
             'sesi'                 => 'required|string',
             'status'               => 'required|in:Hadir',
             'kategori_setoran'     => 'required|in:Hafalan,Murajaah,Tilawah',
-            'surat_start'          => 'required|string',
-            'ayat_start'           => 'required|integer',
-            'surat_end'            => 'required|string',
-            'ayat_end'             => 'required|integer',
+            'metode'               => 'nullable|string',
+            'surat_start'          => 'required_unless:metode,Iqro,Ummi|nullable|string',
+            'ayat_start'           => 'required_unless:metode,Iqro,Ummi|nullable|integer',
+            'surat_end'            => 'required_unless:metode,Iqro,Ummi|nullable|string',
+            'ayat_end'             => 'required_unless:metode,Iqro,Ummi|nullable|integer',
+            'iqro_jilid'           => 'nullable|string',
+            'iqro_halaman'         => 'nullable|integer',
+            'iqro_halaman_end'     => 'nullable|integer',
             'page_start'           => 'nullable|integer',
             'page_end'             => 'nullable|integer',
             'total_page'           => 'nullable|numeric',
@@ -308,8 +321,11 @@ class UnifiedInputController extends Controller
                 ->with('error', 'Presensi sudah tercatat. Gunakan form "Setoran Tambahan" untuk menambah setoran.');
         }
 
+        // Petakan field setoran (Iqro pakai ulang kolom surat/ayat)
+        $map = $this->mapSetoranFields($request);
+
         DB::beginTransaction();
-        
+
         try {
             $presensi = Presensi::create([
                 'santri_id' => $request->santri_id,
@@ -335,16 +351,17 @@ class UnifiedInputController extends Controller
                 'presensi_id'          => $presensi->id,
                 'tanggal'              => $request->tanggal,
                 'kategori_setoran'     => $request->kategori_setoran,
-                'surat_start'          => $request->surat_start,
-                'ayat_start'           => $request->ayat_start,
-                'surat_end'            => $request->surat_end,
-                'ayat_end'             => $request->ayat_end,
-                'page_start'           => $request->page_start,
-                'page_end'             => $request->page_end,
-                'total_page'           => $request->total_page,
-                'juz_start'            => $request->juz_start,
-                'juz_end'              => $request->juz_end,
-                'total_juz'            => $request->total_juz,
+                'metode'               => $map['metode'],
+                'surat_start'          => $map['surat_start'],
+                'ayat_start'           => $map['ayat_start'],
+                'surat_end'            => $map['surat_end'],
+                'ayat_end'             => $map['ayat_end'],
+                'page_start'           => $map['page_start'],
+                'page_end'             => $map['page_end'],
+                'total_page'           => $map['total_page'],
+                'juz_start'            => $map['juz_start'],
+                'juz_end'              => $map['juz_end'],
+                'total_juz'            => $map['total_juz'],
                 'total_kata'           => $request->total_kata ?? 0,
                 'kesalahan_kelancaran' => $request->kesalahan_kelancaran ?? 0,
                 'kesalahan_tajwid'     => $request->kesalahan_tajwid ?? 0,
@@ -389,16 +406,17 @@ class UnifiedInputController extends Controller
                     'role'          => Auth::user()->role,
                     'activity_type' => 'submit',
                     'module'        => 'setoran',
-                    'description'   => "Submit setoran {$request->kategori_setoran} untuk {$santri->name} - {$request->surat_start} ayat {$request->ayat_start} s/d {$request->surat_end} ayat {$request->ayat_end} - Nilai: " . ($request->nilai ?? 100),
+                    'description'   => "Submit setoran {$request->kategori_setoran} untuk {$santri->name} - {$map['surat_start']} ({$map['ayat_start']} - {$map['ayat_end']}) - Nilai: " . ($request->nilai ?? 100),
                     'model_type'    => Setoran::class,
                     'model_id'      => $setoran->id,
                     'new_values'    => [
                         'santri_name' => $santri->name,
                         'kategori'    => $request->kategori_setoran,
-                        'surat_start' => $request->surat_start,
-                        'ayat_start'  => $request->ayat_start,
-                        'surat_end'   => $request->surat_end,
-                        'ayat_end'    => $request->ayat_end,
+                        'metode'      => $map['metode'],
+                        'surat_start' => $map['surat_start'],
+                        'ayat_start'  => $map['ayat_start'],
+                        'surat_end'   => $map['surat_end'],
+                        'ayat_end'    => $map['ayat_end'],
                         'nilai'       => $request->nilai ?? 100,
                         'has_audio'   => !is_null($audioPath),
                         'has_pdf'     => !is_null($pdfPath),
@@ -409,20 +427,70 @@ class UnifiedInputController extends Controller
             } catch (\Exception $e) {
                 Log::error('Failed to log setoran activity: ' . $e->getMessage());
             }
-            
+
             return redirect()->route('guru.input.create')
                 ->with('success', " Presensi & Setoran santri \"{$santri->name}\" berhasil disimpan!");
-                
+
         } catch (\Exception $e) {
             DB::rollBack();
             if (isset($audioPath) && $audioPath) Storage::disk('public')->delete($audioPath);
             if (isset($pdfPath) && $pdfPath) Storage::disk('public')->delete($pdfPath);
             Log::error('❌ Error save combined: ' . $e->getMessage());
-            
+
             return redirect()->route('guru.input.create')
                 ->withInput()
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Petakan field setoran ke kolom database.
+     * - Al-Qur'an: pakai surat_start/ayat_start/dst apa adanya + page/juz.
+     * - Iqro/Ummi: surat_* = "Iqro Jilid N", ayat_* = nomor halaman, page/juz null.
+     */
+    private function mapSetoranFields(Request $request): array
+    {
+        $metode = $request->metode ?: 'Al-Qur\'an';
+        $isIqro = in_array($metode, ['Iqro', 'Ummi']);
+
+        if ($isIqro) {
+            $jilid    = $request->iqro_jilid ?: '1';
+            $halStart = (int) ($request->iqro_halaman ?: 0);
+            $halEnd   = (int) ($request->iqro_halaman_end ?: $halStart);
+            if ($halEnd < $halStart) {
+                $halEnd = $halStart;
+            }
+            $label = ($metode === 'Ummi' ? 'Ummi Jilid ' : 'Iqro Jilid ') . $jilid;
+
+            return [
+                'metode'      => $metode,
+                'surat_start' => $label,
+                'surat_end'   => $label,
+                'ayat_start'  => $halStart,
+                'ayat_end'    => $halEnd,
+                // Iqro tidak memakai halaman/juz mushaf
+                'page_start'  => null,
+                'page_end'    => null,
+                'total_page'  => null,
+                'juz_start'   => null,
+                'juz_end'     => null,
+                'total_juz'   => null,
+            ];
+        }
+
+        return [
+            'metode'      => 'Al-Qur\'an',
+            'surat_start' => $request->surat_start,
+            'surat_end'   => $request->surat_end,
+            'ayat_start'  => $request->ayat_start,
+            'ayat_end'    => $request->ayat_end,
+            'page_start'  => $request->page_start,
+            'page_end'    => $request->page_end,
+            'total_page'  => $request->total_page,
+            'juz_start'   => $request->juz_start,
+            'juz_end'     => $request->juz_end,
+            'total_juz'   => $request->total_juz,
+        ];
     }
 
     private function processAudioData(string $audioData): ?string
@@ -431,33 +499,33 @@ class UnifiedInputController extends Controller
             if (!preg_match('/^data:audio\/([a-zA-Z0-9\-]+)(?:;codecs=[a-zA-Z0-9\-,]+)?;base64,/', $audioData, $type)) {
                 throw new \Exception('Invalid audio format');
             }
-            
+
             $audioData = substr($audioData, strpos($audioData, ',') + 1);
             $audioData = base64_decode($audioData);
-            
+
             if ($audioData === false || strlen($audioData) < 100) {
                 throw new \Exception('Failed to decode audio data');
             }
-            
+
             $extension    = strtolower($type[1] ?? 'webm');
             $extensionMap = ['webm' => 'webm', 'ogg' => 'ogg', 'mp3' => 'mp3', 'mpeg' => 'mp3', 'wav' => 'wav', 'x-wav' => 'wav'];
             $extension    = $extensionMap[$extension] ?? 'webm';
-            
+
             $fileName = "audio_" . time() . "_" . substr(md5(uniqid()), 0, 8) . ".{$extension}";
             $path     = 'audio_setorans/' . $fileName;
-            
+
             if (!Storage::disk('public')->exists('audio_setorans')) {
                 Storage::disk('public')->makeDirectory('audio_setorans');
             }
-            
+
             Storage::disk('public')->put($path, $audioData);
-            
+
             if (!Storage::disk('public')->exists($path)) {
                 throw new \Exception('Audio file not found after save');
             }
-            
+
             return $path;
-            
+
         } catch (\Exception $e) {
             Log::error('❌ Failed to save audio: ' . $e->getMessage());
             return null;
@@ -470,31 +538,31 @@ class UnifiedInputController extends Controller
             if (strlen($pdfHtml) < 100 || stripos($pdfHtml, '<html') === false) {
                 throw new \Exception('Invalid HTML format');
             }
-            
+
             $fileName = "pdf_" . time() . "_" . substr(md5(uniqid()), 0, 8) . ".pdf";
             $path     = 'pdf_setorans/' . $fileName;
-            
+
             if (!Storage::disk('public')->exists('pdf_setorans')) {
                 Storage::disk('public')->makeDirectory('pdf_setorans');
             }
-            
+
             $pdf = Pdf::loadHTML($pdfHtml)
                 ->setPaper('a4', 'portrait')
                 ->setOption('margin-top', 2)
                 ->setOption('margin-right', 2)
                 ->setOption('margin-bottom', 2)
                 ->setOption('margin-left', 2);
-            
+
             $pdfOutput = $pdf->output();
-            
+
             if (empty($pdfOutput)) {
                 throw new \Exception('PDF output is empty');
             }
-            
+
             Storage::disk('public')->put($path, $pdfOutput);
-            
+
             return $path;
-            
+
         } catch (\Exception $e) {
             Log::error('❌ Failed to generate PDF: ' . $e->getMessage());
             return null;

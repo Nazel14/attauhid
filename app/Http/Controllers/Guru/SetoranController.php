@@ -62,18 +62,48 @@ class SetoranController extends Controller
                 // total_juz untuk kolom display (semua kategori)
                 $santri->total_juz = round($setorans->sum('total_juz'), 2);
 
-                // total_hafalan_juz HANYA dari kategori Hafalan
-                $totalHafalanJuz = round(
-                    $setorans->where('kategori_setoran', 'Hafalan')->sum('total_juz'),
-                    2
-                );
-                $santri->total_hafalan_juz = $totalHafalanJuz;
+                // Deteksi metode Iqro
+                $santri->is_iqro = ($santri->target_metode?->value ?? 'quran') === 'iqro';
 
-                // Progress berdasarkan hafalan juz vs target juz
-                $targetJuz = $santri->target_juz ?? 1.00;
-                $santri->juz_progress_percentage = $targetJuz > 0
-                    ? min(round(($totalHafalanJuz / $targetJuz) * 100), 100)
-                    : 0;
+                if ($santri->is_iqro) {
+                    $targetJilid   = (int)($santri->target_jilid ?? 1);
+                    $totalHalaman = 0;
+                    foreach ($setorans->where('kategori_setoran', 'Hafalan') as $s) {
+                        // Hanya hitung halaman dari jilid target sekarang,
+                        // agar progress reset ke nol saat santri naik jilid.
+                        if (!preg_match('/^Iqro Jilid (\d+)/i', (string)$s->surat_start, $mj)) continue;
+                        if ((int)$mj[1] !== $targetJilid) continue;
+                        $h1 = (int)$s->ayat_start;
+                        $h2 = (int)($s->ayat_end ?: $s->ayat_start);
+                        if ($h1 > 0 && $h2 >= $h1) $totalHalaman += ($h2 - $h1 + 1);
+                    }
+                    $totalHalJilid = (int)(config('iqro.halaman_per_jilid.' . $targetJilid) ?? 0);
+
+                    $santri->total_halaman_iqro       = $totalHalaman;
+                    $santri->total_hafalan_juz         = 0;
+                    $santri->total_halaman_jilid       = $totalHalJilid;
+                    $santri->iqro_persen_diketahui     = $totalHalJilid > 0;
+                    $santri->juz_progress_percentage   = $totalHalJilid > 0
+                        ? min(round(($totalHalaman / $totalHalJilid) * 100), 100)
+                        : 0;
+                    // Label target untuk kolom "Target"
+                    $santri->target_display = 'Jilid ' . $targetJilid;
+                } else {
+                    $totalHafalanJuz = round(
+                        $setorans->where('kategori_setoran', 'Hafalan')->sum('total_juz'),
+                        2
+                    );
+                    $targetJuz = $santri->target_juz ?? 1.00;
+                    $santri->total_hafalan_juz        = $totalHafalanJuz;
+                    $santri->total_halaman_iqro       = 0;
+                    $santri->total_halaman_jilid      = 0;
+                    $santri->iqro_persen_diketahui    = false;
+                    $santri->juz_progress_percentage  = $targetJuz > 0
+                        ? min(round(($totalHafalanJuz / $targetJuz) * 100), 100)
+                        : 0;
+                    // Label target untuk kolom "Target"
+                    $santri->target_display = number_format($targetJuz, 2) . ' juz';
+                }
 
                 // Presensi 30 hari terakhir
                 $presensiQuery = Presensi::where('santri_id', $santri->id)
@@ -231,6 +261,31 @@ class SetoranController extends Controller
         $setoranMurajaah = $setorans->where('kategori_setoran', 'Murajaah');
         $setoranTilawah  = $setorans->where('kategori_setoran', 'Tilawah');
 
+        // Deteksi metode Iqro
+        $isIqro = ($santri->target_metode?->value ?? 'quran') === 'iqro';
+
+        // Hitung total halaman Iqro per kategori (untuk tampilan stats)
+        $halamanIqroPerKategori = ['Hafalan' => 0, 'Murajaah' => 0, 'Tilawah' => 0];
+        $totalHalamanIqro = 0;
+        if ($isIqro) {
+            $targetJilid = (int)($santri->target_jilid ?? 1);
+            $mapKat = ['Hafalan' => $setoranHafalan, 'Murajaah' => $setoranMurajaah, 'Tilawah' => $setoranTilawah];
+            foreach ($mapKat as $kat => $col) {
+                $jumlah = 0;
+                foreach ($col as $s) {
+                    if (!preg_match('/^Iqro Jilid (\d+)/i', (string)$s->surat_start, $mj)) continue;
+                    // Untuk Hafalan: hanya jilid target sekarang (basis progress, reset saat naik jilid).
+                    // Murajaah & Tilawah: tetap hitung semua jilid (sekadar info, bukan progress).
+                    if ($kat === 'Hafalan' && (int)$mj[1] !== $targetJilid) continue;
+                    $h1 = (int)$s->ayat_start;
+                    $h2 = (int)($s->ayat_end ?: $s->ayat_start);
+                    if ($h1 > 0 && $h2 >= $h1) $jumlah += ($h2 - $h1 + 1);
+                }
+                $halamanIqroPerKategori[$kat] = $jumlah;
+            }
+            $totalHalamanIqro = $halamanIqroPerKategori['Hafalan'];
+        }
+
         return view('guru.setorans.detail', compact(
             'santri',
             'guru',
@@ -245,7 +300,10 @@ class SetoranController extends Controller
             'setoranTilawah',
             'tanggalMulai',
             'tanggalAkhir',
-            'tahunAjaranAktif'
+            'tahunAjaranAktif',
+            'isIqro',
+            'halamanIqroPerKategori',
+            'totalHalamanIqro'
         ));
     }
 
@@ -430,7 +488,6 @@ class SetoranController extends Controller
                     $setoran->update(['koreksi_pdf_path' => $path]);
 
                     Log::info('✅ PDF updated successfully', ['path' => $path]);
-
                 } catch (\Exception $e) {
                     Log::error('❌ Failed to update PDF', [
                         'setoran_id' => $setoran->id,
@@ -445,7 +502,6 @@ class SetoranController extends Controller
 
             return redirect()->route('guru.setorans.detail', $setoran->santri_id)
                 ->with('success', 'Setoran berhasil diperbarui!');
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('❌ Error update setoran', [
@@ -497,7 +553,6 @@ class SetoranController extends Controller
 
             return redirect()->route('guru.setorans.detail', $santriId)
                 ->with('success', 'Setoran berhasil dihapus.');
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Gagal menghapus setoran: ' . $e->getMessage());
@@ -562,29 +617,120 @@ class SetoranController extends Controller
     private function getDaftarSurat()
     {
         return [
-            '1. Al-Fatihah', '2. Al-Baqarah', '3. Ali \'Imran', '4. An-Nisa\'', '5. Al-Ma\'idah',
-            '6. Al-An\'am', '7. Al-A\'raf', '8. Al-Anfal', '9. At-Taubah', '10. Yunus',
-            '11. Hud', '12. Yusuf', '13. Ar-Ra\'d', '14. Ibrahim', '15. Al-Hijr',
-            '16. An-Nahl', '17. Al-Isra\'', '18. Al-Kahf', '19. Maryam', '20. Taha',
-            '21. Al-Anbiya\'', '22. Al-Hajj', '23. Al-Mu\'minun', '24. An-Nur', '25. Al-Furqan',
-            '26. Asy-Syu\'ara\'', '27. An-Naml', '28. Al-Qasas', '29. Al-\'Ankabut', '30. Ar-Rum',
-            '31. Luqman', '32. As-Sajdah', '33. Al-Ahzab', '34. Saba\'', '35. Fatir',
-            '36. Yasin', '37. As-Saffat', '38. Sad', '39. Az-Zumar', '40. Ghafir',
-            '41. Fussilat', '42. Asy-Syura', '43. Az-Zukhruf', '44. Ad-Dukhan', '45. Al-Jasiyah',
-            '46. Al-Ahqaf', '47. Muhammad', '48. Al-Fath', '49. Al-Hujurat', '50. Qaf',
-            '51. Az-Zariyat', '52. At-Tur', '53. An-Najm', '54. Al-Qamar', '55. Ar-Rahman',
-            '56. Al-Waqi\'ah', '57. Al-Hadid', '58. Al-Mujadilah', '59. Al-Hasyr', '60. Al-Mumtahanah',
-            '61. As-Saff', '62. Al-Jumu\'ah', '63. Al-Munafiqun', '64. At-Taghabun', '65. At-Talaq',
-            '66. At-Tahrim', '67. Al-Mulk', '68. Al-Qalam', '69. Al-Haqqah', '70. Al-Ma\'arij',
-            '71. Nuh', '72. Al-Jinn', '73. Al-Muzzammil', '74. Al-Muddassir', '75. Al-Qiyamah',
-            '76. Al-Insan', '77. Al-Mursalat', '78. An-Naba\'', '79. An-Nazi\'at', '80. \'Abasa',
-            '81. At-Takwir', '82. Al-Infitar', '83. Al-Mutaffifin', '84. Al-Insyiqaq', '85. Al-Buruj',
-            '86. At-Tariq', '87. Al-A\'la', '88. Al-Ghasyiyah', '89. Al-Fajr', '90. Al-Balad',
-            '91. Asy-Syams', '92. Al-Lail', '93. Ad-Duha', '94. Asy-Syarh', '95. At-Tin',
-            '96. Al-\'Alaq', '97. Al-Qadr', '98. Al-Bayyinah', '99. Az-Zalzalah', '100. Al-\'Adiyat',
-            '101. Al-Qari\'ah', '102. At-Takasur', '103. Al-\'Asr', '104. Al-Humazah', '105. Al-Fil',
-            '106. Quraisy', '107. Al-Ma\'un', '108. Al-Kausar', '109. Al-Kafirun', '110. An-Nasr',
-            '111. Al-Masad', '112. Al-Ikhlas', '113. Al-Falaq', '114. An-Nas',
+            '1. Al-Fatihah',
+            '2. Al-Baqarah',
+            '3. Ali \'Imran',
+            '4. An-Nisa\'',
+            '5. Al-Ma\'idah',
+            '6. Al-An\'am',
+            '7. Al-A\'raf',
+            '8. Al-Anfal',
+            '9. At-Taubah',
+            '10. Yunus',
+            '11. Hud',
+            '12. Yusuf',
+            '13. Ar-Ra\'d',
+            '14. Ibrahim',
+            '15. Al-Hijr',
+            '16. An-Nahl',
+            '17. Al-Isra\'',
+            '18. Al-Kahf',
+            '19. Maryam',
+            '20. Taha',
+            '21. Al-Anbiya\'',
+            '22. Al-Hajj',
+            '23. Al-Mu\'minun',
+            '24. An-Nur',
+            '25. Al-Furqan',
+            '26. Asy-Syu\'ara\'',
+            '27. An-Naml',
+            '28. Al-Qasas',
+            '29. Al-\'Ankabut',
+            '30. Ar-Rum',
+            '31. Luqman',
+            '32. As-Sajdah',
+            '33. Al-Ahzab',
+            '34. Saba\'',
+            '35. Fatir',
+            '36. Yasin',
+            '37. As-Saffat',
+            '38. Sad',
+            '39. Az-Zumar',
+            '40. Ghafir',
+            '41. Fussilat',
+            '42. Asy-Syura',
+            '43. Az-Zukhruf',
+            '44. Ad-Dukhan',
+            '45. Al-Jasiyah',
+            '46. Al-Ahqaf',
+            '47. Muhammad',
+            '48. Al-Fath',
+            '49. Al-Hujurat',
+            '50. Qaf',
+            '51. Az-Zariyat',
+            '52. At-Tur',
+            '53. An-Najm',
+            '54. Al-Qamar',
+            '55. Ar-Rahman',
+            '56. Al-Waqi\'ah',
+            '57. Al-Hadid',
+            '58. Al-Mujadilah',
+            '59. Al-Hasyr',
+            '60. Al-Mumtahanah',
+            '61. As-Saff',
+            '62. Al-Jumu\'ah',
+            '63. Al-Munafiqun',
+            '64. At-Taghabun',
+            '65. At-Talaq',
+            '66. At-Tahrim',
+            '67. Al-Mulk',
+            '68. Al-Qalam',
+            '69. Al-Haqqah',
+            '70. Al-Ma\'arij',
+            '71. Nuh',
+            '72. Al-Jinn',
+            '73. Al-Muzzammil',
+            '74. Al-Muddassir',
+            '75. Al-Qiyamah',
+            '76. Al-Insan',
+            '77. Al-Mursalat',
+            '78. An-Naba\'',
+            '79. An-Nazi\'at',
+            '80. \'Abasa',
+            '81. At-Takwir',
+            '82. Al-Infitar',
+            '83. Al-Mutaffifin',
+            '84. Al-Insyiqaq',
+            '85. Al-Buruj',
+            '86. At-Tariq',
+            '87. Al-A\'la',
+            '88. Al-Ghasyiyah',
+            '89. Al-Fajr',
+            '90. Al-Balad',
+            '91. Asy-Syams',
+            '92. Al-Lail',
+            '93. Ad-Duha',
+            '94. Asy-Syarh',
+            '95. At-Tin',
+            '96. Al-\'Alaq',
+            '97. Al-Qadr',
+            '98. Al-Bayyinah',
+            '99. Az-Zalzalah',
+            '100. Al-\'Adiyat',
+            '101. Al-Qari\'ah',
+            '102. At-Takasur',
+            '103. Al-\'Asr',
+            '104. Al-Humazah',
+            '105. Al-Fil',
+            '106. Quraisy',
+            '107. Al-Ma\'un',
+            '108. Al-Kausar',
+            '109. Al-Kafirun',
+            '110. An-Nasr',
+            '111. Al-Masad',
+            '112. Al-Ikhlas',
+            '113. Al-Falaq',
+            '114. An-Nas',
         ];
     }
 }

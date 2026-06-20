@@ -3,48 +3,54 @@
 @section('content')
 
 {{-- ============================================================ --}}
-{{-- STYLES - Dark glass theme matching new Dashboard Santri        --}}
+{{-- STYLES - Light/Dark glass theme matching Dashboard Santri      --}}
 {{-- ============================================================ --}}
 <style>
-    body, #app, main, .main-content, [class*="content"] {
-        background-color: #030712 !important;
-    }
     .page-bg {
+        background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #faf5ff 100%);
+        min-height: 100vh;
+    }
+    html.dark .page-bg {
         background:
             radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99, 102, 241, 0.15), transparent),
             radial-gradient(ellipse 60% 40% at 80% 30%, rgba(168, 85, 247, 0.08), transparent),
-            #030712;
-        min-height: 100vh;
+            #0f172a;
     }
 
     /* Glass card */
     .glass-card {
-        background: linear-gradient(180deg, rgba(17, 24, 39, 0.8) 0%, rgba(17, 24, 39, 0.6) 100%);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(99, 102, 241, 0.1);
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
         border-radius: 1.25rem;
         position: relative;
         overflow: hidden;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.06);
     }
     .glass-card::before {
         content: '';
         position: absolute;
         top: 0; left: 0; right: 0;
         height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.4), transparent);
+        background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.3), transparent);
         pointer-events: none;
     }
-
-    .dark-thead {
-        background: rgba(26, 35, 50, 0.6);
-        backdrop-filter: blur(8px);
+    html.dark .glass-card {
+        background: linear-gradient(180deg, rgba(17, 24, 39, 0.8) 0%, rgba(17, 24, 39, 0.6) 100%);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(99, 102, 241, 0.1);
+        box-shadow: none;
     }
-    tr.dark-row, tr.dark-row-hadir { transition: background 0.15s; }
-    tr.dark-row:hover td { background: rgba(99, 102, 241, 0.06); }
-    tr.dark-row-hadir:hover td { background: rgba(16, 185, 129, 0.06); }
+    html.dark .glass-card::before {
+        background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.4), transparent);
+    }
 
-    
+    .table-thead { background: #f9fafb; }
+    html.dark .table-thead { background: rgba(26, 35, 50, 0.6); backdrop-filter: blur(8px); }
+
+    tr.table-row, tr.table-row-hadir { transition: background 0.15s; }
+    tr.table-row:hover td { background: rgba(99, 102, 241, 0.06); }
+    tr.table-row-hadir:hover td { background: rgba(16, 185, 129, 0.06); }
 
     /* Stat card */
     .stat-card {
@@ -66,41 +72,49 @@
 
     /* Filter input */
     .filter-input {
-        background: rgba(255, 255, 255, 0.03) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: white !important;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        color: #111827;
         transition: all 0.2s;
     }
     .filter-input:focus {
-        background: rgba(255, 255, 255, 0.05) !important;
+        background: #ffffff;
         border-color: rgba(99, 102, 241, 0.5);
         box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         outline: none;
     }
+    html.dark .filter-input {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: white;
+    }
+    html.dark .filter-input:focus { background: rgba(255, 255, 255, 0.05); }
 
     /* Buttons */
     .btn-primary {
         background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: #ffffff;
         box-shadow: 0 8px 20px -8px rgba(99, 102, 241, 0.6);
         transition: all 0.2s;
     }
-    .btn-primary:hover {
-        box-shadow: 0 12px 28px -8px rgba(99, 102, 241, 0.8);
-        transform: translateY(-1px);
-    }
+    .btn-primary:hover { box-shadow: 0 12px 28px -8px rgba(99, 102, 241, 0.8); transform: translateY(-1px); }
     .btn-primary:active { transform: scale(0.97); }
 
     .btn-secondary {
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        color: #374151;
         transition: all 0.2s;
     }
-    .btn-secondary:hover {
-        background: rgba(255, 255, 255, 0.07);
-        border-color: rgba(99, 102, 241, 0.3);
+    .btn-secondary:hover { background: #e5e7eb; border-color: rgba(99, 102, 241, 0.4); }
+    html.dark .btn-secondary {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #d1d5db;
     }
+    html.dark .btn-secondary:hover { background: rgba(255, 255, 255, 0.07); border-color: rgba(99, 102, 241, 0.3); }
 
-    /* Section gradient headers */
+    /* Section gradient headers (sama di kedua mode) */
     .sect-header-hadir {
         background: linear-gradient(135deg, #059669 0%, #047857 100%);
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 4px 12px -4px rgba(5, 150, 105, 0.4);
@@ -120,42 +134,20 @@
         white-space: nowrap;
         transition: all 0.15s;
     }
-    .status-hadir {
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1));
-        color: #34d399;
-        border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-    .status-izin {
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.1));
-        color: #60a5fa;
-        border: 1px solid rgba(59, 130, 246, 0.3);
-    }
-    .status-sakit {
-        background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(202, 138, 4, 0.1));
-        color: #fbbf24;
-        border: 1px solid rgba(234, 179, 8, 0.3);
-    }
-    .status-alpha {
-        background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.1));
-        color: #f87171;
-        border: 1px solid rgba(239, 68, 68, 0.3);
-    }
+    .status-hadir { background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.06)); color: #047857; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-izin  { background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(37, 99, 235, 0.06)); color: #1d4ed8; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .status-sakit { background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(202, 138, 4, 0.06)); color: #a16207; border: 1px solid rgba(234, 179, 8, 0.3); }
+    .status-alpha { background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.06)); color: #b91c1c; border: 1px solid rgba(239, 68, 68, 0.3); }
+    html.dark .status-hadir { background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1)); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    html.dark .status-izin  { background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.1)); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    html.dark .status-sakit { background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(202, 138, 4, 0.1)); color: #fbbf24; border: 1px solid rgba(234, 179, 8, 0.3); }
+    html.dark .status-alpha { background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.1)); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
 
     /* Info notice */
-    .info-notice {
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.02));
-        border: 1px solid rgba(16, 185, 129, 0.2);
-    }
-    .warn-notice {
-        background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.02));
-        border: 1px solid rgba(245, 158, 11, 0.2);
-    }
-
-    /* Progress bar shimmer */
-    @keyframes shimmer-bar {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.85; }
-    }
+    .info-notice { background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.02)); border: 1px solid rgba(16, 185, 129, 0.25); }
+    .warn-notice { background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.02)); border: 1px solid rgba(245, 158, 11, 0.25); }
+    html.dark .info-notice { border: 1px solid rgba(16, 185, 129, 0.2); }
+    html.dark .warn-notice { border: 1px solid rgba(245, 158, 11, 0.2); }
 
     /* Pulse dot */
     @keyframes pulse-ring {
@@ -167,23 +159,20 @@
     /* Scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 8px; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 8px; }
+    html.dark ::-webkit-scrollbar-thumb { background: #374151; }
     ::-webkit-scrollbar-thumb:hover { background: #6366f1; }
     .touch-manipulation { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 
-    @supports (padding: env(safe-area-inset-bottom)) {
-        .page-bg { padding-bottom: env(safe-area-inset-bottom); }
-    }
+    @supports (padding: env(safe-area-inset-bottom)) { .page-bg { padding-bottom: env(safe-area-inset-bottom); } }
 
     /* Fade animation */
-    @keyframes fadeUp {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .fade-up { animation: fadeUp 0.4s ease-out backwards; }
 
-    /* Input date/month picker dark fix */
-    input[type="month"], input[type="date"] { color-scheme: dark; }
+    /* Input date/month picker */
+    input[type="month"], input[type="date"] { color-scheme: light; }
+    html.dark input[type="month"], html.dark input[type="date"] { color-scheme: dark; }
     input[type="month"]::-webkit-inner-spin-button,
     input[type="date"]::-webkit-inner-spin-button { display: none; }
     input[type="month"]::-webkit-calendar-picker-indicator,
@@ -202,11 +191,18 @@
 
     /* Multi-color progress bar */
     .progress-multi {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: #e5e7eb;
+        border: 1px solid #e5e7eb;
         overflow: hidden;
         border-radius: 9999px;
     }
+    html.dark .progress-multi {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-inactive { background: #f3f4f6; border: 1px solid #e5e7eb; color: #4b5563; }
+    html.dark .tab-inactive { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #d1d5db; }
 </style>
 
 <div class="page-bg">
@@ -214,25 +210,25 @@
     {{-- ============================================================ --}}
     {{-- MOBILE STICKY TOP BAR                                         --}}
     {{-- ============================================================ --}}
-    <div class="sticky top-0 z-30 backdrop-blur-xl bg-gray-900/80 border-b border-white/5 px-4 py-3 md:hidden">
+    <div class="sticky top-0 z-30 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-white/5 px-4 py-3 md:hidden">
         <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2.5 min-w-0">
                 <a href="{{ route('santri.dashboard') }}"
-                   class="w-9 h-9 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl flex-shrink-0 active:scale-95 transition-transform touch-manipulation">
-                    <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   class="w-9 h-9 flex items-center justify-center bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl flex-shrink-0 active:scale-95 transition-transform touch-manipulation">
+                    <svg class="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                     </svg>
                 </a>
                 <div class="min-w-0">
-                    <p class="text-sm font-bold text-white leading-tight flex items-center gap-1.5">
+                    <p class="text-sm font-bold text-gray-900 dark:text-white leading-tight flex items-center gap-1.5">
                         <span class="inline-block w-1 h-3.5 bg-gradient-to-b from-indigo-400 to-purple-500 rounded-full"></span>
                         Detail Presensi
                     </p>
-                    <p class="text-[10px] text-gray-400 leading-tight truncate mt-0.5">{{ $santri->name }}</p>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-400 leading-tight truncate mt-0.5">{{ $santri->name }}</p>
                 </div>
             </div>
             <button onclick="toggleMobileFilter()"
-                    class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold rounded-xl active:scale-95 transition-transform touch-manipulation flex-shrink-0">
+                    class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-xl active:scale-95 transition-transform touch-manipulation flex-shrink-0">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
                 </svg>
@@ -244,22 +240,22 @@
     {{-- ============================================================ --}}
     {{-- MOBILE FILTER PANEL                                           --}}
     {{-- ============================================================ --}}
-    <div id="mobileFilterPanel" class="hidden md:hidden bg-gray-900/90 backdrop-blur-xl border-b border-white/5 px-4 py-4">
-        <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-3">Filter Data</p>
+    <div id="mobileFilterPanel" class="hidden md:hidden bg-white/95 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-white/5 px-4 py-4">
+        <p class="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Filter Data</p>
         <form method="GET" action="{{ route('santri.presensis.detail') }}" class="space-y-3">
             <div class="grid grid-cols-2 gap-2">
                 <div>
-                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Bulan</label>
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Bulan</label>
                     <input type="month" name="bulan" value="{{ $bulan }}" class="filter-input w-full px-3 py-2.5 text-sm rounded-xl">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Status</label>
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Status</label>
                     <select name="status" class="filter-input w-full px-3 py-2.5 text-sm rounded-xl">
                         <option value="">Semua Status</option>
-                        <option value="Hadir" {{ $status == 'Hadir' ? 'selected' : '' }}>✅ Hadir</option>
-                        <option value="Izin"  {{ $status == 'Izin'  ? 'selected' : '' }}>📋 Izin</option>
-                        <option value="Sakit" {{ $status == 'Sakit' ? 'selected' : '' }}>🏥 Sakit</option>
-                        <option value="Alpha" {{ $status == 'Alpha' ? 'selected' : '' }}>❌ Alpha</option>
+                        <option value="Hadir" {{ $status == 'Hadir' ? 'selected' : '' }}> Hadir</option>
+                        <option value="Izin"  {{ $status == 'Izin'  ? 'selected' : '' }}> Izin</option>
+                        <option value="Sakit" {{ $status == 'Sakit' ? 'selected' : '' }}> Sakit</option>
+                        <option value="Alpha" {{ $status == 'Alpha' ? 'selected' : '' }}> Alpha</option>
                     </select>
                 </div>
             </div>
@@ -269,7 +265,7 @@
                 </button>
                 @if($status)
                 <a href="{{ route('santri.presensis.detail', ['bulan' => $bulan]) }}"
-                   class="btn-secondary px-4 py-2.5 text-gray-300 text-sm font-medium rounded-xl touch-manipulation">
+                   class="btn-secondary px-4 py-2.5 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-xl touch-manipulation">
                     Reset
                 </a>
                 @endif
@@ -285,7 +281,7 @@
         {{-- DESKTOP PAGE HEADER --}}
         <div class="hidden md:flex items-center justify-between mb-6 fade-up">
             <a href="{{ route('santri.dashboard') }}"
-               class="btn-secondary inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-gray-300">
+               class="btn-secondary inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                 </svg>
@@ -293,15 +289,15 @@
             </a>
             <div class="text-right">
                 <div class="flex items-center justify-end gap-2 mb-1">
-                    <h1 class="text-xl lg:text-2xl font-bold text-white tracking-tight">Detail Presensi</h1>
+                    <h1 class="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Detail Presensi</h1>
                     <span class="inline-block w-1 h-5 bg-gradient-to-b from-indigo-400 to-purple-500 rounded-full"></span>
                 </div>
                 @if(isset($tahunAjaranAktif) && $tahunAjaranAktif)
-                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-xs">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-full text-xs">
                     <div class="relative">
                         <div class="w-1.5 h-1.5 bg-emerald-400 rounded-full pulse-ring"></div>
                     </div>
-                    <span class="text-indigo-200 font-medium">{{ $tahunAjaranAktif->nama ?? $tahunAjaranAktif->name }}</span>
+                    <span class="text-indigo-700 dark:text-indigo-200 font-medium">{{ $tahunAjaranAktif->nama ?? $tahunAjaranAktif->name }}</span>
                 </div>
                 @endif
             </div>
@@ -310,15 +306,15 @@
         {{-- SANTRI INFO CARD --}}
         <div class="glass-card p-4 sm:p-5 mb-4 sm:mb-5 fade-up">
             <div class="flex items-center gap-3 sm:gap-4">
-                
+
                 <div class="flex-1 min-w-0">
-                    <h3 class="text-sm sm:text-base lg:text-lg font-bold text-white truncate">{{ $santri->name }}</h3>
+                    <h3 class="text-sm sm:text-base lg:text-lg font-bold text-gray-900 dark:text-white truncate">{{ $santri->name }}</h3>
                     <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
-                        <span class="inline-flex items-center gap-1 text-xs font-medium text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
+                        <span class="inline-flex items-center gap-1 text-xs font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-200 dark:border-indigo-500/20">
                             {{ $santri->kelas->name ?? '-' }}
                         </span>
-                        <span class="w-1 h-1 bg-gray-600 rounded-full"></span>
-                        <span class="text-xs text-gray-400 inline-flex items-center gap-1">
+                        <span class="w-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400 inline-flex items-center gap-1">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                             {{ $santri->guru->name ?? '-' }}
                         </span>
@@ -326,9 +322,9 @@
                 </div>
                 @if(isset($tahunAjaranAktif) && $tahunAjaranAktif)
                 <div class="flex-shrink-0 md:hidden">
-                    <div class="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+                    <div class="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-lg">
                         <div class="w-1.5 h-1.5 bg-emerald-400 rounded-full pulse-ring"></div>
-                        <span class="text-[10px] font-semibold text-indigo-300 leading-none">{{ $tahunAjaranAktif->nama ?? $tahunAjaranAktif->name }}</span>
+                        <span class="text-[10px] font-semibold text-indigo-700 dark:text-indigo-300 leading-none">{{ $tahunAjaranAktif->nama ?? $tahunAjaranAktif->name }}</span>
                     </div>
                 </div>
                 @endif
@@ -338,18 +334,18 @@
         {{-- DESKTOP FILTER CARD --}}
         <div class="hidden md:block glass-card p-5 mb-5 fade-up">
             <div class="flex items-center gap-2 mb-4">
-                <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
                 </svg>
-                <h4 class="text-sm font-semibold text-gray-200">Filter Data</h4>
+                <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Filter Data</h4>
             </div>
             <form method="GET" action="{{ route('santri.presensis.detail') }}" class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                 <div>
-                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Bulan</label>
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Bulan</label>
                     <input type="month" name="bulan" value="{{ $bulan }}" class="filter-input w-full px-3 py-2.5 text-sm rounded-xl">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Status</label>
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Status</label>
                     <select name="status" class="filter-input w-full px-3 py-2.5 text-sm rounded-xl">
                         <option value="">Semua Status</option>
                         <option value="Hadir" {{ $status == 'Hadir' ? 'selected' : '' }}>Hadir</option>
@@ -367,7 +363,7 @@
                     </button>
                     @if($status)
                     <a href="{{ route('santri.presensis.detail', ['bulan' => $bulan]) }}"
-                       class="btn-secondary px-4 py-2.5 text-gray-300 text-sm font-medium rounded-xl whitespace-nowrap">
+                       class="btn-secondary px-4 py-2.5 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-xl whitespace-nowrap">
                         Reset
                     </a>
                     @endif
@@ -375,7 +371,7 @@
             </form>
         </div>
 
-        {{-- STATISTIK 4 CARDS --}}
+        {{-- STATISTIK 4 CARDS (gradien warna penuh - sama di kedua mode) --}}
         <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-4 mb-5 fade-up">
 
             <div class="stat-card relative overflow-hidden rounded-2xl p-3.5 sm:p-4 lg:p-5 text-white"
@@ -383,9 +379,7 @@
                 <div class="relative z-10">
                     <div class="flex items-start justify-between mb-2">
                         <span class="text-[10px] sm:text-xs font-semibold opacity-90 uppercase tracking-wider">Hadir</span>
-                        <div class="w-7 h-7 sm:w-8 sm:h-8 bg-white/15 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0 ml-1">
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                        </div>
+                       
                     </div>
                     <p class="text-2xl sm:text-3xl lg:text-4xl font-extrabold leading-none tabular-nums">{{ $statistik['hadir'] }}</p>
                     <p class="text-[10px] sm:text-xs opacity-60 mt-1">hari hadir</p>
@@ -400,9 +394,7 @@
                 <div class="relative z-10">
                     <div class="flex items-start justify-between mb-2">
                         <span class="text-[10px] sm:text-xs font-semibold opacity-90 uppercase tracking-wider">Izin</span>
-                        <div class="w-7 h-7 sm:w-8 sm:h-8 bg-white/15 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0 ml-1">
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        </div>
+                        
                     </div>
                     <p class="text-2xl sm:text-3xl lg:text-4xl font-extrabold leading-none tabular-nums">{{ $statistik['izin'] }}</p>
                     <p class="text-[10px] sm:text-xs opacity-60 mt-1">hari izin</p>
@@ -414,9 +406,7 @@
                 <div class="relative z-10">
                     <div class="flex items-start justify-between mb-2">
                         <span class="text-[10px] sm:text-xs font-semibold opacity-90 uppercase tracking-wider">Sakit</span>
-                        <div class="w-7 h-7 sm:w-8 sm:h-8 bg-white/15 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0 ml-1">
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-                        </div>
+                       
                     </div>
                     <p class="text-2xl sm:text-3xl lg:text-4xl font-extrabold leading-none tabular-nums">{{ $statistik['sakit'] }}</p>
                     <p class="text-[10px] sm:text-xs opacity-60 mt-1">hari sakit</p>
@@ -428,9 +418,7 @@
                 <div class="relative z-10">
                     <div class="flex items-start justify-between mb-2">
                         <span class="text-[10px] sm:text-xs font-semibold opacity-90 uppercase tracking-wider">Alpha</span>
-                        <div class="w-7 h-7 sm:w-8 sm:h-8 bg-white/15 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/10 flex-shrink-0 ml-1">
-                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                        </div>
+                        
                     </div>
                     <p class="text-2xl sm:text-3xl lg:text-4xl font-extrabold leading-none tabular-nums">{{ $statistik['alpha'] }}</p>
                     <p class="text-[10px] sm:text-xs opacity-60 mt-1">hari alpha</p>
@@ -444,12 +432,12 @@
         <div class="glass-card p-4 sm:p-5 mb-5 fade-up">
             <div class="flex justify-between items-start mb-3">
                 <div>
-                    <h4 class="text-sm font-semibold text-gray-200 mb-0.5">Persentase Kehadiran</h4>
-                    <p class="text-[11px] text-gray-500">Distribusi status presensi bulan ini</p>
+                    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-0.5">Persentase Kehadiran</h4>
+                    <p class="text-[11px] text-gray-400 dark:text-gray-500">Distribusi status presensi bulan ini</p>
                 </div>
                 <div class="text-right">
-                    <div class="text-2xl sm:text-3xl font-extrabold tabular-nums leading-none {{ $pct >= 80 ? 'text-emerald-400' : ($pct >= 60 ? 'text-yellow-400' : 'text-red-400') }}">{{ $pct }}%</div>
-                    <p class="text-[10px] text-gray-500 mt-1">kehadiran</p>
+                    <div class="text-2xl sm:text-3xl font-extrabold tabular-nums leading-none {{ $pct >= 80 ? 'text-emerald-600 dark:text-emerald-400' : ($pct >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400') }}">{{ $pct }}%</div>
+                    <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1">kehadiran</p>
                 </div>
             </div>
             <div class="progress-multi w-full h-3 sm:h-3.5 flex">
@@ -467,24 +455,24 @@
                 @endif
             </div>
             <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-4 gap-y-2 mt-3.5">
-                <div class="flex items-center gap-1.5 text-[11px] text-gray-400">
+                <div class="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-400/20 inline-block flex-shrink-0"></span>
-                    Hadir <span class="text-white font-semibold tabular-nums">({{ $statistik['hadir'] }})</span>
+                    Hadir <span class="text-gray-900 dark:text-white font-semibold tabular-nums">({{ $statistik['hadir'] }})</span>
                 </div>
-                <div class="flex items-center gap-1.5 text-[11px] text-gray-400">
+                <div class="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
                     <span class="w-2.5 h-2.5 rounded-full bg-blue-400 ring-2 ring-blue-400/20 inline-block flex-shrink-0"></span>
-                    Izin <span class="text-white font-semibold tabular-nums">({{ $statistik['izin'] }})</span>
+                    Izin <span class="text-gray-900 dark:text-white font-semibold tabular-nums">({{ $statistik['izin'] }})</span>
                 </div>
-                <div class="flex items-center gap-1.5 text-[11px] text-gray-400">
+                <div class="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
                     <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 ring-2 ring-yellow-400/20 inline-block flex-shrink-0"></span>
-                    Sakit <span class="text-white font-semibold tabular-nums">({{ $statistik['sakit'] }})</span>
+                    Sakit <span class="text-gray-900 dark:text-white font-semibold tabular-nums">({{ $statistik['sakit'] }})</span>
                 </div>
-                <div class="flex items-center gap-1.5 text-[11px] text-gray-400">
+                <div class="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
                     <span class="w-2.5 h-2.5 rounded-full bg-red-400 ring-2 ring-red-400/20 inline-block flex-shrink-0"></span>
-                    Alpha <span class="text-white font-semibold tabular-nums">({{ $statistik['alpha'] }})</span>
+                    Alpha <span class="text-gray-900 dark:text-white font-semibold tabular-nums">({{ $statistik['alpha'] }})</span>
                 </div>
-                <div class="col-span-2 sm:ml-auto text-[11px] text-gray-500 font-medium sm:whitespace-nowrap">
-                    Total: <span class="text-white font-semibold tabular-nums">{{ $statistik['total'] }}</span> hari
+                <div class="col-span-2 sm:ml-auto text-[11px] text-gray-400 dark:text-gray-500 font-medium sm:whitespace-nowrap">
+                    Total: <span class="text-gray-900 dark:text-white font-semibold tabular-nums">{{ $statistik['total'] }}</span> hari
                 </div>
             </div>
         </div>
@@ -493,13 +481,13 @@
         <div class="flex gap-2 mb-4 lg:hidden">
             <button onclick="switchPresTab('hadir')" id="tab-hadir"
                     class="pres-tab flex-1 py-2.5 text-xs sm:text-sm font-semibold rounded-xl bg-emerald-600 text-white shadow-lg shadow-emerald-900/30 transition-all touch-manipulation">
-                ✅ Kehadiran
+                 Kehadiran
                 <span class="ml-1 bg-white/25 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums">{{ $presensisHadir->count() }}</span>
             </button>
             <button onclick="switchPresTab('absen')" id="tab-absen"
-                    class="pres-tab flex-1 py-2.5 text-xs sm:text-sm font-semibold rounded-xl bg-white/5 border border-white/10 text-gray-300 transition-all touch-manipulation">
-                ⚠️ Ketidakhadiran
-                <span class="ml-1 bg-white/10 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums">{{ $presensisAbsen->count() }}</span>
+                    class="pres-tab flex-1 py-2.5 text-xs sm:text-sm font-semibold rounded-xl tab-inactive transition-all touch-manipulation">
+                 Ketidakhadiran
+                <span class="ml-1 bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums">{{ $presensisAbsen->count() }}</span>
             </button>
         </div>
 
@@ -522,44 +510,44 @@
                 </div>
 
                 <div class="mx-3 sm:mx-4 mt-3 sm:mt-4 px-3 sm:px-4 py-2 sm:py-2.5 info-notice rounded-xl flex items-center gap-2">
-                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <p class="text-[10px] sm:text-xs text-emerald-300">Santri hadir — tidak ada keterangan tambahan</p>
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <p class="text-[10px] sm:text-xs text-emerald-700 dark:text-emerald-300">Santri hadir — tidak ada keterangan tambahan</p>
                 </div>
 
                 <div class="overflow-x-auto flex-1 mt-3 sm:mt-4" style="-webkit-overflow-scrolling: touch;">
                     <table class="min-w-full">
-                        <thead class="dark-thead">
+                        <thead class="table-thead">
                             <tr>
-                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider w-8">#</th>
-                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Tanggal</th>
-                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Hari</th>
-                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Sesi</th>
+                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-8">#</th>
+                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tanggal</th>
+                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Hari</th>
+                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sesi</th>
                             </tr>
                         </thead>
-                        <tbody id="tbody-hadir" class="divide-y divide-white/5">
+                        <tbody id="tbody-hadir" class="divide-y divide-gray-100 dark:divide-white/5">
                             @forelse($presensisHadir as $i => $p)
-                            <tr class="row-hadir dark-row-hadir">
-                                <td class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-[10px] sm:text-xs text-gray-600 tabular-nums">{{ $i + 1 }}</td>
+                            <tr class="row-hadir table-row-hadir">
+                                <td class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-[10px] sm:text-xs text-gray-400 dark:text-gray-600 tabular-nums">{{ $i + 1 }}</td>
                                 <td class="px-2.5 sm:px-4 py-2.5 sm:py-3">
-                                    <p class="text-xs sm:text-sm font-medium text-white whitespace-nowrap tabular-nums">{{ \Carbon\Carbon::parse($p->tanggal)->format('d M Y') }}</p>
-                                    <p class="text-[9px] sm:hidden text-gray-500 mt-0.5">{{ \Carbon\Carbon::parse($p->tanggal)->locale('id')->isoFormat('dddd') }}</p>
+                                    <p class="text-xs sm:text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap tabular-nums">{{ \Carbon\Carbon::parse($p->tanggal)->format('d M Y') }}</p>
+                                    <p class="text-[9px] sm:hidden text-gray-400 dark:text-gray-500 mt-0.5">{{ \Carbon\Carbon::parse($p->tanggal)->locale('id')->isoFormat('dddd') }}</p>
                                 </td>
-                                <td class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-xs text-gray-400 whitespace-nowrap hidden sm:table-cell">{{ \Carbon\Carbon::parse($p->tanggal)->locale('id')->isoFormat('dddd') }}</td>
+                                <td class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap hidden sm:table-cell">{{ \Carbon\Carbon::parse($p->tanggal)->locale('id')->isoFormat('dddd') }}</td>
                                 <td class="px-2.5 sm:px-4 py-2.5 sm:py-3">
                                     @if($p->sesi)
                                     <span class="status-badge status-hadir px-2 py-0.5 text-[10px] sm:text-xs">{{ $p->sesi }}</span>
                                     @else
-                                    <span class="text-[10px] sm:text-xs text-gray-600">−</span>
+                                    <span class="text-[10px] sm:text-xs text-gray-300 dark:text-gray-600">−</span>
                                     @endif
                                 </td>
                             </tr>
                             @empty
                             <tr>
                                 <td colspan="4" class="px-4 py-12 text-center">
-                                    <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                                        <svg class="w-6 h-6 text-emerald-400/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-emerald-500/70 dark:text-emerald-400/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                     </div>
-                                    <p class="text-xs sm:text-sm text-gray-500">Tidak ada data kehadiran</p>
+                                    <p class="text-xs sm:text-sm text-gray-400 dark:text-gray-500">Tidak ada data kehadiran</p>
                                 </td>
                             </tr>
                             @endforelse
@@ -567,7 +555,7 @@
                     </table>
                 </div>
                 @if($presensisHadir->count() > 0)
-                <div id="pagination-hadir" class="px-3 sm:px-4 py-2.5 sm:py-3 border-t border-white/5 bg-white/[0.02] flex-shrink-0"></div>
+                <div id="pagination-hadir" class="px-3 sm:px-4 py-2.5 sm:py-3 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02] flex-shrink-0"></div>
                 @endif
             </div>
 
@@ -587,8 +575,8 @@
                 </div>
 
                 <div class="mx-3 sm:mx-4 mt-3 sm:mt-4 px-3 sm:px-4 py-2 sm:py-2.5 warn-notice rounded-xl flex items-center gap-2">
-                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                    <p class="text-[10px] sm:text-xs text-amber-300">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <p class="text-[10px] sm:text-xs text-amber-700 dark:text-amber-300">
                         @if($presensisAbsen->count() > 0) Terdapat keterangan alasan ketidakhadiran
                         @else Tidak ada ketidakhadiran bulan ini @endif
                     </p>
@@ -596,49 +584,50 @@
 
                 <div class="overflow-x-auto flex-1 mt-3 sm:mt-4" style="-webkit-overflow-scrolling: touch;">
                     <table class="min-w-full">
-                        <thead class="dark-thead">
+                        <thead class="table-thead">
                             <tr>
-                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider w-8">#</th>
-                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Tanggal</th>
-                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Hari</th>
-                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-center text-[10px] font-semibold text-gray-400 uppercase tracking-wider w-16 sm:w-20">Status</th>
-                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Keterangan</th>
+                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-8">#</th>
+                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tanggal</th>
+                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Hari</th>
+                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-center text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16 sm:w-20">Status</th>
+                                <th class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-left text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Keterangan</th>
                             </tr>
                         </thead>
-                        <tbody id="tbody-absen" class="divide-y divide-white/5">
+                        <tbody id="tbody-absen" class="divide-y divide-gray-100 dark:divide-white/5">
                             @forelse($presensisAbsen as $i => $p)
-                            <tr class="row-absen dark-row">
-                                <td class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-[10px] sm:text-xs text-gray-600 tabular-nums">{{ $i + 1 }}</td>
+                            <tr class="row-absen table-row">
+                                <td class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-[10px] sm:text-xs text-gray-400 dark:text-gray-600 tabular-nums">{{ $i + 1 }}</td>
                                 <td class="px-2.5 sm:px-4 py-2.5 sm:py-3">
-                                    <p class="text-xs sm:text-sm font-medium text-white whitespace-nowrap tabular-nums">{{ \Carbon\Carbon::parse($p->tanggal)->format('d M Y') }}</p>
-                                    <p class="text-[9px] sm:hidden text-gray-500 mt-0.5">{{ \Carbon\Carbon::parse($p->tanggal)->locale('id')->isoFormat('dddd') }}</p>
+                                    <p class="text-xs sm:text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap tabular-nums">{{ \Carbon\Carbon::parse($p->tanggal)->format('d M Y') }}</p>
+                                    <p class="text-[9px] sm:hidden text-gray-400 dark:text-gray-500 mt-0.5">{{ \Carbon\Carbon::parse($p->tanggal)->locale('id')->isoFormat('dddd') }}</p>
                                 </td>
-                                <td class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-xs text-gray-400 whitespace-nowrap hidden sm:table-cell">{{ \Carbon\Carbon::parse($p->tanggal)->locale('id')->isoFormat('dddd') }}</td>
+                                <td class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap hidden sm:table-cell">{{ \Carbon\Carbon::parse($p->tanggal)->locale('id')->isoFormat('dddd') }}</td>
                                 <td class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-center">
                                     @if($p->status === 'Izin')
-                                    <span class="status-badge status-izin px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs">📋 Izin</span>
+                                    
+                                  <span class="status-badge status-izin px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs">Izin</span>
                                     @elseif($p->status === 'Sakit')
-                                    <span class="status-badge status-sakit px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs">🏥 Sakit</span>
+                                    <span class="status-badge status-sakit px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs">Sakit</span>
                                     @else
-                                    <span class="status-badge status-alpha px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs">✗ Alpha</span>
+                                    <span class="status-badge status-alpha px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs">Alpha</span>
                                     @endif
                                 </td>
-                                <td class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-[10px] sm:text-sm text-gray-400">
+                                <td class="px-2.5 sm:px-4 py-2.5 sm:py-3 text-[10px] sm:text-sm text-gray-500 dark:text-gray-400">
                                     @if($p->keterangan)
                                     <span class="italic leading-snug">{{ $p->keterangan }}</span>
                                     @else
-                                    <span class="text-[9px] sm:text-xs text-gray-600 italic">@if($p->status === 'Alpha') Tanpa keterangan @else — @endif</span>
+                                    <span class="text-[9px] sm:text-xs text-gray-300 dark:text-gray-600 italic">@if($p->status === 'Alpha') Tanpa keterangan @else — @endif</span>
                                     @endif
                                 </td>
                             </tr>
                             @empty
                             <tr>
                                 <td colspan="5" class="px-4 py-12 text-center">
-                                    <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                                        <svg class="w-6 h-6 text-emerald-400/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-emerald-500/80 dark:text-emerald-400/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                     </div>
-                                    <p class="text-xs sm:text-sm text-gray-300 font-semibold">Tidak ada ketidakhadiran</p>
-                                    <p class="text-[10px] sm:text-xs text-gray-500 mt-1">Santri hadir penuh bulan ini 🎉</p>
+                                    <p class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-semibold">Tidak ada ketidakhadiran</p>
+                                    <p class="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 mt-1">Santri hadir penuh bulan ini </p>
                                 </td>
                             </tr>
                             @endforelse
@@ -646,7 +635,7 @@
                     </table>
                 </div>
                 @if($presensisAbsen->count() > 0)
-                <div id="pagination-absen" class="px-3 sm:px-4 py-2.5 sm:py-3 border-t border-white/5 bg-white/[0.02] flex-shrink-0"></div>
+                <div id="pagination-absen" class="px-3 sm:px-4 py-2.5 sm:py-3 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/[0.02] flex-shrink-0"></div>
                 @endif
             </div>
 
@@ -668,17 +657,17 @@ function switchPresTab(tab) {
     const panelHadir = document.getElementById('panel-hadir');
     const panelAbsen = document.getElementById('panel-absen');
     if (tab === 'hadir') {
-        tabHadir.classList.remove('bg-white/5','border','border-white/10','text-gray-300');
+        tabHadir.classList.remove('tab-inactive');
         tabHadir.classList.add('bg-emerald-600','text-white','shadow-lg','shadow-emerald-900/30');
         tabAbsen.classList.remove('bg-slate-600','text-white','shadow-lg','shadow-slate-900/30');
-        tabAbsen.classList.add('bg-white/5','border','border-white/10','text-gray-300');
+        tabAbsen.classList.add('tab-inactive');
         panelHadir.classList.remove('hidden'); panelHadir.classList.add('flex');
         panelAbsen.classList.add('hidden'); panelAbsen.classList.remove('flex');
     } else {
-        tabAbsen.classList.remove('bg-white/5','border','border-white/10','text-gray-300');
+        tabAbsen.classList.remove('tab-inactive');
         tabAbsen.classList.add('bg-slate-600','text-white','shadow-lg','shadow-slate-900/30');
         tabHadir.classList.remove('bg-emerald-600','text-white','shadow-lg','shadow-emerald-900/30');
-        tabHadir.classList.add('bg-white/5','border','border-white/10','text-gray-300');
+        tabHadir.classList.add('tab-inactive');
         panelAbsen.classList.remove('hidden'); panelAbsen.classList.add('flex');
         panelHadir.classList.add('hidden'); panelHadir.classList.remove('flex');
     }
@@ -699,15 +688,15 @@ function initPagination(rowClass, tbodyId, paginationId, perPage) {
     function render() {
         const c = document.getElementById(paginationId); if (!c) return;
         const from = Math.min((cur-1)*perPage+1,totalRows), to = Math.min(cur*perPage,totalRows);
-        const n='px-2.5 py-1 text-xs rounded-md font-medium text-gray-400 hover:bg-white/5 hover:text-white cursor-pointer transition';
+        const n='px-2.5 py-1 text-xs rounded-md font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white cursor-pointer transition';
         const a='px-2.5 py-1 text-xs rounded-md font-semibold bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-900/30';
-        const d='px-2.5 py-1 text-xs rounded-md text-gray-600 cursor-not-allowed';
-        let h=`<div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-[11px] text-gray-500 whitespace-nowrap tabular-nums">${from}–${to} dari ${totalRows}</span><div class="flex items-center gap-1 flex-wrap">`;
+        const d='px-2.5 py-1 text-xs rounded-md text-gray-300 dark:text-gray-600 cursor-not-allowed';
+        let h=`<div class="flex items-center justify-between gap-2 flex-wrap"><span class="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap tabular-nums">${from}–${to} dari ${totalRows}</span><div class="flex items-center gap-1 flex-wrap">`;
         h+=`<button onclick="gp_${tbodyId}(${cur-1})" ${cur===1?'disabled':''} class="${cur===1?d:n}">‹</button>`;
         let sp=Math.max(1,cur-2),ep=Math.min(totalPages,sp+4); if(ep-sp<4)sp=Math.max(1,ep-4);
-        if(sp>1){h+=`<button onclick="gp_${tbodyId}(1)" class="${n}">1</button>`;if(sp>2)h+=`<span class="text-xs text-gray-600">…</span>`;}
+        if(sp>1){h+=`<button onclick="gp_${tbodyId}(1)" class="${n}">1</button>`;if(sp>2)h+=`<span class="text-xs text-gray-400 dark:text-gray-600">…</span>`;}
         for(let i=sp;i<=ep;i++)h+=`<button onclick="gp_${tbodyId}(${i})" class="${i===cur?a:n}">${i}</button>`;
-        if(ep<totalPages){if(ep<totalPages-1)h+=`<span class="text-xs text-gray-600">…</span>`;h+=`<button onclick="gp_${tbodyId}(${totalPages})" class="${n}">${totalPages}</button>`;}
+        if(ep<totalPages){if(ep<totalPages-1)h+=`<span class="text-xs text-gray-400 dark:text-gray-600">…</span>`;h+=`<button onclick="gp_${tbodyId}(${totalPages})" class="${n}">${totalPages}</button>`;}
         h+=`<button onclick="gp_${tbodyId}(${cur+1})" ${cur===totalPages?'disabled':''} class="${cur===totalPages?d:n}">›</button>`;
         h+=`</div></div>`; c.innerHTML = h;
     }

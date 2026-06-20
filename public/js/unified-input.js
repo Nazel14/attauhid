@@ -210,22 +210,27 @@ async function loadPresensiHariIni() {
         const tableBody = document.getElementById('tableBodyPresensi');
         
         if (tableBody) {
+            const isDark = document.documentElement.classList.contains('dark');
+            const setoranBg = isDark ? '#312e81' : '#e0e7ff';
+            const setoranFg = isDark ? '#a5b4fc' : '#4338ca';
             if (data.santri_list && data.santri_list.length > 0) {
                 tableBody.innerHTML = data.santri_list.map((santri, index) => {
                     const sesiCells = sesiHeaders.map(sesi => {
                         const p = santri.sesi_data && santri.sesi_data[sesi];
                         if (p) {
-                            const colorClass = { Hadir:'bg-green-500', Sakit:'bg-orange-500', Izin:'bg-yellow-500', Alpha:'bg-red-500' }[p.status] || 'bg-gray-400';
+                            // Inline hex agar warna titik status TIDAK ter-purge Tailwind
+                            const dotColor = { Hadir:'#10b981', Sakit:'#f97316', Izin:'#f59e0b', Alpha:'#ef4444' }[p.status] || '#9ca3af';
                             const jumlahSetoran = p.jumlah_setoran || 0;
                             const waktu = p.waktu || '';
                             
                             return `<td class="px-1 py-2 border-b dark:border-gray-700">
                                 <div class="flex flex-col items-center justify-center gap-1">
                                     <div class="flex items-center justify-center gap-1.5">
-                                        <div class="w-5 h-5 rounded-full ${colorClass} flex-shrink-0 cursor-help" 
+                                        <div class="w-5 h-5 rounded-full flex-shrink-0 cursor-help" 
+                                            style="background-color:${dotColor};"
                                             title="${p.status}${waktu ? ' - ' + waktu : ''}"></div>
                                         ${jumlahSetoran > 0 ? 
-                                            `<span class="px-1 bg-indigo-950 text-indigo-400  rounded text-[9px]" 
+                                            `<span class="setoran-badge px-1 rounded text-[9px]" 
                                             title="${jumlahSetoran} setoran">📖${jumlahSetoran}</span>` 
                                             : ''
                                         }
@@ -237,10 +242,10 @@ async function loadPresensiHariIni() {
                                 </div>
                             </td>`;
                         }
-                        return `<td class="px-1 py-2 border-b dark:border-gray-700"><div class="flex items-center justify-center"><div class="w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-600 flex-shrink-0"></div></div></td>`;
+                        return `<td class="px-1 py-2 border-b dark:border-gray-700"><div class="flex items-center justify-center"><div class="w-5 h-5 rounded-full flex-shrink-0" style="border:2px solid #9ca3af;"></div></div></td>`;
                     }).join('');
 
-                    return `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    return `<tr style="transition: background-color 0.15s;" onmouseover="this.style.backgroundColor='rgba(99,102,241,0.06)'" onmouseout="this.style.backgroundColor=''">
                         <td class="px-2 py-2.5 border-b dark:border-gray-700 text-gray-700 dark:text-gray-300 text-center font-medium">${index + 1}</td>
                         <td class="px-2 py-2.5 border-b dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium">${santri.name}</td>
                         ${sesiCells}

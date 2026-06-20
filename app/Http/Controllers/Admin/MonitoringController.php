@@ -149,6 +149,52 @@ class MonitoringController extends Controller
             ? min(100, round(($totalHafalanJuz / $targetJuz) * 100, 2))
             : 0;
 
+        // Iqro-aware: hitung ulang jika santri Iqro
+        $halamanIqroPerKategori = ['Murajaah' => 0, 'Tilawah' => 0];
+        $isIqro = ($santri->target_metode?->value ?? 'quran') === 'iqro';
+        if ($isIqro) {
+            $targetJilid       = (int)($santri->target_jilid ?? 1);
+            $totalHalamanJilid = (int)(config('iqro.halaman_per_jilid.' . $targetJilid) ?? 0);
+            $totalHafalanJuz   = 0; // reuse variabel — di Iqro ini = total halaman
+
+            $setoransIqroAll = Setoran::where('santri_id', $id)
+                ->where('kategori_setoran', 'Hafalan')
+                ->when($tahunAjaranId, fn($q) => $q->where('tahun_ajaran_id', $tahunAjaranId))
+                ->get();
+
+            foreach ($setoransIqroAll as $s) {
+                // Hanya hitung halaman yang jilidnya SAMA dengan target jilid sekarang,
+                // supaya progress mulai dari nol lagi saat santri naik jilid.
+                if (!preg_match('/^Iqro Jilid (\d+)/i', (string)$s->surat_start, $mj)) continue;
+                if ((int)$mj[1] !== $targetJilid) continue;
+                $h1 = (int)$s->ayat_start;
+                $h2 = (int)($s->ayat_end ?: $s->ayat_start);
+                if ($h1 > 0 && $h2 >= $h1) $totalHafalanJuz += ($h2 - $h1 + 1);
+            }
+
+           $progressHafalan = $totalHalamanJilid > 0
+                ? min(100, round(($totalHafalanJuz / $totalHalamanJilid) * 100, 2))
+                : 0;
+
+            // Total halaman Iqro per kategori (untuk kartu Murajaah & Tilawah)
+            $halamanIqroPerKategori = [];
+            foreach (['Murajaah', 'Tilawah'] as $kat) {
+                $rows = Setoran::where('santri_id', $id)
+                    ->where('kategori_setoran', $kat)
+                    ->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir])
+                    ->when($tahunAjaranId, fn($q) => $q->where('tahun_ajaran_id', $tahunAjaranId))
+                    ->get();
+                $hal = 0;
+                foreach ($rows as $s) {
+                    if (!preg_match('/^Iqro Jilid \d+/i', (string)$s->surat_start)) continue;
+                    $h1 = (int)$s->ayat_start;
+                    $h2 = (int)($s->ayat_end ?: $s->ayat_start);
+                    if ($h1 > 0 && $h2 >= $h1) $hal += ($h2 - $h1 + 1);
+                }
+                $halamanIqroPerKategori[$kat] = $hal;
+            }
+        }
+
         // ✅ Data Setoran per Kategori dengan pagination (difilter tahun ajaran + rentang tanggal)
         $baseSetoran = Setoran::where('santri_id', $id)
             ->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir])
@@ -187,6 +233,7 @@ class MonitoringController extends Controller
 
         return view('admin.monitoring.detail-santri', compact(
             'santri',
+            'halamanIqroPerKategori',
             'setoranStats',
             'targetJuz',
             'totalHafalanJuz',
