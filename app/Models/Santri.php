@@ -21,6 +21,7 @@ class Santri extends Model
         'target_juz',
         'target_metode',
         'target_jilid',
+        'status',
     ];
 
     protected $casts = [
@@ -41,6 +42,10 @@ class Santri extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function kenaikanUsulans()
+    {
+        return $this->hasMany(KenaikanUsulan::class);
+    }
     /**
      * Relasi Many-to-One: Santri belongs to one Kelas.
      */
@@ -210,15 +215,16 @@ class Santri extends Model
      * Daftar halaman (unik) yang SUDAH disetor untuk satu jilid Iqro.
      * Deteksi via label "Iqro Jilid X" di surat_start/surat_end.
      */
-    public function halamanIqroTersetor(int $jilid): array
-    {
-        $label = 'Iqro Jilid ' . $jilid;
+    public function halamanIqroTersetor(int $jilid, ?string $sejak = null): array
+{
+    $label = 'Iqro Jilid ' . $jilid;
 
-        $rows = $this->setorans()
-            ->where(function ($q) use ($label) {
-                $q->where('surat_start', $label)->orWhere('surat_end', $label);
-            })
-            ->get(['ayat_start', 'ayat_end']);
+    $rows = $this->setorans()
+        ->where(function ($q) use ($label) {
+            $q->where('surat_start', $label)->orWhere('surat_end', $label);
+        })
+        ->when($sejak, fn ($q) => $q->where('tanggal', '>=', $sejak))
+        ->get(['ayat_start', 'ayat_end']);
 
         $pages = [];
         foreach ($rows as $r) {
@@ -260,5 +266,54 @@ class Santri extends Model
 
         return true;
     }
+
+    /**
+     * Scope: hanya santri aktif (belum lulus / keluar)
+     */
+    public function scopeAktif($query)
+    {
+        return $query->where('status', 'aktif');
+    }
+
+    /**
+ * Tanggal masuk paling awal di kelas yang sedang ditempati santri.
+ * Dipakai sebagai "floor" progress: lanjut antar-semester (tidak reset),
+ * reset saat naik/pindah kelas. Null jika tak ada riwayat (fallback all-time).
+ */
+public function getTanggalMasukKelasAktif(): ?string
+{
+    return $this->kelasHistories()
+        ->where('kelas_id', $this->kelas_id)
+        ->min('tanggal_masuk');
+}
+
+/**
+ * Daftar halaman Iqro unik tersetor untuk satu jilid, DI KELAS tertentu.
+ * Versi kebal-tanggal: filter via kelas_id (bukan floor tanggal_masuk).
+ */
+public function halamanIqroTersetorKelas(int $jilid, ?int $kelasId = null): array
+{
+    $label = 'Iqro Jilid ' . $jilid;
+
+    $rows = $this->setorans()
+        ->where(function ($q) use ($label) {
+            $q->where('surat_start', $label)->orWhere('surat_end', $label);
+        })
+        ->when($kelasId, fn ($q) => $q->where('kelas_id', $kelasId))
+        ->get(['ayat_start', 'ayat_end']);
+
+    $pages = [];
+    foreach ($rows as $r) {
+        $start = (int) $r->ayat_start;
+        $end   = (int) ($r->ayat_end ?: $r->ayat_start);
+        if ($start <= 0) continue;
+        if ($end < $start) { [$start, $end] = [$end, $start]; }
+        for ($p = $start; $p <= $end; $p++) {
+            $pages[$p] = true;
+        }
+    }
+
+    return array_keys($pages);
+}
 
 }

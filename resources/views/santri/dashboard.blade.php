@@ -263,15 +263,18 @@
             {{-- PROFILE HEADER --}}
             <div class="px-4 sm:px-5 py-4 border-b border-gray-100 dark:border-white/5">
                 <div class="flex items-center gap-4">
+                    @php $santriPhoto = $santri->user->profile_photo ?? (auth()->user()->profile_photo ?? null); @endphp
+                    @if($santriPhoto)
+                        <img src="{{ asset('storage/' . $santriPhoto) }}" alt="Foto" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover object-top border-2 border-indigo-200 dark:border-indigo-700 flex-shrink-0">
+                    @else
+                        <span class="w-14 h-14 sm:w-16 sm:h-16 rounded-full {{ ($santri->gender === 'P' || $santri->gender === 'Perempuan') ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-indigo-100 dark:bg-indigo-950 border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400' }} border-2 flex items-center justify-center text-xl font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+                    @endif
                     <div class="flex-1 min-w-0">
                         <h2 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white leading-tight truncate">
                             {{ $santri->name }}
                         </h2>
                         <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
                             <span class="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V4a2 2 0 114 0v2m-4 0h4"/>
-                                </svg>
                                 {{ $santri->nis }}
                             </span>
                             <span class="w-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></span>
@@ -563,9 +566,10 @@
                 <div class="flex-1">
                     <h4 class="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-1">Informasi Data</h4>
                     <p class="text-xs text-blue-600 dark:text-blue-300/70 leading-relaxed">
-                        Statistik yang ditampilkan merupakan data
-                        <strong class="text-blue-800 dark:text-blue-100 font-semibold">30 hari terakhir</strong>.
-                        Klik <strong class="text-blue-800 dark:text-blue-100 font-semibold">"Rapot Lengkap"</strong>
+                        Statistik yang ditampilkan merupakan
+                        <strong class="text-blue-800 dark:text-blue-100 font-semibold">akumulasi selama di kelas ini</strong>
+                        (mencakup semester ganjil &amp; genap). Klik
+                        <strong class="text-blue-800 dark:text-blue-100 font-semibold">"Rapot Lengkap"</strong>
                         untuk melihat laporan dengan filter periode custom.
                     </p>
                 </div>

@@ -49,6 +49,11 @@
         {{-- SANTRI INFO --}}
         <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-4 shadow-sm dark:shadow-none">
             <div class="flex items-center gap-3">
+                @if($santri->user && $santri->user->profile_photo)
+                    <img src="{{ asset('storage/' . $santri->user->profile_photo) }}" alt="Foto" class="w-12 h-12 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                @else
+                    <span class="w-12 h-12 rounded-full {{ $santri->gender === 'Perempuan' ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' }} border flex items-center justify-center text-base font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+                @endif
                 <div>
                     <p class="text-sm font-bold text-gray-900 dark:text-white">{{ $santri->name }}</p>
                     <p class="text-[11px] text-gray-500 font-mono">NIS: {{ $santri->nis }}</p>

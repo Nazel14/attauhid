@@ -1,6 +1,8 @@
 /**
  * Quran API Integration - Amiri Quran Version
- * Version: 4.0 - THEME AWARE: warna teks Arab pakai CSS var (--q-fg/--q-num/--q-box-border)
+ * Version: 4.1 - Marking shape: word-item inline-block + line-height 1.4 +
+ *                border-radius 16px (samakan tampilan tumpul dengan Iqro).
+ *                THEME AWARE: warna teks Arab pakai CSS var (--q-fg/--q-num/--q-box-border)
  *                dgn fallback #fff → light/dark di layar, PDF tetap putih (var fallback).
  */
 
@@ -196,6 +198,10 @@ function wrapWaqafSymbols(text) {
     return text;
 }
 
+// ✅ KONSTANTA bentuk marking (samakan dengan Iqro: kotak membulat / tumpul)
+const MARK_BORDER_RADIUS = '16px';
+const MARK_PADDING       = '3px 8px';
+
 function markWord(element) {
     let currentState = parseInt(element.getAttribute('data-mark-state')) || 0;
     currentState = (currentState + 1) % 4;
@@ -209,20 +215,20 @@ function markWord(element) {
 
     if (currentState === 1) {
         element.style.background   = 'linear-gradient(135deg, rgba(34, 197, 94, 0.25) 0%, rgba(34, 197, 94, 0.35) 100%)';
-        element.style.borderRadius = '8px';
-        element.style.padding      = '3px 8px';
+        element.style.borderRadius = MARK_BORDER_RADIUS;
+        element.style.padding      = MARK_PADDING;
         element.style.boxShadow    = '0 2px 8px rgba(34, 197, 94, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.1)';
         element.style.transform    = 'translateY(-1px)';
     } else if (currentState === 2) {
         element.style.background   = 'linear-gradient(135deg, rgba(234, 179, 8, 0.3) 0%, rgba(234, 179, 8, 0.4) 100%)';
-        element.style.borderRadius = '8px';
-        element.style.padding      = '3px 8px';
+        element.style.borderRadius = MARK_BORDER_RADIUS;
+        element.style.padding      = MARK_PADDING;
         element.style.boxShadow    = '0 2px 8px rgba(234, 179, 8, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.15)';
         element.style.transform    = 'translateY(-1px)';
     } else if (currentState === 3) {
         element.style.background   = 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(239, 68, 68, 0.35) 100%)';
-        element.style.borderRadius = '8px';
-        element.style.padding      = '3px 8px';
+        element.style.borderRadius = MARK_BORDER_RADIUS;
+        element.style.padding      = MARK_PADDING;
         element.style.boxShadow    = '0 2px 8px rgba(239, 68, 68, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.1)';
         element.style.transform    = 'translateY(-1px)';
     }
@@ -485,7 +491,7 @@ function renderSurahBox(ayahs) {
         words.forEach((word, wordIndex) => {
             if (word.trim() !== '') {
                 const processedWord = wrapWaqafSymbols(word);
-                html += `<span class="word-item" data-word="${word}" data-mark-state="0" style="display: inline; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);" onclick="markWord(this)">${processedWord}</span>`;
+                html += `<span class="word-item" data-word="${word}" data-mark-state="0" style="display: inline-block; line-height: 1.4; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);" onclick="markWord(this)">${processedWord}</span>`;
                 if (wordIndex < words.length - 1) html += ' ';
             }
         });
@@ -517,6 +523,18 @@ function addScrollbarStyles() {
             .word-item { transition: all 0.25s cubic-bezier(0.4,0,0.2,1); }
             .word-item:hover { opacity: 0.85; transform: translateY(-1px); }
             .word-item:active { transform: translateY(0); }
+
+            /* ✅ PAKSA bentuk marking membulat — kebal terhadap markWord mana pun
+               (inline style tanpa !important kalah oleh CSS !important ini) */
+            #quranDisplay .word-item[data-mark-state="1"],
+            #quranDisplay .word-item[data-mark-state="2"],
+            #quranDisplay .word-item[data-mark-state="3"],
+            #quranDisplayDrawer .word-item[data-mark-state="1"],
+            #quranDisplayDrawer .word-item[data-mark-state="2"],
+            #quranDisplayDrawer .word-item[data-mark-state="3"] {
+                border-radius: 16px !important;
+                padding: 12px 14px !important;
+            }
         `;
         document.head.appendChild(style);
     }
@@ -662,4 +680,4 @@ window.calculateFallbackStatistics = calculateFallbackStatistics;
 window.surahMapping                = surahMapping;
 window.POIN_PER_KESALAHAN          = POIN_PER_KESALAHAN;
 
-console.log('✅ quran-api.js v4.0 LOADED — theme aware (var --q-fg) + bobot -4 poin/kesalahan');
+console.log('✅ quran-api.js v4.1 LOADED — marking radius 16px (inline-block + line-height 1.4) + bobot -4 poin/kesalahan');

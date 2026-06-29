@@ -210,7 +210,7 @@
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                         Edit
                     </button>
-                    <form action="{{ route('admin.kelas.destroy', $kela->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus Kelas {{ addslashes($kela->name) }}?')">
+                    <form action="{{ route('admin.kelas.destroy', $kela->id) }}" method="POST" onsubmit="return confirm('Hapus Kelas {{ addslashes($kela->name) }}? Kelas yang masih memiliki santri tidak dapat dihapus.')">
                         @csrf @method('DELETE')
                         <button type="submit" class="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 active:bg-red-100 dark:active:bg-red-950/70 transition-colors">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -241,7 +241,7 @@
                         <th class="th">Tahun Ajaran</th>
                         <th class="th">Wali Kelas/Murobbi</th>
                         <th class="th">Jenis Kelas</th>
-                        <th class="th text-center">Aksi</th>
+                        <th class="th" style="text-align:right; padding-right:100px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700/50">
@@ -265,7 +265,7 @@
                         <td class="px-4 py-3">
                             <div class="flex gap-2 justify-center">
                                 <button @click="openEdit({ id: '{{ $kela->id }}', name: '{{ $kela->name }}', tahun_ajaran: '{{ $kela->tahun_ajaran }}', guru_id: '{{ $kela->guru_id }}', gender_restriction: '{{ $kela->gender_restriction }}' })" class="px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 border border-indigo-300 text-indigo-700 dark:bg-indigo-600/20 dark:hover:bg-indigo-600/40 dark:border-indigo-600/30 dark:text-indigo-400 text-xs font-semibold rounded-lg transition-colors">Edit</button>
-                                <form action="{{ route('admin.kelas.destroy', $kela->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus Kelas {{ addslashes($kela->name) }}?')">
+                                <form action="{{ route('admin.kelas.destroy', $kela->id) }}" method="POST" onsubmit="return confirm('Hapus Kelas {{ addslashes($kela->name) }}? Kelas yang masih memiliki santri tidak dapat dihapus.')">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="px-3 py-1.5 bg-red-100 hover:bg-red-200 border border-red-300 text-red-700 dark:bg-red-600/20 dark:hover:bg-red-600/40 dark:border-red-600/30 dark:text-red-400 text-xs font-semibold rounded-lg transition-colors">Hapus</button>
                                 </form>
@@ -304,7 +304,15 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="fi-lbl">Tahun Ajaran <span class="text-red-500 dark:text-red-400">*</span></label>
-                        <input name="tahun_ajaran" type="text" required value="{{ date('Y') . '/' . (date('Y') + 1) }}" class="fi-inp">
+                        @if($tahunAjaranAktif)
+                            <input type="text" value="{{ $tahunAjaranAktif->nama }}" readonly
+                                   class="fi-inp bg-gray-100 dark:bg-gray-800/60 cursor-not-allowed text-gray-600 dark:text-gray-400">
+                            <input type="hidden" name="tahun_ajaran" value="{{ $tahunAjaranAktif->nama }}">
+                        @else
+                            <input type="text" value="Belum ada tahun ajaran aktif" readonly
+                                   class="fi-inp bg-gray-100 dark:bg-gray-800/60 cursor-not-allowed text-amber-600 dark:text-amber-400">
+                        @endif
+                        <p class="text-[10px] text-gray-500 dark:text-gray-600 mt-1">Otomatis mengikuti tahun ajaran aktif</p>
                     </div>
                     <div>
                         <label class="fi-lbl">Wali Kelas <span class="text-red-500 dark:text-red-400">*</span></label>
@@ -348,7 +356,10 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="fi-lbl">Tahun Ajaran <span class="text-red-500 dark:text-red-400">*</span></label>
-                        <input name="tahun_ajaran" type="text" x-model="editData.tahun_ajaran" required class="fi-inp">
+                        <input type="text" x-model="editData.tahun_ajaran" readonly
+                               class="fi-inp bg-gray-100 dark:bg-gray-800/60 cursor-not-allowed text-gray-600 dark:text-gray-400">
+                        <input type="hidden" name="tahun_ajaran" :value="editData.tahun_ajaran">
+                        <p class="text-[10px] text-gray-500 dark:text-gray-600 mt-1">Tahun ajaran kelas ini</p>
                     </div>
                     <div>
                         <label class="fi-lbl">Wali Kelas <span class="text-red-500 dark:text-red-400">*</span></label>
@@ -494,6 +505,22 @@
     .fi-inp { width:100%; background:#fff; border:1px solid #d1d5db; border-radius:10px; color:#111827; font-size:13px; padding:9px 12px; outline:none; transition:border-color .15s, box-shadow .15s; }
     html.dark .fi-inp { background:#0d1117; border:1px solid #374151; color:#e5e7eb; }
     .fi-inp:focus { border-color:#6366f1; box-shadow:0 0 0 2px rgba(99,102,241,.18); }
+
+    /* SELECT — panah tunggal */
+    select.fi-inp {
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        appearance: none !important;
+        background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 24 24' stroke='%236b7280' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") no-repeat right 10px center / 16px !important;
+        padding-right: 34px !important;
+        cursor: pointer;
+    }
+    select.fi-inp::-ms-expand { display: none; }
+    html.dark select.fi-inp {
+        background: #0d1117 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 24 24' stroke='%239ca3af' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") no-repeat right 10px center / 16px !important;
+    }
+    select.fi-inp option { background: #fff; color: #111827; }
+    html.dark select.fi-inp option { background: #111827; color: #e5e7eb; }
     .btn-primary { padding:10px 0; background:#4f46e5; color:#fff; font-size:14px; font-weight:700; border-radius:12px; transition:background .15s; box-shadow:0 4px 14px rgba(79,70,229,.3); }
     .btn-primary:hover { background:#4338ca; }
     .btn-secondary { padding:10px 0; background:#f3f4f6; border:1px solid #d1d5db; color:#374151; font-size:14px; font-weight:600; border-radius:12px; transition:background .15s; }

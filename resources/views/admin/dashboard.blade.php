@@ -319,13 +319,7 @@
                     <span class="card-arrow"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg></span>
                 </a>
 
-                <a href="{{ route('admin.tahun-ajaran.index') }}" class="menu-card card-indigo">
-                    <div class="card-icon">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    </div>
-                    <div><p class="card-label">Tahun Ajaran</p><p class="card-sub">@if(isset($tahunAjaranAktif) && $tahunAjaranAktif){{ $tahunAjaranAktif->label_pendek }}@else Belum ada aktif @endif</p></div>
-                    <span class="card-arrow"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg></span>
-                </a>
+                
 
                 @can('kelola-guru')
                 <a href="{{ route('admin.gurus.index') }}" class="menu-card card-blue">
@@ -346,10 +340,7 @@
                     <span class="card-arrow"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg></span>
                 </a>
                 @endcan
-            </div>
-
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-5">
-
+                
                 @can('kelola-santri')
                 <a href="{{ route('admin.santris.index') }}" class="menu-card card-violet">
                     <div class="card-icon">
@@ -359,6 +350,17 @@
                     <span class="card-arrow"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg></span>
                 </a>
                 @endcan
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-5">
+
+                <a href="{{ route('admin.tahun-ajaran.index') }}" class="menu-card card-indigo">
+                    <div class="card-icon">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </div>
+                    <div><p class="card-label">Tahun Ajaran</p><p class="card-sub">@if(isset($tahunAjaranAktif) && $tahunAjaranAktif){{ $tahunAjaranAktif->label_pendek }}@else Belum ada aktif @endif</p></div>
+                    <span class="card-arrow"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg></span>
+                </a>
 
                 @can('kelola-presensi-sesi')
                 <a href="{{ route('admin.presensi-sesis.index') }}" class="menu-card card-purple">

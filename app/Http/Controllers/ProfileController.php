@@ -45,9 +45,24 @@ class ProfileController extends Controller
     public function updatePhoto(Request $request): RedirectResponse
     {
         $user = $request->user();
-        
-        // ✅ HAPUS validasi waktu update - sekarang bisa upload kapan saja
-        
+
+        // 🔒 Santri: tidak boleh ubah foto sama sekali
+        if ($user->role === 'santri') {
+            return Redirect::route('profile.edit')
+                ->with('error', 'Foto profil tidak dapat diubah.');
+        }
+
+        // 🔒 Guru: maksimal 1x per 7 hari
+        if ($user->role === 'guru' && $user->profile_photo_updated_at) {
+            $next = Carbon::parse($user->profile_photo_updated_at)->addDays(7);
+            if ($next->isFuture()) {
+                return Redirect::route('profile.edit')->with('error',
+                    'Foto hanya bisa diubah seminggu sekali. Coba lagi pada '
+                    . $next->locale('id')->isoFormat('D MMMM YYYY, HH:mm') . '.');
+            }
+        }
+        // admin: lolos tanpa batasan
+
         $request->validate([
             'profile_photo' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048']
         ]);
@@ -72,12 +87,18 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
+        // 🔒 Santri tidak boleh menghapus foto (mencegah bypass aturan)
+        if ($user->role === 'santri') {
+            return Redirect::route('profile.edit')
+                ->with('error', 'Foto profil tidak dapat diubah.');
+        }
+
         if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
             Storage::disk('public')->delete($user->profile_photo);
         }
 
         $user->profile_photo = null;
-        $user->profile_photo_updated_at = null;
+        // ⚠️ Catatan: cooldown TIDAK direset di sini (lihat penjelasan di bawah)
         $user->save();
 
         return Redirect::route('profile.edit')->with('status', 'photo-deleted');

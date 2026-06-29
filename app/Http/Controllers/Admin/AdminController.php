@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use App\Models\LogActivity;
 
 class AdminController extends Controller
@@ -48,6 +49,7 @@ class AdminController extends Controller
             'name' => ['required', 'string', 'max:255', 'unique:users,name'],
             'password' => ['required', 'confirmed', 'min:8'],
             'is_super_admin' => ['required', 'boolean'], // ✅ Checkbox, bukan dropdown
+            'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ]);
 
         // ✅ VALIDASI BATASAN JUMLAH ADMIN
@@ -90,9 +92,10 @@ class AdminController extends Controller
             // ✅ ASSIGN ROLE 'admin' (bukan 'super-admin')
             $user->assignRole('admin');
 
-            // ✅ Jika super admin, berikan permission 'kelola-admin'
-            if ($validated['is_super_admin']) {
-                $user->givePermissionTo('kelola-admin');
+            // ✅ Upload foto profil jika ada (resize jadi persegi 300x300)
+            if ($request->hasFile('profile_photo')) {
+                $user->profile_photo = $this->processProfilePhoto($request->file('profile_photo'));
+                $user->save();
             }
 
             
@@ -161,6 +164,7 @@ class AdminController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:users,name,' . $admin->id],
             'is_super_admin' => ['required', 'boolean'],
+            'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ]);
 
         // ✅ VALIDASI BATASAN SAAT MENGUBAH STATUS
@@ -211,6 +215,14 @@ class AdminController extends Controller
                 $admin->givePermissionTo('kelola-admin');
             } else {
                 $admin->revokePermissionTo('kelola-admin');
+            }
+            // ✅ Ganti foto profil jika ada upload baru
+            if ($request->hasFile('profile_photo')) {
+                if ($admin->profile_photo && Storage::disk('public')->exists($admin->profile_photo)) {
+                    Storage::disk('public')->delete($admin->profile_photo);
+                }
+                $admin->profile_photo = $this->processProfilePhoto($request->file('profile_photo'));
+                $admin->save();
             }
 
             // Log activity
@@ -302,4 +314,56 @@ class AdminController extends Controller
             return back()->with('error', 'Gagal menghapus admin: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Resize & crop foto jadi persegi (square) agar avatar tajam.
+     */
+  private function processProfilePhoto($file): string
+{
+    $maxSize = 400;
+    $path = $file->store('profile-photos', 'public');
+    $fullPath = Storage::disk('public')->path($path);
+
+    $info = getimagesize($fullPath);
+    if (!$info) return $path;
+
+    [$width, $height] = $info;
+    $mime = $info['mime'];
+
+    $src = match ($mime) {
+        'image/jpeg' => imagecreatefromjpeg($fullPath),
+        'image/png'  => imagecreatefrompng($fullPath),
+        default      => null,
+    };
+    if (!$src) return $path;
+
+    $min  = min($width, $height);
+    $srcX = (int) (($width - $min) / 2);
+    $srcY = ($height > $width) ? 0 : (int) (($height - $min) / 2); // ✅ potret crop dari atas
+
+    $size  = min($min, $maxSize); // ✅ jangan upscale (anti-buram)
+    $dst   = imagecreatetruecolor($size, $size);
+    $isPng = $mime === 'image/png';
+
+    if ($isPng) {
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+        $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
+        imagefill($dst, 0, 0, $transparent);
+    }
+
+    imagecopyresampled($dst, $src, 0, 0, $srcX, $srcY, $size, $size, $min, $min);
+
+    if ($isPng) {
+        imagepng($dst, $fullPath, 6);
+    } else {
+        imagejpeg($dst, $fullPath, 95);
+    }
+
+    imagedestroy($src);
+    imagedestroy($dst);
+
+    return $path;
+}
+
 }

@@ -64,7 +64,7 @@
     /* ====================================================== */
     /* COLOR VARIANTS — LIGHT MODE (default)                  */
     /* ====================================================== */
-    .card-indigo  { background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); border: 1px solid rgba(99,102,241,0.25); box-shadow: 0 4px 14px rgba(99,102,241,0.10); }
+    .card-indigo  { background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); border: 1px solid rgba(99,102,241,0.35); box-shadow: 0 4px 14px rgba(99,102,241,0.12); }
     .card-indigo::before  { background: #6366f1; }
     .card-indigo .card-icon  { background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.25); }
     .card-indigo .card-icon svg { color: #4f46e5; }
@@ -72,7 +72,7 @@
     .card-indigo .card-sub   { color: #6366f1; }
     .card-indigo .card-arrow svg { color: #6366f1; }
 
-    .card-emerald { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid rgba(16,185,129,0.25); box-shadow: 0 4px 14px rgba(16,185,129,0.10); }
+    .card-emerald { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border: 1px solid rgba(16,185,129,0.35); box-shadow: 0 4px 14px rgba(16,185,129,0.12); }
     .card-emerald::before { background: #10b981; }
     .card-emerald .card-icon { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.22); }
     .card-emerald .card-icon svg { color: #059669; }
@@ -80,7 +80,7 @@
     .card-emerald .card-sub  { color: #10b981; }
     .card-emerald .card-arrow svg { color: #10b981; }
 
-    .card-orange  { background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 1px solid rgba(249,115,22,0.25); box-shadow: 0 4px 14px rgba(249,115,22,0.10); }
+    .card-orange  { background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%); border: 1px solid rgba(249,115,22,0.35); box-shadow: 0 4px 14px rgba(249,115,22,0.12); }
     .card-orange::before  { background: #f97316; }
     .card-orange .card-icon  { background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.22); }
     .card-orange .card-icon svg { color: #ea580c; }
@@ -88,7 +88,7 @@
     .card-orange .card-sub   { color: #f97316; }
     .card-orange .card-arrow svg { color: #f97316; }
 
-    .card-amber   { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid rgba(202,138,4,0.25); box-shadow: 0 4px 14px rgba(202,138,4,0.10); }
+    .card-amber   { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 1px solid rgba(202,138,4,0.35); box-shadow: 0 4px 14px rgba(202,138,4,0.12); }
     .card-amber::before   { background: #f59e0b; }
     .card-amber .card-icon   { background: rgba(202,138,4,0.12); border: 1px solid rgba(202,138,4,0.25); }
     .card-amber .card-icon svg { color: #d97706; }
@@ -96,7 +96,7 @@
     .card-amber .card-sub    { color: #ca8a04; }
     .card-amber .card-arrow svg { color: #ca8a04; }
 
-    .card-blue    { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid rgba(59,130,246,0.25); box-shadow: 0 4px 14px rgba(59,130,246,0.10); }
+    .card-blue    { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: 1px solid rgba(59,130,246,0.35); box-shadow: 0 4px 14px rgba(59,130,246,0.12); }
     .card-blue::before    { background: #3b82f6; }
     .card-blue .card-icon    { background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.22); }
     .card-blue .card-icon svg { color: #2563eb; }
@@ -107,35 +107,35 @@
     /* ====================================================== */
     /* COLOR VARIANTS — DARK MODE                             */
     /* ====================================================== */
-    html.dark .card-indigo  { background: linear-gradient(135deg, #0c0e1f 0%, #11133a 100%); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    html.dark .card-indigo  { background: linear-gradient(135deg, #1e2140 0%, #262a52 100%); border: 1px solid rgba(99,102,241,0.30); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
     html.dark .card-indigo .card-icon  { background: rgba(99,102,241,0.15); }
     html.dark .card-indigo .card-icon svg { color: #818cf8; }
     html.dark .card-indigo .card-label { color: #c7d2fe; }
     html.dark .card-indigo .card-sub   { color: #6366f1; }
     html.dark .card-indigo .card-arrow svg { color: #818cf8; }
 
-    html.dark .card-emerald { background: linear-gradient(135deg, #041a10 0%, #062015 100%); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    html.dark .card-emerald { background: linear-gradient(135deg, #0d2920 0%, #123a2c 100%); border: 1px solid rgba(16,185,129,0.28); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
     html.dark .card-emerald .card-icon { background: rgba(16,185,129,0.12); }
     html.dark .card-emerald .card-icon svg { color: #34d399; }
     html.dark .card-emerald .card-label{ color: #a7f3d0; }
     html.dark .card-emerald .card-sub  { color: #10b981; }
     html.dark .card-emerald .card-arrow svg { color: #34d399; }
 
-    html.dark .card-orange  { background: linear-gradient(135deg, #1a0d04 0%, #221208 100%); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    html.dark .card-orange  { background: linear-gradient(135deg, #2b1709 0%, #3a200c 100%); border: 1px solid rgba(249,115,22,0.28); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
     html.dark .card-orange .card-icon  { background: rgba(249,115,22,0.12); }
     html.dark .card-orange .card-icon svg { color: #fb923c; }
     html.dark .card-orange .card-label { color: #fed7aa; }
     html.dark .card-orange .card-sub   { color: #f97316; }
     html.dark .card-orange .card-arrow svg { color: #fb923c; }
 
-    html.dark .card-amber   { background: linear-gradient(135deg, #1c1400 0%, #221a00 100%); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    html.dark .card-amber   { background: linear-gradient(135deg, #2b2207 0%, #3a2e0a 100%); border: 1px solid rgba(202,138,4,0.30); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
     html.dark .card-amber .card-icon   { background: rgba(202,138,4,0.15); }
     html.dark .card-amber .card-icon svg { color: #facc15; }
     html.dark .card-amber .card-label  { color: #fde68a; }
     html.dark .card-amber .card-sub    { color: #ca8a04; }
     html.dark .card-amber .card-arrow svg { color: #facc15; }
 
-    html.dark .card-blue    { background: linear-gradient(135deg, #071220 0%, #0c1a2e 100%); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    html.dark .card-blue    { background: linear-gradient(135deg, #0d2038 0%, #122d4e 100%); border: 1px solid rgba(59,130,246,0.28); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
     html.dark .card-blue .card-icon    { background: rgba(59,130,246,0.12); }
     html.dark .card-blue .card-icon svg { color: #60a5fa; }
     html.dark .card-blue .card-label   { color: #bfdbfe; }
@@ -241,6 +241,78 @@
         </script>
         @endif
 
+        @if(isset($notifikasi) && $notifikasi->count() > 0)
+        <div class="mb-5"
+             x-data="notifPanel({{ $notifikasi->pluck('id') }}, {{ ($notifikasiBelum ?? 0) > 0 ? 'true' : 'false' }})"
+             x-show="visible"
+             x-cloak>
+            <div class="bg-white dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60 rounded-2xl overflow-hidden shadow-sm dark:shadow-none">
+
+                {{-- Header --}}
+                <div class="flex items-center gap-2.5 px-4 py-3">
+                    <div class="relative w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-600/30 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                        @if(($notifikasiBelum ?? 0) > 0)
+                        <span class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold min-w-[15px] h-[15px] px-1 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-800">{{ $notifikasiBelum }}</span>
+                        @endif
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-bold text-gray-900 dark:text-white leading-none">Notifikasi</p>
+                        <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                            @if(($notifikasiBelum ?? 0) > 0){{ $notifikasiBelum }} belum dibaca@else Semua sudah dibaca @endif
+                        </p>
+                    </div>
+                    @if(($notifikasiBelum ?? 0) > 0)
+                    <form action="{{ route('guru.notifikasi.baca-semua') }}" method="POST" @click.stop>
+                        @csrf
+                        <button type="submit" class="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">Tandai semua</button>
+                    </form>
+                    @endif
+                    <button type="button" @click="open=!open" class="w-7 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 flex items-center justify-center text-gray-400 transition flex-shrink-0">
+                        <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <button type="button" @click="dismissPanel()" title="Sembunyikan notifikasi" class="w-7 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 flex items-center justify-center text-gray-400 transition flex-shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                {{-- List --}}
+                <div x-show="open" x-collapse>
+                    <div class="border-t border-gray-100 dark:border-gray-700/50 divide-y divide-gray-100 dark:divide-gray-700/40 max-h-80 overflow-y-auto">
+                        @foreach($notifikasi as $n)
+                        <div x-show="!isDismissed({{ $n->id }})"
+                             class="flex items-start gap-3 px-4 py-3 relative {{ is_null($n->dibaca_pada) ? 'bg-indigo-50/40 dark:bg-indigo-950/15' : '' }}">
+                            @if(is_null($n->dibaca_pada))
+                            <span class="absolute left-0 top-0 bottom-0 w-0.5 bg-indigo-500"></span>
+                            @endif
+                            <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-600/30 flex items-center justify-center text-sm flex-shrink-0">⬆️</div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[13px] font-semibold text-gray-900 dark:text-white leading-snug">{{ $n->judul }}</p>
+                                @if($n->pesan)<p class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">{{ $n->pesan }}</p>@endif
+                                @if(!empty($n->data['santri']))
+                                <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1 truncate">{{ implode(', ', $n->data['santri']) }}</p>
+                                @endif
+                                <div class="flex items-center gap-2 mt-1.5">
+                                    <button type="button" @click="dismissOne({{ $n->id }})" class="text-[10px] text-gray-400 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400 font-semibold">Sembunyikan</button>
+                                    <span class="text-gray-300 dark:text-gray-700">·</span>
+                                    <span class="text-[10px] text-gray-400 dark:text-gray-600">{{ $n->created_at?->diffForHumans() }}</span>
+                                    @if(is_null($n->dibaca_pada))
+                                    <span class="text-gray-300 dark:text-gray-700">·</span>
+                                    <form action="{{ route('guru.notifikasi.baca', $n->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="text-[10px] text-indigo-500 dark:text-indigo-400 hover:underline font-semibold">Tandai dibaca</button>
+                                    </form>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         {{-- Header --}}
         <div class="mb-5 sm:mb-6">
             <h1 class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
@@ -253,7 +325,7 @@
                 @if($kelas)
                 <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 border border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-700/50 dark:text-emerald-400">
                     <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse inline-block"></span>
-                    Wali Kelas {{ $kelas->nama }}
+                    Wali Kelas {{ $kelas->name }}
                 </span>
                 @else
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 border border-amber-200 text-amber-700 dark:bg-amber-950 dark:border-amber-700/50 dark:text-amber-400">
@@ -327,7 +399,7 @@
             </div>
 
             {{-- Baris 2: Riwayat Setoran + Riwayat Presensi --}}
-            <div class="grid grid-cols-2 sm:grid-cols-2 gap-3 mb-5">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
 
                 {{-- Riwayat Setoran --}}
                 <a href="{{ route('guru.setorans.index') }}" class="menu-card card-blue">
@@ -364,7 +436,23 @@
                         </svg>
                     </span>
                 </a>
-
+                {{-- Riwayat Santri --}}
+                <a href="{{ route('guru.riwayat-santri') }}" class="menu-card card-indigo col-span-2 sm:col-span-1">
+                    <div class="card-icon">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="card-label">Riwayat Santri</p>
+                        <p class="card-sub">Santri yang sudah naik/pindah</p>
+                    </div>
+                    <span class="card-arrow">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </span>
+                </a>
             </div>
         </div>
 
@@ -459,7 +547,7 @@
                         @php
                             $persen    = $santri->hafalan_persen ?? 0;
                             $totalJuz  = $santri->hafalan_total_juz ?? 0;
-                            $targetJuz = $santri->target_juz > 0 ? $santri->target_juz : 30;
+                            $targetJuz = $santri->target_juz_aktif ?? 0;
                             $barColor  = match(true) {
                                 $persen >= 80 => 'bg-emerald-500',
                                 $persen >= 50 => 'bg-blue-500',
@@ -477,6 +565,11 @@
                             <td class="px-3 py-2.5 text-xs text-gray-400 dark:text-gray-600">{{ $index + 1 }}</td>
                             <td class="px-3 py-2.5">
                                 <div class="flex items-center gap-2">
+                                    @if($santri->user && $santri->user->profile_photo)
+                                        <img src="{{ asset('storage/' . $santri->user->profile_photo) }}" alt="Foto" class="w-8 h-8 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                    @else
+                                        <span class="w-8 h-8 rounded-full {{ $santri->gender === 'Perempuan' ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' }} border flex items-center justify-center text-[11px] font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+                                    @endif
                                     <span class="text-xs font-medium text-gray-800 dark:text-gray-200">{{ $santri->name }}</span>
                                 </div>
                             </td>
@@ -484,7 +577,7 @@
                             <td class="px-3 py-2.5 text-xs text-center text-gray-500">{{ $santri->gender === 'Laki-laki' ? 'L' : 'P' }}</td>
                             <td class="px-3 py-2.5 text-center">
                                 <span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-50 border border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800/50 dark:text-emerald-400 font-medium">
-                                    {{ $santri->target_display }}
+                                    {{ $santri->target_badge ?? $santri->target_display }}
                                 </span>
                             </td>
                             <td class="px-3 py-2.5">
@@ -522,7 +615,7 @@
                 @php
                     $persen    = $santri->hafalan_persen ?? 0;
                     $totalJuz  = $santri->hafalan_total_juz ?? 0;
-                    $targetJuz = $santri->target_juz > 0 ? $santri->target_juz : 30;
+                    $targetJuz = $santri->target_juz_aktif ?? 0;
                     $barColor  = match(true) { $persen >= 80 => 'bg-emerald-500', $persen >= 50 => 'bg-blue-500', $persen >= 25 => 'bg-amber-500', default => 'bg-red-500' };
                     $badgeClass = match(true) {
                         $persen >= 80 => 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800/50 dark:text-emerald-400',
@@ -533,6 +626,11 @@
                 @endphp
                 <div class="flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50 border border-gray-200 dark:bg-gray-800/50 dark:border-gray-800">
                     <span class="text-[10px] text-gray-400 dark:text-gray-600 w-4 text-center flex-shrink-0">{{ $index + 1 }}</span>
+                    @if($santri->user && $santri->user->profile_photo)
+                        <img src="{{ asset('storage/' . $santri->user->profile_photo) }}" alt="Foto" class="w-9 h-9 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                    @else
+                        <span class="w-9 h-9 rounded-full {{ $santri->gender === 'Perempuan' ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' }} border flex items-center justify-center text-xs font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+                    @endif
                     <div class="flex-1 min-w-0">
                         <p class="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">{{ $santri->name }}</p>
                         <div class="flex items-center gap-1.5 mt-1">
@@ -548,7 +646,36 @@
             </div>
         </div>
         @endif
+        <script>
+function notifPanel(ids, defaultOpen) {
+    return {
+        open: defaultOpen,
+        visible: true,
+        ids: ids,
+        dismissed: JSON.parse(localStorage.getItem('notifDismissed') || '[]'),
 
+        init() {
+            // Kalau semua notif sudah di-dismiss, sembunyikan panel
+            if (this.ids.length && this.ids.every(id => this.dismissed.includes(id))) {
+                this.visible = false;
+            }
+        },
+        isDismissed(id) { return this.dismissed.includes(id); },
+        save() { localStorage.setItem('notifDismissed', JSON.stringify(this.dismissed)); },
+        dismissOne(id) {
+            if (!this.dismissed.includes(id)) { this.dismissed.push(id); this.save(); }
+            // Kalau tidak ada lagi yang tampil, sembunyikan panel
+            if (this.ids.every(i => this.dismissed.includes(i))) this.visible = false;
+        },
+        dismissPanel() {
+            // Sembunyikan seluruh panel + tandai semua notif saat ini sebagai dismissed
+            this.ids.forEach(id => { if (!this.dismissed.includes(id)) this.dismissed.push(id); });
+            this.save();
+            this.visible = false;
+        },
+    };
+}
+</script>
     </div>
 </div>
 @endsection

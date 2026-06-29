@@ -23,11 +23,29 @@
         @endphp
         {{-- TOP BAR --}}
         <div class="flex items-center gap-3 mb-4">
-            <a href="{{ route('guru.rapot.index') }}"
+            @php
+                // Kembali ke riwayat jika datang dari halaman riwayat (via ?from=riwayat&ta=ID),
+                // selain itu ke daftar rapot.
+                if (request('from') === 'riwayat') {
+                    $taFrom  = request('ta');
+                    $backUrl = $taFrom
+                        ? route('guru.riwayat-santri.detail', $taFrom)
+                        : route('guru.riwayat-santri');
+                } else {
+                    $backUrl = route('guru.rapot.index');
+                }
+            @endphp
+            <a href="{{ $backUrl }}"
                class="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-300 transition-colors">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 <span class="hidden sm:inline">Kembali</span>
             </a>
+            @if($santri->user && $santri->user->profile_photo)
+                <img src="{{ asset('storage/' . $santri->user->profile_photo) }}" alt="Foto" class="w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+            @else
+                @php $isPerempuanHdr = ($santri->gender === 'P' || $santri->gender === 'Perempuan'); @endphp
+                <span class="w-11 h-11 sm:w-12 sm:h-12 rounded-full {{ $isPerempuanHdr ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' }} border flex items-center justify-center text-base font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+            @endif
             <div class="flex-1 min-w-0">
                 <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate"> Rapot {{ $santri->name }}</h1>
                 <p class="text-[11px] text-gray-500 mt-0.5">{{ $santri->nis }} • {{ $santri->kelas->name ?? '-' }} • {{ $santri->guru->name ?? '-' }}</p>
@@ -37,16 +55,38 @@
 
         {{-- BADGE TAHUN AJARAN --}}
         @if(isset($tahunAjaranAktif) && $tahunAjaranAktif)
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/40 rounded-xl text-xs mb-4">
-            <svg class="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        @php $isHist = $isHistori ?? false; @endphp
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 {{ $isHist ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/40' : 'bg-indigo-50 dark:bg-indigo-950/50 border-indigo-200 dark:border-indigo-800/40' }} border rounded-xl text-xs mb-4">
+            <svg class="w-3.5 h-3.5 {{ $isHist ? 'text-amber-500 dark:text-amber-400' : 'text-indigo-500 dark:text-indigo-400' }} flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
             </svg>
-            <span class="text-gray-900 dark:text-white font-medium">{{ $tahunAjaranAktif->nama ?? $tahunAjaranAktif->name }}</span>
+            <span class="text-gray-900 dark:text-white font-medium">{{ $tahunAjaranAktif->nama ?? $tahunAjaranAktif->name }}
+                @if(($tahunAjaranAktif->semester ?? null))· {{ $tahunAjaranAktif->semester == 2 ? 'Genap' : 'Ganjil' }}@endif
+            </span>
+            @if($isHist)
+            <span class="px-1.5 py-0.5 bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 rounded-full text-[10px] font-semibold">Riwayat</span>
+            @else
             <span class="px-1.5 py-0.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-semibold">Aktif</span>
+            @endif
         </div>
+
+        @if($isHist && isset($kelasKonteks))
+        @php
+            $tmC = \Illuminate\Support\Carbon::parse($tanggalMulai);
+            $taC = \Illuminate\Support\Carbon::parse($tanggalAkhir);
+            // Jaga-jaga jika tanggal terbalik: tampilkan dari yang lebih awal
+            $awal  = $tmC->lessThanOrEqualTo($taC) ? $tmC : $taC;
+            $akhir = $tmC->lessThanOrEqualTo($taC) ? $taC : $tmC;
+        @endphp
+        <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/30 rounded-xl p-3 mb-4 flex items-start gap-2.5">
+            <svg class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <p class="text-xs text-amber-700 dark:text-amber-300">Ini rapot <strong>riwayat</strong>. Data dikunci pada periode saat santri masih di <strong>{{ $kelasKonteks->name ?? '-' }}</strong> ({{ $awal->translatedFormat('d M Y') }} – {{ $akhir->translatedFormat('d M Y') }}). Filter periode dinonaktifkan.</p>
+        </div>
+        @endif
         @endif
 
         {{-- FILTER PERIODE --}}
+        @if(!($isHistori ?? false))
         <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-4 shadow-sm dark:shadow-none">
             <h3 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                 <svg class="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,13 +108,38 @@
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
                         Filter
                     </button>
+                    @if($pdfBoleh ?? true)
                     <button type="button" onclick="previewPDF()" class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-700 hover:bg-red-600 border border-red-700 text-white text-xs font-bold rounded-xl transition-all active:scale-95">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                         PDF
                     </button>
+                    @else
+                    <div class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-600 text-xs font-bold rounded-xl cursor-not-allowed" title="Masa unduh PDF berakhir">
+                        PDF ditutup
+                    </div>
+                    @endif
                 </div>
             </form>
         </div>
+        @else
+        {{-- Tombol PDF di mode histori — tunduk pada jendela unduh --}}
+        <div class="mb-4">
+            @if($pdfBoleh ?? true)
+            <button type="button" onclick="previewPDF()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-red-700 hover:bg-red-600 border border-red-700 text-white text-xs font-bold rounded-xl transition-all active:scale-95">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                Lihat / Unduh PDF Riwayat
+            </button>
+            @if(isset($pdfBatas) && $pdfBatas)
+            <p class="text-[10px] text-gray-400 dark:text-gray-600 mt-1.5">PDF dapat diunduh hingga {{ $pdfBatas->translatedFormat('d M Y') }} (1 minggu setelah semester selesai). Setelahnya, statistik tetap bisa dilihat tanpa batas waktu.</p>
+            @endif
+            @else
+            <div class="bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700/40 rounded-xl p-3 flex items-start gap-2.5">
+                <svg class="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <p class="text-xs text-gray-600 dark:text-gray-400">Masa unduh PDF rapot sudah berakhir@if(isset($pdfBatas) && $pdfBatas) (batas: {{ $pdfBatas->translatedFormat('d M Y') }})@endif. Statistik di bawah tetap dapat dilihat.</p>
+            </div>
+            @endif
+        </div>
+        @endif
 
         {{-- STATISTIK CARDS --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">

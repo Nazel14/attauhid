@@ -48,7 +48,7 @@ class PresensiController extends Controller
 
         // Ambil santri dengan statistik presensi
         $santriList = Santri::where('kelas_id', $kelas->id)
-            ->with(['presensis' => function($query) use ($tanggalMulai, $tanggalAkhir, $sesiFilter, $tahunAjaranId) {
+            ->with(['user', 'presensis' => function($query) use ($tanggalMulai, $tanggalAkhir, $sesiFilter, $tahunAjaranId) {
                 $query->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir]);
                 if ($sesiFilter) {
                     $query->where('sesi', $sesiFilter);
@@ -159,7 +159,7 @@ class PresensiController extends Controller
 
         $santri = Santri::where('id', $santriId)
             ->where('kelas_id', $kelas->id)
-            ->with('kelas')
+            ->with(['kelas', 'user'])
             ->firstOrFail();
 
         // ✅ Ambil tahun ajaran aktif

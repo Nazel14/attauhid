@@ -13,6 +13,8 @@
             is_super_admin: 0
         },
         currentAdminId: null,
+        photoPreview: null,
+        currentPhotoUrl: null,
         showNotification: false,
         notificationMessage: '',
         notificationType: '',
@@ -21,6 +23,8 @@
             this.isEdit = false;
             this.formAction = '{{ route('admin.admins.store') }}';
             this.formData = { name: '', password: '', password_confirmation: '', is_super_admin: 0 };
+            this.photoPreview = null;
+            this.currentPhotoUrl = null;
             this.isOpen = true;
         },
         openEditModal(admin) {
@@ -28,6 +32,8 @@
             this.currentAdminId = admin.id;
             this.formAction = `/admin/admins/${admin.id}`;
             this.formData = { name: admin.name, is_super_admin: admin.is_super_admin ? 1 : 0, password: '', password_confirmation: '' };
+            this.photoPreview = null;
+            this.currentPhotoUrl = admin.profile_photo_url || null;
             this.isOpen = true;
         },
         closeModal() { this.isOpen = false; },
@@ -39,6 +45,14 @@
             const input = event.target; let value = input.value;
             if (value.length > 0) value = value.charAt(0).toUpperCase() + value.slice(1);
             input.value = value; this.formData.name = value;
+        },
+        handlePhotoChange(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => { this.photoPreview = e.target.result; };
+                reader.readAsDataURL(file);
+            }
         }
      }"
      x-init="
@@ -131,7 +145,12 @@
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                             <td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-600">{{ $admins->firstItem() + $index }}</td>
                             <td class="px-4 py-3">
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-2.5">
+                                    @if($admin->profile_photo)
+                                        <img src="{{ asset('storage/' . $admin->profile_photo) }}" alt="Foto" class="w-10 h-10 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                    @else
+                                        <span class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-sm font-bold text-indigo-600 dark:text-indigo-400 flex-shrink-0">{{ strtoupper(substr($admin->name, 0, 1)) }}</span>
+                                    @endif
                                     <div>
                                         <p class="text-xs font-semibold text-gray-800 dark:text-gray-200">
                                             {{ $admin->name }}
@@ -163,7 +182,7 @@
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center justify-center gap-2">
-                                    <button @click="openEditModal({{ json_encode(['id' => $admin->id,'name' => $admin->name,'is_super_admin' => $admin->hasPermissionTo('kelola-admin')]) }})"
+                                    <button @click="openEditModal({{ json_encode(['id' => $admin->id,'name' => $admin->name,'is_super_admin' => $admin->hasPermissionTo('kelola-admin'),'profile_photo_url' => $admin->profile_photo ? asset('storage/'.$admin->profile_photo) : null]) }})"
                                         class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-indigo-100 border border-indigo-300 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-950 dark:border-indigo-800/50 dark:text-indigo-400 dark:hover:bg-indigo-900/50 transition-colors">Edit</button>
                                     @if(!$admin->hasPermissionTo('kelola-admin') && $admin->id !== auth()->id())
                                     <form action="{{ route('admin.admins.destroy', $admin) }}" method="POST" class="inline" onsubmit="return confirm('Hapus admin {{ $admin->name }}?')">
@@ -194,6 +213,11 @@
             @forelse ($admins as $index => $admin)
             <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 shadow-sm dark:shadow-none">
                 <div class="flex items-start gap-3">
+                    @if($admin->profile_photo)
+                       <img src="{{ asset('storage/' . $admin->profile_photo) }}" alt="Foto" class="w-10 h-10 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                    @else
+                        <span class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-sm font-bold text-indigo-600 dark:text-indigo-400 flex-shrink-0">{{ strtoupper(substr($admin->name, 0, 1)) }}</span>
+                    @endif
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
                             <p class="text-xs font-semibold text-gray-800 dark:text-gray-200">
@@ -219,7 +243,7 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-1.5 flex-shrink-0">
-                        <button @click="openEditModal({{ json_encode(['id' => $admin->id,'name' => $admin->name,'is_super_admin' => $admin->hasPermissionTo('kelola-admin')]) }})"
+                        <button @click="openEditModal({{ json_encode(['id' => $admin->id,'name' => $admin->name,'is_super_admin' => $admin->hasPermissionTo('kelola-admin'),'profile_photo_url' => $admin->profile_photo ? asset('storage/'.$admin->profile_photo) : null]) }})"
                             class="px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-indigo-100 border border-indigo-300 text-indigo-700 dark:bg-indigo-950 dark:border-indigo-800/50 dark:text-indigo-400 active:scale-95 transition-all">Edit</button>
                         @if(!$admin->hasPermissionTo('kelola-admin') && $admin->id !== auth()->id())
                         <form action="{{ route('admin.admins.destroy', $admin) }}" method="POST" onsubmit="return confirm('Hapus admin {{ $admin->name }}?')">
@@ -266,9 +290,30 @@
                     </button>
                 </div>
 
-                <form :action="formAction" method="POST" class="p-4 space-y-4">
+                <form :action="formAction" method="POST" enctype="multipart/form-data" class="p-4 space-y-4">
                     @csrf
                     <template x-if="isEdit">@method('PUT')</template>
+
+                    {{-- Foto Profil --}}
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="relative">
+                            <template x-if="photoPreview">
+                                <img :src="photoPreview" class="w-20 h-20 rounded-full object-cover object-top border-2 border-indigo-300 dark:border-indigo-700">
+                            </template>
+                            <template x-if="!photoPreview && currentPhotoUrl">
+                                <img :src="currentPhotoUrl" class="w-20 h-20 rounded-full object-cover object-top border-2 border-gray-300 dark:border-gray-600">
+                            </template>
+                            <template x-if="!photoPreview && !currentPhotoUrl">
+                                <span class="w-20 h-20 rounded-full bg-indigo-100 dark:bg-indigo-950 border-2 border-indigo-200 dark:border-indigo-800 flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-indigo-400 dark:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                </span>
+                            </template>
+                        </div>
+                        <label class="cursor-pointer text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
+                            <span x-text="(photoPreview || currentPhotoUrl) ? 'Ganti Foto' : 'Tambah Foto (opsional)'"></span>
+                            <input type="file" name="profile_photo" accept="image/*" class="hidden" @change="handlePhotoChange($event)">
+                        </label>
+                    </div>
 
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">Nama Lengkap <span class="text-red-500 dark:text-red-400">*</span></label>

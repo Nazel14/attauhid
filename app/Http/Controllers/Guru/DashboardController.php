@@ -8,8 +8,10 @@ use App\Models\Kelas;
 use App\Models\Santri;
 use App\Models\Setoran;
 use App\Models\TahunAjaran;
+use App\Models\KenaikanUsulan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Models\KelasNotifikasi;
 
 class DashboardController extends Controller
 {
@@ -42,37 +44,43 @@ class DashboardController extends Controller
 
                 $jumlahSantri = Santri::where('kelas_id', $kelas->id)->count();
 
-                $santriList = Santri::where('kelas_id', $kelas->id)
+                $santriList = Santri::with('user')
+                    ->where('kelas_id', $kelas->id)
                     ->orderBy('name')
                     ->get();
 
-                // ✅ Ambil total juz hafalan per santri
-                // Jika ada tahun ajaran aktif, filter berdasarkan tahun ajaran
-                // Jika tidak ada, ambil all time (backward compatible)
                 $santriIds = $santriList->pluck('id');
 
-                $hafalanQuery = Setoran::whereIn('santri_id', $santriIds)
-                    ->where('kategori_setoran', 'Hafalan');
-
-                if ($tahunAjaranAktif) {
-                    $hafalanQuery->where('tahun_ajaran_id', $tahunAjaranAktif->id);
-                }
-
-                $hafalanPerSantri = $hafalanQuery
-                    ->selectRaw('santri_id, SUM(total_juz) as total_juz_hafalan')
+                // Progress hafalan per santri DI KELAS INI (kebal-tanggal via kelas_id).
+                // Reset otomatis saat naik kelas (setoran lama ber-kelas_id kelas lama).
+                $hafalanPerSantri = Setoran::whereIn('santri_id', $santriIds)
+                    ->where('kelas_id', $kelas->id)
+                    ->where('kategori_setoran', 'Hafalan')
+                    ->selectRaw('santri_id, ROUND(SUM(total_juz), 2) as total')
                     ->groupBy('santri_id')
-                    ->pluck('total_juz_hafalan', 'santri_id');
+                    ->pluck('total', 'santri_id');
+
+                // ✅ Status usulan kenaikan (dipakai saat hitung target & badge)
+                $usulanIds = $tahunAjaranAktif
+                    ? KenaikanUsulan::where('tahun_ajaran_id', $tahunAjaranAktif->id)
+                        ->whereIn('santri_id', $santriList->pluck('id'))
+                        ->pluck('status', 'santri_id')
+                    : collect();
 
                 // Inject progress ke setiap santri
-               $santriList = $santriList->map(function ($santri) use ($hafalanPerSantri, $tahunAjaranAktif) {
+                $santriList = $santriList->map(function ($santri) use ($hafalanPerSantri, $tahunAjaranAktif, $usulanIds) {
+                    $kelasId  = $santri->kelas_id;
+                    $baruNaik = ($usulanIds[$santri->id] ?? null) === 'disetujui';
 
                     // ============================================
-                    // SANTRI IQRO: progress = halaman tersetor / total halaman jilid
+                    // SANTRI IQRO: progress = halaman tersetor (di kelas ini) / total halaman jilid
                     // ============================================
                     if ($santri->isIqro()) {
                         $jilid    = (int) $santri->target_jilid;
                         $totalHal = (int) config("iqro.halaman_per_jilid.$jilid", 0);
-                        $halSudah = count($santri->halamanIqroTersetor($jilid));
+
+                        // Per kelas → reset otomatis saat naik kelas
+                        $halSudah = count($santri->halamanIqroTersetorKelas($jilid, $kelasId));
 
                         if ($totalHal > 0) {
                             $persenIqro = min(100, round(($halSudah / $totalHal) * 100, 1));
@@ -80,27 +88,29 @@ class DashboardController extends Controller
                             $persenIqro = null; // jumlah halaman jilid belum diketahui → jangan tebak
                         }
 
-                        $santri->is_iqro_progress  = true;
-                        $santri->iqro_jilid         = $jilid;
-                        $santri->iqro_hal_sudah     = $halSudah;
-                        $santri->iqro_hal_total     = $totalHal;
-                        $santri->hafalan_persen     = $persenIqro ?? 0;
+                        $santri->is_iqro_progress      = true;
+                        $santri->iqro_jilid            = $jilid;
+                        $santri->iqro_hal_sudah        = $halSudah;
+                        $santri->iqro_hal_total        = $totalHal;
+                        $santri->hafalan_persen        = $persenIqro ?? 0;
                         $santri->iqro_persen_diketahui = $totalHal > 0;
+                        $santri->baru_naik             = $baruNaik;
+                        $santri->target_badge          = 'Jilid ' . $jilid;
                         return $santri;
                     }
 
                     // ============================================
-                    // SANTRI QUR'AN: progress = juz tersetor / target juz (logika lama)
+                    // SANTRI QUR'AN: progress = juz tersetor (di kelas ini) / target juz
                     // ============================================
-                    $totalJuz  = round($hafalanPerSantri[$santri->id] ?? 0, 2);
+                    $totalJuz = round($hafalanPerSantri[$santri->id] ?? 0, 2);
 
-                    $targetJuz = $tahunAjaranAktif
-                        ? ($santri->getTargetJuzByTahunAjaran($tahunAjaranAktif->id) ?: ($santri->target_juz > 0 ? $santri->target_juz : 30))
-                        : ($santri->target_juz > 0 ? $santri->target_juz : 30);
-
-                    if (!$targetJuz || $targetJuz <= 0) {
-                        $targetJuz = 30;
-                    }
+                    // Target dari per-tahun-ajaran; fallback target_juz bila kosong.
+                    $targetPerTa = $tahunAjaranAktif
+                        ? $santri->getTargetJuzByTahunAjaran($tahunAjaranAktif->id)
+                        : null;
+                    $targetJuz = ($targetPerTa && $targetPerTa > 0)
+                        ? (float) $targetPerTa
+                        : (float) ($santri->target_juz ?? 0);
 
                     $persen = $targetJuz > 0
                         ? min(100, round(($totalJuz / $targetJuz) * 100, 1))
@@ -110,11 +120,17 @@ class DashboardController extends Controller
                     $santri->hafalan_total_juz = $totalJuz;
                     $santri->hafalan_persen    = $persen;
                     $santri->target_juz_aktif  = $targetJuz;
+                    $santri->target_badge      = number_format($targetJuz, 1) . ' Juz';
+                    $santri->baru_naik         = $baruNaik;
                     return $santri;
                 });
 
-                 // ✅ Deteksi santri Iqro yang SIAP NAIK JILID (1 query agregat, bukan per-santri)
-                $santriSiapNaik = $this->deteksiSiapNaikJilid($santriList);
+                $santriList->each(function ($s) use ($usulanIds) {
+                    $s->usulan_status = $usulanIds[$s->id] ?? null; // null | diusulkan | disetujui | ditolak
+                });
+
+                // ✅ Deteksi santri Iqro yang SIAP NAIK JILID — dihitung per KELAS sekarang
+                $santriSiapNaik = $this->deteksiSiapNaikJilid($santriList, $kelas->id);
 
             } else {
                 Log::warning('Kelas tidak ditemukan untuk guru_id: ' . $guru->id);
@@ -126,19 +142,29 @@ class DashboardController extends Controller
         // default kosong bila guru/kelas tidak ada
         $santriSiapNaik = $santriSiapNaik ?? collect();
 
+        // ✅ Notifikasi guru
+        $notifikasi      = collect();
+        $notifikasiBelum = 0;
+        if ($guru) {
+            $notifikasi = KelasNotifikasi::where('guru_id', $guru->id)
+                ->orderByDesc('created_at')->limit(10)->get();
+            $notifikasiBelum = $notifikasi->whereNull('dibaca_pada')->count();
+        }
+
         return view('guru.dashboard', compact(
             'kelas',
             'jumlahSantri',
             'santriList',
             'guru',
             'tahunAjaranAktif',
-            'santriSiapNaik' // ✅ BARU: santri Iqro siap naik jilid
+            'santriSiapNaik',
+            'notifikasi',
+            'notifikasiBelum'
         ));
     }
 
     /**
      * Naikkan jilid untuk santri-santri yang dicentang guru.
-     * Versi minimal: hanya menaikkan target_jilid +1 (tanpa tabel riwayat).
      */
     public function naikkanJilid(\Illuminate\Http\Request $request)
     {
@@ -159,7 +185,6 @@ class DashboardController extends Controller
 
         $maxJilid = (int) config('iqro.max_jilid', 6);
 
-        // Hanya santri di kelas guru ini, metode Iqro, belum jilid terakhir
         $santris = Santri::whereIn('id', $validated['santri_ids'])
             ->where('kelas_id', $kelas->id)
             ->get();
@@ -185,12 +210,11 @@ class DashboardController extends Controller
     }
 
     /**
-     * Deteksi santri Iqro yang sudah menyelesaikan SEMUA halaman jilidnya.
-     * Pakai 1 query agregat untuk semua setoran Iqro sekaligus (hindari N+1).
+     * Deteksi santri Iqro yang sudah menyelesaikan SEMUA halaman jilidnya
+     * DI KELAS sekarang (kelas_id). Pakai 1 query agregat (hindari N+1).
      */
-    private function deteksiSiapNaikJilid($santriList)
+    private function deteksiSiapNaikJilid($santriList, ?int $kelasId = null)
     {
-        // Hanya proses santri yang metode-nya Iqro & belum di jilid terakhir
         $maxJilid = (int) config('iqro.max_jilid', 6);
 
         $kandidat = $santriList->filter(function ($s) use ($maxJilid) {
@@ -203,21 +227,19 @@ class DashboardController extends Controller
             return collect();
         }
 
-        // Ambil SEMUA setoran Iqro untuk para kandidat dalam 1 query
         $santriIds = $kandidat->pluck('id')->all();
 
         $rows = Setoran::whereIn('santri_id', $santriIds)
+            ->when($kelasId, fn ($q) => $q->where('kelas_id', $kelasId))
             ->where(function ($q) {
                 $q->where('surat_start', 'like', 'Iqro Jilid %')
                   ->orWhere('surat_end', 'like', 'Iqro Jilid %');
             })
             ->get(['santri_id', 'surat_start', 'surat_end', 'ayat_start', 'ayat_end']);
 
-        // Kelompokkan halaman tersetor per (santri_id, jilid)
-        // struktur: $tersetor[santri_id][jilid] = [set halaman]
+        // $tersetor[santri_id][jilid] = [set halaman]
         $tersetor = [];
         foreach ($rows as $r) {
-            // Ambil nomor jilid dari label "Iqro Jilid N"
             $label = $r->surat_start ?: $r->surat_end;
             if (!preg_match('/Iqro Jilid (\d+)/', (string) $label, $m)) {
                 continue;
@@ -234,12 +256,11 @@ class DashboardController extends Controller
             }
         }
 
-        // Tentukan siapa yang lengkap halaman jilidnya
         $siap = collect();
         foreach ($kandidat as $s) {
             $jilid    = (int) $s->target_jilid;
             $totalHal = config("iqro.halaman_per_jilid.$jilid");
-            if (!$totalHal) continue; // jumlah halaman belum diketahui → skip
+            if (!$totalHal) continue;
 
             $halSantri = $tersetor[$s->id][$jilid] ?? [];
             $lengkap = true;

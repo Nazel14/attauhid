@@ -63,6 +63,11 @@
                 {{-- Card Header --}}
                 <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex items-center gap-2.5 min-w-0">
+                        @if($santri->user && $santri->user->profile_photo)
+                            <img src="{{ asset('storage/' . $santri->user->profile_photo) }}" alt="Foto" class="w-9 h-9 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                        @else
+                            <span class="w-9 h-9 rounded-full {{ $santri->gender === 'Perempuan' ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' }} border flex items-center justify-center text-xs font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+                        @endif
                         <div class="min-w-0">
                             <p class="text-sm font-bold text-gray-900 dark:text-white truncate">{{ $santri->name }}</p>
                             <p class="text-[10px] text-gray-500 dark:text-gray-600 font-mono">{{ $santri->nis }}</p>
@@ -154,8 +159,8 @@
     .indicators { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; justify-content: center; }
 
     .indicator {
-        width: 10px;
-        height: 10px;
+        width: var(--dot, 10px);
+        height: var(--dot, 10px);
         border-radius: 50%;
         background: rgba(255,255,255,0.10);
     }
@@ -168,7 +173,7 @@
     .indicator.sakit,  html.dark .indicator.sakit { background: #f97316; }
 
     /* Pertegas indikator di kotak hari ini (latar ungu) */
-    .calendar-day.today .indicator { box-shadow: 0 0 0 1px rgba(255,255,255,0.7); }
+    
     .calendar-day.today .indicator.hadir { background: #4ade80; }
     .calendar-day.today .indicator.alpha { background: #f87171; }
     .calendar-day.today .indicator.izin  { background: #fbbf24; }
@@ -231,7 +236,20 @@ function renderCalendar(santriId) {
     const today = new Date(); today.setHours(0,0,0,0);
     const dayNames = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
     const sesiCount = sesiList.length;
-    const gridCols = sesiCount <= 2 ? Math.max(sesiCount, 1) : 2;
+    // Kolom: 1-2 sesi → sebanyak sesi; 3-4 → 2 kolom; 5-9 → 3 kolom; 10+ → 4 kolom
+    let gridCols;
+    if (sesiCount <= 2)      gridCols = Math.max(sesiCount, 1);
+    else if (sesiCount <= 4) gridCols = 2;
+    else if (sesiCount <= 9) gridCols = 3;
+    else                     gridCols = 4;
+    // Bulat mengecil saat sesi makin banyak agar muat di kotak hari
+    let dotSize;
+    if (sesiCount <= 2)      dotSize = 10;
+    else if (sesiCount <= 4) dotSize = 8;
+    else if (sesiCount <= 6) dotSize = 6;
+    else if (sesiCount <= 9) dotSize = 5;
+    else                     dotSize = 4;
+    const dotGap = dotSize >= 8 ? 2 : 1;
 
     // Ambil data presensi santri ini (akses dengan key string agar pasti cocok JSON)
     const dataSantri = presensiData[santriId] || presensiData[String(santriId)] || {};
@@ -259,7 +277,7 @@ function renderCalendar(santriId) {
                      onclick="showDayDetail(${santriId}, '${dateStr}', ${day}, '${months[state.currentMonth]}')">
                     <div class="day-name">${dayNames[date.getDay()]}</div>
                     <div class="day-number">${day}</div>
-                    <div class="indicators" style="grid-template-columns: repeat(${gridCols}, 1fr);">${indicators}</div>
+                    <div class="indicators" style="grid-template-columns: repeat(${gridCols}, 1fr); gap: ${dotGap}px; --dot: ${dotSize}px;">${indicators}</div>
                  </div>`;
     }
 

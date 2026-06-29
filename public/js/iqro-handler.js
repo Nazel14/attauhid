@@ -49,8 +49,8 @@
     'use strict';
 
     // ==== UKURAN FONT LAYAR (ubah di sini untuk perbesar/perkecil) ====
-    const IQRO_SCREEN_FONT_SIZE = 30;   // sebelumnya 40 — font sel di layar
-    const IQRO_COMBO_FONT_SIZE  = 38;   // sebelumnya 44 — font sel combo di layar
+    const IQRO_SCREEN_FONT_SIZE = 40;   // sebelumnya 40 — font sel di layar
+    const IQRO_COMBO_FONT_SIZE  = 44;   // sebelumnya 44 — font sel combo di layar
     // ==================================================================
 
     const IQRO_PDF_FONT_SIZE    = 50;
@@ -207,7 +207,7 @@
             }
 
             return '' +
-                '<div style="display:flex;direction:rtl;align-items:center;border-top:1px solid var(--q-line,rgba(255,255,255,0.3));padding:6px 0;">' +
+                '<div class="iqro-row-scroll" style="display:flex;direction:rtl;align-items:center;border-top:1px solid var(--q-line,rgba(255,255,255,0.3));padding:6px 0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;">' +
                     labelHtml + inner +
                 '</div>';
         };
@@ -316,26 +316,30 @@
         }
     }
 
-    function fitPageRows(pageEl, minFactor, allowWrap) {
-        if (!pageEl) return;
-        pageEl.querySelectorAll('.iqro-row-inner').forEach(
-            inner => fitInnerToWidth(inner, minFactor, allowWrap)
-        );
+    function fitPageRowsScreen(container) {
+        if (!container) return;
+        // Auto-fit layar DIMATIKAN. Sebelumnya font-size DI-REMOVE, padahal 44px
+        // dipasang sebagai INLINE STYLE di tiap .word-item → removeProperty membuat
+        // font jatuh ke nilai warisan (~16px) = huruf mengecil.
+        // FIX: set ulang ke ukuran penuh, jangan dihapus.
+        container.querySelectorAll('.iqro-row-inner .word-item').forEach(c => {
+            c.style.setProperty('font-size', IQRO_SCREEN_FONT_SIZE + 'px', 'important');
+        });
     }
 
     function buildNavBar(pageNumbers) {
         if (pageNumbers.length <= 1) return '';
-        const btnStyle = 'background:var(--q-nav-btn,#374151);color:var(--q-nav-btn-fg,#e5e7eb);border:none;border-radius:8px;' +
-                         'padding:7px 14px;font-size:13px;cursor:pointer;white-space:nowrap;font-weight:600;';
+        const btnStyle = 'background:var(--q-nav-btn,#374151);color:var(--q-nav-btn-fg,#e5e7eb);border:none;border-radius:6px;' +
+                         'padding:5px 10px;font-size:11px;cursor:pointer;white-space:nowrap;font-weight:600;line-height:1.2;';
         return '' +
             '<div class="iqro-nav" data-idx="0" data-total="' + pageNumbers.length + '" data-html2canvas-ignore="true"' +
             ' style="position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;' +
-            'gap:8px;background:var(--q-nav-bg,rgba(17,24,39,0.96));padding:8px 10px;border-radius:8px;margin-bottom:12px;">' +
-                '<button type="button" class="iqro-prev" onclick="iqroNavGo(this,-1)" style="' + btnStyle + 'opacity:0.45;cursor:not-allowed;">⟵ Sebelumnya</button>' +
-                '<span class="iqro-nav-label" style="font-size:13px;color:var(--q-nav-label,#cbd5e1);font-weight:700;">' +
-                    'Halaman ' + pageNumbers[0] + ' &nbsp;(1/' + pageNumbers.length + ')' +
+            'gap:6px;background:var(--q-nav-bg,rgba(17,24,39,0.96));padding:5px 8px;border-radius:6px;margin-bottom:10px;">' +
+                '<button type="button" class="iqro-prev" onclick="iqroNavGo(this,-1)" style="' + btnStyle + 'opacity:0.45;cursor:not-allowed;">←</button>' +
+                '<span class="iqro-nav-label" style="font-size:11px;color:var(--q-nav-label,#cbd5e1);font-weight:700;white-space:nowrap;">' +
+                    'Hal ' + pageNumbers[0] + ' (1/' + pageNumbers.length + ')' +
                 '</span>' +
-                '<button type="button" class="iqro-next" onclick="iqroNavGo(this,1)" style="' + btnStyle + '">Berikutnya ⟶</button>' +
+                '<button type="button" class="iqro-next" onclick="iqroNavGo(this,1)" style="' + btnStyle + '">→</button>' +
             '</div>';
     }
 
@@ -354,7 +358,7 @@
             bar.dataset.idx = idx;
             const label = bar.querySelector('.iqro-nav-label');
             const hal   = pages[idx].getAttribute('data-halaman') || (idx + 1);
-            if (label) label.innerHTML = 'Halaman ' + hal + ' &nbsp;(' + (idx + 1) + '/' + total + ')';
+            if (label) label.innerHTML = 'Hal ' + hal + ' (' + (idx + 1) + '/' + total + ')';
 
             const prevBtn = bar.querySelector('.iqro-prev');
             const nextBtn = bar.querySelector('.iqro-next');
@@ -373,6 +377,11 @@
         if (typeof container.scrollTo === 'function') {
             try { container.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { container.scrollTop = 0; }
         }
+
+        // Re-fit baris halaman yang baru ditampilkan (navigasi Prev/Next)
+        setTimeout(() => {
+            if (typeof fitPageRowsScreen === 'function') fitPageRowsScreen(container);
+        }, 100);
     }
 
     function iqroNavGo(btn, dir) {
@@ -424,12 +433,25 @@
 
         iqroShowPageIn(display, 0);
 
+        // Auto-fit ringan untuk layar — turunkan font baris kepanjangan secukupnya,
+        // sisanya biar bisa di-scroll horizontal (.iqro-row-scroll).
+        // Tunggu font Amiri & layout settle dulu baru ukur.
+        const fitScreenSoon = (el) => {
+            setTimeout(() => fitPageRowsScreen(el), 150);
+            setTimeout(() => fitPageRowsScreen(el), 500);
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(() => fitPageRowsScreen(el)).catch(() => {});
+            }
+        };
+        fitScreenSoon(display);
+
         const drawerDisplay = document.getElementById('quranDisplayDrawer');
         if (drawerDisplay) {
             drawerDisplay.innerHTML = display.innerHTML;
             drawerDisplay.style.setProperty('max-height', 'none', 'important');
             drawerDisplay.style.setProperty('overflow-y', 'visible', 'important');
             iqroShowPageIn(drawerDisplay, 0);
+            fitScreenSoon(drawerDisplay);
         }
 
         return true;

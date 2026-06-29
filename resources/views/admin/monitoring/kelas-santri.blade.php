@@ -61,7 +61,7 @@
         $totalHafalan      = 0;
         $setoransIqro = $santri->setorans()
             ->where('kategori_setoran', 'Hafalan')
-            ->when($tahunAjaranId, fn($q) => $q->where('tahun_ajaran_id', $tahunAjaranId))
+            ->when($santri->kelas_id, fn($q) => $q->where('kelas_id', $santri->kelas_id))
             ->get();
         foreach ($setoransIqro as $s) {
             // Hanya hitung halaman dari jilid target sekarang,
@@ -78,7 +78,7 @@
     } else {
         $totalHafalan    = $santri->setorans()
             ->where('kategori_setoran', 'Hafalan')
-            ->when($tahunAjaranId, fn($q) => $q->where('tahun_ajaran_id', $tahunAjaranId))
+            ->when($santri->kelas_id, fn($q) => $q->where('kelas_id', $santri->kelas_id))
             ->sum('total_juz');
         $progressPercent = $santri->target_juz > 0
             ? ($totalHafalan / $santri->target_juz) * 100
@@ -87,6 +87,11 @@
 @endphp
                 <div class="px-4 py-3.5">
                     <div class="flex items-center gap-3 mb-2.5">
+                        @if($santri->user && $santri->user->profile_photo)
+                            <img src="{{ asset('storage/' . $santri->user->profile_photo) }}" alt="Foto" class="w-10 h-10 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                        @else
+                            <span class="w-10 h-10 rounded-full {{ $isPerempuan ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' }} border flex items-center justify-center text-sm font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+                        @endif
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-bold text-gray-900 dark:text-white truncate">{{ $santri->name }}</p>
                             <p class="text-[11px] text-gray-500 dark:text-gray-600 font-mono">
@@ -133,10 +138,10 @@
                         <th class="th w-12">No</th>
                         <th class="th">NIS</th>
                         <th class="th">Nama Santri</th>
-                        <th class="th text-center">Gender</th>
-                        <th class="th text-center">Target Juz</th>
-                        <th class="th text-center">Progress</th>
-                        <th class="th text-center">Aksi</th>
+                        <th class="th" style="text-align:right; padding-right:95px;">Gender</th>
+                        <th class="th" style="text-align:right; padding-right:90px;">Target Juz</th>
+                        <th class="th" style="text-align:right; padding-right:70px;">Progress</th>
+                        <th class="th" style="text-align:right; padding-right:90px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700/50">
@@ -151,7 +156,7 @@
         $totalHafalan      = 0;
         $setoransIqro = $santri->setorans()
             ->where('kategori_setoran', 'Hafalan')
-            ->when($tahunAjaranId, fn($q) => $q->where('tahun_ajaran_id', $tahunAjaranId))
+            ->when($santri->kelas_id, fn($q) => $q->where('kelas_id', $santri->kelas_id))
             ->get();
         foreach ($setoransIqro as $s) {
             // Hanya hitung halaman dari jilid target sekarang,
@@ -168,7 +173,7 @@
     } else {
         $totalHafalan    = $santri->setorans()
             ->where('kategori_setoran', 'Hafalan')
-            ->when($tahunAjaranId, fn($q) => $q->where('tahun_ajaran_id', $tahunAjaranId))
+            ->when($santri->kelas_id, fn($q) => $q->where('kelas_id', $santri->kelas_id))
             ->sum('total_juz');
         $progressPercent = $santri->target_juz > 0
             ? ($totalHafalan / $santri->target_juz) * 100
@@ -180,6 +185,11 @@
                         <td class="px-5 py-3.5 text-sm font-mono text-gray-500 dark:text-gray-400">{{ $santri->nis }}</td>
                         <td class="px-5 py-3.5">
                             <div class="flex items-center gap-2.5">
+                                @if($santri->user && $santri->user->profile_photo)
+                                    <img src="{{ asset('storage/' . $santri->user->profile_photo) }}" alt="Foto" class="w-9 h-9 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                @else
+                                    <span class="w-9 h-9 rounded-full {{ $isPerempuan ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' }} border flex items-center justify-center text-xs font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+                                @endif
                                 <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $santri->name }}</span>
                             </div>
                         </td>

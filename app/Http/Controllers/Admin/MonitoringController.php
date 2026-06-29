@@ -31,16 +31,16 @@ class MonitoringController extends Controller
         $tahunAjaranAktif = TahunAjaran::getAktif();
         $semuaTahunAjaran = TahunAjaran::terbaru()->get();
 
-        $statistikKelas = Kelas::with(['santris' => function($q) use ($tanggalMulai, $tanggalAkhir, $tahunAjaranId) {
+        // Total setoran per kelas — kebal-tanggal via kelas_id.
+        // Hitung hanya setoran yang kelas_id-nya = kelas santri sekarang,
+        // sehingga ikut "reset" otomatis saat santri naik kelas.
+        $statistikKelas = Kelas::with(['santris' => function($q) {
             $q->withCount([
-                'setorans as total_setoran' => function($sq) use ($tanggalMulai, $tanggalAkhir, $tahunAjaranId) {
-                    $sq->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir]);
-                    if ($tahunAjaranId) {
-                        $sq->where('tahun_ajaran_id', $tahunAjaranId);
-                    }
+                'setorans as total_setoran' => function($sq) {
+                    $sq->whereColumn('setorans.kelas_id', 'santris.kelas_id');
                 },
             ]);
-        }, 'guru'])
+        }, 'guru.user'])
         ->when($kelasId, fn($q) => $q->where('id', $kelasId))
         ->get()
         ->map(function($kelas) {
@@ -48,6 +48,8 @@ class MonitoringController extends Controller
                 'kelas_id'      => $kelas->id,
                 'kelas'         => $kelas->name,
                 'guru'          => $kelas->guru->name ?? 'Belum ada guru',
+                'guru_photo'    => ($kelas->guru && $kelas->guru->user && $kelas->guru->user->profile_photo)
+                                    ? $kelas->guru->user->profile_photo : null,
                 'total_santri'  => $kelas->santris->count(),
                 'total_setoran' => $kelas->santris->sum('total_setoran'),
             ];
@@ -71,29 +73,29 @@ class MonitoringController extends Controller
      * List Santri per Kelas
      */
     public function kelasSantri($id, Request $request)
-{
-    $tanggalMulai = $request->input('tanggal_mulai', now()->subDays(30)->format('Y-m-d'));
-    $tanggalAkhir = $request->input('tanggal_akhir', now()->format('Y-m-d'));
+    {
+        $tanggalMulai = $request->input('tanggal_mulai', now()->subDays(30)->format('Y-m-d'));
+        $tanggalAkhir = $request->input('tanggal_akhir', now()->format('Y-m-d'));
 
-    $kelas = Kelas::with('guru')->findOrFail($id);
+        $kelas = Kelas::with('guru')->findOrFail($id);
 
-    // ✅ Tambahkan ini
-    $tahunAjaranId = $request->input('tahun_ajaran_id')
-        ? (int) $request->input('tahun_ajaran_id')
-        : TahunAjaran::getAktifId();
+        $tahunAjaranId = $request->input('tahun_ajaran_id')
+            ? (int) $request->input('tahun_ajaran_id')
+            : TahunAjaran::getAktifId();
 
-    $santriList = Santri::where('kelas_id', $id)
-        ->orderBy('name')
-        ->get();
+        $santriList = Santri::with('user')
+            ->where('kelas_id', $id)
+            ->orderBy('name')
+            ->get();
 
-    return view('admin.monitoring.kelas-santri', compact(
-        'kelas',
-        'santriList',
-        'tanggalMulai',
-        'tanggalAkhir',
-        'tahunAjaranId' // ✅ Tambahkan ini
-    ));
-}
+        return view('admin.monitoring.kelas-santri', compact(
+            'kelas',
+            'santriList',
+            'tanggalMulai',
+            'tanggalAkhir',
+            'tahunAjaranId'
+        ));
+    }
 
     /**
      * Detail Santri - Gabungan Setoran & Presensi
@@ -103,11 +105,16 @@ class MonitoringController extends Controller
         $tanggalMulai = $request->input('tanggal_mulai', now()->subDays(30)->format('Y-m-d'));
         $tanggalAkhir = $request->input('tanggal_akhir', now()->format('Y-m-d'));
 
-        $santri = Santri::with('kelas')->findOrFail($id);
+        $santri = Santri::with(['kelas', 'user'])->findOrFail($id);
+
+        // ✅ Kelas santri sekarang — dipakai SEMUA query setoran (kebal-tanggal).
+        //    Didefinisikan paling atas agar tersedia untuk seluruh query di bawah.
+        $kelasIdSantri = $santri->kelas_id;
 
         // ✅ Ambil tahun ajaran — prioritas dari request, fallback ke aktif
-        $tahunAjaranId    = $request->input('tahun_ajaran_id') 
-            ? (int) $request->input('tahun_ajaran_id') 
+        //    (masih dipakai untuk target juz & data presensi)
+        $tahunAjaranId    = $request->input('tahun_ajaran_id')
+            ? (int) $request->input('tahun_ajaran_id')
             : TahunAjaran::getAktifId();
         $semuaTahunAjaran = TahunAjaran::terbaru()->get();
 
@@ -124,10 +131,9 @@ class MonitoringController extends Controller
 
         $targetJuz = (float) $targetJuz;
 
-        // ✅ Statistik Setoran per Kategori (difilter tahun ajaran + rentang tanggal)
+        // ✅ Statistik Setoran per Kategori — per kelas (kebal-tanggal)
         $setoranStats = Setoran::where('santri_id', $id)
-            ->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir])
-            ->when($tahunAjaranId, fn($q) => $q->where('tahun_ajaran_id', $tahunAjaranId))
+            ->when($kelasIdSantri, fn($q) => $q->where('kelas_id', $kelasIdSantri))
             ->select(
                 'kategori_setoran',
                 DB::raw('COUNT(*) as total'),
@@ -138,11 +144,10 @@ class MonitoringController extends Controller
             ->get()
             ->keyBy('kategori_setoran');
 
-        // ✅ Progress Hafalan — ambil SELURUH hafalan di tahun ajaran ini (bukan hanya rentang tanggal)
-        // supaya progress mencerminkan pencapaian keseluruhan tahun ajaran
+        // ✅ Progress Hafalan — akumulatif per kelas (kebal-tanggal), reset saat naik kelas
         $totalHafalanJuz = (float) Setoran::where('santri_id', $id)
             ->where('kategori_setoran', 'Hafalan')
-            ->when($tahunAjaranId, fn($q) => $q->where('tahun_ajaran_id', $tahunAjaranId))
+            ->when($kelasIdSantri, fn($q) => $q->where('kelas_id', $kelasIdSantri))
             ->sum('total_juz');
 
         $progressHafalan = $targetJuz > 0
@@ -159,7 +164,7 @@ class MonitoringController extends Controller
 
             $setoransIqroAll = Setoran::where('santri_id', $id)
                 ->where('kategori_setoran', 'Hafalan')
-                ->when($tahunAjaranId, fn($q) => $q->where('tahun_ajaran_id', $tahunAjaranId))
+                ->when($kelasIdSantri, fn($q) => $q->where('kelas_id', $kelasIdSantri))
                 ->get();
 
             foreach ($setoransIqroAll as $s) {
@@ -172,7 +177,7 @@ class MonitoringController extends Controller
                 if ($h1 > 0 && $h2 >= $h1) $totalHafalanJuz += ($h2 - $h1 + 1);
             }
 
-           $progressHafalan = $totalHalamanJilid > 0
+            $progressHafalan = $totalHalamanJilid > 0
                 ? min(100, round(($totalHafalanJuz / $totalHalamanJilid) * 100, 2))
                 : 0;
 
@@ -181,8 +186,7 @@ class MonitoringController extends Controller
             foreach (['Murajaah', 'Tilawah'] as $kat) {
                 $rows = Setoran::where('santri_id', $id)
                     ->where('kategori_setoran', $kat)
-                    ->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir])
-                    ->when($tahunAjaranId, fn($q) => $q->where('tahun_ajaran_id', $tahunAjaranId))
+                    ->when($kelasIdSantri, fn($q) => $q->where('kelas_id', $kelasIdSantri))
                     ->get();
                 $hal = 0;
                 foreach ($rows as $s) {
@@ -195,10 +199,9 @@ class MonitoringController extends Controller
             }
         }
 
-        // ✅ Data Setoran per Kategori dengan pagination (difilter tahun ajaran + rentang tanggal)
+        // ✅ Data Setoran per Kategori dengan pagination — per kelas (kebal-tanggal)
         $baseSetoran = Setoran::where('santri_id', $id)
-            ->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir])
-            ->when($tahunAjaranId, fn($q) => $q->where('tahun_ajaran_id', $tahunAjaranId))
+            ->when($kelasIdSantri, fn($q) => $q->where('kelas_id', $kelasIdSantri))
             ->with('guru.user')
             ->orderBy('tanggal', 'desc');
 
@@ -206,7 +209,9 @@ class MonitoringController extends Controller
         $setoranMurajaah = (clone $baseSetoran)->where('kategori_setoran', 'Murajaah')->paginate(8, ['*'], 'murajaah_page');
         $setoranTilawah  = (clone $baseSetoran)->where('kategori_setoran', 'Tilawah')->paginate(8, ['*'], 'tilawah_page');
 
-        // ✅ Data Presensi (difilter tahun ajaran + rentang tanggal)
+        // ✅ Data Presensi — TETAP per tanggal + tahun ajaran.
+        //    Tabel presensi belum punya kolom kelas_id, jadi tidak bisa
+        //    difilter via kelas_id seperti setoran (konsisten dgn bagian lain app).
         $presensiData = Presensi::where('santri_id', $id)
             ->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir])
             ->when($tahunAjaranId, fn($q) => $q->where('tahun_ajaran_id', $tahunAjaranId))

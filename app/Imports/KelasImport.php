@@ -7,117 +7,118 @@ use App\Models\Guru;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 
-class KelasImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
+class KelasImport implements ToCollection, SkipsEmptyRows
 {
     protected $errors = [];
     protected $successCount = 0;
     protected $failedCount = 0;
 
-   public function collection(Collection $rows)
-{
-    $guruList = Guru::orderBy('id')->get();
-    
-    // Mapping no_gender ke gender_restriction
-    $noGenderToGender = [
-        1 => 'campuran',
-        2 => 'ikhwan',
-        3 => 'akhwat'
-    ];
-    
-    foreach ($rows as $index => $row) {
-        $rowNumber = $index + 2;
-        
-        if ($this->isExampleRow($row)) {
-            continue;
-        }
-        
-        if (empty($row['nama_kelas']) || empty($row['tahun_ajaran']) || empty($row['no_guru']) || empty($row['no_gender'])) {
-            continue;
-        }
-        
-        try {
-            DB::transaction(function () use ($row, $rowNumber, $guruList, $noGenderToGender) {
-                if (empty($row['nama_kelas'])) {
-                    throw new \Exception("Nama kelas tidak boleh kosong");
-                }
-                
-                if (empty($row['tahun_ajaran'])) {
-                    throw new \Exception("Tahun ajaran tidak boleh kosong");
-                }
-                
-                if (empty($row['no_guru'])) {
-                    throw new \Exception("Nomor guru tidak boleh kosong");
-                }
-                
-                if (empty($row['no_gender'])) {
-                    throw new \Exception("Nomor gender tidak boleh kosong");
-                }
-                
-                $noGuru = (int) $row['no_guru'];
-                
-                if ($noGuru < 1 || $noGuru > $guruList->count()) {
-                    throw new \Exception("Nomor Guru {$noGuru} tidak valid. Tersedia 1-{$guruList->count()}");
-                }
-                
-                $guru = $guruList->get($noGuru - 1);
-                
-                if (!$guru) {
-                    throw new \Exception("Guru dengan nomor urut {$noGuru} tidak ditemukan");
-                }
-                
-                // Validasi no_gender
-                $noGender = (int) $row['no_gender'];
-                if (!isset($noGenderToGender[$noGender])) {
-                    throw new \Exception("No Gender tidak valid. Harus: 1 (Campuran), 2 (Ikhwan), atau 3 (Akhwat)");
-                }
-                
-                $gender = $noGenderToGender[$noGender];
-                
-                $name = $this->smartCapitalize(trim($row['nama_kelas']));
-                $tahunAjaran = trim($row['tahun_ajaran']);
-                
-                $exists = Kelas::where('name', $name)
-                               ->where('tahun_ajaran', $tahunAjaran)
-                               ->exists();
-                
-                if ($exists) {
-                    throw new \Exception("Kelas {$name} dengan tahun ajaran {$tahunAjaran} sudah ada");
-                }
-                
-                Kelas::create([
-                    'name' => $name,
-                    'tahun_ajaran' => $tahunAjaran,
-                    'guru_id' => $guru->id,
-                    'gender_restriction' => $gender,
-                ]);
-                
-                $this->successCount++;
-            });
-            
-        } catch (\Exception $e) {
-            $this->failedCount++;
-            $this->errors[] = "Baris {$rowNumber}: " . $e->getMessage();
-        }
-    }
-}
-    
-    protected function isExampleRow($row): bool
+    public function collection(Collection $rows)
     {
-        $exampleNames = ['Kelas 7A (Contoh)', 'Kelas 8B (Contoh)', 'kelas 7a (contoh)', 'kelas 8b (contoh)'];
-        if (in_array(trim($row['nama_kelas'] ?? ''), $exampleNames)) {
-            return true;
+        $guruList = Guru::orderBy('id')->get();
+
+        // Mapping no_gender ke gender_restriction
+        $noGenderToGender = [
+            1 => 'campuran',
+            2 => 'ikhwan',
+            3 => 'akhwat'
+        ];
+
+        foreach ($rows as $index => $row) {
+            // BACA PER POSISI KOLOM (bukan nama heading), supaya tabel bantuan
+            // di kolom F/H/K/N tidak mengganggu pembacaan.
+            // A=0 nama_kelas, B=1 tahun_ajaran, C=2 no_guru, D=3 no_gender
+            $namaKelas  = trim((string) ($row[0] ?? ''));
+            $tahunAjaran = trim((string) ($row[1] ?? ''));
+            $noGuruRaw  = trim((string) ($row[2] ?? ''));
+            $noGenderRaw = trim((string) ($row[3] ?? ''));
+
+            $rowNumber = $index + 1; // index 0 = baris 1 (Excel)
+
+            // Lewati baris header (baris 1)
+            if ($index === 0) {
+                continue;
+            }
+
+            // Lewati baris contoh
+            if ($this->isExampleRow($namaKelas)) {
+                continue;
+            }
+
+            // Baris benar-benar kosong → skip diam-diam
+            if ($namaKelas === '' && $tahunAjaran === '' && $noGuruRaw === '' && $noGenderRaw === '') {
+                continue;
+            }
+
+            // Baris terisi sebagian → laporkan sebagai error
+            if ($namaKelas === '' || $tahunAjaran === '' || $noGuruRaw === '' || $noGenderRaw === '') {
+                $this->failedCount++;
+                $this->errors[] = "Baris {$rowNumber}: Data belum lengkap. Pastikan kolom nama_kelas, tahun_ajaran, no_guru, dan no_gender semuanya terisi.";
+                continue;
+            }
+
+            try {
+                DB::transaction(function () use ($namaKelas, $tahunAjaran, $noGuruRaw, $noGenderRaw, $guruList, $noGenderToGender) {
+                    $noGuru = (int) $noGuruRaw;
+
+                    if ($noGuru < 1 || $noGuru > $guruList->count()) {
+                        throw new \Exception("Nomor Guru {$noGuru} tidak valid. Tersedia 1-{$guruList->count()}");
+                    }
+
+                    $guru = $guruList->get($noGuru - 1);
+
+                    if (!$guru) {
+                        throw new \Exception("Guru dengan nomor urut {$noGuru} tidak ditemukan");
+                    }
+
+                    // Validasi no_gender
+                    $noGender = (int) $noGenderRaw;
+                    if (!isset($noGenderToGender[$noGender])) {
+                        throw new \Exception("No Gender tidak valid. Harus: 1 (Campuran), 2 (Ikhwan), atau 3 (Akhwat)");
+                    }
+
+                    $gender = $noGenderToGender[$noGender];
+
+                    $name = $this->smartCapitalize($namaKelas);
+                    $ta   = trim($tahunAjaran);
+
+                    $exists = Kelas::where('name', $name)
+                                   ->where('tahun_ajaran', $ta)
+                                   ->exists();
+
+                    if ($exists) {
+                        throw new \Exception("Kelas {$name} dengan tahun ajaran {$ta} sudah ada");
+                    }
+
+                    Kelas::create([
+                        'name' => $name,
+                        'tahun_ajaran' => $ta,
+                        'guru_id' => $guru->id,
+                        'gender_restriction' => $gender,
+                    ]);
+
+                    $this->successCount++;
+                });
+
+            } catch (\Exception $e) {
+                $this->failedCount++;
+                $this->errors[] = "Baris {$rowNumber}: " . $e->getMessage();
+            }
         }
-        
-        return false;
     }
-    
+
+    protected function isExampleRow(string $namaKelas): bool
+    {
+        $exampleNames = ['kelas 7a (contoh)', 'kelas 8b (contoh)'];
+        return in_array(strtolower(trim($namaKelas)), $exampleNames);
+    }
+
     private function smartCapitalize($text)
     {
         $text = trim($text);
-        
+
         $result = preg_replace_callback('/(\d+|[a-zA-Z]+)/', function($matches) {
             $word = $matches[1];
             if (!is_numeric($word)) {
@@ -125,7 +126,7 @@ class KelasImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
             }
             return $word;
         }, $text);
-        
+
         return $result;
     }
 

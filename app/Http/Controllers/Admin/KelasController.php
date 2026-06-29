@@ -26,8 +26,11 @@ class KelasController extends Controller
         $kelas = Kelas::with('guru')->latest()->get();
         $gurus = Guru::orderBy('name')->get();
         $genderRestrictions = Kelas::GENDER_RESTRICTIONS;
-        
-        return view('admin.kelas.index', compact('kelas', 'gurus', 'genderRestrictions'));
+
+        // Tahun ajaran aktif (untuk dropdown di modal create/edit)
+        $tahunAjaranAktif = \App\Models\TahunAjaran::getAktif();
+
+        return view('admin.kelas.index', compact('kelas', 'gurus', 'genderRestrictions', 'tahunAjaranAktif'));
     }
     /**
      * Menyimpan Kelas baru ke database.
@@ -108,15 +111,23 @@ class KelasController extends Controller
      * Menghapus Kelas.
      */
     public function destroy(Kelas $kela)
-    {
-        $name = $kela->name;
-        $oldValues = $kela->toArray();
-        $kela->delete();
-        $this->logDelete('kelas', $name, $oldValues);
-        
+{
+    // Jangan hapus kelas yang masih punya santri — santri beserta seluruh
+    // riwayat setoran/presensi-nya akan ikut terhapus (cascade DB).
+    $jumlahSantri = $kela->santris()->count();
+    if ($jumlahSantri > 0) {
         return redirect()->route('admin.kelas.index')
-            ->with('deleted', 'Kelas/Halaqah berhasil dihapus.');
+            ->with('error', "Kelas \"{$kela->name}\" masih memiliki {$jumlahSantri} santri. Pindahkan atau hapus santrinya dulu sebelum menghapus kelas.");
     }
+
+    $name = $kela->name;
+    $oldValues = $kela->toArray();
+    $kela->delete();
+    $this->logDelete('kelas', $name, $oldValues);
+    
+    return redirect()->route('admin.kelas.index')
+        ->with('deleted', 'Kelas/Halaqah berhasil dihapus.');
+}
 
     /**
      * Bulk delete kelas (hapus banyak sekaligus)
@@ -132,6 +143,19 @@ class KelasController extends Controller
         ]);
 
         try {
+            // Tolak kalau ada kelas yang masih punya santri
+            $kelasBerisi = Kelas::whereIn('id', $request->kelas_ids)
+                ->withCount('santris')
+                ->get()
+                ->filter(fn ($k) => $k->santris_count > 0)
+                ->pluck('name')
+                ->toArray();
+
+            if (!empty($kelasBerisi)) {
+                return redirect()->route('admin.kelas.index')
+                    ->with('error', 'Kelas berikut masih memiliki santri dan tidak bisa dihapus: ' . implode(', ', $kelasBerisi) . '. Pindahkan/hapus santrinya dulu.');
+            }
+
             $deletedCount = count($request->kelas_ids);
             $kelasNames = Kelas::whereIn('id', $request->kelas_ids)->pluck('name')->toArray();
             DB::transaction(function () use ($request) {
@@ -167,6 +191,10 @@ class KelasController extends Controller
     $sheet = $spreadsheet->getActiveSheet();
     
     $guruList = Guru::orderBy('id')->get();
+
+    // Tahun ajaran aktif — kelas hanya boleh ikut TA aktif (1 opsi)
+    $taAktif = \App\Models\TahunAjaran::getAktif();
+    $taNama  = $taAktif->nama ?? '2024/2025';
     
     // Header dengan no_gender (bukan gender langsung)
     $headers = ['nama_kelas', 'tahun_ajaran', 'no_guru', 'no_gender'];
@@ -208,12 +236,27 @@ class KelasController extends Controller
         ]
     ]);
     
-    // Contoh data dengan no_gender
+    // Contoh data dengan no_gender (tahun_ajaran = TA aktif)
     $exampleData = [
-        ['Kelas 7A (Contoh)', '2024/2025', '1', '1'],  // campuran
-        ['Kelas 8B (Contoh)', '2024/2025', '1', '2'],  // ikhwan
+        ['Kelas 7A (Contoh)', $taNama, '1', '1'],  // campuran
+        ['Kelas 8B (Contoh)', $taNama, '1', '2'],  // ikhwan
     ];
     $sheet->fromArray($exampleData, NULL, 'A2');
+
+    // Baris contoh dibuat lebih gelap supaya jelas "ini hanya contoh, hapus"
+    $sheet->getStyle('A2:D3')->applyFromArray([
+        'fill' => [
+            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+            'startColor' => ['rgb' => 'D1D5DB']   // abu-abu lebih gelap
+        ],
+        'font' => ['size' => 9, 'color' => ['rgb' => '4B5563'], 'italic' => true],
+        'borders' => [
+            'outline' => [
+                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                'color' => ['rgb' => '9CA3AF']
+            ]
+        ]
+    ]);
     
     $sheet->getColumnDimension('A')->setWidth(25);
     $sheet->getColumnDimension('B')->setWidth(15);
@@ -227,11 +270,14 @@ class KelasController extends Controller
     $sheet->getColumnDimension('J')->setWidth(2);
     $sheet->getColumnDimension('K')->setWidth(8);
     $sheet->getColumnDimension('L')->setWidth(15);
+    $sheet->getColumnDimension('M')->setWidth(2);
+    $sheet->getColumnDimension('N')->setWidth(10);
+    $sheet->getColumnDimension('O')->setWidth(22);
     
     // Petunjuk
     $sheet->setCellValue('F1', 'PETUNJUK');
     $sheet->setCellValue('F2', 'Nama Kelas: Nama lengkap kelas');
-    $sheet->setCellValue('F3', 'Tahun Ajaran: Format YYYY/YYYY');
+    $sheet->setCellValue('F3', 'Tahun Ajaran: Pakai TA AKTIF (lihat tabel kanan →)');
     $sheet->setCellValue('F4', 'No Guru: Lihat tabel guru →');
     $sheet->setCellValue('F5', 'No Gender: Lihat tabel gender →');
     $sheet->setCellValue('F6', '');
@@ -370,6 +416,53 @@ class KelasController extends Controller
     }
     
     $sheet->getStyle('K1:L5')->applyFromArray([
+        'borders' => [
+            'outline' => [
+                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                'color' => ['rgb' => 'E5E7EB']
+            ]
+        ]
+    ]);
+
+    // ── Tabel Tahun Ajaran Aktif (hanya 1 opsi) ──
+    $sheet->setCellValue('N1', 'TAHUN AJARAN');
+    $sheet->mergeCells('N1:O1');
+    $sheet->getStyle('N1')->applyFromArray([
+        'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '374151']],
+        'fill' => [
+            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+            'startColor' => ['rgb' => 'F9FAFB']
+        ],
+        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+        'borders' => [
+            'bottom' => [
+                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                'color' => ['rgb' => 'E5E7EB']
+            ]
+        ]
+    ]);
+
+    $sheet->setCellValue('N2', 'Status');
+    $sheet->setCellValue('O2', 'Tahun Ajaran');
+    $sheet->getStyle('N2:O2')->applyFromArray([
+        'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '6B7280']],
+        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
+    ]);
+
+    $sheet->setCellValue('N3', 'AKTIF');
+    $sheet->setCellValue('O3', $taNama);
+    $sheet->getStyle('N3:O3')->applyFromArray([
+        'font' => ['size' => 9, 'color' => ['rgb' => '374151']],
+        'alignment' => [
+            'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+            'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+        ]
+    ]);
+    // tonjolkan TA aktif (hijau bold)
+    $sheet->getStyle('N3')->getFont()->setBold(true)->getColor()->setRGB('059669');
+    $sheet->getStyle('O3')->getFont()->setBold(true)->getColor()->setRGB('059669');
+
+    $sheet->getStyle('N1:O3')->applyFromArray([
         'borders' => [
             'outline' => [
                 'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,

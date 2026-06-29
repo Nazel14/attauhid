@@ -19,10 +19,13 @@ class SantriBulkUpdateImport implements ToCollection, WithHeadingRow, SkipsEmpty
     protected $failedCount = 0;
     protected $kelasId;
     protected $santrisByNoUrut = [];
+    protected $warnings = [];
+    protected $photos = [];
 
-    public function __construct($kelasId)
+    public function __construct($kelasId, array $photos = [])
     {
         $this->kelasId = $kelasId;
+        $this->photos = $photos;
 
         // Bangun peta no_urut → santri SEKALI di awal, urutan SAMA seperti
         // exportForEdit (where kelas_id + orderBy name asc). Peta ini "beku":
@@ -131,8 +134,8 @@ class SantriBulkUpdateImport implements ToCollection, WithHeadingRow, SkipsEmpty
                     // Validasi gender restriction
                     $genderFull = $updateData['gender'] ?? $santri->gender;
                     
-                    if (!empty($row['no_kelas_baru'])) {
-                        $noKelasBaru = (int) $row['no_kelas_baru'];
+                    if (isset($row['no_kelas_baru']) && trim((string) $row['no_kelas_baru']) !== '') {
+                        $noKelasBaru = (int) trim((string) $row['no_kelas_baru']);
                         $kelasList = \App\Models\Kelas::with('guru')->orderBy('id')->get();
                         
                         if ($noKelasBaru < 1 || $noKelasBaru > $kelasList->count()) {
@@ -190,6 +193,29 @@ class SantriBulkUpdateImport implements ToCollection, WithHeadingRow, SkipsEmpty
                         if (!empty($userUpdateData)) {
                             $santri->user->update($userUpdateData);
                         }
+
+                        // ✅ Foto: ganti / hapus
+                        if (!empty($row['nama_file_foto'])) {
+                            $rawFoto = trim((string) $row['nama_file_foto']);
+                            $fotoUpper = strtoupper(preg_replace('/\s+/', '', $rawFoto));
+                            if (in_array($fotoUpper, ['HAPUS', '-', 'DELETE'])) {
+                                if ($santri->user->profile_photo && Storage::disk('public')->exists($santri->user->profile_photo)) {
+                                    Storage::disk('public')->delete($santri->user->profile_photo);
+                                }
+                                $santri->user->update(['profile_photo' => null]);
+                            } else {
+                                $key = strtolower(str_replace(' ', '_', $rawFoto));
+                                if (isset($this->photos[$key])) {
+                                    if ($santri->user->profile_photo && Storage::disk('public')->exists($santri->user->profile_photo)) {
+                                        Storage::disk('public')->delete($santri->user->profile_photo);
+                                    }
+                                    $path = $this->processPhoto($this->photos[$key]);
+                                    if ($path) $santri->user->update(['profile_photo' => $path]);
+                                } else {
+                                    $this->warnings[] = "Baris {$rowNumber}: foto '{$rawFoto}' tidak ditemukan, foto santri tidak diubah.";
+                                }
+                            }
+                        }
                     }
                 
                     
@@ -203,9 +229,45 @@ class SantriBulkUpdateImport implements ToCollection, WithHeadingRow, SkipsEmpty
         }
     }
 
+    private function processPhoto($sourcePath): ?string
+    {
+        try {
+            $maxSize = 400;
+            $path = 'profile-photos/' . uniqid('santri_') . '.jpg';
+            Storage::disk('public')->put($path, file_get_contents($sourcePath));
+            $fullPath = Storage::disk('public')->path($path);
+            $info = getimagesize($fullPath);
+            if (!$info) return $path;
+            [$width, $height] = $info;
+            $src = match ($info['mime']) {
+                'image/jpeg' => imagecreatefromjpeg($fullPath),
+                'image/png'  => imagecreatefrompng($fullPath),
+                default      => null,
+            };
+            if (!$src) return $path;
+            $min  = min($width, $height);
+            $srcX = (int)(($width - $min) / 2);
+            $srcY = ($height > $width) ? 0 : (int)(($height - $min) / 2);
+            $size = min($min, $maxSize);
+            $dst  = imagecreatetruecolor($size, $size);
+            imagecopyresampled($dst, $src, 0, 0, $srcX, $srcY, $size, $size, $min, $min);
+            imagejpeg($dst, $fullPath, 95);
+            imagedestroy($src);
+            imagedestroy($dst);
+            return $path;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     public function getErrors()
     {
         return $this->errors;
+    }
+
+    public function getWarnings()
+    {
+        return $this->warnings;
     }
 
     public function getSuccessCount()

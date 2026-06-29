@@ -26,6 +26,8 @@ use App\Http\Controllers\Guru\PresensiController;
 use App\Http\Controllers\Guru\SetoranController;
 use App\Http\Controllers\Guru\SantriController as GuruSantriController;
 use App\Http\Controllers\Guru\RapotController as GuruRapotController;
+use App\Http\Controllers\Guru\KenaikanController as GuruKenaikanController;
+use App\Http\Controllers\Guru\NotifikasiController as GuruNotifikasiController;
 
 /* --------------------------------------
  * 1. Rute Default & Auth (Login/Logout)
@@ -123,6 +125,14 @@ Route::middleware(['auth', 'role:super-admin,admin'])->prefix('admin')->name('ad
         });
     });
 
+    Route::middleware('permission:kelola-santri')->group(function() {
+        Route::controller(AdminKenaikanController::class)->prefix('kenaikan')->name('kenaikan.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/proses', 'proses')->name('proses');
+            Route::patch('/{usulan}/tolak', 'tolak')->name('tolak');
+        });
+    });
+
     Route::middleware('permission:kelola-presensi-sesi')->group(function() {
         Route::controller(AdminPresensiSesiController::class)->prefix('presensi-sesis')->name('presensi-sesis.')->group(function() {
             Route::patch('/{presensiSesi}/toggle', 'toggleActive')->name('toggle');
@@ -168,6 +178,12 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
     Route::get('/dashboard', [GuruDashboardController::class, 'index'])->name('dashboard');
     // Naik Jilid Iqro (konfirmasi guru)
     Route::post('/naik-jilid', [GuruDashboardController::class, 'naikkanJilid'])->name('naik-jilid');
+    // Naik Kelas massal (guru langsung eksekusi, tanpa admin)
+    Route::post('/naik-kelas', [GuruKenaikanController::class, 'naikkan'])->name('naik-kelas');
+
+    // Notifikasi guru
+    Route::post('/notifikasi/{notifikasi}/baca', [GuruNotifikasiController::class, 'baca'])->name('notifikasi.baca');
+    Route::post('/notifikasi/baca-semua', [GuruNotifikasiController::class, 'bacaSemua'])->name('notifikasi.baca-semua');
     
     // Manajemen Santri
     Route::controller(GuruSantriController::class)->prefix('santris')->name('santris.')->group(function () {
@@ -186,7 +202,10 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
             return response()->json([]);
         }
 
+        $kelasId = \App\Models\Santri::where('id', $santriId)->value('kelas_id');
+
         $setorans = \App\Models\Setoran::where('santri_id', $santriId)
+            ->when($kelasId, fn($q) => $q->where('kelas_id', $kelasId))
             ->where('kategori_setoran', 'Hafalan')
             ->whereNotNull('surat_start')
             ->whereNotNull('ayat_start')
@@ -274,10 +293,13 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
         }
 
         // Ambil semua setoran Iqro santri (deteksi via label "Iqro Jilid X")
+        $kelasId = \App\Models\Santri::where('id', $santriId)->value('kelas_id');
+
         $rows = \App\Models\Setoran::where('santri_id', $santriId)
+            ->when($kelasId, fn($q) => $q->where('kelas_id', $kelasId))
             ->where(function ($q) {
                 $q->where('surat_start', 'like', 'Iqro Jilid %')
-                  ->orWhere('surat_end', 'like', 'Iqro Jilid %');
+                ->orWhere('surat_end', 'like', 'Iqro Jilid %');
             })
             ->get(['surat_start', 'surat_end', 'ayat_start', 'ayat_end']);
 
@@ -336,11 +358,17 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
         Route::get('/{setoran}/pdf', 'downloadPdf')->name('pdf');
     });
 
+    // Riwayat Santri (per tahun ajaran) — DIDEFINISIKAN SEBELUM grup rapot
+    Route::get('/riwayat-santri', [GuruRapotController::class, 'riwayatSantri'])->name('riwayat-santri');
+    Route::get('/riwayat-santri/{tahunAjaran}', [GuruRapotController::class, 'detailRiwayatSantri'])
+        ->whereNumber('tahunAjaran')
+        ->name('riwayat-santri.detail');
+
     // Rapot
     Route::controller(GuruRapotController::class)->prefix('rapot')->name('rapot.')->group(function () {
         Route::get('/', 'index')->name('index');
-        Route::get('/{santri}', 'show')->name('show');
-        Route::get('/{santri}/pdf', 'downloadPdf')->name('pdf');
+        Route::get('/{santri}', 'show')->whereNumber('santri')->name('show');
+        Route::get('/{santri}/pdf', 'downloadPdf')->whereNumber('santri')->name('pdf');
     });
 });
 

@@ -141,7 +141,7 @@
                         <th class="th">Nama Sesi</th>
                         <th class="th">Status</th>
                         <th class="th">Terakhir Diubah</th>
-                        <th class="th text-right">Aksi</th>
+                        <th class="th" style="text-align:right; padding-right:100px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700/50">

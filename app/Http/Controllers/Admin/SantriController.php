@@ -83,6 +83,7 @@ class SantriController extends Controller
             'target_jilid'  => ['nullable', 'required_if:target_metode,iqro', 'integer', 'min:1', 'max:6'],
             'kelas_id' => 'required|exists:kelas,id',
             'password' => 'required|string|min:8|confirmed',
+            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ], [
             'password.min' => 'Password minimal 8 karakter.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
@@ -125,6 +126,12 @@ class SantriController extends Controller
                     'plain_password' => $validated['password'],
                     'role' => 'santri',
                 ]);
+
+                // ✅ Upload foto profil jika ada
+                if (request()->hasFile('profile_photo')) {
+                    $santriUser->profile_photo = $this->processProfilePhoto(request()->file('profile_photo'));
+                    $santriUser->save();
+                }
                 
                 $santri = Santri::create([
                     'user_id' => $santriUser->id,
@@ -162,8 +169,10 @@ class SantriController extends Controller
         'target_jilid'  => ['nullable', 'required_if:target_metode,iqro', 'integer', 'min:1', 'max:6'],
         'kelas_id' => 'required|exists:kelas,id',
         'password' => 'nullable|string|min:8',
+        'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
     ], [
         'password.min' => 'Password minimal 8 karakter.',
+        'password.confirmed' => 'Konfirmasi password baru tidak cocok.',
     ]);
 
     $oldValues = $santri->only(['nis', 'name', 'gender', 'target_juz', 'kelas_id', 'guru_id']);
@@ -224,6 +233,22 @@ class SantriController extends Controller
                 }
                 
                 $santri->user->update($updateData);
+
+                // ✅ Foto profil (hapus / ganti)
+                if (request()->boolean('delete_photo') && $santri->user->profile_photo) {
+                    if (Storage::disk('public')->exists($santri->user->profile_photo)) {
+                        Storage::disk('public')->delete($santri->user->profile_photo);
+                    }
+                    $santri->user->profile_photo = null;
+                    $santri->user->save();
+                }
+                if (request()->hasFile('profile_photo')) {
+                    if ($santri->user->profile_photo && Storage::disk('public')->exists($santri->user->profile_photo)) {
+                        Storage::disk('public')->delete($santri->user->profile_photo);
+                    }
+                    $santri->user->profile_photo = $this->processProfilePhoto(request()->file('profile_photo'));
+                    $santri->user->save();
+                }
             }
 
             return redirect()->route('admin.santris.detail', $validated['kelas_id'])
@@ -301,11 +326,11 @@ public function downloadTemplate()
     $kelasList = Kelas::with('guru')->orderBy('id')->get();
 
     // Headers (8 kolom: tambah metode & target_jilid)
-    $headers = ['nis', 'nama', 'gender', 'metode', 'target_juz', 'target_jilid', 'no_kelas', 'password'];
+    $headers = ['nis', 'nama', 'gender', 'metode', 'target_juz', 'target_jilid', 'no_kelas', 'password', 'nama_file_foto'];
     $sheet->fromArray($headers, NULL, 'A1');
 
-    // Style header (A1:H1)
-    $sheet->getStyle('A1:H1')->applyFromArray([
+    // Style header (A1:I1)
+    $sheet->getStyle('A1:I1')->applyFromArray([
         'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '1F2937']],
         'fill' => [
             'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -323,8 +348,8 @@ public function downloadTemplate()
         ]
     ]);
 
-    // Style baris contoh (A2:H3)
-    $sheet->getStyle('A2:H3')->applyFromArray([
+    // Style baris contoh (A2:I3)
+    $sheet->getStyle('A2:I3')->applyFromArray([
         'fill' => [
             'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
             'startColor' => ['rgb' => 'FFFBEB']
@@ -340,8 +365,8 @@ public function downloadTemplate()
 
     // Data contoh: satu Qur'an, satu Iqro
     $exampleData = [
-        ['12345 (Contoh)', 'Ahmad',  'L', 'quran', '5.50', '',  '1', 'pass1234'],
-        ['12346 (Contoh)', 'Aisyah', 'P', 'iqro',  '',     '3', '1', 'pass8765'],
+        ['12345 (Contoh)', 'Ahmad',  'L', 'quran', '5.50', '',  '1', 'pass1234', 'ahmad.jpg'],
+        ['12346 (Contoh)', 'Aisyah', 'P', 'iqro',  '',     '3', '1', 'pass8765', 'aisyah.jpg'],
     ];
 
     foreach ($exampleData as $rowIndex => $row) {
@@ -362,30 +387,33 @@ public function downloadTemplate()
     $sheet->getColumnDimension('F')->setWidth(11);  // Target Jilid
     $sheet->getColumnDimension('G')->setWidth(9);   // No Kelas
     $sheet->getColumnDimension('H')->setWidth(16);  // Password
-    $sheet->getColumnDimension('I')->setWidth(2);   // spacing
-    $sheet->getColumnDimension('J')->setWidth(46);  // Petunjuk
-    $sheet->getColumnDimension('K')->setWidth(2);   // spacing
-    $sheet->getColumnDimension('L')->setWidth(8);   // No Kelas
-    $sheet->getColumnDimension('M')->setWidth(35);  // Kelas - Guru
+    $sheet->getColumnDimension('I')->setWidth(20);  // nama_file_foto
+    $sheet->getColumnDimension('J')->setWidth(2);   // spacing
+    $sheet->getColumnDimension('K')->setWidth(46);  // Petunjuk
+    $sheet->getColumnDimension('L')->setWidth(2);   // spacing
+    $sheet->getColumnDimension('M')->setWidth(8);   // No Kelas
+    $sheet->getColumnDimension('N')->setWidth(35);  // Kelas - Guru
 
-    // PETUNJUK IMPORT (kolom J)
-    $sheet->setCellValue('J1', 'PETUNJUK IMPORT SANTRI');
-    $sheet->setCellValue('J2', '1. NIS: Nomor Induk Santri (unik)');
-    $sheet->setCellValue('J3', '2. Nama: Nama lengkap santri');
-    $sheet->setCellValue('J4', '3. Gender: L (Laki-laki) atau P (Perempuan)');
-    $sheet->setCellValue('J5', '4. Metode: quran atau iqro');
-    $sheet->setCellValue('J6', '5. Target Juz: 0.00 - 30.00 (isi bila metode quran)');
-    $sheet->setCellValue('J7', '6. Target Jilid: 1 - 6 (isi bila metode iqro)');
-    $sheet->setCellValue('J8', '7. No Kelas: Lihat tabel kanan →');
-    $sheet->setCellValue('J9', '8. Password: Minimal 8 karakter');
-    $sheet->setCellValue('J10', '');
-    $sheet->setCellValue('J11', 'CATATAN:');
-    $sheet->setCellValue('J12', '• Metode quran → isi Target Juz, kosongkan Target Jilid');
-    $sheet->setCellValue('J13', '• Metode iqro → isi Target Jilid, kosongkan Target Juz');
-    $sheet->setCellValue('J14', '• Baris 2-3 adalah CONTOH, hapus sebelum import');
-    $sheet->setCellValue('J15', '• NIS yang mengandung "(Contoh)" akan diabaikan sistem');
+    // PETUNJUK IMPORT (kolom K)
+    $sheet->setCellValue('K1', 'PETUNJUK IMPORT SANTRI');
+    $sheet->setCellValue('K2', '1. NIS: Nomor Induk Santri (unik)');
+    $sheet->setCellValue('K3', '2. Nama: Nama lengkap santri');
+    $sheet->setCellValue('K4', '3. Gender: L (Laki-laki) atau P (Perempuan)');
+    $sheet->setCellValue('K5', '4. Metode: quran atau iqro');
+    $sheet->setCellValue('K6', '5. Target Juz: 0.00 - 30.00 (isi bila metode quran)');
+    $sheet->setCellValue('K7', '6. Target Jilid: 1 - 6 (isi bila metode iqro)');
+    $sheet->setCellValue('K8', '7. No Kelas: Lihat tabel kanan →');
+    $sheet->setCellValue('K9', '8. Password: Minimal 8 karakter');
+    $sheet->setCellValue('K10', '9. Nama File Foto: tanpa spasi, mis: ahmad.jpg (opsional)');
+    $sheet->setCellValue('K11', '');
+    $sheet->setCellValue('K12', 'CATATAN:');
+    $sheet->setCellValue('K13', '• Metode quran → isi Target Juz, kosongkan Target Jilid');
+    $sheet->setCellValue('K14', '• Metode iqro → isi Target Jilid, kosongkan Target Juz');
+    $sheet->setCellValue('K15', '• Foto diupload terpisah sebagai 1 ZIP saat import');
+    $sheet->setCellValue('K16', '• Baris 2-3 adalah CONTOH, hapus sebelum import');
+    $sheet->setCellValue('K17', '• NIS yang mengandung "(Contoh)" akan diabaikan sistem');
 
-    $sheet->getStyle('J1')->applyFromArray([
+    $sheet->getStyle('K1')->applyFromArray([
         'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => 'FFFFFF']],
         'fill' => [
             'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -393,16 +421,16 @@ public function downloadTemplate()
         ],
         'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
     ]);
-    $sheet->getStyle('J2:J9')->applyFromArray([
+    $sheet->getStyle('K2:K10')->applyFromArray([
         'font' => ['size' => 9, 'color' => ['rgb' => '374151']],
     ]);
-    $sheet->getStyle('J11')->applyFromArray([
+    $sheet->getStyle('K12')->applyFromArray([
         'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'DC2626']],
     ]);
-    $sheet->getStyle('J12:J15')->applyFromArray([
+    $sheet->getStyle('K13:K17')->applyFromArray([
         'font' => ['size' => 8, 'color' => ['rgb' => '374151']],
     ]);
-    $sheet->getStyle('J1:J15')->applyFromArray([
+    $sheet->getStyle('K1:K17')->applyFromArray([
         'borders' => [
             'outline' => [
                 'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
@@ -411,10 +439,10 @@ public function downloadTemplate()
         ]
     ]);
 
-    // TABEL KELAS & GURU (kolom L-M)
-    $sheet->setCellValue('L1', 'KELAS & GURU');
-    $sheet->mergeCells('L1:M1');
-    $sheet->getStyle('L1')->applyFromArray([
+    // TABEL KELAS & GURU (kolom M-N)
+    $sheet->setCellValue('M1', 'KELAS & GURU');
+    $sheet->mergeCells('M1:N1');
+    $sheet->getStyle('M1')->applyFromArray([
         'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '1F2937']],
         'fill' => [
             'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -429,19 +457,19 @@ public function downloadTemplate()
         ]
     ]);
 
-    $sheet->setCellValue('L2', 'No');
-    $sheet->setCellValue('M2', 'Kelas - Guru');
-    $sheet->getStyle('L2:M2')->applyFromArray([
+    $sheet->setCellValue('M2', 'No');
+    $sheet->setCellValue('N2', 'Kelas - Guru');
+    $sheet->getStyle('M2:N2')->applyFromArray([
         'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '6B7280']],
         'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
     ]);
 
     $currentRow = 3;
     foreach ($kelasList as $index => $kelas) {
-        $sheet->setCellValue('L' . $currentRow, $index + 1);
+        $sheet->setCellValue('M' . $currentRow, $index + 1);
         $guruName = $kelas->guru ? $kelas->guru->name : 'Tanpa Guru';
-        $sheet->setCellValue('M' . $currentRow, $kelas->name . ' - ' . $guruName);
-        $sheet->getStyle('L' . $currentRow . ':M' . $currentRow)->applyFromArray([
+        $sheet->setCellValue('N' . $currentRow, $kelas->name . ' - ' . $guruName);
+        $sheet->getStyle('M' . $currentRow . ':N' . $currentRow)->applyFromArray([
             'font' => ['size' => 9, 'color' => ['rgb' => '374151']],
             'alignment' => [
                 'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
@@ -452,7 +480,7 @@ public function downloadTemplate()
     }
 
     $lastRowKelas = $currentRow - 1;
-    $sheet->getStyle('L1:M' . $lastRowKelas)->applyFromArray([
+    $sheet->getStyle('M1:N' . $lastRowKelas)->applyFromArray([
         'borders' => [
             'outline' => [
                 'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
@@ -496,11 +524,11 @@ public function exportForEdit($kelasId)
     $sheet = $spreadsheet->getActiveSheet();
 
     // Headers (8 kolom: tambah metode, target_juz, target_jilid)
-    $headers = ['no_urut', 'nis', 'nama', 'gender', 'metode', 'target_juz', 'target_jilid', 'no_kelas_baru'];
+    $headers = ['no_urut', 'nis', 'nama', 'gender', 'metode', 'target_juz', 'target_jilid', 'no_kelas_baru', 'nama_file_foto'];
     $sheet->fromArray($headers, NULL, 'A1');
 
-    // Style header (A1:H1)
-    $sheet->getStyle('A1:H1')->applyFromArray([
+    // Style header (A1:I1)
+    $sheet->getStyle('A1:I1')->applyFromArray([
         'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '1F2937']],
         'fill' => [
             'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -533,6 +561,14 @@ public function exportForEdit($kelasId)
         $sheet->setCellValue('G' . $row, $metodeVal === 'iqro' ? $santri->target_jilid : '');
         $sheet->setCellValue('H' . $row, ''); // no_kelas_baru (kosong, isi manual jika pindah kelas)
 
+        // nama_file_foto: isi saran HANYA jika santri sudah punya foto
+        $fotoSaran = '';
+        if ($santri->user && $santri->user->profile_photo && $santri->user->name) {
+            $cleanName = preg_replace('/[^A-Za-z0-9._-]/', '', str_replace(' ', '_', $santri->name));
+            $fotoSaran = $cleanName . '.jpg';
+        }
+        $sheet->setCellValue('I' . $row, $fotoSaran);
+
         // Kolom NO URUT background abu-abu (read-only indicator)
         $sheet->getStyle('A' . $row)->applyFromArray([
             'fill' => [
@@ -554,31 +590,37 @@ public function exportForEdit($kelasId)
     $sheet->getColumnDimension('F')->setWidth(11);  // target_juz
     $sheet->getColumnDimension('G')->setWidth(11);  // target_jilid
     $sheet->getColumnDimension('H')->setWidth(14);  // no_kelas_baru
-    $sheet->getColumnDimension('I')->setWidth(2);   // spacing
-    $sheet->getColumnDimension('J')->setWidth(46);  // petunjuk
-    $sheet->getColumnDimension('K')->setWidth(2);   // spacing
-    $sheet->getColumnDimension('L')->setWidth(8);   // no kelas
-    $sheet->getColumnDimension('M')->setWidth(35);  // kelas - guru
+    $sheet->getColumnDimension('I')->setWidth(20);  // nama_file_foto
+    $sheet->getColumnDimension('J')->setWidth(2);   // spacing
+    $sheet->getColumnDimension('K')->setWidth(46);  // petunjuk
+    $sheet->getColumnDimension('L')->setWidth(2);   // spacing
+    $sheet->getColumnDimension('M')->setWidth(8);   // no kelas
+    $sheet->getColumnDimension('N')->setWidth(35);  // kelas - guru
 
-    // PETUNJUK BULK UPDATE (kolom J)
-    $sheet->setCellValue('J1', '📋 PANDUAN BULK UPDATE');
-    $sheet->setCellValue('J2', '');
-    $sheet->setCellValue('J3', '⚠️ ATURAN PENTING:');
-    $sheet->setCellValue('J4', '• JANGAN ubah/hapus kolom NO URUT');
-    $sheet->setCellValue('J5', '• JANGAN tambah/hapus baris');
-    $sheet->setCellValue('J6', '• Password tidak bisa diubah via Excel');
-    $sheet->setCellValue('J7', '');
-    $sheet->setCellValue('J8', '📝 METODE & TARGET:');
-    $sheet->setCellValue('J9', '• Metode: quran atau iqro');
-    $sheet->setCellValue('J10', '• quran → isi Target Juz (0-30), Jilid kosong');
-    $sheet->setCellValue('J11', '• iqro → isi Target Jilid (1-6), Juz kosong');
-    $sheet->setCellValue('J12', '');
-    $sheet->setCellValue('J13', '📝 PINDAH KELAS:');
-    $sheet->setCellValue('J14', '• Isi "No Kelas Baru" (lihat tabel kanan →)');
-    $sheet->setCellValue('J15', '• Kosongkan jika tidak pindah kelas');
-    $sheet->setCellValue('J16', '• NIS harus tetap unik (tidak boleh sama)');
+    // PETUNJUK BULK UPDATE (kolom K)
+    $sheet->setCellValue('K1', '📋 PANDUAN BULK UPDATE');
+    $sheet->setCellValue('K2', '');
+    $sheet->setCellValue('K3', '⚠️ ATURAN PENTING:');
+    $sheet->setCellValue('K4', '• JANGAN ubah/hapus kolom NO URUT');
+    $sheet->setCellValue('K5', '• JANGAN tambah/hapus baris');
+    $sheet->setCellValue('K6', '• Password tidak bisa diubah via Excel');
+    $sheet->setCellValue('K7', '');
+    $sheet->setCellValue('K8', '📝 METODE & TARGET:');
+    $sheet->setCellValue('K9', '• Metode: quran atau iqro');
+    $sheet->setCellValue('K10', '• quran → isi Target Juz (0-30), Jilid kosong');
+    $sheet->setCellValue('K11', '• iqro → isi Target Jilid (1-6), Juz kosong');
+    $sheet->setCellValue('K12', '');
+    $sheet->setCellValue('K13', '📝 PINDAH KELAS:');
+    $sheet->setCellValue('K14', '• Isi "No Kelas Baru" (lihat tabel kanan →)');
+    $sheet->setCellValue('K15', '• Kosongkan jika tidak pindah kelas');
+    $sheet->setCellValue('K16', '');
+    $sheet->setCellValue('K17', '📷 FOTO:');
+    $sheet->setCellValue('K18', '• Isi nama_file_foto = nama file di ZIP (ganti foto)');
+    $sheet->setCellValue('K19', '• Upload foto sebagai 1 ZIP saat update');
+    $sheet->setCellValue('K20', '• Kosongkan = foto tidak diubah');
+    $sheet->setCellValue('K21', '• Tulis HAPUS = foto dihapus jadi tanpa foto');
 
-    $sheet->getStyle('J1')->applyFromArray([
+    $sheet->getStyle('K1')->applyFromArray([
         'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => 'FFFFFF']],
         'fill' => [
             'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -586,19 +628,22 @@ public function exportForEdit($kelasId)
         ],
         'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
     ]);
-    $sheet->getStyle('J3')->applyFromArray([
+    $sheet->getStyle('K3')->applyFromArray([
         'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'DC2626']],
     ]);
-    $sheet->getStyle('J8')->applyFromArray([
+    $sheet->getStyle('K8')->applyFromArray([
         'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '2563EB']],
     ]);
-    $sheet->getStyle('J13')->applyFromArray([
+    $sheet->getStyle('K13')->applyFromArray([
         'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'D97706']],
     ]);
-    $sheet->getStyle('J2:J16')->applyFromArray([
+    $sheet->getStyle('K17')->applyFromArray([
+        'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '7C3AED']],
+    ]);
+    $sheet->getStyle('K2:K21')->applyFromArray([
         'font' => ['size' => 8, 'color' => ['rgb' => '374151']],
     ]);
-    $sheet->getStyle('J1:J16')->applyFromArray([
+    $sheet->getStyle('K1:K21')->applyFromArray([
         'borders' => [
             'outline' => [
                 'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM,
@@ -607,12 +652,12 @@ public function exportForEdit($kelasId)
         ]
     ]);
 
-    // TABEL KELAS & GURU (kolom L-M)
+    // TABEL KELAS & GURU (kolom M-N)
     $kelasList = Kelas::with('guru')->orderBy('id')->get();
 
-    $sheet->setCellValue('L1', 'KELAS & GURU');
-    $sheet->mergeCells('L1:M1');
-    $sheet->getStyle('L1')->applyFromArray([
+    $sheet->setCellValue('M1', 'KELAS & GURU');
+    $sheet->mergeCells('M1:N1');
+    $sheet->getStyle('M1')->applyFromArray([
         'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '1F2937']],
         'fill' => [
             'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -627,19 +672,19 @@ public function exportForEdit($kelasId)
         ]
     ]);
 
-    $sheet->setCellValue('L2', 'No');
-    $sheet->setCellValue('M2', 'Kelas - Guru');
-    $sheet->getStyle('L2:M2')->applyFromArray([
+    $sheet->setCellValue('M2', 'No');
+    $sheet->setCellValue('N2', 'Kelas - Guru');
+    $sheet->getStyle('M2:N2')->applyFromArray([
         'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '6B7280']],
         'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
     ]);
 
     $currentRow = 3;
     foreach ($kelasList as $index => $kelasItem) {
-        $sheet->setCellValue('L' . $currentRow, $index + 1);
+        $sheet->setCellValue('M' . $currentRow, $index + 1);
         $guruName = $kelasItem->guru ? $kelasItem->guru->name : 'Tanpa Guru';
-        $sheet->setCellValue('M' . $currentRow, $kelasItem->name . ' - ' . $guruName);
-        $sheet->getStyle('L' . $currentRow . ':M' . $currentRow)->applyFromArray([
+        $sheet->setCellValue('N' . $currentRow, $kelasItem->name . ' - ' . $guruName);
+        $sheet->getStyle('M' . $currentRow . ':N' . $currentRow)->applyFromArray([
             'font' => ['size' => 9, 'color' => ['rgb' => '374151']],
             'alignment' => [
                 'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
@@ -650,7 +695,7 @@ public function exportForEdit($kelasId)
     }
 
     $lastRowKelas = $currentRow - 1;
-    $sheet->getStyle('L1:M' . $lastRowKelas)->applyFromArray([
+    $sheet->getStyle('M1:N' . $lastRowKelas)->applyFromArray([
         'borders' => [
             'outline' => [
                 'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
@@ -679,117 +724,119 @@ public function exportForEdit($kelasId)
      * ✅ IMPORT 
      */
     public function import(Request $request)
-{
-    $request->validate([
-        'file' => 'required|mimes:xlsx,xls|max:2048',
-    ], [
-        'file.required' => 'File Excel wajib diupload',
-        'file.mimes' => 'File harus berformat Excel (.xlsx atau .xls)',
-    ]);
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls|max:2048',
+            'photos_zip' => 'nullable|file|mimes:zip|max:20480',
+        ], [
+            'file.required' => 'File Excel wajib diupload',
+            'file.mimes' => 'File harus berformat Excel (.xlsx atau .xls)',
+            'photos_zip.mimes' => 'File foto harus berformat ZIP',
+            'photos_zip.max' => 'Ukuran ZIP foto maksimal 20MB',
+        ]);
 
-    try {
-        $import = new SantriImport();
-        Excel::import($import, $request->file('file'));
+        try {
+            [$photos, $tmpDir] = $this->extractPhotosZip($request->file('photos_zip'));
 
-        $successCount = $import->getSuccessCount();
-        $failedCount = $import->getFailedCount();
-        $errors = $import->getErrors();
+            $import = new SantriImport($photos);
+            Excel::import($import, $request->file('file'));
 
-        if ($failedCount > 0) {
-            $errorMessage = "Berhasil: {$successCount} santri. Gagal: {$failedCount} santri.<br><br>";
-            $errorMessage .= "<strong>Detail Error:</strong><br>";
-            $errorMessage .= implode('<br>', $errors);
-            
-            return redirect()->route('admin.santris.index')
-                ->with('error', $errorMessage);
+            $successCount = $import->getSuccessCount();
+            $failedCount = $import->getFailedCount();
+            $errors = $import->getErrors();
+            $warnings = $import->getWarnings();
+
+            $this->cleanupTmp($tmpDir);
+
+            if ($failedCount > 0) {
+                $errorMessage = "Berhasil: {$successCount} santri. Gagal: {$failedCount} santri.<br><br>";
+                $errorMessage .= "<strong>Detail Error:</strong><br>";
+                $errorMessage .= implode('<br>', array_merge($errors, $warnings));
+
+                return redirect()->route('admin.santris.index')->with('error', $errorMessage);
+            }
+
+            $this->logActivity('import', 'santri', "Import {$successCount} data santri dari Excel", null, null, ['total_imported' => $successCount, 'kelas_stats' => $import->getKelasStats()]);
+
+            $kelasStats = $import->getKelasStats();
+            $statsText = [];
+            foreach ($kelasStats as $kelasName => $count) {
+                $statsText[] = "{$kelasName}: {$count} santri";
+            }
+
+            $message = "Berhasil mengimport {$successCount} santri!";
+            if (!empty($statsText)) {
+                $message .= " (" . implode(', ', $statsText) . ")";
+            }
+            if (!empty($warnings)) {
+                $message .= "<br><br><strong>Catatan foto:</strong><br>" . implode('<br>', $warnings);
+            }
+
+            return redirect()->route('admin.santris.index')->with('success', $message);
+
+        } catch (\Exception $e) {
+            \Log::error("Error importing santri: " . $e->getMessage());
+            \Log::error("Stack trace: " . $e->getTraceAsString());
+            return redirect()->back()->with('error', 'Gagal mengimport data: ' . $e->getMessage());
         }
-
-        $this->logActivity(
-            'import',
-            'santri',
-            "Import {$successCount} data santri dari Excel",
-            null,
-            null,
-            ['total_imported' => $successCount, 'kelas_stats' => $import->getKelasStats()]
-        );
-
-        $kelasStats = $import->getKelasStats();
-        $statsText = [];
-        foreach ($kelasStats as $kelasName => $count) {
-            $statsText[] = "{$kelasName}: {$count} santri";
-        }
-        
-        $message = "Berhasil mengimport {$successCount} santri!";
-        if (!empty($statsText)) {
-            $message .= " (" . implode(', ', $statsText) . ")";
-        }
-
-        return redirect()->route('admin.santris.index')
-            ->with('success', $message);
-
-    } catch (\Exception $e) {
-        \Log::error("Error importing santri: " . $e->getMessage());
-        \Log::error("Stack trace: " . $e->getTraceAsString());
-        
-        return redirect()->back()
-            ->with('error', 'Gagal mengimport data: ' . $e->getMessage());
     }
-}
 
     /**
      * ✅ BULK UPDATE - Dengan ZIP Foto (DIPERBAIKI)
      */
-    public function bulkUpdate(Request $request)
-{
-    $request->validate([
-        'file' => 'required|mimes:xlsx,xls|max:2048',
-        'kelas_id' => 'required|exists:kelas,id',
-    ], [
-        'file.required' => 'File Excel wajib diupload',
-        'file.mimes' => 'File harus berformat Excel (.xlsx atau .xls)',
-        'file.max' => 'Ukuran file maksimal 2MB',
-        'kelas_id.required' => 'Kelas ID tidak ditemukan',
-    ]);
+       public function bulkUpdate(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls|max:2048',
+            'kelas_id' => 'required|exists:kelas,id',
+            'photos_zip' => 'nullable|file|mimes:zip|max:20480',
+        ], [
+            'file.required' => 'File Excel wajib diupload',
+            'file.mimes' => 'File harus berformat Excel (.xlsx atau .xls)',
+            'file.max' => 'Ukuran file maksimal 2MB',
+            'kelas_id.required' => 'Kelas ID tidak ditemukan',
+            'photos_zip.mimes' => 'File foto harus berformat ZIP',
+            'photos_zip.max' => 'Ukuran ZIP foto maksimal 20MB',
+        ]);
 
-    $kelasId = $request->kelas_id;
+        $kelasId = $request->kelas_id;
 
-    try {
-        $import = new SantriBulkUpdateImport($kelasId);
-        Excel::import($import, $request->file('file'));
+        try {
+            [$photos, $tmpDir] = $this->extractPhotosZip($request->file('photos_zip'));
 
-        $successCount = $import->getSuccessCount();
-        $failedCount = $import->getFailedCount();
-        $errors = $import->getErrors();
+            $import = new SantriBulkUpdateImport($kelasId, $photos);
+            Excel::import($import, $request->file('file'));
 
-        if ($failedCount > 0) {
-            $errorMessage = "Berhasil update: {$successCount} santri. Gagal: {$failedCount} santri.<br><br>";
-            $errorMessage .= "<strong>Detail Error:</strong><br>";
-            $errorMessage .= implode('<br>', $errors);
-            
-            return redirect()->route('admin.santris.detail', $kelasId)
-                ->with('error', $errorMessage);
+            $successCount = $import->getSuccessCount();
+            $failedCount = $import->getFailedCount();
+            $errors = $import->getErrors();
+            $warnings = $import->getWarnings();
+
+            $this->cleanupTmp($tmpDir);
+
+            if ($failedCount > 0) {
+                $errorMessage = "Berhasil update: {$successCount} santri. Gagal: {$failedCount} santri.<br><br>";
+                $errorMessage .= "<strong>Detail Error:</strong><br>";
+                $errorMessage .= implode('<br>', array_merge($errors, $warnings));
+
+                return redirect()->route('admin.santris.detail', $kelasId)->with('error', $errorMessage);
+            }
+
+            $this->logActivity('update', 'santri', "Bulk update {$successCount} data santri dari Excel di kelas ID {$kelasId}", null, null, ['total_updated' => $successCount, 'kelas_id' => $kelasId]);
+
+            $msg = "Berhasil mengupdate {$successCount} data santri!";
+            if (!empty($warnings)) {
+                $msg .= "<br><br><strong>Catatan foto:</strong><br>" . implode('<br>', $warnings);
+            }
+
+            return redirect()->route('admin.santris.detail', $kelasId)->with('updated', $msg);
+
+        } catch (\Exception $e) {
+            \Log::error("Error bulk updating santri: " . $e->getMessage());
+            \Log::error("Stack trace: " . $e->getTraceAsString());
+            return redirect()->route('admin.santris.detail', $kelasId)->with('error', 'Gagal mengupdate data: ' . $e->getMessage());
         }
-
-        $this->logActivity(
-            'update',
-            'santri',
-            "Bulk update {$successCount} data santri dari Excel di kelas ID {$kelasId}",
-            null,
-            null,
-            ['total_updated' => $successCount, 'kelas_id' => $kelasId]
-        );
-
-        return redirect()->route('admin.santris.detail', $kelasId)
-            ->with('updated', "Berhasil mengupdate {$successCount} data santri!");
-
-    } catch (\Exception $e) {
-        \Log::error("Error bulk updating santri: " . $e->getMessage());
-        \Log::error("Stack trace: " . $e->getTraceAsString());
-        
-        return redirect()->route('admin.santris.detail', $kelasId)
-            ->with('error', 'Gagal mengupdate data: ' . $e->getMessage());
     }
-}
     
     /**
      * Destroy - hapus santri beserta foto profil
@@ -823,5 +870,93 @@ public function exportForEdit($kelasId)
             return redirect()->back()
                 ->with('error', 'Gagal menghapus Santri. ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Resize & crop foto jadi persegi (bias atas agar kepala tidak terpotong).
+     */
+    private function processProfilePhoto($file): string
+    {
+        $maxSize = 400;
+        $path = $file->store('profile-photos', 'public');
+        $fullPath = Storage::disk('public')->path($path);
+
+        $info = getimagesize($fullPath);
+        if (!$info) return $path;
+
+        [$width, $height] = $info;
+        $mime = $info['mime'];
+
+        $src = match ($mime) {
+            'image/jpeg' => imagecreatefromjpeg($fullPath),
+            'image/png'  => imagecreatefrompng($fullPath),
+            default      => null,
+        };
+        if (!$src) return $path;
+
+        $min  = min($width, $height);
+        $srcX = (int) (($width - $min) / 2);
+        $srcY = ($height > $width) ? 0 : (int) (($height - $min) / 2);
+
+        $size = min($min, $maxSize);
+        $dst  = imagecreatetruecolor($size, $size);
+
+        imagecopyresampled($dst, $src, 0, 0, $srcX, $srcY, $size, $size, $min, $min);
+        imagejpeg($dst, $fullPath, 95);
+
+        imagedestroy($src);
+        imagedestroy($dst);
+
+        return $path;
+    }
+
+    /**
+     * Ekstrak ZIP foto jadi map [namaFileLowercase => pathAsli].
+     * Return: [photosMap, tmpDir]
+     */
+    private function extractPhotosZip($zipFile): array
+    {
+        if (!$zipFile) {
+            return [[], null];
+        }
+        if (!class_exists('ZipArchive')) {
+            return [[], null];
+        }
+
+        $tmpDir = storage_path('app/tmp_photos_' . uniqid());
+        @mkdir($tmpDir, 0755, true);
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipFile->getRealPath()) !== true) {
+            return [[], $tmpDir];
+        }
+        $zip->extractTo($tmpDir);
+        $zip->close();
+
+        $photos = [];
+        $rii = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($tmpDir, \FilesystemIterator::SKIP_DOTS));
+        foreach ($rii as $f) {
+            if (!$f->isFile()) continue;
+            $ext = strtolower($f->getExtension());
+            if (in_array($ext, ['jpg', 'jpeg', 'png'])) {
+                $key = strtolower(str_replace(' ', '_', $f->getFilename()));
+                $photos[$key] = $f->getPathname();
+            }
+        }
+
+        return [$photos, $tmpDir];
+    }
+
+    private function cleanupTmp($tmpDir): void
+    {
+        if (!$tmpDir || !is_dir($tmpDir)) return;
+        $rii = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($tmpDir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($rii as $f) {
+            $f->isDir() ? @rmdir($f->getPathname()) : @unlink($f->getPathname());
+        }
+        @rmdir($tmpDir);
     }
 }

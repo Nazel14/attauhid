@@ -11,6 +11,9 @@
         isBulkUpdateModalOpen: false,
         formAction: '{{ route('guru.santris.store') }}',
         formData: { nis: '', name: '', gender: 'L', target_metode: 'quran', target_juz: '1.00', target_jilid: '1', kelas_id: '' },
+        photoPreview: null,
+        currentPhotoUrl: null,
+        deletePhoto: false,
         showPassword: false,
         showPasswordConfirmation: false,
         selectedSantris: [],
@@ -52,15 +55,26 @@
         openCreateModal() {
             this.isEdit = false;
             this.formAction = '{{ route('guru.santris.store') }}';
-            this.formData = { nis:'', name:'', gender:'L', target_metode:'quran', target_juz:'1.00', target_jilid:'1', kelas_id: @if($kelas->isNotEmpty())'{{ $kelas->first()->id }}'@else''@endif };            this.showPassword = false; this.showPasswordConfirmation = false;
+            this.formData = { nis:'', name:'', gender:'L', target_metode:'quran', target_juz:'1.00', target_jilid:'1', kelas_id: @if($kelas->isNotEmpty())'{{ $kelas->first()->id }}'@else''@endif };
+            this.photoPreview = null; this.currentPhotoUrl = null; this.deletePhoto = false;
+            this.showPassword = false; this.showPasswordConfirmation = false;
             this.isOpen = true;
         },
 
-        openEditModal(s) {
+        openEditModal(s, photoUrl) {
             this.isEdit = true;
             this.formAction = '/guru/santris/' + s.id;
             this.formData = { nis:s.nis, name:s.name, gender:s.gender, target_metode:s.target_metode||'quran', target_juz:s.target_juz??'1.00', target_jilid:s.target_jilid??'1', kelas_id:s.kelas_id };
+            this.photoPreview = null; this.currentPhotoUrl = photoUrl || null; this.deletePhoto = false;
             this.showPassword = false; this.isOpen = true;
+        },
+        previewPhoto(e) {
+            const file = e.target.files[0];
+            if (file) { const r = new FileReader(); r.onload = (ev)=>{ this.photoPreview = ev.target.result; this.deletePhoto = false; }; r.readAsDataURL(file); }
+        },
+        removePhoto() {
+            this.photoPreview = null; this.deletePhoto = true; this.currentPhotoUrl = null;
+            const input = document.querySelector('input[name=profile_photo]'); if (input) input.value = '';
         },
 
         closeModal() { this.isOpen = false; },
@@ -81,7 +95,7 @@
     <div id="notif-ok" class="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-[300] animate-slide-in">
         <div class="bg-emerald-600 border border-emerald-500/40 text-white px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3">
             <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            <p class="flex-1 text-sm font-medium">{{ session('success') }}</p>
+            <p class="flex-1 text-sm font-medium">{!! session('success') !!}</p>
             <button onclick="document.getElementById('notif-ok').remove()" class="opacity-70 hover:opacity-100"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
         </div>
     </div>
@@ -90,7 +104,7 @@
     <div id="notif-upd" class="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-[300] animate-slide-in">
         <div class="bg-emerald-600 border border-emerald-500/40 text-white px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3">
             <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            <p class="flex-1 text-sm font-medium">{{ session('updated') }}</p>
+            <p class="flex-1 text-sm font-medium">{!! session('updated') !!}</p>
             <button onclick="document.getElementById('notif-upd').remove()" class="opacity-70 hover:opacity-100"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
         </div>
     </div>
@@ -202,6 +216,12 @@
                         :checked="selectedSantris.includes('{{ $santri->id }}')"
                         @change="toggleSelect('{{ $santri->id }}')">
 
+                    @if($santri->user && $santri->user->profile_photo)
+                        <img src="{{ asset('storage/' . $santri->user->profile_photo) }}" alt="Foto" class="w-10 h-10 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                    @else
+                        <span class="w-10 h-10 rounded-full {{ ($santri->gender === 'P' || $santri->gender === 'Perempuan') ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' }} border flex items-center justify-center text-sm font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+                    @endif
+
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-bold text-gray-900 dark:text-white truncate">{{ $santri->name }}</p>
                         <p class="text-[11px] text-gray-500 font-mono">{{ $santri->nis }}</p>
@@ -255,7 +275,7 @@
                         'target_metode'=>$santri->target_metode?->value ?? 'quran',
                         'target_juz'=>$santri->target_juz,
                         'target_jilid'=>$santri->target_jilid,
-                    ]) }})"
+                    ]) }}, '{{ $santri->user && $santri->user->profile_photo ? asset('storage/'.$santri->user->profile_photo) : '' }}')"
                         class="flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 active:bg-indigo-100 dark:active:bg-indigo-950/80 transition-colors border-r border-gray-200 dark:border-gray-700/50">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                         Edit
@@ -315,6 +335,11 @@
                         <td class="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">{{ $santri->nis }}</td>
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-2.5">
+                                @if($santri->user && $santri->user->profile_photo)
+                                    <img src="{{ asset('storage/' . $santri->user->profile_photo) }}" alt="Foto" class="w-9 h-9 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                @else
+                                    <span class="w-9 h-9 rounded-full {{ ($santri->gender === 'P' || $santri->gender === 'Perempuan') ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' }} border flex items-center justify-center text-xs font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+                                @endif
                                 <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $santri->name }}</span>
                             </div>
                         </td>
@@ -345,7 +370,7 @@
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex gap-2">
-                                <button @click="openEditModal({{ json_encode(['id'=>$santri->id,'nis'=>$santri->nis,'name'=>$santri->name,'gender'=>$santri->gender,'target_juz'=>$santri->target_juz,'kelas_id'=>$santri->kelas_id]) }})"
+                                <button @click="openEditModal({{ json_encode(['id'=>$santri->id,'nis'=>$santri->nis,'name'=>$santri->name,'gender'=>$santri->gender,'target_metode'=>$santri->target_metode?->value ?? 'quran','target_juz'=>$santri->target_juz,'target_jilid'=>$santri->target_jilid,'kelas_id'=>$santri->kelas_id]) }}, '{{ $santri->user && $santri->user->profile_photo ? asset('storage/'.$santri->user->profile_photo) : '' }}')"
                                     class="px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 border border-indigo-300 text-indigo-700 dark:bg-indigo-600/20 dark:hover:bg-indigo-600/40 dark:border-indigo-600/30 dark:text-indigo-400 text-xs font-semibold rounded-lg transition-colors">Edit</button>
                                 <form action="{{ route('guru.santris.destroy', $santri->id) }}" method="POST"
                                       onsubmit="return confirm('Hapus santri {{ addslashes($santri->name) }}?')">
@@ -386,9 +411,34 @@
                 <h3 class="text-sm font-bold text-gray-900 dark:text-white" x-text="isEdit ? '✏️ Edit Santri' : '➕ Tambah Santri Baru'"></h3>
                 <button @click="closeModal()" class="modal-close-btn"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
             </div>
-            <form :action="formAction" method="POST" class="p-5 space-y-3 overflow-y-auto" style="max-height:72vh;">
+            <form :action="formAction" method="POST" enctype="multipart/form-data" class="p-5 space-y-3 overflow-y-auto" style="max-height:72vh;">
                 @csrf
                 <template x-if="isEdit"><input type="hidden" name="_method" value="PUT"></template>
+                <input type="hidden" name="delete_photo" x-bind:value="deletePhoto ? '1' : '0'">
+
+                {{-- Foto Profil --}}
+                <div class="flex items-center gap-4">
+                    <div class="relative flex-shrink-0">
+                        <template x-if="photoPreview">
+                            <img :src="photoPreview" class="w-16 h-16 rounded-full object-cover object-top border-2 border-indigo-300 dark:border-indigo-700">
+                        </template>
+                        <template x-if="!photoPreview && currentPhotoUrl">
+                            <img :src="currentPhotoUrl" class="w-16 h-16 rounded-full object-cover object-top border-2 border-gray-300 dark:border-gray-600">
+                        </template>
+                        <template x-if="!photoPreview && !currentPhotoUrl">
+                            <span class="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-950 border-2 border-indigo-200 dark:border-indigo-800 flex items-center justify-center">
+                                <svg class="w-7 h-7 text-indigo-400 dark:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            </span>
+                        </template>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-100 border border-indigo-300 text-indigo-700 dark:bg-indigo-600/20 dark:border-indigo-600/30 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-600/40 transition-colors">
+                            <span x-text="(photoPreview || currentPhotoUrl) ? 'Ganti Foto' : 'Pilih Foto (opsional)'"></span>
+                            <input type="file" name="profile_photo" accept="image/*" class="hidden" @change="previewPhoto($event)">
+                        </label>
+                        <button x-show="photoPreview || currentPhotoUrl" type="button" @click="removePhoto()" class="text-[11px] font-semibold text-red-600 dark:text-red-400 hover:underline text-left">Hapus Foto</button>
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div><label class="fi-lbl">NIS <span class="text-red-500 dark:text-red-400">*</span></label><input type="text" name="nis" x-model="formData.nis" required class="fi-inp" placeholder="12345"></div>
@@ -409,11 +459,11 @@
                         </select>
                     </div>
                     <div>
-                        <label class="fi-lbl">Kelas <span class="text-red-500 dark:text-red-400">*</span></label>
-                        <select name="kelas_id" x-model="formData.kelas_id" required class="fi-inp">
-                            <option value="">Pilih</option>
-                            @foreach($kelas as $k)<option value="{{ $k->id }}">{{ $k->name }}</option>@endforeach
-                        </select>
+                        <label class="fi-lbl">Kelas</label>
+                        <input type="hidden" name="kelas_id" x-model="formData.kelas_id">
+                        <div class="fi-inp bg-gray-50 dark:bg-gray-900/40 text-gray-500 dark:text-gray-400 flex items-center">
+                            @if($kelas->isNotEmpty()){{ $kelas->first()->name }}@else- belum punya kelas -@endif
+                        </div>
                     </div>
                 </div>
 
@@ -505,9 +555,14 @@
                         class="w-full text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-100 dark:file:bg-blue-600/20 file:text-blue-700 dark:file:text-blue-400 hover:file:bg-blue-200 dark:hover:file:bg-blue-600/30">
                     <p class="text-[10px] text-gray-500 dark:text-gray-600 mt-1">Format: .xlsx / .xls | Maks 2MB</p>
                 </div>
+                <div><label class="fi-lbl">ZIP Foto (opsional)</label>
+                    <input type="file" name="photos_zip" accept=".zip"
+                        class="w-full text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-100 dark:file:bg-indigo-600/20 file:text-indigo-700 dark:file:text-indigo-400 hover:file:bg-indigo-200 dark:hover:file:bg-indigo-600/30">
+                    <p class="text-[10px] text-gray-500 dark:text-gray-600 mt-1">ZIP berisi kumpulan foto. Nama tiap foto = kolom <b>nama_file_foto</b>. Maks 20MB.</p>
+                </div>
                 <div class="text-xs text-blue-700/80 dark:text-blue-300/80 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/30 rounded-xl px-4 py-3">
                     <p class="font-semibold text-blue-700 dark:text-blue-300 mb-1.5">📋 Langkah-langkah:</p>
-                    <ol class="space-y-0.5 list-decimal list-inside"><li>Download template</li><li>Isi data santri</li><li>Upload di sini</li></ol>
+                    <ol class="space-y-0.5 list-decimal list-inside"><li>Download template, isi + kolom nama_file_foto</li><li>Upload Excel</li><li>Kumpulkan foto jadi 1 ZIP, upload di sini</li></ol>
                 </div>
                 <div class="flex gap-3"><button type="button" @click="isImportModalOpen=false" class="btn-secondary flex-1">Batal</button><button type="submit" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-colors">Import Data</button></div>
             </form>
@@ -529,6 +584,11 @@
                 <div><label class="fi-lbl">File Excel yang Sudah Diedit <span class="text-red-500 dark:text-red-400">*</span></label>
                     <input type="file" name="file" accept=".xlsx,.xls" required
                         class="w-full text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-orange-100 dark:file:bg-orange-600/20 file:text-orange-700 dark:file:text-orange-400 hover:file:bg-orange-200 dark:hover:file:bg-orange-600/30">
+                </div>
+                <div><label class="fi-lbl">ZIP Foto (opsional)</label>
+                    <input type="file" name="photos_zip" accept=".zip"
+                        class="w-full text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-100 dark:file:bg-indigo-600/20 file:text-indigo-700 dark:file:text-indigo-400 hover:file:bg-indigo-200 dark:hover:file:bg-indigo-600/30">
+                    <p class="text-[10px] text-gray-500 dark:text-gray-600 mt-1">ZIP berisi kumpulan foto. Kosongkan kalau tidak ubah foto. Maks 20MB.</p>
                 </div>
                 <div class="text-xs text-red-700/80 dark:text-red-300/80 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/30 rounded-xl px-4 py-3">
                     <p class="font-semibold text-red-600 dark:text-red-400 mb-1">⚠️ Peringatan:</p>
@@ -598,14 +658,17 @@
 
     /* Custom dropdown arrow untuk select */
     select.fi-inp {
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 10px center;
-        background-size: 16px;
-        padding-right: 34px;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        appearance: none !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 24 24' stroke='%236b7280' stroke-width='2.5'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 12px center !important;
+        background-size: 16px 16px !important;
+        padding-right: 36px;
+    }
+    html.dark select.fi-inp {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 24 24' stroke='%23cbd5e1' stroke-width='2.5'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e") !important;
     }
 </style>
 

@@ -88,6 +88,11 @@
 
                 {{-- Row 1: nama + nomor --}}
                 <div class="flex items-center gap-3 px-4 py-3">
+                    @if($santri->user && $santri->user->profile_photo)
+                        <img src="{{ asset('storage/' . $santri->user->profile_photo) }}" alt="Foto" class="w-10 h-10 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                    @else
+                        <span class="w-10 h-10 rounded-full {{ $santri->gender === 'Perempuan' ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' }} border flex items-center justify-center text-sm font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+                    @endif
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-bold text-gray-900 dark:text-white truncate">{{ $santri->name }}</p>
                         <p class="text-[11px] text-gray-500 font-mono">{{ $santri->nis }}</p>
@@ -209,7 +214,14 @@
 
                         {{-- Nama --}}
                         <td class="px-4 py-3">
-                            <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $santri->name }}</span>
+                            <div class="flex items-center gap-2.5">
+                                @if($santri->user && $santri->user->profile_photo)
+                                    <img src="{{ asset('storage/' . $santri->user->profile_photo) }}" alt="Foto" class="w-9 h-9 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                @else
+                                    <span class="w-9 h-9 rounded-full {{ $santri->gender === 'Perempuan' ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' }} border flex items-center justify-center text-xs font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+                                @endif
+                                <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $santri->name }}</span>
+                            </div>
                         </td>
 
                         {{-- Gender --}}

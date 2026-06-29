@@ -20,7 +20,9 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class SetoranController extends Controller
 {
     /**
-     * Tampilkan daftar setoran
+     * Tampilkan daftar setoran.
+     * Progress per KELAS (kelas_id) — kebal-tanggal, reset saat naik kelas,
+     * akumulatif lintas semester. Konsisten dengan Dashboard & Rapot.
      */
     public function index()
     {
@@ -43,17 +45,18 @@ class SetoranController extends Controller
         $tahunAjaranId    = $tahunAjaranAktif?->id;
 
         $santris = Santri::where('kelas_id', $kelas->id)
-            ->with(['guru', 'kelas'])
+            ->with(['guru', 'kelas', 'user'])
             ->get()
             ->map(function ($santri) use ($tahunAjaranId) {
 
-                $setoranQuery = Setoran::where('santri_id', $santri->id);
-                if ($tahunAjaranId) {
-                    $setoranQuery->where('tahun_ajaran_id', $tahunAjaranId);
-                }
-                $setorans = $setoranQuery->get();
+                $kelasId = $santri->kelas_id;
 
-                // Hitung per-kategori (jumlah setoran)
+                // Setoran DI KELAS INI (kebal-tanggal)
+                $setorans = Setoran::where('santri_id', $santri->id)
+                    ->where('kelas_id', $kelasId)
+                    ->get();
+
+                // Hitung per-kategori (jumlah setoran) — sudah ter-scope kelas
                 $santri->total_hafalan  = $setorans->where('kategori_setoran', 'Hafalan')->count();
                 $santri->total_tilawah  = $setorans->where('kategori_setoran', 'Tilawah')->count();
                 $santri->total_murajaah = $setorans->where('kategori_setoran', 'Murajaah')->count();
@@ -67,26 +70,17 @@ class SetoranController extends Controller
 
                 if ($santri->is_iqro) {
                     $targetJilid   = (int)($santri->target_jilid ?? 1);
-                    $totalHalaman = 0;
-                    foreach ($setorans->where('kategori_setoran', 'Hafalan') as $s) {
-                        // Hanya hitung halaman dari jilid target sekarang,
-                        // agar progress reset ke nol saat santri naik jilid.
-                        if (!preg_match('/^Iqro Jilid (\d+)/i', (string)$s->surat_start, $mj)) continue;
-                        if ((int)$mj[1] !== $targetJilid) continue;
-                        $h1 = (int)$s->ayat_start;
-                        $h2 = (int)($s->ayat_end ?: $s->ayat_start);
-                        if ($h1 > 0 && $h2 >= $h1) $totalHalaman += ($h2 - $h1 + 1);
-                    }
+                    // Samakan dengan dashboard: per kelas, dedup halaman
+                    $totalHalaman  = count($santri->halamanIqroTersetorKelas($targetJilid, $kelasId));
                     $totalHalJilid = (int)(config('iqro.halaman_per_jilid.' . $targetJilid) ?? 0);
 
                     $santri->total_halaman_iqro       = $totalHalaman;
-                    $santri->total_hafalan_juz         = 0;
-                    $santri->total_halaman_jilid       = $totalHalJilid;
-                    $santri->iqro_persen_diketahui     = $totalHalJilid > 0;
-                    $santri->juz_progress_percentage   = $totalHalJilid > 0
+                    $santri->total_hafalan_juz        = 0;
+                    $santri->total_halaman_jilid      = $totalHalJilid;
+                    $santri->iqro_persen_diketahui    = $totalHalJilid > 0;
+                    $santri->juz_progress_percentage  = $totalHalJilid > 0
                         ? min(round(($totalHalaman / $totalHalJilid) * 100), 100)
                         : 0;
-                    // Label target untuk kolom "Target"
                     $santri->target_display = 'Jilid ' . $targetJilid;
                 } else {
                     $totalHafalanJuz = round(
@@ -101,11 +95,10 @@ class SetoranController extends Controller
                     $santri->juz_progress_percentage  = $targetJuz > 0
                         ? min(round(($totalHafalanJuz / $targetJuz) * 100), 100)
                         : 0;
-                    // Label target untuk kolom "Target"
                     $santri->target_display = number_format($targetJuz, 2) . ' juz';
                 }
 
-                // Presensi 30 hari terakhir
+                // Presensi 30 hari terakhir (presensi tak punya kelas_id → tetap by tanggal)
                 $presensiQuery = Presensi::where('santri_id', $santri->id)
                     ->where('tanggal', '>=', now()->subDays(30));
                 if ($tahunAjaranId) {
@@ -162,7 +155,9 @@ class SetoranController extends Controller
     }
 
     /**
-     * Tampilkan detail setoran per santri
+     * Tampilkan detail setoran per santri.
+     * CATATAN: halaman ini sengaja PER-SEMESTER (dropdown tahun ajaran),
+     * jadi tetap memfilter via tahun_ajaran_id — bukan kelas_id. Tidak diubah.
      */
     public function detail(int $santriId)
     {
@@ -181,7 +176,7 @@ class SetoranController extends Controller
                 ->with('error', 'Anda belum ditugaskan sebagai wali kelas.');
         }
 
-        $santri = Santri::with(['kelas', 'guru'])
+        $santri = Santri::with(['kelas', 'guru', 'user'])
             ->where('id', $santriId)
             ->where('kelas_id', $kelas->id)
             ->firstOrFail();
@@ -189,26 +184,59 @@ class SetoranController extends Controller
         $tahunAjaranAktif = TahunAjaran::getAktif();
         $tahunAjaranId    = $tahunAjaranAktif?->id;
 
-        // ✅ FIX: Default range = seluruh periode tahun ajaran aktif
-        // Sebelumnya hanya 30 hari terakhir, sehingga data lama tidak tampil
-        $defaultMulai = $tahunAjaranAktif
-            ? Carbon::parse($tahunAjaranAktif->tanggal_mulai)->format('Y-m-d')
-            : now()->startOfYear()->format('Y-m-d');
+        // ===== Daftar semester (TA) yang punya data untuk santri ini =====
+        $taIds = Setoran::where('santri_id', $santriId)
+                ->whereNotNull('tahun_ajaran_id')->distinct()->pluck('tahun_ajaran_id')
+            ->merge(
+                Presensi::where('santri_id', $santriId)
+                    ->whereNotNull('tahun_ajaran_id')->distinct()->pluck('tahun_ajaran_id')
+            )
+            ->unique()->filter()->values();
 
-        $defaultAkhir = $tahunAjaranAktif
-            ? Carbon::parse($tahunAjaranAktif->tanggal_akhir)->format('Y-m-d')
-            : now()->format('Y-m-d');
+        if ($tahunAjaranId && !$taIds->contains($tahunAjaranId)) {
+            $taIds->push($tahunAjaranId);
+        }
 
-        $tanggalMulai = request('tanggal_mulai', $defaultMulai);
-        $tanggalAkhir = request('tanggal_akhir', $defaultAkhir);
+        $historyByTa = \App\Models\SantriKelasHistory::where('santri_id', $santriId)
+            ->whereIn('tahun_ajaran_id', $taIds)
+            ->with('kelas')
+            ->get()
+            ->keyBy('tahun_ajaran_id');
 
+        $taList = TahunAjaran::whereIn('id', $taIds)
+            ->orderByDesc('tanggal_mulai')
+            ->get()
+            ->map(function ($ta) use ($historyByTa) {
+                $h = $historyByTa->get($ta->id);
+                $ta->kelas_konteks = $h?->kelas?->name;
+                return $ta;
+            });
+
+        $taTerpilih = request('ta');
+        if (!$taTerpilih) {
+            $taTerpilih = ($tahunAjaranId && $taIds->contains($tahunAjaranId))
+                ? $tahunAjaranId
+                : $taList->first()?->id;
+        }
+        $taTerpilih = $taTerpilih ? (int) $taTerpilih : null;
+
+        $taObjekTerpilih = $taList->firstWhere('id', $taTerpilih);
+        $isSemesterAktif = $taTerpilih && $taTerpilih === $tahunAjaranId;
+        $kelasKonteks    = $taObjekTerpilih->kelas_konteks ?? ($santri->kelas->name ?? '-');
+
+        $tanggalMulai = request('tanggal_mulai');
+        $tanggalAkhir = request('tanggal_akhir');
+
+        // ===== Setoran (difilter per semester) =====
         $setoranQuery = Setoran::where('santri_id', $santriId)
-            ->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir])
             ->with('presensi')
             ->orderBy('tanggal', 'desc')
             ->orderBy('created_at', 'desc');
-        if ($tahunAjaranId) {
-            $setoranQuery->where('tahun_ajaran_id', $tahunAjaranId);
+        if ($taTerpilih) {
+            $setoranQuery->where('tahun_ajaran_id', $taTerpilih);
+        }
+        if ($tanggalMulai && $tanggalAkhir) {
+            $setoranQuery->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir]);
         }
         $setorans = $setoranQuery->get();
 
@@ -229,10 +257,13 @@ class SetoranController extends Controller
                 }
             });
 
-        $presensiQuery = Presensi::where('santri_id', $santriId)
-            ->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir]);
-        if ($tahunAjaranId) {
-            $presensiQuery->where('tahun_ajaran_id', $tahunAjaranId);
+        // ===== Presensi (difilter per semester) =====
+        $presensiQuery = Presensi::where('santri_id', $santriId);
+        if ($taTerpilih) {
+            $presensiQuery->where('tahun_ajaran_id', $taTerpilih);
+        }
+        if ($tanggalMulai && $tanggalAkhir) {
+            $presensiQuery->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir]);
         }
         $presensis = $presensiQuery->get();
 
@@ -243,15 +274,12 @@ class SetoranController extends Controller
             'total_alpha' => $presensis->where('status', 'Alpha')->count(),
         ];
 
-        // Progress HANYA dari hafalan juz
         $totalHafalanJuz = round(
             $setorans->where('kategori_setoran', 'Hafalan')->sum('total_juz'),
             2
         );
 
-        $targetJuz = $tahunAjaranAktif
-            ? ($santri->getTargetJuzByTahunAjaran($tahunAjaranId) ?? ($santri->target_juz ?? 1.00))
-            : ($santri->target_juz ?? 1.00);
+        $targetJuz = $santri->getTargetJuzByTahunAjaran($taTerpilih) ?: ($santri->target_juz ?? 1.00);
 
         $progressHafalan = $targetJuz > 0
             ? min(($totalHafalanJuz / $targetJuz) * 100, 100)
@@ -261,10 +289,8 @@ class SetoranController extends Controller
         $setoranMurajaah = $setorans->where('kategori_setoran', 'Murajaah');
         $setoranTilawah  = $setorans->where('kategori_setoran', 'Tilawah');
 
-        // Deteksi metode Iqro
         $isIqro = ($santri->target_metode?->value ?? 'quran') === 'iqro';
 
-        // Hitung total halaman Iqro per kategori (untuk tampilan stats)
         $halamanIqroPerKategori = ['Hafalan' => 0, 'Murajaah' => 0, 'Tilawah' => 0];
         $totalHalamanIqro = 0;
         if ($isIqro) {
@@ -274,8 +300,6 @@ class SetoranController extends Controller
                 $jumlah = 0;
                 foreach ($col as $s) {
                     if (!preg_match('/^Iqro Jilid (\d+)/i', (string)$s->surat_start, $mj)) continue;
-                    // Untuk Hafalan: hanya jilid target sekarang (basis progress, reset saat naik jilid).
-                    // Murajaah & Tilawah: tetap hitung semua jilid (sekadar info, bukan progress).
                     if ($kat === 'Hafalan' && (int)$mj[1] !== $targetJilid) continue;
                     $h1 = (int)$s->ayat_start;
                     $h2 = (int)($s->ayat_end ?: $s->ayat_start);
@@ -303,7 +327,12 @@ class SetoranController extends Controller
             'tahunAjaranAktif',
             'isIqro',
             'halamanIqroPerKategori',
-            'totalHalamanIqro'
+            'totalHalamanIqro',
+            'taList',
+            'taTerpilih',
+            'taObjekTerpilih',
+            'kelasKonteks',
+            'isSemesterAktif'
         ));
     }
 

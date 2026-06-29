@@ -19,6 +19,9 @@
             target_jilid: '1',
             kelas_id: '',
         },
+        photoPreview: null,
+        currentPhotoUrl: null,
+        deletePhoto: false,
 
         showNotification: false,
         notificationMessage: '',
@@ -92,12 +95,13 @@
                 target_jilid: '1',
                 kelas_id: @if($allKelas->isNotEmpty()) '{{ $allKelas->first()->id }}' @else '' @endif
             };
+            this.photoPreview = null; this.currentPhotoUrl = null; this.deletePhoto = false;
             this.showPassword = false;
             this.showPasswordConfirmation = false;
             this.isOpen = true;
         },
 
-        openEditModal(santri) {
+        openEditModal(santri, photoUrl) {
             this.isEdit = true;
             this.formAction = `/admin/santris/${santri.id}`;
             let genderValue = 'L';
@@ -110,9 +114,14 @@
                 nis: santri.nis,
                 name: santri.name,
                 gender: genderValue,
+                target_metode: santri.target_metode ?? 'quran',
                 target_juz: santri.target_juz,
+                target_jilid: santri.target_jilid ?? '1',
                 kelas_id: santri.kelas_id,
             };
+            this.photoPreview = null;
+            this.currentPhotoUrl = photoUrl || null;
+            this.deletePhoto = false;
             this.showPassword = false;
             this.showPasswordConfirmation = false;
             this.isOpen = true;
@@ -122,7 +131,20 @@
         openTemplateModal() { this.isTemplateModalOpen = true; },
         openExportEditModal() { this.isExportEditModalOpen = true; },
         openBulkUpdateModal() { this.isBulkUpdateModalOpen = true; },
-        closeModal() { this.isOpen = false; },
+        previewPhoto(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => { this.photoPreview = e.target.result; this.deletePhoto = false; };
+                reader.readAsDataURL(file);
+            }
+        },
+        removePhoto() {
+            this.photoPreview = null; this.deletePhoto = true; this.currentPhotoUrl = null;
+            const input = document.querySelector('input[name=profile_photo]');
+            if (input) input.value = '';
+        },
+        closeModal() { this.isOpen = false; this.photoPreview = null; this.currentPhotoUrl = null; this.deletePhoto = false; },
         closeImportModal() { this.isImportModalOpen = false; },
         closeTemplateModal() { this.isTemplateModalOpen = false; },
         closeExportEditModal() { this.isExportEditModalOpen = false; },
@@ -327,6 +349,12 @@
                         :checked="selectedSantris.includes('{{ $santri->id }}')"
                         @change="toggleSelect('{{ $santri->id }}')">
 
+                    @if($santri->user && $santri->user->profile_photo)
+                        <img src="{{ asset('storage/' . $santri->user->profile_photo) }}" alt="Foto" class="w-10 h-10 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                    @else
+                        <span class="w-10 h-10 rounded-full {{ $isPerempuan ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' }} border flex items-center justify-center text-sm font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+                    @endif
+
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-1.5">
                             <p class="text-sm font-bold text-gray-900 dark:text-white truncate">{{ $santri->name }}</p>
@@ -379,7 +407,7 @@
                             'target_metode'=>$santri->target_metode?->value ?? 'quran',
                             'target_juz'=>$santri->target_juz,
                             'target_jilid'=>$santri->target_jilid,
-                        ]) }})"
+                        ]) }}, '{{ $santri->user && $santri->user->profile_photo ? asset('storage/'.$santri->user->profile_photo) : '' }}')"
                         class="flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 active:bg-indigo-100 dark:active:bg-indigo-950/80 transition-colors border-r border-gray-200 dark:border-gray-700/60">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                         Edit
@@ -420,7 +448,7 @@
                         <th class="th">Gender</th>
                         <th class="th">Target Juz</th>
                         <th class="th">Password</th>
-                        <th class="th text-center">Aksi</th>
+                        <th class="th" style="text-align:right; padding-right:130px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700/50">
@@ -441,6 +469,11 @@
                         <td class="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">{{ $santri->nis }}</td>
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-2.5">
+                                @if($santri->user && $santri->user->profile_photo)
+                                    <img src="{{ asset('storage/' . $santri->user->profile_photo) }}" alt="Foto" class="w-9 h-9 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                @else
+                                    <span class="w-9 h-9 rounded-full {{ $isPerempuan ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' }} border flex items-center justify-center text-xs font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+                                @endif
                                 <div>
                                     <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $santri->name }}</span>
                                     @if($isMismatch)
@@ -473,7 +506,7 @@
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex gap-2 justify-center">
-                                <button @click="openEditModal({{ json_encode(['id'=>$santri->id,'nis'=>$santri->nis,'name'=>$santri->name,'gender'=>$santri->gender,'target_juz'=>$santri->target_juz,'kelas_id'=>$santri->kelas_id]) }})"
+                                <button @click="openEditModal({{ json_encode(['id'=>$santri->id,'nis'=>$santri->nis,'name'=>$santri->name,'gender'=>$santri->gender,'target_metode'=>$santri->target_metode?->value ?? 'quran','target_juz'=>$santri->target_juz,'target_jilid'=>$santri->target_jilid,'kelas_id'=>$santri->kelas_id]) }}, '{{ $santri->user && $santri->user->profile_photo ? asset('storage/'.$santri->user->profile_photo) : '' }}')"
                                     class="px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 border border-indigo-300 text-indigo-700 dark:bg-indigo-600/20 dark:hover:bg-indigo-600/40 dark:border-indigo-600/30 dark:text-indigo-400 text-xs font-semibold rounded-lg transition-colors">Edit</button>
                                 <form action="{{ route('admin.santris.destroy', $santri) }}" method="POST"
                                       onsubmit="return confirm('Apakah Anda yakin ingin menghapus Santri {{ addslashes($santri->name) }}?')">
@@ -517,6 +550,31 @@
             <form :action="formAction" method="POST" enctype="multipart/form-data" class="p-5 space-y-4 overflow-y-auto" style="max-height:72vh;">
                 @csrf
                 <input type="hidden" name="_method" x-bind:value="isEdit ? 'PUT' : 'POST'">
+                <input type="hidden" name="delete_photo" x-bind:value="deletePhoto ? '1' : '0'">
+
+                {{-- Foto Profil --}}
+                <div class="flex items-center gap-4">
+                    <div class="relative flex-shrink-0">
+                        <template x-if="photoPreview">
+                            <img :src="photoPreview" class="w-16 h-16 rounded-full object-cover object-top border-2 border-indigo-300 dark:border-indigo-700">
+                        </template>
+                        <template x-if="!photoPreview && currentPhotoUrl">
+                            <img :src="currentPhotoUrl" class="w-16 h-16 rounded-full object-cover object-top border-2 border-gray-300 dark:border-gray-600">
+                        </template>
+                        <template x-if="!photoPreview && !currentPhotoUrl">
+                            <span class="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-950 border-2 border-indigo-200 dark:border-indigo-800 flex items-center justify-center">
+                                <svg class="w-7 h-7 text-indigo-400 dark:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            </span>
+                        </template>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-100 border border-indigo-300 text-indigo-700 dark:bg-indigo-600/20 dark:border-indigo-600/30 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-600/40 transition-colors">
+                            <span x-text="(photoPreview || currentPhotoUrl) ? 'Ganti Foto' : 'Pilih Foto (opsional)'"></span>
+                            <input type="file" name="profile_photo" accept="image/*" class="hidden" @change="previewPhoto($event)">
+                        </label>
+                        <button x-show="photoPreview || currentPhotoUrl" type="button" @click="removePhoto()" class="text-[11px] font-semibold text-red-600 dark:text-red-400 hover:underline text-left">Hapus Foto</button>
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -598,22 +656,21 @@
                                 </button>
                             </div>
                         </div>
-                        <template x-if="!isEdit">
-                            <div>
-                                <label class="fi-lbl">Konfirmasi Password <span class="text-red-500 dark:text-red-400">*</span></label>
-                                <div class="relative">
-                                    <input name="password_confirmation"
-                                        :type="showPasswordConfirmation ? 'text' : 'password'"
-                                        required
-                                        placeholder="Ulangi password"
-                                        class="fi-inp pr-9">
-                                    <button type="button" @click="showPasswordConfirmation=!showPasswordConfirmation" class="eye-btn">
-                                        <svg x-show="!showPasswordConfirmation" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                        <svg x-show="showPasswordConfirmation" class="w-4 h-4" style="display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
-                                    </button>
-                                </div>
+                        <div>
+                            <label class="fi-lbl" x-text="isEdit ? 'Konfirmasi Password Baru' : 'Konfirmasi Password *'"></label>
+                            <div class="relative">
+                                <input name="password_confirmation"
+                                    :type="showPasswordConfirmation ? 'text' : 'password'"
+                                    :required="!isEdit"
+                                    placeholder="Ulangi password"
+                                    class="fi-inp pr-9">
+                                <button type="button" @click="showPasswordConfirmation=!showPasswordConfirmation" class="eye-btn">
+                                    <svg x-show="!showPasswordConfirmation" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <svg x-show="showPasswordConfirmation" class="w-4 h-4" style="display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                                </button>
                             </div>
-                        </template>
+                            <p x-show="isEdit" class="text-[10px] text-gray-500 dark:text-gray-600 mt-1">Isi hanya jika mengubah password</p>
+                        </div>
                     </div>
                 </div>
 
@@ -693,12 +750,18 @@
                         class="w-full text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-100 dark:file:bg-blue-600/20 file:text-blue-700 dark:file:text-blue-400 hover:file:bg-blue-200 dark:hover:file:bg-blue-600/30">
                     <p class="text-[10px] text-gray-500 dark:text-gray-600 mt-1">Format: .xlsx / .xls | Maks 2MB</p>
                 </div>
+                <div>
+                    <label class="fi-lbl">ZIP Foto (opsional)</label>
+                    <input type="file" name="photos_zip" accept=".zip"
+                        class="w-full text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-100 dark:file:bg-indigo-600/20 file:text-indigo-700 dark:file:text-indigo-400 hover:file:bg-indigo-200 dark:hover:file:bg-indigo-600/30">
+                    <p class="text-[10px] text-gray-500 dark:text-gray-600 mt-1">ZIP berisi kumpulan foto. Nama tiap foto = kolom <b>nama_file_foto</b>. Maks 20MB.</p>
+                </div>
                 <div class="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/30 rounded-xl px-4 py-3">
                     <p class="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1.5">📋 Langkah-langkah import:</p>
                     <ol class="text-[11px] text-blue-700/80 dark:text-blue-300/70 space-y-0.5 list-decimal list-inside">
-                        <li>Download template Excel</li>
-                        <li>Isi data santri di Excel</li>
-                        <li>Upload Excel di sini</li>
+                        <li>Download template, isi data + kolom nama_file_foto</li>
+                        <li>Upload Excel di kolom pertama</li>
+                        <li>Kumpulkan foto jadi 1 ZIP, upload di kolom ZIP Foto</li>
                     </ol>
                 </div>
                 <div class="flex gap-3">
@@ -737,6 +800,12 @@
                     <input type="file" name="file" accept=".xlsx,.xls" required
                         class="w-full text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-orange-100 dark:file:bg-orange-600/20 file:text-orange-700 dark:file:text-orange-400 hover:file:bg-orange-200 dark:hover:file:bg-orange-600/30">
                     <p class="text-[10px] text-gray-500 dark:text-gray-600 mt-1">Format: .xlsx / .xls | Maks 2MB</p>
+                </div>
+                <div>
+                    <label class="fi-lbl">ZIP Foto (opsional)</label>
+                    <input type="file" name="photos_zip" accept=".zip"
+                        class="w-full text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-100 dark:file:bg-indigo-600/20 file:text-indigo-700 dark:file:text-indigo-400 hover:file:bg-indigo-200 dark:hover:file:bg-indigo-600/30">
+                    <p class="text-[10px] text-gray-500 dark:text-gray-600 mt-1">ZIP berisi kumpulan foto. Kosongkan kalau tidak ubah foto. Maks 20MB.</p>
                 </div>
                 <div class="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/30 rounded-xl px-4 py-3">
                     <p class="text-xs font-semibold text-red-700 dark:text-red-400 mb-1.5">⚠️ PERINGATAN:</p>
@@ -803,17 +872,21 @@
     ::-webkit-scrollbar-thumb { background:#9ca3af; border-radius:99px; }
     html.dark ::-webkit-scrollbar-thumb { background:#374151; }
 
-    /* Custom dropdown arrow untuk select */
+    /* Custom dropdown arrow untuk select — shorthand agar panah tidak berulang */
     select.fi-inp {
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 10px center;
-        background-size: 16px;
-        padding-right: 34px;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        appearance: none !important;
+        background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 24 24' stroke='%236b7280' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") no-repeat right 10px center / 16px !important;
+        padding-right: 34px !important;
+        cursor: pointer;
     }
+    select.fi-inp::-ms-expand { display: none; }
+    html.dark select.fi-inp {
+        background: #0d1117 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 24 24' stroke='%239ca3af' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") no-repeat right 10px center / 16px !important;
+    }
+    select.fi-inp option { background: #fff; color: #111827; }
+    html.dark select.fi-inp option { background: #111827; color: #e5e7eb; }
 </style>
 
 @endsection

@@ -13,6 +13,7 @@ class Setoran extends Model
     protected $fillable = [
         'tahun_ajaran_id', 
         'santri_id',
+        'kelas_id',
         'guru_id',
         'presensi_id',
         'tanggal',
@@ -248,13 +249,20 @@ class Setoran extends Model
     {
         parent::boot();
 
-        static::saving(function ($setoran) {
-            // Auto-isi tahun_ajaran_id dari yang aktif jika belum diisi
-            if (empty($setoran->tahun_ajaran_id)) {
-                $setoran->tahun_ajaran_id = TahunAjaran::getAktifId();
-            }
+        // SESUDAH
+            static::saving(function ($setoran) {
+                // Auto-isi tahun_ajaran_id dari yang aktif jika belum diisi
+                if (empty($setoran->tahun_ajaran_id)) {
+                    $setoran->tahun_ajaran_id = TahunAjaran::getAktifId();
+                }
 
-            if ($setoran->hasSetoran()) {
+                // Auto-isi kelas_id dari kelas santri saat setoran dibuat (kebal-tanggal).
+                // Hanya saat membuat baru (belum ada kelas_id) → tidak menimpa data lama saat edit.
+                if (empty($setoran->kelas_id) && $setoran->santri_id) {
+                    $setoran->kelas_id = optional(\App\Models\Santri::find($setoran->santri_id))->kelas_id;
+                }
+
+                if ($setoran->hasSetoran()) {
                 $setoran->nilai = $setoran->hitungNilai();
 
                 if ($setoran->page_start && $setoran->page_end) {

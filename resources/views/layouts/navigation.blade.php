@@ -145,6 +145,10 @@ class="bg-gray-200 dark:bg-gray-950 border-b border-gray-300 dark:border-gray-80
                                     <svg class="{{ $ddIcon }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
                                     Riwayat Presensi
                                 </a>
+                                <a href="{{ route('guru.riwayat-santri') }}" class="{{ $ddItem }}">
+                                    <svg class="{{ $ddIcon }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    Riwayat Santri
+                                </a>
                             </div>
                         </div>
 
@@ -183,8 +187,14 @@ class="bg-gray-200 dark:bg-gray-950 border-b border-gray-300 dark:border-gray-80
                 {{-- Desktop user dropdown --}}
                 <div class="hidden sm:block">
                     <div x-data="{ show: false }" class="relative">
-                        <button @click="show = !show" @click.away="show = false"
+                       <button @click="show = !show" @click.away="show = false"
                                 class="inline-flex items-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition">
+                            @if(Auth::user()->profile_photo)
+                                
+                               <img src="{{ asset('storage/' . Auth::user()->profile_photo) }}" alt="Foto" class="w-7 h-7 rounded-full object-cover object-top border border-gray-300 dark:border-gray-600">
+                            @else
+                                <span class="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-[10px] font-bold text-indigo-600 dark:text-indigo-400">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</span>
+                            @endif
                             <span class="hidden lg:block max-w-[100px] truncate text-gray-700 dark:text-gray-300">{{ Auth::user()->name }}</span>
                             @if(auth()->user()->role === 'admin')
                                 @can('kelola-admin')
@@ -226,6 +236,10 @@ class="bg-gray-200 dark:bg-gray-950 border-b border-gray-300 dark:border-gray-80
                                     </span>
                                 </button>
                             </div>
+                           <a href="{{ route('profile.edit') }}" class="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                Profil Saya
+                            </a>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="submit" class="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-left">
@@ -248,13 +262,14 @@ class="bg-gray-200 dark:bg-gray-950 border-b border-gray-300 dark:border-gray-80
                               class="pointer-events-none relative inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow-md ring-0 transition-transform duration-300 ease-in-out">
                             <svg class="absolute w-3.5 h-3.5 text-amber-500 transition-all duration-300 ease-in-out"
                                  :class="dark ? 'opacity-0 -rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'"
-                                 fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.121a1 1 0 10-1.414 1.414l.707.707a1 1 0 001.414-1.414l-.707-.707zm1.414-10.606a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM4 11a1 1 0 100-2H3a1 1 0 100 2h1z" clip-rule="evenodd"/>
+                                 fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="4"/>
+                                <path stroke-linecap="round" d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
                             </svg>
                             <svg class="absolute w-3.5 h-3.5 text-indigo-600 transition-all duration-300 ease-in-out"
                                  :class="dark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-90 scale-0'"
-                                 fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+                                 fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
                             </svg>
                         </span>
                     </button>
@@ -287,6 +302,11 @@ class="bg-gray-200 dark:bg-gray-950 border-b border-gray-300 dark:border-gray-80
         {{-- User Header --}}
         <div class="px-4 py-3 bg-gray-50 dark:bg-gradient-to-br dark:from-gray-800/80 dark:to-gray-900 border-b border-gray-200 dark:border-gray-700/50">
             <div class="flex items-center gap-3">
+              @if(Auth::user()->profile_photo)
+                    <img src="{{ asset('storage/' . Auth::user()->profile_photo) }}" alt="Foto" class="w-10 h-10 rounded-full object-cover object-top border-2 border-gray-300 dark:border-gray-600 flex-shrink-0">
+                @else
+                    <span class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-950 border-2 border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-sm font-bold text-indigo-600 dark:text-indigo-400 flex-shrink-0">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</span>
+                @endif
                 <div class="min-w-0 flex-1">
                     <p class="text-xs font-semibold text-gray-900 dark:text-white truncate">{{ Auth::user()->name }}</p>
                     <p class="text-[10px] mt-0.5
@@ -317,6 +337,14 @@ class="bg-gray-200 dark:bg-gray-950 border-b border-gray-300 dark:border-gray-80
                     <svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                 </div>
                 Dashboard
+            </a>
+
+            {{-- Profil Saya --}}
+            <a href="{{ route('profile.edit') }}" class="{{ $mItemBase }} {{ request()->routeIs('profile.edit') ? $mItemActive : $mItemIdle }}">
+                <div class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                </div>
+                Profil Saya
             </a>
 
             @if(auth()->user()->role === 'admin')
@@ -382,6 +410,10 @@ class="bg-gray-200 dark:bg-gray-950 border-b border-gray-300 dark:border-gray-80
                 <a href="{{ route('guru.presensis.index') }}" class="{{ $mItemBase }} {{ request()->routeIs('guru.presensis.*') ? $mItemActive : $mItemIdle }}">
                     <div class="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900/40 flex items-center justify-center flex-shrink-0"><svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
                     Riwayat Presensi
+                </a>
+                <a href="{{ route('guru.riwayat-santri') }}" class="{{ $mItemBase }} {{ request()->routeIs('guru.riwayat-santri*') ? $mItemActive : $mItemIdle }}">
+                    <div class="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-900/40 flex items-center justify-center flex-shrink-0"><svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
+                    Riwayat Santri
                 </a>
 
                 <div class="{{ $mSection }}"><p class="{{ $mLabel }}">Management</p></div>

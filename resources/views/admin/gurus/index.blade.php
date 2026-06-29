@@ -12,6 +12,7 @@
         formAction: '{{ route('admin.gurus.store') }}',
         formData: { name: '', nip: '', username: '' },
         photoPreview: null,
+        currentPhotoUrl: null,
         deletePhoto: false,
         showNotification: false,
         notificationMessage: '',
@@ -58,12 +59,15 @@
             this.isEdit = false;
             this.formAction = '{{ route('admin.gurus.store') }}';
             this.formData = { name: '', nip: '', username: '' };
-            this.photoPreview = null; this.deletePhoto = false; this.isOpen = true;
+            this.photoPreview = null; this.currentPhotoUrl = null; this.deletePhoto = false; this.isOpen = true;
         },
-        openEditModal(guru, username) {
+        openEditModal(guru, username, photoUrl) {
             this.isEdit = true;
             this.formAction = `/admin/gurus/${guru.id}`;
             this.formData = { name: guru.name, nip: guru.nip, username: username };
+            this.photoPreview = null;
+            this.currentPhotoUrl = photoUrl || null;
+            this.deletePhoto = false;
             this.isOpen = true;
         },
         previewPhoto(event) {
@@ -75,11 +79,11 @@
             }
         },
         removePhoto() {
-            this.photoPreview = null; this.deletePhoto = true;
+            this.photoPreview = null; this.deletePhoto = true; this.currentPhotoUrl = null;
             const input = document.querySelector('input[name=profile_photo]');
             if (input) input.value = '';
         },
-        closeModal() { this.isOpen = false; this.photoPreview = null; this.deletePhoto = false; },
+        closeModal() { this.isOpen = false; this.photoPreview = null; this.currentPhotoUrl = null; this.deletePhoto = false; },
         openImportModal() { this.isImportModalOpen = true; },
         openExportEditModal() { this.isExportEditModalOpen = true; },
         openBulkUpdateModal() { this.isBulkUpdateModalOpen = true; },
@@ -101,9 +105,10 @@
             this.isSubmitting = true;
             const form = event.target;
             const formData = new FormData(form);
+            formData.set('delete_photo', this.deletePhoto ? '1' : '0');
             try {
                 const response = await fetch(this.formAction, {
-                    method: 'POST', body: formData,
+                    method: 'POST', body: formData, redirect: 'manual',
                     headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
                 });
                 if (response.status === 422) {
@@ -111,7 +116,9 @@
                     const pesan = data.errors ? Object.values(data.errors).flat().join('<br>') : (data.message || 'Validasi gagal. Periksa kembali isian Anda.');
                     this.displayNotification(pesan, 'error'); this.isSubmitting = false; return;
                 }
-                if (response.ok || response.redirected) { window.location.href = '{{ route('admin.gurus.index') }}'; return; }
+                if (response.ok || response.type === 'opaqueredirect' || response.redirected || (response.status >= 200 && response.status < 400)) {
+                    window.location.href = '{{ route('admin.gurus.index') }}'; return;
+                }
                 this.displayNotification('Terjadi kesalahan (HTTP ' + response.status + ').', 'error'); this.isSubmitting = false;
             } catch (error) {
                 console.error('Error:', error);
@@ -121,13 +128,13 @@
      }"
      x-init="
        @if(session('success'))
-    displayNotification('{{ session('success') }}', 'success')
+    displayNotification({{ Js::from(session('success')) }}, 'success')
 @elseif(session('updated'))
-    displayNotification('{{ session('updated') }}', 'updated')
+    displayNotification({{ Js::from(session('updated')) }}, 'updated')
 @elseif(session('deleted'))
-    displayNotification('{{ session('deleted') }}', 'deleted')
+    displayNotification({{ Js::from(session('deleted')) }}, 'deleted')
 @elseif(session('error'))
-    displayNotification('{!! session('error') !!}', 'error')
+    displayNotification({{ Js::from(session('error')) }}, 'error')
 @endif
      "
      x-effect="if (isOpen || isImportModalOpen || isTemplateModalOpen || isExportEditModalOpen || isBulkUpdateModalOpen) { document.body.classList.add('overflow-hidden') } else { document.body.classList.remove('overflow-hidden') }">
@@ -228,6 +235,11 @@
                 <div class="flex items-center gap-3 px-4 py-3">
                     <input type="checkbox" class="guru-checkbox w-4 h-4 rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-indigo-600 flex-shrink-0 cursor-pointer"
                         value="{{ $guru->id }}" :checked="selectedGurus.includes('{{ $guru->id }}')" @change="toggleSelect('{{ $guru->id }}')">
+                    @if($guru->user && $guru->user->profile_photo)
+                        <img src="{{ asset('storage/' . $guru->user->profile_photo) }}" alt="Foto" class="w-10 h-10 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                    @else
+                        <span class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-sm font-bold text-indigo-600 dark:text-indigo-400 flex-shrink-0">{{ strtoupper(substr($guru->name, 0, 1)) }}</span>
+                    @endif
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-bold text-gray-900 dark:text-white truncate">{{ $guru->name }}</p>
                         <p class="text-[11px] text-gray-500">NIP: {{ $guru->nip ?? '-' }}</p>
@@ -254,7 +266,7 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-2 border-t border-gray-200 dark:border-gray-700/50">
-                    <button @click="openEditModal({{ json_encode($guru) }}, '{{ $guru->user->name ?? '' }}')"
+                    <button @click="openEditModal({{ json_encode($guru) }}, '{{ $guru->user->name ?? '' }}', '{{ $guru->user && $guru->user->profile_photo ? asset('storage/'.$guru->user->profile_photo) : '' }}')"
                         class="flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 active:bg-indigo-100 dark:active:bg-indigo-950/80 transition-colors border-r border-gray-200 dark:border-gray-700/50">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                         Edit
@@ -289,7 +301,7 @@
                         <th class="th">NIP</th>
                         <th class="th">Username</th>
                         <th class="th">Password</th>
-                        <th class="th text-center">Aksi</th>
+                        <th class="th" style="text-align:right; padding-right:160px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700/50">
@@ -299,7 +311,16 @@
                             <input type="checkbox" class="guru-checkbox w-4 h-4 rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-indigo-600 cursor-pointer" value="{{ $guru->id }}" :checked="selectedGurus.includes('{{ $guru->id }}')" @change="toggleSelect('{{ $guru->id }}')">
                         </td>
                         <td class="px-4 py-3 text-sm text-gray-500">{{ $index + 1 }}</td>
-                        <td class="px-4 py-3"><div class="flex items-center gap-2.5"><span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $guru->name }}</span></div></td>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-2.5">
+                                @if($guru->user && $guru->user->profile_photo)
+                                    <img src="{{ asset('storage/' . $guru->user->profile_photo) }}" alt="Foto" class="w-9 h-9 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                @else
+                                    <span class="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-400 flex-shrink-0">{{ strtoupper(substr($guru->name, 0, 1)) }}</span>
+                                @endif
+                                <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $guru->name }}</span>
+                            </div>
+                        </td>
                         <td class="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">{{ $guru->nip ?? '-' }}</td>
                         <td class="px-4 py-3"><span class="chip bg-indigo-100 text-indigo-700 border-indigo-300 dark:bg-indigo-950/50 dark:text-indigo-400 dark:border-indigo-800/30">{{ $guru->user->name ?? '-' }}</span></td>
                         <td class="px-4 py-3">
@@ -316,7 +337,7 @@
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex gap-2 justify-center">
-                                <button @click="openEditModal({{ json_encode($guru) }}, '{{ $guru->user->name ?? '' }}')" class="px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 border border-indigo-300 text-indigo-700 dark:bg-indigo-600/20 dark:hover:bg-indigo-600/40 dark:border-indigo-600/30 dark:text-indigo-400 text-xs font-semibold rounded-lg transition-colors">Edit</button>
+                                <button @click="openEditModal({{ json_encode($guru) }}, '{{ $guru->user->name ?? '' }}', '{{ $guru->user && $guru->user->profile_photo ? asset('storage/'.$guru->user->profile_photo) : '' }}')" class="px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 border border-indigo-300 text-indigo-700 dark:bg-indigo-600/20 dark:hover:bg-indigo-600/40 dark:border-indigo-600/30 dark:text-indigo-400 text-xs font-semibold rounded-lg transition-colors">Edit</button>
                                 <form action="{{ route('admin.gurus.destroy', $guru) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus Guru {{ addslashes($guru->name) }}?')">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="px-3 py-1.5 bg-red-100 hover:bg-red-200 border border-red-300 text-red-700 dark:bg-red-600/20 dark:hover:bg-red-600/40 dark:border-red-600/30 dark:text-red-400 text-xs font-semibold rounded-lg transition-colors">Hapus</button>
@@ -348,6 +369,30 @@
                 @csrf
                 <input type="hidden" name="_method" x-bind:value="isEdit ? 'PUT' : 'POST'">
                 <input type="hidden" name="delete_photo" x-bind:value="deletePhoto ? '1' : '0'">
+
+                {{-- Foto Profil --}}
+                <div class="flex items-center gap-4">
+                    <div class="relative flex-shrink-0">
+                        <template x-if="photoPreview">
+                            <img :src="photoPreview" class="w-16 h-16 rounded-full object-cover object-top border-2 border-indigo-300 dark:border-indigo-700">
+                        </template>
+                        <template x-if="!photoPreview && currentPhotoUrl">
+                            <img :src="currentPhotoUrl" class="w-16 h-16 rounded-full object-cover object-top border-2 border-gray-300 dark:border-gray-600">
+                        </template>
+                        <template x-if="!photoPreview && !currentPhotoUrl">
+                            <span class="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-950 border-2 border-indigo-200 dark:border-indigo-800 flex items-center justify-center">
+                                <svg class="w-7 h-7 text-indigo-400 dark:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            </span>
+                        </template>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-100 border border-indigo-300 text-indigo-700 dark:bg-indigo-600/20 dark:border-indigo-600/30 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-600/40 transition-colors">
+                            <span x-text="(photoPreview || currentPhotoUrl) ? 'Ganti Foto' : 'Pilih Foto (opsional)'"></span>
+                            <input type="file" name="profile_photo" accept="image/*" class="hidden" @change="previewPhoto($event)">
+                        </label>
+                        <button x-show="photoPreview || currentPhotoUrl" type="button" @click="removePhoto()" class="text-[11px] font-semibold text-red-600 dark:text-red-400 hover:underline text-left">Hapus Foto</button>
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -465,14 +510,19 @@
             </div>
             <form action="{{ route('admin.gurus.import') }}" method="POST" enctype="multipart/form-data" class="p-5 space-y-4" @submit="setTimeout(() => { closeImportModal(); }, 100)">
                 @csrf
-                <div>
+              <div>
                     <label class="fi-lbl">Pilih File Excel <span class="text-red-500 dark:text-red-400">*</span></label>
                     <input type="file" name="file" accept=".xlsx,.xls" required class="w-full text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-100 dark:file:bg-blue-600/20 file:text-blue-700 dark:file:text-blue-400 hover:file:bg-blue-200 dark:hover:file:bg-blue-600/30">
                     <p class="text-[10px] text-gray-500 dark:text-gray-600 mt-1">Format: .xlsx / .xls | Maks 2MB</p>
                 </div>
+                <div>
+                    <label class="fi-lbl">ZIP Foto (opsional)</label>
+                    <input type="file" name="photos_zip" accept=".zip" class="w-full text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-100 dark:file:bg-indigo-600/20 file:text-indigo-700 dark:file:text-indigo-400 hover:file:bg-indigo-200 dark:hover:file:bg-indigo-600/30">
+                    <p class="text-[10px] text-gray-500 dark:text-gray-600 mt-1">ZIP berisi kumpulan foto. Nama tiap foto = kolom <b>nama_file_foto</b> di Excel. Maks 20MB.</p>
+                </div>
                 <div class="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/30 rounded-xl px-4 py-3">
                     <p class="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1.5">📋 Langkah-langkah:</p>
-                    <ol class="text-[11px] text-blue-700/80 dark:text-blue-300/70 space-y-0.5 list-decimal list-inside"><li>Download template terlebih dahulu</li><li>Isi data guru sesuai format</li><li>Upload file di sini</li></ol>
+                    <ol class="text-[11px] text-blue-700/80 dark:text-blue-300/70 space-y-0.5 list-decimal list-inside"><li>Download template, isi data + kolom nama_file_foto</li><li>Upload file Excel di kolom pertama</li><li>Kumpulkan foto jadi 1 ZIP, upload di kolom ZIP Foto</li></ol>
                 </div>
                 <div class="flex gap-3">
                     <button type="button" @click="closeImportModal()" class="btn-secondary flex-1">Batal</button>
@@ -522,10 +572,15 @@
                     <p class="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1.5">📋 Langkah-Langkah:</p>
                     <ol class="text-[11px] text-blue-700/80 dark:text-blue-300/70 space-y-0.5 list-decimal list-inside"><li>Klik tombol "Export" untuk download data guru</li><li>Edit data di Excel (JANGAN ubah kolom NO URUT)</li><li>Upload Excel yang sudah diedit di sini</li></ol>
                 </div>
-                <div>
+               <div>
                     <label class="fi-lbl">File Excel yang Sudah Diedit <span class="text-red-500 dark:text-red-400">*</span></label>
                     <input type="file" name="file" accept=".xlsx,.xls" required class="w-full text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-orange-100 dark:file:bg-orange-600/20 file:text-orange-700 dark:file:text-orange-400 hover:file:bg-orange-200 dark:hover:file:bg-orange-600/30">
                     <p class="text-[10px] text-gray-500 dark:text-gray-600 mt-1">Format: .xlsx / .xls | Maks 2MB</p>
+                </div>
+                <div>
+                    <label class="fi-lbl">ZIP Foto (opsional)</label>
+                    <input type="file" name="photos_zip" accept=".zip" class="w-full text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-100 dark:file:bg-indigo-600/20 file:text-indigo-700 dark:file:text-indigo-400 hover:file:bg-indigo-200 dark:hover:file:bg-indigo-600/30">
+                    <p class="text-[10px] text-gray-500 dark:text-gray-600 mt-1">ZIP berisi kumpulan foto. Kosongkan kalau tidak ingin ubah foto. Maks 20MB.</p>
                 </div>
                 <div class="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/30 rounded-xl px-4 py-3">
                     <p class="text-xs font-semibold text-red-700 dark:text-red-400 mb-1.5">⚠️ PERINGATAN:</p>

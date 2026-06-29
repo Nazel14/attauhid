@@ -314,7 +314,12 @@
         {{-- SANTRI INFO CARD --}}
         <div class="glass-card p-4 sm:p-5 mb-4 fade-up">
             <div class="flex items-center gap-3 sm:gap-4">
-
+                @php $santriPhoto = $santri->user->profile_photo ?? (auth()->user()->profile_photo ?? null); @endphp
+                @if($santriPhoto)
+                    <img src="{{ asset('storage/' . $santriPhoto) }}" alt="Foto" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover object-top border-2 border-indigo-200 dark:border-indigo-700 flex-shrink-0">
+                @else
+                    <span class="w-12 h-12 sm:w-14 sm:h-14 rounded-full {{ ($santri->gender === 'P' || $santri->gender === 'Perempuan') ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-indigo-100 dark:bg-indigo-950 border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400' }} border-2 flex items-center justify-center text-lg font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+                @endif
                 <div class="min-w-0 flex-1">
                     <h3 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">{{ $santri->name }}</h3>
                     <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">

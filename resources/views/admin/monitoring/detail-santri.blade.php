@@ -11,6 +11,12 @@
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 <span class="hidden sm:inline">Kembali</span>
             </a>
+            @php $isPerempuanHdr = $santri->gender === 'Perempuan'; @endphp
+            @if($santri->user && $santri->user->profile_photo)
+                <img src="{{ asset('storage/' . $santri->user->profile_photo) }}" alt="Foto" class="w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+            @else
+                <span class="w-11 h-11 sm:w-12 sm:h-12 rounded-full {{ $isPerempuanHdr ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' }} border flex items-center justify-center text-base font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+            @endif
             <div class="flex-1 min-w-0">
                 <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate"> {{ $santri->name }}</h1>
                 <p class="text-[11px] text-gray-500 mt-0.5">{{ $santri->nis }} · {{ $santri->kelas->name ?? '-' }}</p>

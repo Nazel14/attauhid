@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
@@ -15,9 +16,16 @@ use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 {
     protected $errors = [];
+    protected $warnings = [];
     protected $successCount = 0;
     protected $failedCount = 0;
     protected $kelasStats = [];
+    protected $photos = [];
+
+    public function __construct(array $photos = [])
+    {
+        $this->photos = $photos;
+    }
 
     public function collection(Collection $rows)
     {
@@ -124,6 +132,17 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                         'target_jilid'  => $targetJilid,
                     ]);
 
+                    // ✅ Foto: cocokkan nama_file_foto dengan file di ZIP
+                    if (!empty($row['nama_file_foto'])) {
+                        $key = strtolower(str_replace(' ', '_', trim($row['nama_file_foto'])));
+                        if (isset($this->photos[$key])) {
+                            $path = $this->processPhoto($this->photos[$key]);
+                            if ($path) $santriUser->update(['profile_photo' => $path]);
+                        } else {
+                            $this->warnings[] = "Baris {$rowNumber}: foto '{$row['nama_file_foto']}' tidak ditemukan, santri tetap dibuat tanpa foto.";
+                        }
+                    }
+
                     // Track per kelas
                     $kelasName = $kelas->name;
                     if (!isset($this->kelasStats[$kelasName])) {
@@ -153,7 +172,39 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
         return false;
     }
 
+    private function processPhoto($sourcePath): ?string
+    {
+        try {
+            $maxSize = 400;
+            $path = 'profile-photos/' . uniqid('santri_') . '.jpg';
+            Storage::disk('public')->put($path, file_get_contents($sourcePath));
+            $fullPath = Storage::disk('public')->path($path);
+            $info = getimagesize($fullPath);
+            if (!$info) return $path;
+            [$width, $height] = $info;
+            $src = match ($info['mime']) {
+                'image/jpeg' => imagecreatefromjpeg($fullPath),
+                'image/png'  => imagecreatefrompng($fullPath),
+                default      => null,
+            };
+            if (!$src) return $path;
+            $min  = min($width, $height);
+            $srcX = (int)(($width - $min) / 2);
+            $srcY = ($height > $width) ? 0 : (int)(($height - $min) / 2);
+            $size = min($min, $maxSize);
+            $dst  = imagecreatetruecolor($size, $size);
+            imagecopyresampled($dst, $src, 0, 0, $srcX, $srcY, $size, $size, $min, $min);
+            imagejpeg($dst, $fullPath, 95);
+            imagedestroy($src);
+            imagedestroy($dst);
+            return $path;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     public function getErrors()      { return $this->errors; }
+    public function getWarnings()    { return $this->warnings; }
     public function getSuccessCount(){ return $this->successCount; }
     public function getFailedCount() { return $this->failedCount; }
     public function getKelasStats()  { return $this->kelasStats; }

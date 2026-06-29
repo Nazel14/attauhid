@@ -14,7 +14,7 @@
         --text-sub: #64748b;
         --text-label: #475569;
         --icon-muted: #94a3b8;
-        --placeholder: #cbd5e1;
+        --placeholder: #94a3b8;
         --logo-bg: linear-gradient(135deg, #eef2ff, #e0e7ff);
         --logo-border: #c7d2fe;
         --footer-border: #e2e8f0;
@@ -35,7 +35,7 @@
         --text-sub: #8b93a7;
         --text-label: #9ca3af;
         --icon-muted: #6b7280;
-        --placeholder: #4b5366;
+        --placeholder: #6b7280;
         --logo-bg: linear-gradient(135deg, #2a2d4f, #353b6b);
         --logo-border: #4338ca;
         --footer-border: #353b50;
@@ -132,10 +132,10 @@
         margin-bottom: 24px;
     }
     .logo {
-        width: 52px; height: 52px;
+        width: 72px; height: 72px;
         background: var(--logo-bg);
         border: 1px solid var(--logo-border);
-        border-radius: 14px;
+        border-radius: 12px;
         display: flex; align-items: center; justify-content: center;
         margin-bottom: 14px;
         flex-shrink: 0;
@@ -273,7 +273,7 @@
 
         <div class="header">
             <div class="logo">
-                <img src="/favicon.ico" alt="Logo" width="28" height="28" style="object-fit:contain;">
+                <img src="/favicon.ico" alt="Logo" width="44" height="44" style="object-fit:contain;">
             </div>
             <h1>Selamat Datang</h1>
             <p>Sistem Management Tahfidz</p>

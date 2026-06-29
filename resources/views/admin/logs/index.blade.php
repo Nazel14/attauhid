@@ -192,7 +192,7 @@
                 <table class="min-w-full">
                     <thead>
                         <tr class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
-                            <th class="th w-12">No</th><th class="th">Waktu</th><th class="th">User</th><th class="th">Role</th><th class="th">Aktivitas</th><th class="th">Module</th><th class="th">Deskripsi</th><th class="th text-center">Aksi</th>
+                            <th class="th w-12">No</th><th class="th">Waktu</th><th class="th">User</th><th class="th">Role</th><th class="th">Aktivitas</th><th class="th">Module</th><th class="th">Deskripsi</th><th class="th" style="text-align:right; padding-right:40px;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-700/50">

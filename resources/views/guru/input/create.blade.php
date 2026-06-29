@@ -60,13 +60,13 @@
     {{-- ============================================================ --}}
     <div id="mobileDrawerOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden lg:hidden" onclick="closeDrawer()"></div>
     <div id="mobileDrawer" class="fixed bottom-0 left-0 right-0 z-[160] lg:hidden translate-y-full transition-transform duration-300 ease-out">
-        <div class="bg-gray-900 border-t border-gray-700/50 rounded-t-2xl shadow-2xl max-h-[90vh] flex flex-col">
-            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-700/50 flex-shrink-0">
+        <div class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700/50 rounded-t-2xl shadow-2xl max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700/50 flex-shrink-0">
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-1 bg-gray-600 rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-2"></div>
-                    <span id="drawerTitle" class="font-semibold text-white text-sm">📊 Presensi Hari Ini</span>
+                    <div class="w-8 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-2"></div>
+                    <span id="drawerTitle" class="font-semibold text-gray-900 dark:text-white text-sm">📊 Presensi Hari Ini</span>
                 </div>
-                <button onclick="closeDrawer()" class="w-7 h-7 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-gray-300 transition">
+                <button onclick="closeDrawer()" class="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
@@ -270,8 +270,8 @@
                                             <option value="4">Jilid 4</option>
                                             <option value="5">Jilid 5</option>
                                             <option value="6">Jilid 6</option>
-                                            <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1">🔒 Otomatis terisi dari target santri.</p>
                                         </select>
+                                        <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1">🔒 Otomatis terisi dari target santri.</p>
                                     </div>
                                     <div class="grid grid-cols-2 gap-2">
                                         <div>
@@ -412,10 +412,10 @@
                                 <div>
                                     <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Status Kehadiran <span class="text-red-500 dark:text-red-400">*</span></label>
                                     <div class="grid grid-cols-2 gap-1.5">
-                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Hadir" required class="sr-only"><div class="status-radio-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-center hover:border-emerald-500/50 transition text-xs font-medium text-gray-700 dark:text-gray-300">✅ Hadir</div></label>
-                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Sakit" class="sr-only"><div class="status-radio-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-center hover:border-orange-500/50 transition text-xs font-medium text-gray-700 dark:text-gray-300">🤒 Sakit</div></label>
-                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Izin" class="sr-only"><div class="status-radio-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-center hover:border-amber-500/50 transition text-xs font-medium text-gray-700 dark:text-gray-300">📝 Izin</div></label>
-                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Alpha" class="sr-only"><div class="status-radio-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-center hover:border-red-500/50 transition text-xs font-medium text-gray-700 dark:text-gray-300">❌ Alpha</div></label>
+                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Hadir" required class="sr-only"><div class="status-radio-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-center hover:border-emerald-500/50 transition text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background-color:#10b981;"></span>Hadir</div></label>
+                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Sakit" class="sr-only"><div class="status-radio-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-center hover:border-orange-500/50 transition text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background-color:#f97316;"></span>Sakit</div></label>
+                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Izin" class="sr-only"><div class="status-radio-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-center hover:border-amber-500/50 transition text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background-color:#f59e0b;"></span>Izin</div></label>
+                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Alpha" class="sr-only"><div class="status-radio-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-center hover:border-red-500/50 transition text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background-color:#ef4444;"></span>Alpha</div></label>
                                     </div>
                                 </div>
                                 <div>
@@ -674,7 +674,6 @@
                     <div id="defaultView" class="hidden p-4">
                         <div class="flex items-center justify-between mb-3">
                             <h4 class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">📊 Presensi — {{ $tanggalHariIni }}</h4>
-                            <button type="button" onclick="loadPresensiHariIni()" class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-indigo-600 dark:text-indigo-400 rounded-lg transition font-medium border border-gray-200 dark:border-gray-700">🔄 Refresh</button>
                         </div>
                         <div class="grid grid-cols-4 gap-2 mb-4">
                             <div class="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900/30 rounded-lg p-2.5 text-center"><div class="text-xl font-bold text-emerald-600 dark:text-emerald-400" id="statHadir">0</div><div class="text-[10px] text-gray-500 dark:text-gray-500 flex items-center justify-center gap-1"><span class="w-2 h-2 rounded-full" style="background-color:#10b981;"></span>Hadir</div></div>
@@ -1008,6 +1007,11 @@ html:not(.dark) #quranDisplayDrawer {
     from { width: 100%; }
     to   { width: 0%; }
 }
+
+/* Iqro: scrollbar tipis per baris (geser kiri kalau baris panjang) */
+    .iqro-row-scroll::-webkit-scrollbar { height: 4px; }
+    .iqro-row-scroll::-webkit-scrollbar-track { background: transparent; }
+    .iqro-row-scroll::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.4); border-radius: 4px; }
 </style>
 
 {{-- ============================================================ --}}
@@ -1060,7 +1064,7 @@ function openDrawer(type) {
         loadPresensiHariIniToTarget(content);
 
     } else if (type === 'quran') {
-        title.innerHTML = '🕌 Al-Qur\'an & Penilaian';
+        title.innerHTML = '📝 Penilaian';
 
         // Clone quranPanel
         const quranPanelEl = document.getElementById('quranPanel');
@@ -1305,7 +1309,7 @@ function updateCounterFromOriginal() {
 
         // ✅ FIX: Hapus blok Statistik Setoran dari clone agar tidak double
         // Yang dipakai adalah blok Statistik Setoran di audioWrapper (sudah punya nilai langsung)
-        const statBlockInClone = quranClone.querySelector('#displayTotalKataDrawer')?.closest('.bg-gray-800\\/50.border.border-gray-700\\/50.p-3.rounded-xl');
+        const statBlockInClone = quranClone.querySelector('#displayTotalKataDrawer')?.closest('.rounded-xl');
         if (statBlockInClone) statBlockInClone.remove();
 
         // Tentukan mode aktif
@@ -1339,15 +1343,15 @@ function updateCounterFromOriginal() {
         // ✅ Buat section Audio & Penilaian + Statistik Setoran + Catatan Guru + Submit untuk drawer mobile
         const audioWrapper = document.createElement('div');
         audioWrapper.className = 'space-y-3 mt-3';
-        audioWrapper.innerHTML = `
-            <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-                <div class="flex items-center justify-between px-4 py-3 bg-gray-800/60 border-b border-gray-700/50">
-                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+       audioWrapper.innerHTML = `
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+                <div class="flex items-center justify-between px-4 py-3 bg-gray-100 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700/50">
+                    <span class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
                         <span class="w-5 h-5 bg-blue-600 rounded flex items-center justify-center text-[10px]">🎤</span>
                         Audio & Penilaian
                     </span>
                     <button type="button" onclick="clearMarking()"
-                            class="px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded-lg transition flex items-center gap-1">
+                            class="px-2.5 py-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded-lg transition flex items-center gap-1">
                         🗑️ Reset Marking
                     </button>
                 </div>
@@ -1370,7 +1374,7 @@ function updateCounterFromOriginal() {
                         </button>
                     </div>
                     <div id="recordingTimer${activeMode}"
-                         class="hidden text-xs font-bold text-blue-400 text-center py-2 bg-blue-950/50 rounded-lg border border-blue-800/50">
+                         class="hidden text-xs font-bold text-blue-600 dark:text-blue-400 text-center py-2 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800/50">
                         ⏱️ Durasi: 0:00
                     </div>
                     <audio id="audioPlayback${activeMode}" controls class="w-full hidden rounded-lg"></audio>
@@ -1380,71 +1384,70 @@ function updateCounterFromOriginal() {
                         🗑️ Hapus & Rekam Ulang
                     </button>
                     <input type="hidden" id="audioData${activeMode}">
-                    <p class="text-[10px] text-gray-600 italic">💡 Gunakan Jeda untuk berhenti sementara. Marking kata di atas untuk catat kesalahan.</p>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-600 italic">💡 Gunakan Jeda untuk berhenti sementara. Marking kata di atas untuk catat kesalahan.</p>
 
-                    {{-- ✅ STATISTIK SETORAN DI DRAWER MOBILE --}}
-                    <div class="bg-gray-800/50 border border-gray-700/50 p-3 rounded-xl mt-2">
-                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">📊 Statistik Setoran</h4>
+                    <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 p-3 rounded-xl mt-2">
+                        <h4 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">📊 Statistik Setoran</h4>
                         <div class="grid grid-cols-3 gap-2 mb-3">
-                            <div class="bg-gray-900 p-2.5 rounded-lg">
+                            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-transparent p-2.5 rounded-lg">
                                 <div class="text-[10px] text-gray-500 mb-0.5">Total Kata</div>
-                                <div class="text-xl font-bold text-blue-400" id="displayTotalKataDrawer">${valTotalKataDisplay}</div>
+                                <div class="text-xl font-bold text-blue-600 dark:text-blue-400" id="displayTotalKataDrawer">${valTotalKataDisplay}</div>
                             </div>
-                            <div class="bg-gray-900 p-2.5 rounded-lg">
+                            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-transparent p-2.5 rounded-lg">
                                 <div class="text-[10px] text-gray-500 mb-0.5">Juz Range</div>
-                                <div class="text-lg font-bold text-purple-400" id="displayJuzRangeDrawer">${valJuzRange}</div>
+                                <div class="text-lg font-bold text-purple-600 dark:text-purple-400" id="displayJuzRangeDrawer">${valJuzRange}</div>
                             </div>
-                            <div class="bg-gray-900 p-2.5 rounded-lg">
+                            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-transparent p-2.5 rounded-lg">
                                 <div class="text-[10px] text-gray-500 mb-0.5">Total Juz</div>
-                                <div class="text-xl font-bold text-white" id="displayTotalJuzDrawer">${valTotalJuz}</div>
+                                <div class="text-xl font-bold text-gray-900 dark:text-white" id="displayTotalJuzDrawer">${valTotalJuz}</div>
                             </div>
                         </div>
-                        <div class="bg-gray-900 p-2.5 rounded-lg">
+                        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-transparent p-2.5 rounded-lg">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-[10px] text-gray-500 font-medium">📄 Halaman Mushaf Madinah</span>
-                                <span class="text-[10px] text-gray-600">⚙️ Otomatis</span>
+                                <span class="text-[10px] text-gray-500 dark:text-gray-600">⚙️ Otomatis</span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <div class="flex-1 bg-gray-800 px-2.5 py-2 rounded-lg border border-gray-700">
+                                <div class="flex-1 bg-gray-100 dark:bg-gray-800 px-2.5 py-2 rounded-lg border border-gray-200 dark:border-gray-700">
                                     <div class="text-[10px] text-gray-500">Mulai</div>
-                                    <div class="text-base font-bold text-orange-400" id="displayPageStartDrawer">${valPageStart}</div>
+                                    <div class="text-base font-bold text-orange-600 dark:text-orange-400" id="displayPageStartDrawer">${valPageStart}</div>
                                 </div>
-                                <div class="text-gray-600">→</div>
-                                <div class="flex-1 bg-gray-800 px-2.5 py-2 rounded-lg border border-gray-700">
+                                <div class="text-gray-400 dark:text-gray-600">→</div>
+                                <div class="flex-1 bg-gray-100 dark:bg-gray-800 px-2.5 py-2 rounded-lg border border-gray-200 dark:border-gray-700">
                                     <div class="text-[10px] text-gray-500">Selesai</div>
-                                    <div class="text-base font-bold text-orange-400" id="displayPageEndDrawer">${valPageEnd}</div>
+                                    <div class="text-base font-bold text-orange-600 dark:text-orange-400" id="displayPageEndDrawer">${valPageEnd}</div>
                                 </div>
-                                <div class="flex-1 bg-orange-950/50 px-2.5 py-2 rounded-lg border border-orange-900/30">
+                                <div class="flex-1 bg-orange-50 dark:bg-orange-950/50 px-2.5 py-2 rounded-lg border border-orange-200 dark:border-orange-900/30">
                                     <div class="text-[10px] text-gray-500">Total</div>
-                                    <div class="text-base font-bold text-orange-400" id="displayTotalPageDrawer">${valTotalPage}</div>
+                                    <div class="text-base font-bold text-orange-600 dark:text-orange-400" id="displayTotalPageDrawer">${valTotalPage}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2 pt-1">
-                        <div class="bg-gray-800 rounded-lg p-2.5 flex items-center justify-between col-span-2">
-                            <span class="text-xs text-gray-400">🟢 Kelancaran</span>
-                            <strong id="displayKelancaran${activeMode}" class="text-base text-emerald-400">${valKelancaran}</strong>
+                        <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between col-span-2">
+                            <span class="text-xs text-gray-600 dark:text-gray-400">🟢 Kelancaran</span>
+                            <strong id="displayKelancaran${activeMode}" class="text-base text-emerald-600 dark:text-emerald-400">${valKelancaran}</strong>
                         </div>
-                        <div class="bg-gray-800 rounded-lg p-2.5 flex items-center justify-between">
-                            <span class="text-xs text-gray-400">🟡 Tajwid</span>
-                            <strong id="displayTajwid${activeMode}" class="text-base text-amber-400">${valTajwid}</strong>
+                        <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between">
+                            <span class="text-xs text-gray-600 dark:text-gray-400">🟡 Tajwid</span>
+                            <strong id="displayTajwid${activeMode}" class="text-base text-amber-600 dark:text-amber-400">${valTajwid}</strong>
                         </div>
-                        <div class="bg-gray-800 rounded-lg p-2.5 flex items-center justify-between">
-                            <span class="text-xs text-gray-400">🔴 Pelafalan</span>
-                            <strong id="displayPelafalan${activeMode}" class="text-base text-red-400">${valPelafalan}</strong>
+                        <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between">
+                            <span class="text-xs text-gray-600 dark:text-gray-400">🔴 Pelafalan</span>
+                            <strong id="displayPelafalan${activeMode}" class="text-base text-red-600 dark:text-red-400">${valPelafalan}</strong>
                         </div>
-                        <div class="bg-indigo-950 border border-indigo-800/50 rounded-lg p-2.5 flex items-center justify-between col-span-2">
-                            <span class="text-xs font-bold text-gray-300">📊 Nilai</span>
-                            <strong id="displayNilai${activeMode}" class="text-2xl text-indigo-400">${valNilai}</strong>
+                        <div class="bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-2.5 flex items-center justify-between col-span-2">
+                            <span class="text-xs font-bold text-gray-700 dark:text-gray-300">📊 Nilai</span>
+                            <strong id="displayNilai${activeMode}" class="text-2xl text-indigo-600 dark:text-indigo-400">${valNilai}</strong>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                <label class="block text-xs font-medium text-gray-400 mb-2">📝 Catatan Guru</label>
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">📝 Catatan Guru</label>
                 <textarea id="drawerCatatanGuru${activeMode}" rows="3"
                           class="form-textarea w-full"
                           placeholder="Tambahkan catatan...">${valCatatan}</textarea>
@@ -1579,6 +1582,7 @@ async function submitFromDrawer(mode) {
     setTimeout(() => {
         const form = document.getElementById(formId);
         if (form) {
+            if (typeof window.guardPdfPayloadSize === 'function') window.guardPdfPayloadSize(form, mode);
             form.submit();
         } else {
             hideSubmitLoadingOverlay();
@@ -2076,6 +2080,8 @@ function resetMarkingCounterForMode(mode) {
         'iqroHalamanEndCombined':  { searchable: false, placeholder: '-- Selesai --', live: true },
         'iqroHalamanStartSetoranOnly':{ searchable: false, placeholder: '-- Mulai --',   live: true },
         'iqroHalamanEndSetoranOnly':  { searchable: false, placeholder: '-- Selesai --', live: true },
+        'iqroJilidCombined':       { searchable: false, placeholder: 'Jilid 1', live: true },
+        'iqroJilidSetoranOnly':    { searchable: false, placeholder: 'Jilid 1', live: true },
     };
     const PLAIN_SELECTORS = ['#formPresensiOnly select[name="santri_id"]','#formPresensiOnly select[name="sesi"]'];
     const widgets = {};
@@ -2263,9 +2269,11 @@ function resetMarkingCounterForMode(mode) {
         const w = window._csWidgets?.[widgetId]; if (!w) return;
         const santriId = currentSantriId;
         const jilid    = getJilidForMode(mode);
+        const isHafalan = isHafalanMode(mode);
+        console.log(`[IQRO-HI] ${widgetId}: santriId=${santriId}, jilid="${jilid}", isHafalan=${isHafalan}, iqroDataReady=${!!iqroData[santriId]}`, iqroData[santriId]);
         Array.from(w.list.querySelectorAll('li')).forEach(li => {
             li.querySelectorAll('.hi-indicator').forEach(el => el.remove());
-            if (!santriId || !jilid || li.classList.contains('cs-ph') || !li.dataset.value) return;
+            if (!isHafalan || !santriId || !jilid || li.classList.contains('cs-ph') || !li.dataset.value) return;
             const halaman = parseInt(li.dataset.value);
             if (!halaman || !isHalamanSelesai(jilid, halaman, santriId)) return;
             const chk = document.createElement('span'); chk.className = 'hi-indicator'; chk.textContent = '✓';
@@ -2325,7 +2333,27 @@ function resetMarkingCounterForMode(mode) {
                 if (currentSantriId) { fetchHafalanSantri(currentSantriId); fetchIqroSantri(currentSantriId); }
             });
         });
-        ['kategoriSetoranCombined','kategoriSetoranOnly'].forEach(id => document.getElementById(id)?.addEventListener('change', applyAllIndicators));
+        ['kategoriSetoranCombined','kategoriSetoranOnly'].forEach(id => {
+            const mode = id === 'kategoriSetoranOnly' ? 'SetoranOnly' : 'Combined';
+            document.getElementById(id)?.addEventListener('change', function() {
+                setTimeout(() => {
+                    const hafalan = isHafalanMode(mode);
+                    console.log(`[HI] kategori ${mode} → value="${this.value}", isHafalan=${hafalan}`);
+                    ['suratStart','suratEnd','ayatStart','ayatEnd'].forEach(prefix => {
+                        const w = window._csWidgets?.[`${prefix}${mode}`];
+                        if (!w) return;
+                        if (!hafalan) {
+                            w.list.querySelectorAll('.hi-indicator').forEach(el => el.remove());
+                        } else {
+                            applyIndicatorToWidget(`${prefix}${mode}`, mode);
+                        }
+                    });
+                    // ✅ Refresh indikator Iqro juga — applyIqroIndicatorToWidget sudah cek isHafalan sendiri
+                    ['iqroHalamanStart','iqroHalamanEnd'].forEach(prefix =>
+                        applyIqroIndicatorToWidget(`${prefix}${mode}`, mode));
+                }, 50);
+            });
+        });
 
         // Iqro: jilid berubah → centang halaman jilid itu; dropdown halaman
         // diisi dinamis (live) → pantau perubahan opsi lalu re-apply ✓

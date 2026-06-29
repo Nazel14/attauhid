@@ -97,6 +97,11 @@
                 @forelse($statistikKelas as $index => $stat)
                 <div class="px-4 py-3.5 flex items-center gap-3">
                     <div class="w-8 h-8 flex-shrink-0 rounded-lg bg-indigo-100 border border-indigo-300 dark:bg-indigo-500/15 dark:border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-xs font-black">{{ $index+1 }}</div>
+                    @if($stat['guru_photo'])
+                        <img src="{{ asset('storage/' . $stat['guru_photo']) }}" alt="Foto" class="w-9 h-9 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                    @else
+                        <span class="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm font-bold flex-shrink-0">{{ strtoupper(substr($stat['guru'], 0, 1)) }}</span>
+                    @endif
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-bold text-gray-900 dark:text-white truncate">{{ $stat['kelas'] }}</p>
                         <p class="text-[11px] text-gray-500 truncate">{{ $stat['guru'] ?? '-' }} · <span class="text-indigo-600 dark:text-indigo-400 font-bold">{{ $stat['total_santri'] }}</span> santri</p>
@@ -120,15 +125,22 @@
                             <th class="th">Guru Pembimbing</th>
                             <th class="th">Kelas</th>
                             <th class="th" style="width:160px">Jumlah Santri</th>
-                            <th class="th text-center" style="width:160px">Aksi</th>
+                            <th class="th" style="text-align:right; padding-right:70px;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-700/50">
                         @forelse($statistikKelas as $index => $stat)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/25 transition-colors">
                             <td class="px-5 py-3.5 text-sm text-gray-500 dark:text-gray-600" style="width:56px">{{ $index+1 }}</td>
-                            <td class="px-5 py-3.5 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                {{ $stat['guru'] ?? '-' }}
+                            <td class="px-5 py-3.5">
+                                <div class="flex items-center gap-2.5">
+                                    @if($stat['guru_photo'])
+                                        <img src="{{ asset('storage/' . $stat['guru_photo']) }}" alt="Foto" class="w-9 h-9 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                    @else
+                                        <span class="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold flex-shrink-0">{{ strtoupper(substr($stat['guru'], 0, 1)) }}</span>
+                                    @endif
+                                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $stat['guru'] ?? '-' }}</span>
+                                </div>
                             </td>
                             <td class="px-5 py-3.5 text-sm text-gray-700 dark:text-gray-300">
                                 {{ $stat['kelas'] }}

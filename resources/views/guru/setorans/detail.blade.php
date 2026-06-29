@@ -58,24 +58,58 @@
         <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-4 shadow-sm dark:shadow-none">
             <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
+                    @if($santri->user && $santri->user->profile_photo)
+                        <img src="{{ asset('storage/' . $santri->user->profile_photo) }}" alt="Foto" class="w-12 h-12 rounded-full object-cover object-top border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                    @else
+                        <span class="w-12 h-12 rounded-full {{ $santri->gender === 'Perempuan' ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400' }} border flex items-center justify-center text-base font-bold flex-shrink-0">{{ strtoupper(substr($santri->name, 0, 1)) }}</span>
+                    @endif
                     <div>
                         <p class="text-sm font-bold text-gray-900 dark:text-white">{{ $santri->name }}</p>
                         <p class="text-[11px] text-gray-500 font-mono">{{ $santri->nis }} • {{ $santri->kelas->name ?? '-' }}</p>
                     </div>
                 </div>
                 <div class="text-right flex-shrink-0">
-                    <p class="text-[10px] text-gray-500 dark:text-gray-600">Periode</p>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-600">Semester</p>
                     <p class="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                        {{ \Carbon\Carbon::parse($tanggalMulai)->format('d/m/Y') }} – {{ \Carbon\Carbon::parse($tanggalAkhir)->format('d/m/Y') }}
+                        @if($taObjekTerpilih)
+                            {{ $taObjekTerpilih->nama }} · Sem {{ $taObjekTerpilih->semester }}
+                        @else
+                            Semua data
+                        @endif
+                    </p>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-600 mt-0.5">
+                        Kelas: <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ $kelasKonteks }}</span>
+                        @if($isSemesterAktif)
+                            <span class="ml-1 px-1.5 py-0.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-full text-[9px] font-bold">Aktif</span>
+                        @else
+                            <span class="ml-1 px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-full text-[9px] font-bold">Riwayat</span>
+                        @endif
                     </p>
                 </div>
             </div>
+        </div>
+
+        {{-- PILIH SEMESTER --}}
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-4 shadow-sm dark:shadow-none">
+            <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-3">Pilih Semester / Tahun Ajaran</p>
+            <form method="GET" action="{{ route('guru.setorans.detail', $santri->id) }}">
+                <select name="ta" onchange="this.form.submit()" class="fi-inp">
+                    @foreach($taList as $ta)
+                        <option value="{{ $ta->id }}" {{ (int)$taTerpilih === (int)$ta->id ? 'selected' : '' }}>
+                            {{ $ta->nama }} — Semester {{ $ta->semester }} ({{ $ta->semester == 1 ? 'Ganjil' : 'Genap' }})
+                            @if($ta->kelas_konteks) · Kelas {{ $ta->kelas_konteks }} @endif
+                            @if($ta->id === optional($tahunAjaranAktif)->id) · Aktif @endif
+                        </option>
+                    @endforeach
+                </select>
+            </form>
         </div>
 
         {{-- FILTER --}}
         <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-4 shadow-sm dark:shadow-none">
             <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-3">Filter Periode</p>
             <form method="GET" action="{{ route('guru.setorans.detail', $santri->id) }}" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <input type="hidden" name="ta" value="{{ $taTerpilih }}">
                 <div>
                     <label class="fi-lbl">📅 Tanggal Mulai</label>
                     <input type="date" name="tanggal_mulai" value="{{ $tanggalMulai }}" class="fi-inp">
@@ -89,7 +123,7 @@
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
                         Filter
                     </button>
-                    <a href="{{ route('guru.setorans.detail', $santri->id) }}" class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl transition-all active:scale-95">
+                    <a href="{{ route('guru.setorans.detail', $santri->id, ['ta' => $taTerpilih]) }}" class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl transition-all active:scale-95">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                         Reset
                     </a>

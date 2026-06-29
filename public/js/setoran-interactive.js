@@ -677,7 +677,7 @@ function _sliceCanvasFixed(canvas, maxPageHeight) {
             cW, safeContentH
         );
 
-        slices.push(pc.toDataURL('image/png', 1.0));
+        slices.push(pc.toDataURL('image/jpeg', 0.85));
         const utilPct = ((safeContentH / visibleAreaPerPage) * 100).toFixed(1);
         console.log(`✂️ Slice ${slices.length}: source y=${startY}→${startY + safeContentH} (${safeContentH}px, ${utilPct}% util), canvas=${maxPageHeight}px`);
     }
@@ -1123,6 +1123,20 @@ table.ct td { color:#222; }
     }
 }
 
+function guardPdfPayloadSize(form, mode) {
+    // ~6MB aman di bawah post_max_size 8M. Kalau limit sudah dinaikkan ke 64M,
+    // angka ini boleh dinaikkan jadi 50 * 1024 * 1024.
+    const MAX_PDF_CHARS = 50 * 1024 * 1024;
+    const pdfInput = document.getElementById('pdfHtmlData' + mode)
+                  || form.querySelector('[name="pdf_html_content"]');
+    if (pdfInput && pdfInput.value && pdfInput.value.length > MAX_PDF_CHARS) {
+        const mb = (pdfInput.value.length / 1048576).toFixed(1);
+        console.warn(`⚠️ pdf_html_content ${mb}MB melebihi batas — PDF di-drop agar setoran tetap tersimpan`);
+        pdfInput.value = '';
+    }
+}
+window.guardPdfPayloadSize = guardPdfPayloadSize;
+
 // =====================================================
 // generateAndSavePDFToInput
 // =====================================================
@@ -1217,6 +1231,11 @@ function setupNativeFormValidation() {
             } catch (err) {
                 console.warn('⚠️ PDF gen failed:', err.message);
             }
+
+            // ✅ Jaring pengaman: jika payload PDF terlalu besar untuk post_max_size,
+            // drop PDF-nya agar setoran TETAP tersimpan & notifikasi sukses tetap muncul.
+            guardPdfPayloadSize(form, mode);
+
             form.submit();
         });
     });

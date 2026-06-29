@@ -89,11 +89,11 @@
                     @if($isCampuran)
                     <div class="grid grid-cols-2 gap-2">
                         <div class="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/30 rounded-lg px-3 py-2 text-center">
-                            <p class="text-[10px] text-blue-500 mb-0.5"> Laki-laki</p>
+                            <p class="text-[10px] text-blue-500 mb-0.5"> Ikhwan</p>
                             <p class="text-lg font-black text-blue-600 dark:text-blue-300">{{ $kelas['laki_laki'] }}</p>
                         </div>
                         <div class="bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-800/30 rounded-lg px-3 py-2 text-center">
-                            <p class="text-[10px] text-pink-500 mb-0.5"> Perempuan</p>
+                            <p class="text-[10px] text-pink-500 mb-0.5"> Akhwat</p>
                             <p class="text-lg font-black text-pink-600 dark:text-pink-300">{{ $kelas['perempuan'] }}</p>
                         </div>
                     </div>

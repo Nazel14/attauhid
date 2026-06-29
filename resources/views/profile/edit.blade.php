@@ -59,10 +59,10 @@
                     {{-- Profile Photo Display --}}
                     <div class="flex flex-col items-center mb-6">
                         <div class="relative mb-4">
-                            @if($user->profile_photo)
+                          @if($user->profile_photo)
                                 <img src="{{ asset('storage/' . $user->profile_photo) }}" 
                                     alt="Profile Photo" 
-                                    class="w-32 h-32 rounded-full object-cover border-4 border-gray-200 dark:border-gray-600">
+                                    class="w-32 h-32 rounded-full object-cover object-top border-4 border-gray-200 dark:border-gray-600">
                             @else
                                 <div class="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-4 border-gray-200 dark:border-gray-600">
                                     <svg class="w-16 h-16 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

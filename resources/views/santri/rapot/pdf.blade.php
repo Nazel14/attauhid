@@ -564,72 +564,149 @@
             color: #6b7280;
             margin-bottom: 2px;
         }
+
+        /* ================================================== */
+        /* KOP SURAT (gaya rapor)                              */
+        /* ================================================== */
+        .kop { width:100%; border-collapse:collapse; }
+        .kop td { vertical-align:middle; }
+        .kop-logo { width:72px; text-align:center; }
+        .kop-logo img { width:64px; height:64px; }
+        .kop-logo-ph {
+            width:58px; height:58px; margin:0 auto;
+            border:1px dashed #cbd5e1; border-radius:50%;
+            color:#9ca3af; font-size:7px; line-height:58px; text-align:center;
+        }
+        .kop-center { text-align:center; padding:0 8px; }
+        .kop-lembaga {
+            font-size:16px; font-weight:700; color:#111827;
+            letter-spacing:0.5px; text-transform:uppercase; line-height:1.15;
+        }
+        .kop-sub {
+            font-size:9px; font-weight:700; color:#4f46e5;
+            letter-spacing:1.2px; text-transform:uppercase; margin-top:2px;
+        }
+        .kop-alamat { font-size:8px; color:#6b7280; margin-top:4px; line-height:1.5; }
+        .kop-rule-thick { border-top:2.5px solid #111827; height:0; font-size:0; line-height:0; margin-top:8px; }
+        .kop-rule-thin  { border-top:0.8px solid #111827; height:0; font-size:0; line-height:0; margin-top:2px; }
+
+        /* ================================================== */
+        /* JUDUL RAPOR                                         */
+        /* ================================================== */
+        .report-title {
+            text-align:center; font-size:13px; font-weight:700; color:#111827;
+            letter-spacing:1.5px; text-transform:uppercase; margin:18px 0 2px 0;
+        }
+        .report-subtitle {
+            text-align:center; font-size:9px; color:#6b7280;
+            letter-spacing:0.5px; margin-bottom:16px;
+        }
+
+        /* ================================================== */
+        /* IDENTITAS + FOTO 3x4                                */
+        /* ================================================== */
+        .identity-card {
+            width:100%; border:1px solid #e5e7eb; border-radius:5px;
+            border-collapse:separate; margin-bottom:14px;
+        }
+        .identity-card > tbody > tr > td { vertical-align:top; padding:14px 16px; }
+        .id-row { width:100%; }
+        .id-row td { padding:3.5px 0; font-size:10px; vertical-align:top; }
+        .id-label { width:40%; color:#6b7280; font-weight:600; }
+        .id-sep   { width:14px; color:#9ca3af; }
+        .id-value { color:#111827; font-weight:700; }
+        .identity-photo-cell { width:86px; text-align:center; border-left:1px solid #f3f4f6; }
+        .photo-box {
+            width:60px; height:78px; margin:0 auto;
+            border:1px solid #d1d5db; border-radius:3px;
+            overflow:hidden; background:#f9fafb;
+        }
+        .photo-box img { width:60px; height:78px; object-fit:cover; object-position:top; }
+        .photo-ph { width:60px; height:78px; color:#9ca3af; font-size:9px; line-height:78px; text-align:center; }
     </style>
 </head>
 <body>
+
+@php
+    // ====== KONFIGURASI KOP (silakan edit sesuai data pondok) ======
+    $namaLembaga   = 'Pondok Pesantren Tahfizh';
+    $subLembaga    = 'Program Tahfizh Al-Qur\'an';
+    $alamatLembaga = 'Jl. .............. No. .., Kota ........, Jawa Barat';
+    $kontakLembaga = 'Telp. 0000-0000-0000  ·  email@domain.sch.id';
+
+    // ====== LOGO: taruh file di public/images/logo-rapot.png ======
+    $logoAbs  = public_path('images/logo-rapot.png');
+    $logoData = file_exists($logoAbs)
+        ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoAbs))
+        : null;
+
+    // ====== FOTO SANTRI (otomatis dari users.profile_photo) ======
+    $fotoRel  = $santri->user->profile_photo ?? null;
+    $fotoAbs  = $fotoRel ? public_path('storage/'.$fotoRel) : null;
+    $fotoData = ($fotoAbs && file_exists($fotoAbs))
+        ? 'data:image/jpeg;base64,'.base64_encode(file_get_contents($fotoAbs))
+        : null;
+
+    // Kelas & guru sesuai KONTEKS rapot (histori → kelas lama; aktif → kelas sekarang)
+    $kelasNama = ($kelasRapot->name ?? null) ?? ($santri->kelas->name ?? '-');
+    $guruNama  = ($guruRapot->name  ?? null) ?? ($santri->guru->name  ?? '-');
+@endphp
 
 {{-- ============================================================ --}}
 {{-- HALAMAN 1 : INFO SANTRI + STATISTIK                          --}}
 {{-- ============================================================ --}}
 
-<table class="accent-bar" style="width:100%;border-collapse:collapse;"><tr><td style="height:4px;background-color:#4f46e5;font-size:0;line-height:0;border-radius:2px;">&nbsp;</td></tr></table>
+<!-- KOP SURAT -->
+<table class="kop">
+    <tr>
+        <td class="kop-logo">
+            @if($logoData)
+                <img src="{{ $logoData }}" alt="Logo">
+            @else
+                <div class="kop-logo-ph">LOGO</div>
+            @endif
+        </td>
+        <td class="kop-center">
+            <div class="kop-lembaga">{{ $namaLembaga }}</div>
+            <div class="kop-sub">{{ $subLembaga }}</div>
+            <div class="kop-alamat">{{ $alamatLembaga }}<br>{{ $kontakLembaga }}</div>
+        </td>
+        <td class="kop-logo"></td>
+    </tr>
+</table>
+<div class="kop-rule-thick"></div>
+<div class="kop-rule-thin"></div>
 
-<!-- Header -->
-<div class="doc-header">
-    <table class="doc-header-table">
-        <tr>
-            <td>
-                <div class="doc-brand">Sistem Monitoring Tahfidz</div>
-                <div class="doc-title">Rapot Santri</div>
-                <div class="doc-subtitle">Laporan komprehensif kinerja dan perkembangan santri</div>
-            </td>
-            <td class="doc-meta">
-                <div class="doc-meta-label">Tanggal Cetak</div>
-                <div class="doc-meta-value">{{ \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y') }}</div>
-            </td>
-        </tr>
-    </table>
-</div>
+<!-- JUDUL RAPOR -->
+<div class="report-title">Laporan Perkembangan Santri</div>
+<div class="report-subtitle">Dicetak {{ \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y') }}</div>
 
-<!-- Info Santri -->
-<div class="santri-card">
-    <table class="santri-table">
-        <tr>
-            <td>
-                <div class="field-label">Nama Santri</div>
-                <div class="field-value">{{ $santri->name }}</div>
-            </td>
-            <td>
-                <div class="field-label">Kelas</div>
-                <div class="field-value">{{ $santri->kelas->name ?? '-' }}</div>
-            </td>
-        </tr>
-        <tr>
-            <td style="padding-top:10px;">
-                <div class="field-label">Nomor Induk Santri</div>
-                <div class="field-value">{{ $santri->nis ?? '-' }}</div>
-            </td>
-            <td style="padding-top:10px;">
-                <div class="field-label">Guru Pembimbing</div>
-                <div class="field-value">{{ $santri->guru->name ?? '-' }}</div>
-            </td>
-        </tr>
-        @if(isset($tahunAjaranAktif) && $tahunAjaranAktif)
-        <tr>
-            <td colspan="2" style="padding-top:10px;">
-                <div class="field-label">Tahun Ajaran</div>
-                <div class="field-value">
-                    {{ $tahunAjaranAktif->nama ?? '-' }}
-                    @if($tahunAjaranAktif->semester)
-                        &nbsp;·&nbsp;Semester {{ $tahunAjaranAktif->semester }}
-                        ({{ $tahunAjaranAktif->semester == 1 ? 'Ganjil' : 'Genap' }})
-                    @endif
-                </div>
-            </td>
-        </tr>
-        @endif
-    </table>
-</div>
+<!-- IDENTITAS SANTRI + FOTO -->
+<table class="identity-card">
+    <tr>
+        <td class="identity-fields">
+            <table class="id-row">
+                <tr><td class="id-label">Nama Santri</td><td class="id-sep">:</td><td class="id-value">{{ $santri->name }}</td></tr>
+                <tr><td class="id-label">Nomor Induk</td><td class="id-sep">:</td><td class="id-value">{{ $santri->nis ?? '-' }}</td></tr>
+                <tr><td class="id-label">Kelas</td><td class="id-sep">:</td><td class="id-value">{{ $kelasNama }}</td></tr>
+                <tr><td class="id-label">Guru Pembimbing</td><td class="id-sep">:</td><td class="id-value">{{ $guruNama }}</td></tr>
+                @if(isset($tahunAjaranAktif) && $tahunAjaranAktif)
+                <tr><td class="id-label">Tahun Ajaran</td><td class="id-sep">:</td><td class="id-value">{{ $tahunAjaranAktif->nama ?? '-' }}@if($tahunAjaranAktif->semester) · Semester {{ $tahunAjaranAktif->semester == 1 ? 'Ganjil' : 'Genap' }}@endif</td></tr>
+                @endif
+            </table>
+        </td>
+        <td class="identity-photo-cell">
+            <div class="photo-box">
+                @if($fotoData)
+                    <img src="{{ $fotoData }}" alt="Foto">
+                @else
+                    <div class="photo-ph">3 × 4</div>
+                @endif
+            </div>
+            <div class="photo-caption">Foto Santri</div>
+        </td>
+    </tr>
+</table>
 
 <!-- Periode -->
 <div class="period-line">
@@ -755,7 +832,7 @@
                 <div class="doc-brand">Detail Pencatatan</div>
                 <div class="doc-title">Riwayat Setoran</div>
                 <div class="doc-subtitle">
-                    {{ $santri->name }} &nbsp;·&nbsp; {{ $santri->kelas->name ?? '-' }}
+                    {{ $santri->name }} &nbsp;·&nbsp; {{ $kelasNama }}
                     &nbsp;·&nbsp;
                     {{ \Carbon\Carbon::parse($tanggalMulai)->locale('id')->isoFormat('D MMM Y') }}
                     – {{ \Carbon\Carbon::parse($tanggalAkhir)->locale('id')->isoFormat('D MMM Y') }}
@@ -854,7 +931,7 @@
                 <div class="doc-brand">Detail Pencatatan</div>
                 <div class="doc-title">Ringkasan Presensi</div>
                 <div class="doc-subtitle">
-                    {{ $santri->name }} &nbsp;·&nbsp; {{ $santri->kelas->name ?? '-' }}
+                    {{ $santri->name }} &nbsp;·&nbsp; {{ $kelasNama }}
                     &nbsp;·&nbsp;
                     {{ \Carbon\Carbon::parse($tanggalMulai)->locale('id')->isoFormat('D MMM Y') }}
                     – {{ \Carbon\Carbon::parse($tanggalAkhir)->locale('id')->isoFormat('D MMM Y') }}
@@ -946,7 +1023,7 @@
         </td>
         <td>
             <div class="signature-role">Hormat kami,<br/>Guru Pembimbing</div>
-            <div class="signature-name">( {{ $santri->guru->name ?? '__________________' }} )</div>
+            <div class="signature-name">( {{ $guruNama !== '-' ? $guruNama : '__________________' }} )</div>
             <div class="signature-role-sub">Tanda tangan &amp; nama lengkap</div>
         </td>
     </tr>
