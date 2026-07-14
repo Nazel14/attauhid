@@ -60,18 +60,19 @@ class GuruSantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                         throw new \Exception("Gender harus L atau P");
                     }
 
-                    // === METODE & TARGET (quran / iqro) ===
+                    // === METODE & TARGET (quran / iqro / aisar) ===
                     $metode = strtolower(trim($row['metode'] ?? 'quran'));
-                    if (!in_array($metode, ['quran', 'iqro'])) {
-                        throw new \Exception("Metode harus 'quran' atau 'iqro'");
+                    if (!in_array($metode, ['quran', 'iqro', 'aisar'])) {
+                        throw new \Exception("Metode harus 'quran', 'iqro', atau 'aisar'");
                     }
 
-                    $targetJuz   = null;
-                    $targetJilid = null;
+                    $isJilidBased = in_array($metode, ['iqro', 'aisar'], true);
+                    $targetJuz    = null;
+                    $targetJilid  = null;
 
-                    if ($metode === 'iqro') {
+                    if ($isJilidBased) {
                         if (!isset($row['target_jilid']) || $row['target_jilid'] === '') {
-                            throw new \Exception("Metode iqro wajib mengisi Target Jilid (1-6)");
+                            throw new \Exception("Metode {$metode} wajib mengisi Target Jilid (1-6)");
                         }
                         $targetJilid = (int) $row['target_jilid'];
                         if ($targetJilid < 1 || $targetJilid > 6) {
@@ -79,6 +80,7 @@ class GuruSantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                         }
                     } else { // quran
                         $targetJuz = $row['target_juz'] ?? 1.00;
+                        $targetJuz = str_replace(',', '.', (string) $targetJuz);
                         if (!is_numeric($targetJuz) || $targetJuz < 0 || $targetJuz > 30) {
                             throw new \Exception("Target Juz harus angka antara 0-30");
                         }
@@ -123,12 +125,20 @@ class GuruSantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 
                     // ✅ Foto: cocokkan nama_file_foto dengan file di ZIP
                     if (!empty($row['nama_file_foto'])) {
-                        $key = strtolower(str_replace(' ', '_', trim($row['nama_file_foto'])));
+                        $namaFoto = trim($row['nama_file_foto']);
+                        $key = strtolower(str_replace(' ', '_', $namaFoto));
                         if (isset($this->photos[$key])) {
                             $path = $this->processPhoto($this->photos[$key]);
-                            if ($path) $santriUser->update(['profile_photo' => $path]);
+                            if ($path) {
+                                $santriUser->update([
+                                    'profile_photo'      => $path,
+                                    'profile_photo_name' => $namaFoto,
+                                ]);
+                            } else {
+                                $this->warnings[] = "Baris {$rowNumber}: foto '{$namaFoto}' gagal diproses, santri tetap dibuat tanpa foto.";
+                            }
                         } else {
-                            $this->warnings[] = "Baris {$rowNumber}: foto '{$row['nama_file_foto']}' tidak ditemukan, santri tetap dibuat tanpa foto.";
+                            $this->warnings[] = "Baris {$rowNumber}: foto '{$namaFoto}' tidak ditemukan, santri tetap dibuat tanpa foto.";
                         }
                     }
 

@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Inertia\Inertia;
 
 class RapotController extends Controller
 {
@@ -43,6 +44,46 @@ class RapotController extends Controller
     }
 
     /**
+     * ============================================================
+     * SUMBER TUNGGAL RIWAYAT SANTRI (ALUMNI KELAS GURU)
+     * ============================================================
+     *
+     * PENTING: `tanggal_keluar` TIDAK cukup untuk menentukan santri "keluar
+     * dari kelas". tutupSemester() mengisi tanggal_keluar pada SEMUA baris
+     * history setiap kali semester ditutup — termasuk untuk santri yang
+     * sebenarnya masih duduk di kelas yang sama. Kalau hanya mengandalkan
+     * whereNotNull('tanggal_keluar'), guru kelas 8A ikut melihat santri-nya
+     * sendiri sebagai "riwayat", padahal mereka belum pindah ke mana-mana.
+     *
+     * Kriteria yang benar: baris history dianggap riwayat bila santri
+     * SEKARANG sudah tidak berada di kelas tersebut (santri.kelas_id berbeda
+     * dari history.kelas_id). Lalu diambil satu baris TERBARU per santri
+     * agar tidak dobel di beberapa tahun ajaran.
+     *
+     * @return \Illuminate\Support\Collection<SantriKelasHistory>
+     */
+    private function historiAlumniGuru(Guru $guru)
+    {
+        $kelasIdsGuru = Kelas::where('guru_id', $guru->id)->pluck('id');
+        if ($kelasIdsGuru->isEmpty()) {
+            return collect();
+        }
+
+        return SantriKelasHistory::with(['santri.user', 'santri.kelas'])
+            ->whereIn('kelas_id', $kelasIdsGuru)
+            ->whereNotNull('tanggal_keluar')
+            ->orderByDesc('tanggal_keluar')
+            ->orderByDesc('id')
+            ->get()
+            // Hanya santri yang BENAR-BENAR sudah tidak di kelas itu lagi.
+            ->filter(fn ($h) => $h->santri
+                && (int) $h->santri->kelas_id !== (int) $h->kelas_id)
+            // Sudah terurut desc → unique() menyisakan kepindahan TERBARU per santri.
+            ->unique('santri_id')
+            ->values();
+    }
+
+    /**
      * Tentukan akses rapot santri & konteks kelas.
      * - Santri masih di kelas guru  → akses AKTIF (kelas = kelas sekarang).
      * - Santri pernah di kelas guru → akses HISTORI (kelas = kelas lama).
@@ -64,9 +105,10 @@ class RapotController extends Controller
             ];
         }
 
-        // Akses histori (sudah pindah)
+        // Akses histori (sudah pindah) — hanya kelas yang benar-benar ditinggalkan
         $histori = SantriKelasHistory::where('santri_id', $santri->id)
             ->whereIn('kelas_id', $kelasIdsGuru)
+            ->where('kelas_id', '!=', $santri->kelas_id)
             ->orderByDesc('tanggal_masuk')
             ->first();
 
@@ -106,22 +148,50 @@ class RapotController extends Controller
     }
 
     /**
-     * Hitung jumlah halaman Iqro UNIK (dedup) dari koleksi setoran (sudah ter-scope kelas),
-     * untuk satu jilid target.
+     * Hitung jumlah halaman jilid (Iqro/Aisar) UNIK (dedup) dari koleksi setoran
+     * (sudah ter-scope kelas), untuk satu jilid target.
+     * $labelPrefix: "Iqro Jilid " / "Aisar Jilid " — ikut metode santri.
      */
-    private function hitungHalamanIqroUnik($setoransHafalan, int $targetJilid): int
+    private function hitungHalamanIqroUnik($setoransHafalan, int $targetJilid, string $labelPrefix = 'Iqro Jilid '): int
     {
-        $pages = [];
+        $pages   = [];
+        $pattern = '/^' . preg_quote(trim($labelPrefix), '/') . ' ?(\d+)/i';
+
         foreach ($setoransHafalan as $s) {
-            if (!preg_match('/^Iqro Jilid (\d+)/i', (string) $s->surat_start, $mj)) continue;
+            if (!preg_match($pattern, (string) $s->surat_start, $mj)) continue;
             if ((int) $mj[1] !== $targetJilid) continue;
+
             $h1 = (int) $s->ayat_start;
             $h2 = (int) ($s->ayat_end ?: $s->ayat_start);
             if ($h1 <= 0) continue;
             if ($h2 < $h1) { [$h1, $h2] = [$h2, $h1]; }
             for ($p = $h1; $p <= $h2; $p++) $pages[$p] = true;
         }
+
         return count($pages);
+    }
+
+    /**
+     * Tentukan URL & label tombol "Kembali" di halaman Show.
+     * Dua jalur:
+     *  - dari Riwayat Santri (?from=riwayat&ta=X) → kembali ke detail riwayat TA tsb
+     *  - dari Rapot Index → kembali ke rapot index
+     * Fallback: jika akses histori (tanpa param from), tetap ke riwayat.
+     */
+    private function resolveBackNavigation(Request $request, bool $isHistori, ?int $tahunAjaranId): array
+    {
+        $fromRiwayat = $request->query('from') === 'riwayat';
+        $taBack      = (int) $request->query('ta') ?: $tahunAjaranId;
+
+        if ($fromRiwayat && $taBack) {
+            return [route('guru.riwayat-santri.detail', $taBack), 'Kembali ke Riwayat Santri'];
+        }
+
+        if ($isHistori && $tahunAjaranId) {
+            return [route('guru.riwayat-santri.detail', $tahunAjaranId), 'Kembali ke Riwayat Santri'];
+        }
+
+        return [route('guru.rapot.index'), 'Kembali ke Rapot'];
     }
 
     /**
@@ -138,9 +208,9 @@ class RapotController extends Controller
         $tahunAjaranId    = $tahunAjaranAktif?->id;
 
         // Jendela kenaikan: HANYA semester genap (2) & mulai 1 bulan sebelum semester berakhir
-        $bolehNaik     = false;
-        $tglMulaiNaik  = null;
-        $alasanTutup   = null;
+        $bolehNaik             = false;
+        $tglMulaiNaikFormatted = null;
+        $alasanTutup           = null;
         if ($tahunAjaranAktif) {
             $isGenap = (int) $tahunAjaranAktif->semester === 2;
 
@@ -152,14 +222,30 @@ class RapotController extends Controller
                     $selesaiC     = $selesai instanceof Carbon ? $selesai : Carbon::parse($selesai);
                     $tglMulaiNaik = $selesaiC->copy()->subMonth();
                     $bolehNaik    = now()->greaterThanOrEqualTo($tglMulaiNaik);
+
+                    // Format untuk ditampilkan sebagai string di JSX
+                    $tglMulaiNaikFormatted = $tglMulaiNaik->translatedFormat('d F Y');
                 } else {
                     $bolehNaik = true;
                 }
             }
         }
 
+        // Kelas tidak memiliki relasi tahunAjaran(), jadi label tahun ajaran di dropdown
+        // kelas tujuan memakai tahun ajaran AKTIF saat ini.
+        $namaTahunAjaranAktif = $tahunAjaranAktif
+            ? ($tahunAjaranAktif->nama ?? $tahunAjaranAktif->name ?? '-')
+            : '-';
+
         $kelasTujuanList = $kelas
-            ? Kelas::with('guru')->where('id', '!=', $kelas->id)->orderBy('name')->get()
+            ? Kelas::with('guru')
+                ->where('id', '!=', $kelas->id)
+                ->orderBy('name')
+                ->get()
+                ->map(function ($k) use ($namaTahunAjaranAktif) {
+                    $k->tahun_ajaran = $namaTahunAjaranAktif;
+                    return $k;
+                })
             : collect();
 
         $sudahNaikIds = ($kelas && $tahunAjaranId)
@@ -177,13 +263,13 @@ class RapotController extends Controller
         // Progress per KELAS (kelas_id). Target tetap level-kelas (per TA / fallback target_juz).
         $santriList->each(function ($santri) use ($tahunAjaranAktif, $tahunAjaranId) {
             $kelasId = $santri->kelas_id;
-            $isIqro  = ($santri->target_metode?->value ?? 'quran') === 'iqro';
+            $isIqro  = $santri->isJilidBased(); // iqro ATAU aisar
             $santri->is_iqro = $isIqro;
 
             if ($isIqro) {
                 $targetJilid   = (int)($santri->target_jilid ?? 1);
                 $totalHalaman  = count($santri->halamanIqroTersetorKelas($targetJilid, $kelasId));
-                $totalHalJilid = (int)(config('iqro.halaman_per_jilid.' . $targetJilid) ?? 0);
+                $totalHalJilid = (int)(config($santri->jilidConfigKey() . '.halaman_per_jilid.' . $targetJilid) ?? 0);
 
                 $santri->hafalan_total_juz     = 0;
                 $santri->total_halaman_iqro    = $totalHalaman;
@@ -215,13 +301,13 @@ class RapotController extends Controller
             }
         });
 
-        return view('guru.rapot.index', compact(
+        return Inertia::render('Guru/Rapot/Index', compact(
             'kelas',
             'santriList',
             'guru',
             'tahunAjaranAktif',
             'bolehNaik',
-            'tglMulaiNaik',
+            'tglMulaiNaikFormatted',
             'kelasTujuanList',
             'sudahNaikIds',
             'alasanTutup'
@@ -230,26 +316,24 @@ class RapotController extends Controller
 
     /**
      * Halaman utama Riwayat Santri: rekap per TAHUN AJARAN.
+     * Hanya santri yang BENAR-BENAR sudah meninggalkan kelas guru ini.
      */
     public function riwayatSantri()
     {
-        $guru  = Guru::where('user_id', Auth::id())->first();
-        $kelas = $guru ? Kelas::where('guru_id', $guru->id)->first() : null;
+        $guru = Guru::where('user_id', Auth::id())->first();
 
         $ringkasan = collect();
-        if ($guru) {
-            $kelasIdsGuru = Kelas::where('guru_id', $guru->id)->pluck('id');
-            if ($kelasIdsGuru->isNotEmpty()) {
-                $histori = SantriKelasHistory::whereIn('kelas_id', $kelasIdsGuru)
-                    ->whereNotNull('tanggal_keluar')
-                    ->get();
 
-                $taIds = $histori->pluck('tahun_ajaran_id')->filter()->unique()->all();
+        if ($guru) {
+            $alumni = $this->historiAlumniGuru($guru);
+
+            if ($alumni->isNotEmpty()) {
+                $taIds = $alumni->pluck('tahun_ajaran_id')->filter()->unique()->all();
                 $taMap = $taIds
                     ? TahunAjaran::whereIn('id', $taIds)->get()->keyBy('id')
                     : collect();
 
-                $ringkasan = $histori
+                $ringkasan = $alumni
                     ->groupBy('tahun_ajaran_id')
                     ->map(function ($items, $taId) use ($taMap) {
                         $ta = $taId ? ($taMap[$taId] ?? null) : null;
@@ -266,50 +350,84 @@ class RapotController extends Controller
             }
         }
 
-        return view('guru.rapot.riwayat', compact('guru', 'kelas', 'ringkasan'));
+        return Inertia::render('Guru/RiwayatSantri/Index', [
+            'ringkasan' => $ringkasan->map(fn ($r) => [
+                'tahun_ajaran_id' => $r['tahun_ajaran_id'],
+                'nama'            => $r['nama'],
+                'semester'        => $r['semester'],
+                'jumlah'          => $r['jumlah'],
+                'terakhir'        => $r['terakhir']
+                    ? \Illuminate\Support\Carbon::parse($r['terakhir'])->translatedFormat('d M Y')
+                    : null,
+            ])->values(),
+        ]);
     }
 
     /**
      * Detail Riwayat Santri untuk SATU tahun ajaran.
+     * Memakai sumber data yang sama dengan riwayatSantri() supaya jumlahnya konsisten.
      */
     public function detailRiwayatSantri($tahunAjaranId)
     {
-        $guru  = Guru::where('user_id', Auth::id())->first();
+        $guru = Guru::where('user_id', Auth::id())->first();
         if (!$guru) abort(403, 'Data guru tidak ditemukan.');
-
-        $kelasIdsGuru = Kelas::where('guru_id', $guru->id)->pluck('id');
 
         $tahunAjaran = TahunAjaran::find($tahunAjaranId);
 
-        $santriAlumni = SantriKelasHistory::with(['santri.user', 'santri.kelas'])
-            ->whereIn('kelas_id', $kelasIdsGuru)
-            ->whereNotNull('tanggal_keluar')
-            ->where('tahun_ajaran_id', $tahunAjaranId)
-            ->orderByDesc('tanggal_keluar')
-            ->get()
-            ->filter(fn($h) => $h->santri)
-            ->unique('santri_id')
+        $santriAlumni = $this->historiAlumniGuru($guru)
+            ->filter(fn ($h) => (int) $h->tahun_ajaran_id === (int) $tahunAjaranId)
             ->values();
 
-        return view('guru.rapot.riwayat-detail', compact('guru', 'tahunAjaran', 'santriAlumni'));
+        return Inertia::render('Guru/RiwayatSantri/Detail', [
+            'tahunAjaran' => $tahunAjaran ? [
+                'id'       => $tahunAjaran->id,
+                'nama'     => $tahunAjaran->nama,
+                'semester' => $tahunAjaran->semester,
+            ] : null,
+            'santriAlumni' => $santriAlumni->map(function ($h) use ($tahunAjaran) {
+                $s = $h->santri;
+                return [
+                    'id'             => $s->id,
+                    'name'           => $s->name,
+                    'nis'            => $s->nis,
+                    'gender'         => $s->gender,
+                    'photo_url'      => $s->user?->profile_photo ? asset('storage/' . $s->user->profile_photo) : null,
+                    'kelas_now'      => $s->kelas->name ?? '-',
+                    'kelas_asal'     => $h->kelas->name ?? '-',
+                    'tanggal_keluar' => $h->tanggal_keluar
+                        ? \Illuminate\Support\Carbon::parse($h->tanggal_keluar)->translatedFormat('d M Y')
+                        : null,
+                    // Jalur eksplisit: from=riwayat + ta → tombol kembali di Show ke halaman ini
+                    'rapot_url'      => route('guru.rapot.show', ['santri' => $s->id, 'from' => 'riwayat', 'ta' => $tahunAjaran->id ?? '']),
+                ];
+            })->values(),
+        ]);
     }
 
     /**
      * Rentang tanggal untuk PRESENSI (presensi tak punya kelas_id).
      * - HISTORI → terkunci ke periode kelas lama.
-     * - AKTIF   → sejak masuk kelas (floor) s/d hari ini; guru boleh mempersempit.
+     * - AKTIF   → FULL semester aktif: mulai TA s/d min(hari ini, selesai TA).
      */
     private function resolveRentangPresensi(Request $request, Santri $santri, array $akses): array
     {
+        // Histori → terkunci ke periode kelas lama
         if ($akses['isHistori']) {
             return [$akses['rangeMulai'], $akses['rangeAkhir']];
         }
 
-        $floorMasuk = $santri->getTanggalMasukKelasAktif();
-        $tanggalMulai = $request->input('tanggal_mulai', $floorMasuk);
-        $tanggalAkhir = $request->input('tanggal_akhir', now()->toDateString());
+        // Aktif → FULL semester aktif: mulai TA s/d min(hari ini, selesai TA)
+        $ta = $akses['tahunAjaran'];
+        if ($ta && $ta->tanggal_mulai) {
+            $mulai      = Carbon::parse($ta->tanggal_mulai);
+            $selesaiRaw = $ta->tanggal_selesai ?? ($ta->tanggal_akhir ?? null);
+            $selesai    = $selesaiRaw ? Carbon::parse($selesaiRaw) : now();
+            $akhir      = now()->lt($selesai) ? now() : $selesai;
+            return [$mulai->format('Y-m-d'), $akhir->format('Y-m-d')];
+        }
 
-        return [$tanggalMulai, $tanggalAkhir];
+        // Fallback jika TA tak punya tanggal
+        return [now()->startOfYear()->toDateString(), now()->toDateString()];
     }
 
     private function terapkanRentang($query, ?string $mulai, ?string $akhir)
@@ -348,9 +466,7 @@ class RapotController extends Controller
             ->when($kelasRapotId, fn($q) => $q->where('kelas_id', $kelasRapotId))
             ->with('guru')
             ->orderBy('tanggal', 'desc');
-        if ($request->filled('tanggal_mulai') || $request->filled('tanggal_akhir')) {
-            $this->terapkanRentang($setoranQuery, $tanggalMulai, $tanggalAkhir);
-        }
+        $this->terapkanRentang($setoranQuery, $tanggalMulai, $tanggalAkhir);
         $setoransRaw = $setoranQuery->get();
         $setorans    = $this->groupSetoranByKategoriSurat($setoransRaw);
 
@@ -371,8 +487,8 @@ class RapotController extends Controller
             ? min(100, round(($totalJuzHafalan / $targetJuz) * 100, 1))
             : 0;
 
-        // Deteksi Iqro
-        $isIqro = ($santri->target_metode?->value ?? 'quran') === 'iqro';
+        // Deteksi metode jilid (Iqro / Aisar)
+        $isIqro = $santri->isJilidBased();
         $totalHalamanIqro  = 0;
         $totalHalamanJilid = 0;
         $progressIqro      = 0;
@@ -380,9 +496,10 @@ class RapotController extends Controller
             $targetJilid       = (int)($santri->target_jilid ?? 1);
             $totalHalamanIqro  = $this->hitungHalamanIqroUnik(
                 $setoransRaw->where('kategori_setoran', 'Hafalan'),
-                $targetJilid
+                $targetJilid,
+                $santri->jilidLabelPrefix()   // "Iqro Jilid " / "Aisar Jilid "
             );
-            $totalHalamanJilid = (int)(config('iqro.halaman_per_jilid.' . $targetJilid) ?? 0);
+            $totalHalamanJilid = (int)(config($santri->jilidConfigKey() . '.halaman_per_jilid.' . $targetJilid) ?? 0);
             $progressIqro      = $totalHalamanJilid > 0
                 ? min(100, round(($totalHalamanIqro / $totalHalamanJilid) * 100, 1))
                 : 0;
@@ -405,6 +522,7 @@ class RapotController extends Controller
             'progress_iqro'         => $progressIqro,
             'target_jilid'          => $santri->target_jilid ?? 1,
             'iqro_persen_diketahui' => $totalHalamanJilid > 0,
+            'metode_label'          => $santri->isAisar() ? 'Aisar' : 'Iqro',
         ];
 
         $statistikPresensi = [
@@ -418,14 +536,18 @@ class RapotController extends Controller
             ? round(($statistikPresensi['hadir'] / $statistikPresensi['total_hari']) * 100, 1)
             : 0;
 
-        $jendela  = $this->cekJendelaPdf($tahunAjaranAktif);
-        $pdfBoleh = $jendela['boleh'];
-        $pdfBatas = $jendela['batas'];
+        $jendela           = $this->cekJendelaPdf($tahunAjaranAktif);
+        $pdfBoleh          = $jendela['boleh'];
+        $pdfBatasFormatted = $jendela['batas']
+            ? $jendela['batas']->translatedFormat('d F Y')
+            : null;
 
-        return view('guru.rapot.show', compact(
+        // ===== DUA JALUR KEMBALI =====
+        [$backUrl, $backLabel] = $this->resolveBackNavigation($request, $isHistori, $tahunAjaranId);
+
+        return Inertia::render('Guru/Rapot/Show', compact(
             'santri',
             'setorans',
-            'presensis',
             'statistikSetoran',
             'statistikPresensi',
             'tanggalMulai',
@@ -434,7 +556,9 @@ class RapotController extends Controller
             'isHistori',
             'kelasKonteks',
             'pdfBoleh',
-            'pdfBatas'
+            'pdfBatasFormatted',
+            'backUrl',
+            'backLabel'
         ));
     }
 
@@ -471,9 +595,7 @@ class RapotController extends Controller
             ->when($kelasRapotId, fn($q) => $q->where('kelas_id', $kelasRapotId))
             ->with('guru')
             ->orderBy('tanggal', 'desc');
-        if ($request->filled('tanggal_mulai') || $request->filled('tanggal_akhir')) {
-            $this->terapkanRentang($setoranQuery, $tanggalMulai, $tanggalAkhir);
-        }
+        $this->terapkanRentang($setoranQuery, $tanggalMulai, $tanggalAkhir);
         $setoransRaw = $setoranQuery->get();
         $setorans    = $this->groupSetoranByKategoriSurat($setoransRaw);
 
@@ -493,17 +615,42 @@ class RapotController extends Controller
             ? min(100, round(($totalJuzHafalan / $targetJuz) * 100, 1))
             : 0;
 
+        // Metode jilid (Iqro / Aisar) — supaya PDF juga benar untuk santri jilid-based
+        $isIqro = $santri->isJilidBased();
+        $totalHalamanIqro  = 0;
+        $totalHalamanJilid = 0;
+        $progressIqro      = 0;
+        if ($isIqro) {
+            $targetJilid       = (int)($santri->target_jilid ?? 1);
+            $totalHalamanIqro  = $this->hitungHalamanIqroUnik(
+                $setoransRaw->where('kategori_setoran', 'Hafalan'),
+                $targetJilid,
+                $santri->jilidLabelPrefix()
+            );
+            $totalHalamanJilid = (int)(config($santri->jilidConfigKey() . '.halaman_per_jilid.' . $targetJilid) ?? 0);
+            $progressIqro      = $totalHalamanJilid > 0
+                ? min(100, round(($totalHalamanIqro / $totalHalamanJilid) * 100, 1))
+                : 0;
+        }
+
         $statistikSetoran = [
-            'total_setoran'     => $setoransRaw->count(),
-            'rata_nilai'        => round($setoransRaw->avg('nilai') ?? 0, 2),
-            'total_juz'         => round($setoransRaw->sum('total_juz') ?? 0, 2),
-            'total_juz_hafalan' => round($totalJuzHafalan, 2),
-            'total_kata'        => $setoransRaw->sum('total_kata') ?? 0,
-            'hafalan'           => $setoransRaw->where('kategori_setoran', 'Hafalan')->count(),
-            'murajaah'          => $setoransRaw->where('kategori_setoran', 'Murajaah')->count(),
-            'tilawah'           => $setoransRaw->where('kategori_setoran', 'Tilawah')->count(),
-            'target_juz'        => $targetJuz,
-            'persentase_target' => $persentaseTarget,
+            'total_setoran'         => $setoransRaw->count(),
+            'rata_nilai'            => round($setoransRaw->avg('nilai') ?? 0, 2),
+            'total_juz'             => round($setoransRaw->sum('total_juz') ?? 0, 2),
+            'total_juz_hafalan'     => round($totalJuzHafalan, 2),
+            'total_kata'            => $setoransRaw->sum('total_kata') ?? 0,
+            'hafalan'               => $setoransRaw->where('kategori_setoran', 'Hafalan')->count(),
+            'murajaah'              => $setoransRaw->where('kategori_setoran', 'Murajaah')->count(),
+            'tilawah'               => $setoransRaw->where('kategori_setoran', 'Tilawah')->count(),
+            'target_juz'            => $targetJuz,
+            'persentase_target'     => $persentaseTarget,
+            'is_iqro'               => $isIqro,
+            'total_halaman_iqro'    => $totalHalamanIqro,
+            'total_halaman_jilid'   => $totalHalamanJilid,
+            'progress_iqro'         => $progressIqro,
+            'target_jilid'          => $santri->target_jilid ?? 1,
+            'iqro_persen_diketahui' => $totalHalamanJilid > 0,
+            'metode_label'          => $santri->isAisar() ? 'Aisar' : 'Iqro',
         ];
 
         $statistikPresensi = [

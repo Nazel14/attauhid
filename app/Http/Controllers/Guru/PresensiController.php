@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use Inertia\Inertia;
 
 class PresensiController extends Controller
 {
@@ -21,202 +22,121 @@ class PresensiController extends Controller
      * Tampilkan daftar presensi
      */
     public function index(Request $request)
-    {
-        $userId = Auth::id();
-        $guru   = Guru::where('user_id', $userId)->first();
+{
+    $userId = Auth::id();
+    $guru   = Guru::where('user_id', $userId)->first();
+    if (!$guru)  return redirect()->route('guru.dashboard')->with('error', 'Data guru tidak ditemukan.');
 
-        if (!$guru) {
-            return redirect()->route('guru.dashboard')
-                ->with('error', 'Data guru tidak ditemukan.');
+    $kelas = Kelas::where('guru_id', $guru->id)->first();
+    if (!$kelas) return redirect()->route('guru.dashboard')->with('error', 'Anda belum ditugaskan sebagai wali kelas.');
+
+    $tahunAjaranAktif = TahunAjaran::getAktif();
+    $tahunAjaranId    = $tahunAjaranAktif?->id;
+
+    $sesiList = PresensiSesiConfig::active()->ordered()->get()->pluck('sesi_name')->values();
+
+    $santriModels = Santri::where('kelas_id', $kelas->id)->with('user')->orderBy('name')->get();
+
+    // Kalender 6 bulan terakhir per santri
+    $startCal = now()->subMonths(6)->startOfMonth();
+    $endCal   = now()->endOfMonth();
+
+    $santris = $santriModels->map(function ($santri) use ($startCal, $endCal, $tahunAjaranId) {
+        $calQuery = Presensi::where('santri_id', $santri->id)->whereBetween('tanggal', [$startCal, $endCal]);
+        if ($tahunAjaranId) $calQuery->where('tahun_ajaran_id', $tahunAjaranId);
+
+        $calendar = [];
+        foreach ($calQuery->get() as $p) {
+            $calendar[$p->tanggal->format('Y-m-d')][$p->sesi] = $p->status;
         }
 
-        $kelas = Kelas::where('guru_id', $guru->id)->first();
-        
-        if (!$kelas) {
-            return redirect()->route('guru.dashboard')
-                ->with('error', 'Anda belum ditugaskan sebagai wali kelas.');
-        }
+        return [
+            'id'        => $santri->id,
+            'name'      => $santri->name,
+            'nis'       => $santri->nis,
+            'gender'    => $santri->gender,
+            'photo_url' => $santri->user?->profile_photo ? asset('storage/' . $santri->user->profile_photo) : null,
+            'calendar'  => $calendar ?: (object) [],   // pastikan {} bukan [] di JSON
+        ];
+    })->values();
 
-        // ✅ Ambil tahun ajaran aktif
-        $tahunAjaranAktif = TahunAjaran::getAktif();
-        $tahunAjaranId    = $tahunAjaranAktif?->id;
-
-        // Filter parameters
-        $tanggalMulai = $request->input('tanggal_mulai', Carbon::now()->subDays(7)->format('Y-m-d'));
-        $tanggalAkhir = $request->input('tanggal_akhir', Carbon::now()->format('Y-m-d'));
-        $sesiFilter   = $request->input('sesi');
-
-        // Ambil santri dengan statistik presensi
-        $santriList = Santri::where('kelas_id', $kelas->id)
-            ->with(['user', 'presensis' => function($query) use ($tanggalMulai, $tanggalAkhir, $sesiFilter, $tahunAjaranId) {
-                $query->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir]);
-                if ($sesiFilter) {
-                    $query->where('sesi', $sesiFilter);
-                }
-                // ✅ Filter tahun ajaran
-                if ($tahunAjaranId) {
-                    $query->where('tahun_ajaran_id', $tahunAjaranId);
-                }
-            }])
-            ->get()
-            ->map(function($santri) {
-                $presensis = $santri->presensis;
-                
-                $santri->total_hadir    = $presensis->where('status', 'Hadir')->count();
-                $santri->total_sakit    = $presensis->where('status', 'Sakit')->count();
-                $santri->total_izin     = $presensis->where('status', 'Izin')->count();
-                $santri->total_alpha    = $presensis->where('status', 'Alpha')->count();
-                $santri->total_presensi = $presensis->count();
-                
-                return $santri;
-            })
-            ->sortBy('name');
-
-        // Statistik untuk cards
-        $totalSantri = $santriList->count();
-        $totalIkhwan = $santriList->where('gender', 'Laki-laki')->count();
-        $totalAkhwat = $santriList->where('gender', 'Perempuan')->count();
-
-        // Pagination
-        $perPage           = 15;
-        $currentPage       = request()->get('page', 1);
-        $santrisCollection = collect($santriList);
-        $santrisPaginated  = new \Illuminate\Pagination\LengthAwarePaginator(
-            $santrisCollection->forPage($currentPage, $perPage),
-            $santrisCollection->count(),
-            $perPage,
-            $currentPage,
-            ['path' => request()->url(), 'query' => request()->query()]
-        );
-
-        // Data untuk calendar (6 bulan terakhir)
-        $presensiData      = [];
-        $startDateCalendar = now()->subMonths(6)->startOfMonth();
-        $endDateCalendar   = now()->endOfMonth();
-        
-        foreach ($santriList as $santri) {
-            $calendarQuery = Presensi::where('santri_id', $santri->id)
-                ->whereBetween('tanggal', [$startDateCalendar, $endDateCalendar]);
-
-            // ✅ Filter tahun ajaran pada calendar juga
-            if ($tahunAjaranId) {
-                $calendarQuery->where('tahun_ajaran_id', $tahunAjaranId);
-            }
-
-            $presensis = $calendarQuery->get();
-            
-            $presensiData[$santri->id] = [];
-            
-            foreach ($presensis as $presensi) {
-                $tanggalKey = $presensi->tanggal->format('Y-m-d');
-                
-                if (!isset($presensiData[$santri->id][$tanggalKey])) {
-                    $presensiData[$santri->id][$tanggalKey] = [];
-                }
-                
-                $presensiData[$santri->id][$tanggalKey][$presensi->sesi] = $presensi->status;
-            }
-        }
-
-        $sesiList = PresensiSesiConfig::active()->ordered()->get();
-
-        return view('guru.presensis.index', [
-            'santris'          => $santrisPaginated,
-            'santriList'       => $santriList,
-            'kelas'            => $kelas,
-            'guru'             => $guru,
-            'totalSantri'      => $totalSantri,
-            'totalIkhwan'      => $totalIkhwan,
-            'totalAkhwat'      => $totalAkhwat,
-            'presensiData'     => $presensiData,
-            'sesiList'         => $sesiList,
-            'tanggalMulai'     => $tanggalMulai,
-            'tanggalAkhir'     => $tanggalAkhir,
-            'sesiFilter'       => $sesiFilter,
-            'tahunAjaranAktif' => $tahunAjaranAktif, // ✅ BARU
-        ]);
-    }
+    return Inertia::render('Guru/Presensi/Index', [
+        'kelas'            => ['id' => $kelas->id, 'name' => $kelas->name ?? $kelas->nama],
+        'guruName'         => $guru->name,
+        'genderSummary'    => [
+            'total'  => $santris->count(),
+            'ikhwan' => $santriModels->where('gender', 'Laki-laki')->count(),
+            'akhwat' => $santriModels->where('gender', 'Perempuan')->count(),
+        ],
+        'tahunAjaranAktif' => $tahunAjaranAktif ? ['nama' => $tahunAjaranAktif->nama ?? $tahunAjaranAktif->name] : null,
+        'sesiList'         => $sesiList,
+        'santris'          => $santris,
+    ]);
+}
 
     /**
      * Tampilkan detail presensi per santri
      */
     public function detail(Request $request, $santriId)
-    {
-        $userId = Auth::id();
-        $guru   = Guru::where('user_id', $userId)->first();
+{
+    $userId = Auth::id();
+    $guru   = Guru::where('user_id', $userId)->first();
+    if (!$guru)  return redirect()->route('guru.dashboard')->with('error', 'Data guru tidak ditemukan.');
 
-        if (!$guru) {
-            return redirect()->route('guru.dashboard')
-                ->with('error', 'Data guru tidak ditemukan.');
-        }
+    $kelas = Kelas::where('guru_id', $guru->id)->first();
+    if (!$kelas) return redirect()->route('guru.dashboard')->with('error', 'Anda belum ditugaskan sebagai wali kelas.');
 
-        $kelas = Kelas::where('guru_id', $guru->id)->first();
-        
-        if (!$kelas) {
-            return redirect()->route('guru.dashboard')
-                ->with('error', 'Anda belum ditugaskan sebagai wali kelas.');
-        }
+    $santri = Santri::where('id', $santriId)->where('kelas_id', $kelas->id)->with(['kelas', 'user'])->firstOrFail();
 
-        $santri = Santri::where('id', $santriId)
-            ->where('kelas_id', $kelas->id)
-            ->with(['kelas', 'user'])
-            ->firstOrFail();
+    $tahunAjaranAktif = TahunAjaran::getAktif();
+    $tahunAjaranId    = $tahunAjaranAktif?->id;
 
-        // ✅ Ambil tahun ajaran aktif
-        $tahunAjaranAktif = TahunAjaran::getAktif();
-        $tahunAjaranId    = $tahunAjaranAktif?->id;
+    $tanggalMulai = $request->input('tanggal_mulai', Carbon::now()->subDays(30)->format('Y-m-d'));
+    $tanggalAkhir = $request->input('tanggal_akhir', Carbon::now()->format('Y-m-d'));
+    $sesiFilter   = $request->input('sesi');
 
-        // Filter
-        $tanggalMulai = $request->input('tanggal_mulai', Carbon::now()->subDays(30)->format('Y-m-d'));
-        $tanggalAkhir = $request->input('tanggal_akhir', Carbon::now()->format('Y-m-d'));
-        $sesiFilter   = $request->input('sesi');
+    $q = Presensi::where('santri_id', $santriId)
+        ->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir])
+        ->when($sesiFilter, fn ($qq) => $qq->where('sesi', $sesiFilter))
+        ->withCount('setorans')
+        ->orderBy('tanggal', 'desc')->orderBy('sesi');
+    if ($tahunAjaranId) $q->where('tahun_ajaran_id', $tahunAjaranId);
+    $presensis = $q->get();
 
-        // ✅ Presensi dengan relasi setorans + filter tahun ajaran
-        $presensiQuery = Presensi::where('santri_id', $santriId)
-            ->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir])
-            ->when($sesiFilter, function($query) use ($sesiFilter) {
-                return $query->where('sesi', $sesiFilter);
-            })
-            ->with('setorans')
-            ->orderBy('tanggal', 'desc')
-            ->orderBy('sesi');
+    $statBase = Presensi::where('santri_id', $santriId)->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir]);
+    if ($tahunAjaranId) $statBase->where('tahun_ajaran_id', $tahunAjaranId);
 
-        if ($tahunAjaranId) {
-            $presensiQuery->where('tahun_ajaran_id', $tahunAjaranId);
-        }
+    $sesiList = PresensiSesiConfig::active()->ordered()->get()->pluck('sesi_name')->values();
 
-        $presensis = $presensiQuery->paginate(20);
-
-        // ✅ Statistik dengan filter tahun ajaran
-        $statistikBase = Presensi::where('santri_id', $santriId)
-            ->whereBetween('tanggal', [$tanggalMulai, $tanggalAkhir]);
-
-        if ($tahunAjaranId) {
-            $statistikBase->where('tahun_ajaran_id', $tahunAjaranId);
-        }
-
-        $statistik = [
-            'total_hadir' => (clone $statistikBase)->where('status', 'Hadir')->count(),
-            'total_sakit' => (clone $statistikBase)->where('status', 'Sakit')->count(),
-            'total_izin'  => (clone $statistikBase)->where('status', 'Izin')->count(),
-            'total_alpha' => (clone $statistikBase)->where('status', 'Alpha')->count(),
-        ];
-
-        $sesiList = PresensiSesiConfig::active()->ordered()->get();
-
-        return view('guru.presensis.detail', compact(
-            'santri',
-            'guru',
-            'kelas',
-            'presensis',
-            'statistik',
-            'sesiList',
-            'tanggalMulai',
-            'tanggalAkhir',
-            'sesiFilter',
-            'tahunAjaranAktif' // ✅ BARU
-        ));
-    }
+    return Inertia::render('Guru/Presensi/Detail', [
+        'santri' => [
+            'id'         => $santri->id,
+            'name'       => $santri->name,
+            'nis'        => $santri->nis,
+            'gender'     => $santri->gender,
+            'photo_url'  => $santri->user?->profile_photo ? asset('storage/' . $santri->user->profile_photo) : null,
+            'kelas_name' => $santri->kelas->name ?? ($santri->kelas->nama ?? '-'),
+        ],
+        'tahunAjaranAktif' => $tahunAjaranAktif ? ['nama' => $tahunAjaranAktif->nama ?? $tahunAjaranAktif->name] : null,
+        'statistik' => [
+            'hadir' => (clone $statBase)->where('status', 'Hadir')->count(),
+            'sakit' => (clone $statBase)->where('status', 'Sakit')->count(),
+            'izin'  => (clone $statBase)->where('status', 'Izin')->count(),
+            'alpha' => (clone $statBase)->where('status', 'Alpha')->count(),
+        ],
+        'sesiList' => $sesiList,
+        'filter'   => ['tanggal_mulai' => $tanggalMulai, 'tanggal_akhir' => $tanggalAkhir, 'sesi' => $sesiFilter],
+        'presensi' => $presensis->map(fn ($p) => [
+            'id'              => $p->id,
+            'tanggal'         => $p->tanggal->format('Y-m-d'),
+            'tanggal_display' => $p->tanggal->format('d M Y'),
+            'sesi'            => $p->sesi,
+            'status'          => $p->status,
+            'keterangan'      => $p->keterangan,
+            'has_setoran'     => $p->setorans_count > 0,
+        ])->values(),
+    ]);
+}
 
     /**
      * Tampilkan form edit presensi

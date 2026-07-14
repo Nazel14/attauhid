@@ -14,6 +14,7 @@ use App\Imports\KelasImport;
 use App\Imports\KelasBulkUpdateImport;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Inertia\Inertia;
 
 class KelasController extends Controller
 {
@@ -30,7 +31,12 @@ class KelasController extends Controller
         // Tahun ajaran aktif (untuk dropdown di modal create/edit)
         $tahunAjaranAktif = \App\Models\TahunAjaran::getAktif();
 
-        return view('admin.kelas.index', compact('kelas', 'gurus', 'genderRestrictions', 'tahunAjaranAktif'));
+        return Inertia::render('Admin/Kelas/Index', [
+            'kelas' => $kelas,
+            'gurus' => $gurus,
+            'genderRestrictions' => $genderRestrictions,
+            'tahunAjaranAktif' => $tahunAjaranAktif,
+        ]);
     }
     /**
      * Menyimpan Kelas baru ke database.
@@ -104,7 +110,7 @@ class KelasController extends Controller
         $this->logUpdate('kelas', $kela->name, $kela, $oldValues);
 
         return redirect()->route('admin.kelas.index')
-            ->with('updated', 'Data Kelas/Halaqah berhasil diperbarui.');
+            ->with('success', 'Data Kelas/Halaqah berhasil diperbarui.');
     }   
 
     /**
@@ -126,7 +132,7 @@ class KelasController extends Controller
     $this->logDelete('kelas', $name, $oldValues);
     
     return redirect()->route('admin.kelas.index')
-        ->with('deleted', 'Kelas/Halaqah berhasil dihapus.');
+        ->with('success', 'Kelas/Halaqah berhasil dihapus.');
 }
 
     /**
@@ -173,7 +179,7 @@ class KelasController extends Controller
 
             $count = count($request->kelas_ids);
             return redirect()->route('admin.kelas.index')
-                ->with('deleted', "Berhasil menghapus {$count} kelas!");
+                ->with('success', "Berhasil menghapus {$count} kelas!");
                 
         } catch (\Exception $e) {
             \Log::error("Error bulk deleting Kelas: " . $e->getMessage());
@@ -790,7 +796,7 @@ class KelasController extends Controller
             );
 
             return redirect()->route('admin.kelas.index')
-                ->with('updated', "Berhasil mengupdate {$successCount} data kelas!");
+                ->with('success', "Berhasil mengupdate {$successCount} data kelas!");
 
         } catch (\Exception $e) {
             \Log::error("Error bulk updating kelas: " . $e->getMessage());

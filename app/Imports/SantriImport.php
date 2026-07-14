@@ -6,21 +6,25 @@ use App\Models\Santri;
 use App\Models\Kelas;
 use App\Models\User;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 
-class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
+class SantriImport implements ToCollection, WithHeadingRow
 {
-    protected $errors = [];
-    protected $warnings = [];
-    protected $successCount = 0;
-    protected $failedCount = 0;
-    protected $kelasStats = [];
-    protected $photos = [];
+    private int $successCount = 0;
+    private int $failedCount = 0;
+    private array $errors = [];
+    private array $warnings = [];
+    private array $kelasStats = [];
+
+    /** Metode yang valid — quran (juz), iqro & aisar (jilid) */
+    private const METODE_VALID = ['quran', 'iqro', 'aisar'];
+
+    /** @var array<string,string> map [namaFileLowercase => pathAsli] hasil ekstrak ZIP */
+    private array $photos;
 
     public function __construct(array $photos = [])
     {
@@ -29,183 +33,210 @@ class SantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 
     public function collection(Collection $rows)
     {
-        $kelasList = Kelas::with('guru')->orderBy('id')->get();
+        // Urutkan kelas by id supaya "no_kelas" (1-based) konsisten dengan template
+        $kelasList = Kelas::orderBy('id')->get()->values();
 
         foreach ($rows as $index => $row) {
-            $rowNumber = $index + 2;
+            $rowNum = $index + 2; // baris Excel (header = 1)
 
-            // SKIP BARIS CONTOH
-            if ($this->isExampleRow($row)) {
-                \Log::info("Baris {$rowNumber} adalah contoh, di-skip");
+            $nis = trim((string) ($row['nis'] ?? ''));
+
+            // Skip baris kosong & baris contoh
+            if ($nis === '' && trim((string) ($row['nama'] ?? '')) === '') {
+                continue;
+            }
+            if (stripos($nis, '(Contoh)') !== false || stripos($nis, 'Contoh') !== false) {
                 continue;
             }
 
-            if (empty($row['nis']) || empty($row['nama'])) {
+            $nama       = trim((string) ($row['nama'] ?? ''));
+            $gender     = strtoupper(trim((string) ($row['gender'] ?? '')));
+            $metode     = strtolower(trim((string) ($row['metode'] ?? 'quran')));
+            $targetJuz  = isset($row['target_juz']) && $row['target_juz'] !== ''
+                ? str_replace(',', '.', (string) $row['target_juz'])
+                : null;
+            $targetJilid = $row['target_jilid'] ?? null;
+            $noKelas    = $row['no_kelas'] ?? null;
+            $password   = trim((string) ($row['password'] ?? ''));
+            $namaFoto   = trim((string) ($row['nama_file_foto'] ?? ''));
+
+            // ===== VALIDASI =====
+            $rowErrors = [];
+
+            if ($nis === '') {
+                $rowErrors[] = "NIS kosong";
+            } elseif (Santri::where('nis', $nis)->exists()) {
+                $rowErrors[] = "NIS {$nis} sudah terdaftar";
+            }
+
+            if ($nama === '') {
+                $rowErrors[] = "Nama kosong";
+            }
+
+            if (!in_array($gender, ['L', 'P'])) {
+                $rowErrors[] = "Gender harus L atau P";
+            }
+
+            if (!in_array($metode, self::METODE_VALID)) {
+                $rowErrors[] = "Metode harus quran, iqro, atau aisar (ditemukan: {$metode})";
+            }
+
+            $isJilidBased = in_array($metode, ['iqro', 'aisar'], true);
+
+            if ($isJilidBased) {
+                // iqro / aisar → wajib target_jilid
+                $maxJilid = (int) config("{$metode}.max_jilid", 6);
+                if ($targetJilid === null || $targetJilid === '') {
+                    $rowErrors[] = "Target Jilid wajib diisi untuk metode " . ucfirst($metode);
+                } elseif (!is_numeric($targetJilid) || (int) $targetJilid < 1 || (int) $targetJilid > $maxJilid) {
+                    $rowErrors[] = "Target Jilid harus 1-{$maxJilid} untuk metode " . ucfirst($metode);
+                }
+            } elseif ($metode === 'quran') {
+                // quran → wajib target_juz
+                if ($targetJuz === null || $targetJuz === '') {
+                    $rowErrors[] = "Target Juz wajib diisi untuk metode quran";
+                } elseif (!is_numeric($targetJuz) || (float) $targetJuz < 0 || (float) $targetJuz > 30) {
+                    $rowErrors[] = "Target Juz harus 0-30";
+                }
+            }
+
+            // Kelas
+            $kelas = null;
+            if ($noKelas === null || $noKelas === '' || !is_numeric($noKelas)) {
+                $rowErrors[] = "No Kelas kosong / bukan angka";
+            } else {
+                $kelas = $kelasList->get((int) $noKelas - 1);
+                if (!$kelas) {
+                    $rowErrors[] = "No Kelas {$noKelas} tidak ditemukan";
+                }
+            }
+
+            if (strlen($password) < 8) {
+                $rowErrors[] = "Password minimal 8 karakter";
+            }
+
+            // Validasi gender vs restriksi kelas
+            if ($kelas && in_array($gender, ['L', 'P'])) {
+                $genderFull = $gender === 'L' ? 'Laki-laki' : 'Perempuan';
+                if ($kelas->gender_restriction === 'ikhwan' && $genderFull !== 'Laki-laki') {
+                    $rowErrors[] = "Kelas {$kelas->name} khusus Ikhwan, santri perempuan tidak bisa masuk";
+                }
+                if ($kelas->gender_restriction === 'akhwat' && $genderFull !== 'Perempuan') {
+                    $rowErrors[] = "Kelas {$kelas->name} khusus Akhwat, santri laki-laki tidak bisa masuk";
+                }
+            }
+
+            if (!empty($rowErrors)) {
+                $this->failedCount++;
+                $this->errors[] = "Baris {$rowNum} ({$nama}): " . implode('; ', $rowErrors);
                 continue;
             }
 
+            // ===== SIMPAN =====
             try {
-                DB::transaction(function () use ($row, $rowNumber, $kelasList) {
-                    // Validasi dasar
-                    if (empty($row['nis']))      throw new \Exception("NIS tidak boleh kosong");
-                    if (empty($row['nama']))     throw new \Exception("Nama tidak boleh kosong");
-                    if (empty($row['gender']))   throw new \Exception("Gender tidak boleh kosong");
-                    if (empty($row['no_kelas'])) throw new \Exception("Nomor Kelas tidak boleh kosong");
-                    if (empty($row['password'])) throw new \Exception("Password tidak boleh kosong");
+                DB::transaction(function () use ($nis, $nama, $gender, $metode, $targetJuz, $targetJilid, $kelas, $password, $namaFoto, $rowNum) {
+                    $name = preg_replace_callback('/\b\w+/', function ($m) {
+                        return ucfirst(strtolower($m[0]));
+                    }, $nama);
 
-                    $gender = strtoupper(trim($row['gender']));
-                    if (!in_array($gender, ['L', 'P'])) {
-                        throw new \Exception("Gender harus L atau P");
-                    }
+                    $genderFull   = $gender === 'L' ? 'Laki-laki' : 'Perempuan';
+                    $isJilidBased = in_array($metode, ['iqro', 'aisar'], true);
 
-                    // === METODE & TARGET (quran / iqro) ===
-                    $metode = strtolower(trim($row['metode'] ?? 'quran'));
-                    if (!in_array($metode, ['quran', 'iqro'])) {
-                        throw new \Exception("Metode harus 'quran' atau 'iqro'");
-                    }
-
-                    $targetJuz   = null;
-                    $targetJilid = null;
-
-                    if ($metode === 'iqro') {
-                        if (!isset($row['target_jilid']) || $row['target_jilid'] === '') {
-                            throw new \Exception("Metode iqro wajib mengisi Target Jilid (1-6)");
-                        }
-                        $targetJilid = (int) $row['target_jilid'];
-                        if ($targetJilid < 1 || $targetJilid > 6) {
-                            throw new \Exception("Target Jilid harus angka antara 1-6");
-                        }
-                    } else { // quran
-                        $targetJuz = $row['target_juz'] ?? 1.00;
-                        if (!is_numeric($targetJuz) || $targetJuz < 0 || $targetJuz > 30) {
-                            throw new \Exception("Target Juz harus angka antara 0-30");
-                        }
-                    }
-
-                    if (strlen($row['password']) < 8) {
-                        throw new \Exception("Password minimal 8 karakter");
-                    }
-
-                    $noKelas = (int) $row['no_kelas'];
-                    if ($noKelas < 1 || $noKelas > $kelasList->count()) {
-                        throw new \Exception("Nomor Kelas {$noKelas} tidak valid. Tersedia 1-{$kelasList->count()}");
-                    }
-
-                    $kelas = $kelasList->get($noKelas - 1);
-                    if (!$kelas) {
-                        throw new \Exception("Kelas dengan nomor urut {$noKelas} tidak ditemukan");
-                    }
-
-                    if (Santri::where('nis', $row['nis'])->exists()) {
-                        throw new \Exception("NIS {$row['nis']} sudah terdaftar");
-                    }
-
-                    $name = ucwords(strtolower(trim($row['nama'])));
-                    $genderFull = $gender === 'L' ? 'Laki-laki' : 'Perempuan';
-
-                    // Validasi gender restriction
-                    if ($kelas->gender_restriction === 'ikhwan' && $genderFull !== 'Laki-laki') {
-                        throw new \Exception("Kelas {$kelas->name} khusus Ikhwan (Laki-laki)");
-                    }
-                    if ($kelas->gender_restriction === 'akhwat' && $genderFull !== 'Perempuan') {
-                        throw new \Exception("Kelas {$kelas->name} khusus Akhwat (Perempuan)");
-                    }
-
-                    $guruId = $kelas->guru_id;
-
-                    $santriUser = User::create([
-                        'name'           => $name,
-                        'password'       => Hash::make($row['password']),
-                        'plain_password' => $row['password'],
-                        'role'           => 'santri',
+                    $user = User::create([
+                        'name' => $name,
+                        'password' => Hash::make($password),
+                        'plain_password' => $password,
+                        'role' => 'santri',
                     ]);
 
+                    // Foto dari ZIP (opsional)
+                    if ($namaFoto !== '') {
+                        $key = strtolower(str_replace(' ', '_', $namaFoto));
+                        if (isset($this->photos[$key])) {
+                            $storedPath = $this->processPhoto($this->photos[$key], 'imp_');
+                            if ($storedPath) {
+                                $user->profile_photo      = $storedPath;
+                                $user->profile_photo_name = $namaFoto;
+                                $user->save();
+                            } else {
+                                $this->warnings[] = "Baris {$rowNum} ({$name}): foto '{$namaFoto}' gagal diproses, santri dibuat tanpa foto";
+                            }
+                        } else {
+                            $this->warnings[] = "Baris {$rowNum} ({$name}): foto '{$namaFoto}' tidak ditemukan di ZIP, santri dibuat tanpa foto";
+                        }
+                    }
+
                     Santri::create([
-                        'user_id'       => $santriUser->id,
+                        'user_id'       => $user->id,
                         'kelas_id'      => $kelas->id,
-                        'guru_id'       => $guruId,
-                        'nis'           => $row['nis'],
+                        'guru_id'       => $kelas->guru_id,
+                        'nis'           => $nis,
                         'name'          => $name,
                         'gender'        => $genderFull,
                         'target_metode' => $metode,
-                        'target_juz'    => $targetJuz,
-                        'target_jilid'  => $targetJilid,
+                        'target_juz'    => $isJilidBased ? null : (float) $targetJuz,
+                        'target_jilid'  => $isJilidBased ? (int) $targetJilid : null,
                     ]);
-
-                    // ✅ Foto: cocokkan nama_file_foto dengan file di ZIP
-                    if (!empty($row['nama_file_foto'])) {
-                        $key = strtolower(str_replace(' ', '_', trim($row['nama_file_foto'])));
-                        if (isset($this->photos[$key])) {
-                            $path = $this->processPhoto($this->photos[$key]);
-                            if ($path) $santriUser->update(['profile_photo' => $path]);
-                        } else {
-                            $this->warnings[] = "Baris {$rowNumber}: foto '{$row['nama_file_foto']}' tidak ditemukan, santri tetap dibuat tanpa foto.";
-                        }
-                    }
-
-                    // Track per kelas
-                    $kelasName = $kelas->name;
-                    if (!isset($this->kelasStats[$kelasName])) {
-                        $this->kelasStats[$kelasName] = 0;
-                    }
-                    $this->kelasStats[$kelasName]++;
-
-                    $this->successCount++;
                 });
+
+                $this->successCount++;
+                $this->kelasStats[$kelas->name] = ($this->kelasStats[$kelas->name] ?? 0) + 1;
 
             } catch (\Exception $e) {
                 $this->failedCount++;
-                $this->errors[] = "Baris {$rowNumber} (NIS: {$row['nis']}): " . $e->getMessage();
+                $this->errors[] = "Baris {$rowNum} ({$nama}): gagal simpan — " . $e->getMessage();
             }
         }
     }
 
-    protected function isExampleRow($row): bool
-    {
-        $nis = trim($row['nis'] ?? '');
-        if (stripos($nis, '(Contoh)') !== false) return true;
-        if (stripos($nis, 'CONTOH:') === 0)      return true;
-
-        $nama = trim($row['nama'] ?? '');
-        if (stripos($nama, '(Contoh)') !== false) return true;
-
-        return false;
-    }
-
-    private function processPhoto($sourcePath): ?string
+    /**
+     * Salin foto dari ZIP → storage, sekaligus crop persegi & resize (maks 400px).
+     * Disamakan dengan SantriController::processProfilePhoto().
+     */
+    private function processPhoto(string $sourcePath, string $prefix = 'imp_'): ?string
     {
         try {
-            $maxSize = 400;
-            $path = 'profile-photos/' . uniqid('santri_') . '.jpg';
+            $maxSize  = 400;
+            $ext      = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION)) ?: 'jpg';
+            $path     = 'profile-photos/' . uniqid($prefix) . '.' . $ext;
+
             Storage::disk('public')->put($path, file_get_contents($sourcePath));
             $fullPath = Storage::disk('public')->path($path);
+
             $info = getimagesize($fullPath);
             if (!$info) return $path;
+
             [$width, $height] = $info;
+
             $src = match ($info['mime']) {
                 'image/jpeg' => imagecreatefromjpeg($fullPath),
                 'image/png'  => imagecreatefrompng($fullPath),
                 default      => null,
             };
             if (!$src) return $path;
+
             $min  = min($width, $height);
-            $srcX = (int)(($width - $min) / 2);
-            $srcY = ($height > $width) ? 0 : (int)(($height - $min) / 2);
+            $srcX = (int) (($width - $min) / 2);
+            $srcY = ($height > $width) ? 0 : (int) (($height - $min) / 2);
+
             $size = min($min, $maxSize);
             $dst  = imagecreatetruecolor($size, $size);
+
             imagecopyresampled($dst, $src, 0, 0, $srcX, $srcY, $size, $size, $min, $min);
             imagejpeg($dst, $fullPath, 95);
+
             imagedestroy($src);
             imagedestroy($dst);
+
             return $path;
         } catch (\Throwable $e) {
             return null;
         }
     }
 
-    public function getErrors()      { return $this->errors; }
-    public function getWarnings()    { return $this->warnings; }
-    public function getSuccessCount(){ return $this->successCount; }
-    public function getFailedCount() { return $this->failedCount; }
-    public function getKelasStats()  { return $this->kelasStats; }
+    public function getSuccessCount(): int  { return $this->successCount; }
+    public function getFailedCount(): int   { return $this->failedCount; }
+    public function getErrors(): array      { return $this->errors; }
+    public function getWarnings(): array    { return $this->warnings; }
+    public function getKelasStats(): array  { return $this->kelasStats; }
 }

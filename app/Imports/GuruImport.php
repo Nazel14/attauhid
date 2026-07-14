@@ -65,12 +65,25 @@ class GuruImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 
                     // ✅ Foto: cocokkan nama_file_foto dengan file yang diupload
                     if (!empty($row['nama_file_foto'])) {
-                        $key = strtolower(str_replace(' ', '_', trim($row['nama_file_foto'])));
+                        $rawFoto = trim($row['nama_file_foto']);
+                        $key = strtolower(str_replace(' ', '_', $rawFoto));
+
                         if (isset($this->photos[$key])) {
                             $path = $this->processPhoto($this->photos[$key]);
-                            if ($path) $user->update(['profile_photo' => $path]);
+
+                            if ($path) {
+                                $user->update([
+                                    'profile_photo'            => $path,
+                                    // simpan nama file sesuai yang ditulis di Excel,
+                                    // supaya cocok saat diekspor kembali
+                                    'profile_photo_name'       => $rawFoto,
+                                    'profile_photo_updated_at' => now(),
+                                ]);
+                            } else {
+                                $this->warnings[] = "Baris {$rowNumber}: foto '{$rawFoto}' gagal diproses, guru tetap dibuat tanpa foto.";
+                            }
                         } else {
-                            $this->warnings[] = "Baris {$rowNumber}: foto '{$row['nama_file_foto']}' tidak ditemukan, guru tetap dibuat tanpa foto.";
+                            $this->warnings[] = "Baris {$rowNumber}: foto '{$rawFoto}' tidak ditemukan, guru tetap dibuat tanpa foto.";
                         }
                     }
 

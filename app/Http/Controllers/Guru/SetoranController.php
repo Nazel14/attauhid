@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Inertia\Inertia;
 
 class SetoranController extends Controller
 {
@@ -24,135 +25,90 @@ class SetoranController extends Controller
      * Progress per KELAS (kelas_id) — kebal-tanggal, reset saat naik kelas,
      * akumulatif lintas semester. Konsisten dengan Dashboard & Rapot.
      */
-    public function index()
-    {
-        $userId = Auth::id();
-        $guru = Guru::where('user_id', $userId)->first();
+   public function index()
+{
+    $userId = Auth::id();
+    $guru   = Guru::where('user_id', $userId)->first();
+    if (!$guru)  return redirect()->route('guru.dashboard')->with('error', 'Data guru tidak ditemukan.');
 
-        if (!$guru) {
-            return redirect()->route('guru.dashboard')
-                ->with('error', 'Data guru tidak ditemukan.');
-        }
+    $kelas = Kelas::where('guru_id', $guru->id)->first();
+    if (!$kelas) return redirect()->route('guru.dashboard')->with('error', 'Anda belum ditugaskan sebagai wali kelas.');
 
-        $kelas = Kelas::where('guru_id', $guru->id)->first();
+    $tahunAjaranAktif = TahunAjaran::getAktif();
+    $tahunAjaranId    = $tahunAjaranAktif?->id;
 
-        if (!$kelas) {
-            return redirect()->route('guru.dashboard')
-                ->with('error', 'Anda belum ditugaskan sebagai wali kelas.');
-        }
+    $santris = Santri::where('kelas_id', $kelas->id)
+        ->with(['guru', 'kelas', 'user'])
+        ->get()
+        ->map(function ($santri) {
+            $kelasId  = $santri->kelas_id;
+            $setorans = Setoran::where('santri_id', $santri->id)->where('kelas_id', $kelasId)->get();
 
-        $tahunAjaranAktif = TahunAjaran::getAktif();
-        $tahunAjaranId    = $tahunAjaranAktif?->id;
+            
+            $isIqro       = $santri->isJilidBased(); // iqro ATAU aisar
+            $metodeSantri = $santri->jilidConfigKey(); // 'iqro' / 'aisar'
 
-        $santris = Santri::where('kelas_id', $kelas->id)
-            ->with(['guru', 'kelas', 'user'])
-            ->get()
-            ->map(function ($santri) use ($tahunAjaranId) {
+            if ($isIqro) {
+                $targetJilid   = (int) ($santri->target_jilid ?? 1);
+                $totalHalaman  = count($santri->halamanIqroTersetorKelas($targetJilid, $kelasId)); // dedup, scope kelas, label otomatis ikut metode santri
+                $totalHalJilid = (int) (config($santri->jilidConfigKey() . '.halaman_per_jilid.' . $targetJilid) ?? 0);
+                $persenTahu    = $totalHalJilid > 0;
+                $progress      = $persenTahu ? min(round(($totalHalaman / $totalHalJilid) * 100), 100) : 0;
+                $targetDisplay = 'Jilid ' . $targetJilid;
+                $capaianJuz    = 0.0;
+            } else {
+                $totalHafalanJuz = round($setorans->where('kategori_setoran', 'Hafalan')->sum('total_juz'), 2);
+                $targetJuz       = $santri->target_juz ?? 1.00;
+                $totalHalaman    = 0;
+                $totalHalJilid   = 0;
+                $persenTahu      = true;
+                $progress        = $targetJuz > 0 ? min(round(($totalHafalanJuz / $targetJuz) * 100), 100) : 0;
+                $targetDisplay   = number_format($targetJuz, 2) . ' juz';
+                $capaianJuz      = $totalHafalanJuz;
+            }
 
-                $kelasId = $santri->kelas_id;
+            return [
+                'id'                    => $santri->id,
+                'name'                  => $santri->name,
+                'nis'                   => $santri->nis,
+                'gender'                => $santri->gender,
+                'photo_url'             => $santri->user?->profile_photo ? asset('storage/' . $santri->user->profile_photo) : null,
+                'is_iqro'               => $isIqro,
+                'total_hafalan'         => $setorans->where('kategori_setoran', 'Hafalan')->count(),
+                'total_murajaah'        => $setorans->where('kategori_setoran', 'Murajaah')->count(),
+                'total_tilawah'         => $setorans->where('kategori_setoran', 'Tilawah')->count(),
+                'total_setoran'         => $setorans->count(),
+                'capaian_juz'           => $capaianJuz,
+                'total_halaman_iqro'    => $totalHalaman,
+                'total_halaman_jilid'   => $totalHalJilid,
+                'iqro_persen_diketahui' => $persenTahu,
+                'target_jilid'          => $santri->target_jilid,
+                'target_display'        => $targetDisplay,
+                'progress_persen'       => (int) $progress,
+            ];
+        })
+        ->sortBy('name')->values();
 
-                // Setoran DI KELAS INI (kebal-tanggal)
-                $setorans = Setoran::where('santri_id', $santri->id)
-                    ->where('kelas_id', $kelasId)
-                    ->get();
+    $setoranHariIniQuery = Setoran::whereIn('santri_id', $santris->pluck('id'))->whereDate('tanggal', today());
+    if ($tahunAjaranId) $setoranHariIniQuery->where('tahun_ajaran_id', $tahunAjaranId);
+    $setoranHariIni = $setoranHariIniQuery->get();
 
-                // Hitung per-kategori (jumlah setoran) — sudah ter-scope kelas
-                $santri->total_hafalan  = $setorans->where('kategori_setoran', 'Hafalan')->count();
-                $santri->total_tilawah  = $setorans->where('kategori_setoran', 'Tilawah')->count();
-                $santri->total_murajaah = $setorans->where('kategori_setoran', 'Murajaah')->count();
-                $santri->total_setoran  = $setorans->count();
-
-                // total_juz untuk kolom display (semua kategori)
-                $santri->total_juz = round($setorans->sum('total_juz'), 2);
-
-                // Deteksi metode Iqro
-                $santri->is_iqro = ($santri->target_metode?->value ?? 'quran') === 'iqro';
-
-                if ($santri->is_iqro) {
-                    $targetJilid   = (int)($santri->target_jilid ?? 1);
-                    // Samakan dengan dashboard: per kelas, dedup halaman
-                    $totalHalaman  = count($santri->halamanIqroTersetorKelas($targetJilid, $kelasId));
-                    $totalHalJilid = (int)(config('iqro.halaman_per_jilid.' . $targetJilid) ?? 0);
-
-                    $santri->total_halaman_iqro       = $totalHalaman;
-                    $santri->total_hafalan_juz        = 0;
-                    $santri->total_halaman_jilid      = $totalHalJilid;
-                    $santri->iqro_persen_diketahui    = $totalHalJilid > 0;
-                    $santri->juz_progress_percentage  = $totalHalJilid > 0
-                        ? min(round(($totalHalaman / $totalHalJilid) * 100), 100)
-                        : 0;
-                    $santri->target_display = 'Jilid ' . $targetJilid;
-                } else {
-                    $totalHafalanJuz = round(
-                        $setorans->where('kategori_setoran', 'Hafalan')->sum('total_juz'),
-                        2
-                    );
-                    $targetJuz = $santri->target_juz ?? 1.00;
-                    $santri->total_hafalan_juz        = $totalHafalanJuz;
-                    $santri->total_halaman_iqro       = 0;
-                    $santri->total_halaman_jilid      = 0;
-                    $santri->iqro_persen_diketahui    = false;
-                    $santri->juz_progress_percentage  = $targetJuz > 0
-                        ? min(round(($totalHafalanJuz / $targetJuz) * 100), 100)
-                        : 0;
-                    $santri->target_display = number_format($targetJuz, 2) . ' juz';
-                }
-
-                // Presensi 30 hari terakhir (presensi tak punya kelas_id → tetap by tanggal)
-                $presensiQuery = Presensi::where('santri_id', $santri->id)
-                    ->where('tanggal', '>=', now()->subDays(30));
-                if ($tahunAjaranId) {
-                    $presensiQuery->where('tahun_ajaran_id', $tahunAjaranId);
-                }
-                $presensis = $presensiQuery->get();
-
-                $santri->total_hadir = $presensis->where('status', 'Hadir')->count();
-                $santri->total_sakit = $presensis->where('status', 'Sakit')->count();
-                $santri->total_izin  = $presensis->where('status', 'Izin')->count();
-                $santri->total_alpha = $presensis->where('status', 'Alpha')->count();
-
-                return $santri;
-            })
-            ->sortBy('name');
-
-        $totalSantri = $santris->count();
-        $totalIkhwan = $santris->where('gender', 'Laki-laki')->count();
-        $totalAkhwat = $santris->where('gender', 'Perempuan')->count();
-
-        $setoranHariIniQuery = Setoran::whereIn('santri_id', $santris->pluck('id'))
-            ->whereDate('tanggal', today());
-        if ($tahunAjaranId) {
-            $setoranHariIniQuery->where('tahun_ajaran_id', $tahunAjaranId);
-        }
-        $setoranHariIni         = $setoranHariIniQuery->get();
-        $setoranHariIniHafalan  = $setoranHariIni->where('kategori_setoran', 'Hafalan')->count();
-        $setoranHariIniTilawah  = $setoranHariIni->where('kategori_setoran', 'Tilawah')->count();
-        $setoranHariIniMurajaah = $setoranHariIni->where('kategori_setoran', 'Murajaah')->count();
-
-        $perPage           = 15;
-        $currentPage       = request()->get('page', 1);
-        $santrisCollection = collect($santris);
-        $santrisPaginated  = new \Illuminate\Pagination\LengthAwarePaginator(
-            $santrisCollection->forPage($currentPage, $perPage),
-            $santrisCollection->count(),
-            $perPage,
-            $currentPage,
-            ['path' => request()->url(), 'query' => request()->query()]
-        );
-
-        return view('guru.setorans.index', [
-            'santris'                => $santrisPaginated,
-            'kelas'                  => $kelas,
-            'guru'                   => $guru,
-            'totalSantri'            => $totalSantri,
-            'totalIkhwan'            => $totalIkhwan,
-            'totalAkhwat'            => $totalAkhwat,
-            'setoranHariIniHafalan'  => $setoranHariIniHafalan,
-            'setoranHariIniTilawah'  => $setoranHariIniTilawah,
-            'setoranHariIniMurajaah' => $setoranHariIniMurajaah,
-            'tahunAjaranAktif'       => $tahunAjaranAktif,
-        ]);
-    }
+    return Inertia::render('Guru/Setoran/Index', [
+        'kelas'          => ['id' => $kelas->id, 'name' => $kelas->name],
+        'genderSummary'  => [
+            'ikhwan' => $santris->where('gender', 'Laki-laki')->count(),
+            'akhwat' => $santris->where('gender', 'Perempuan')->count(),
+            'total'  => $santris->count(),
+        ],
+        'setoranHariIni' => [
+            'hafalan'  => $setoranHariIni->where('kategori_setoran', 'Hafalan')->count(),
+            'tilawah'  => $setoranHariIni->where('kategori_setoran', 'Tilawah')->count(),
+            'murajaah' => $setoranHariIni->where('kategori_setoran', 'Murajaah')->count(),
+        ],
+        'tahunAjaranAktif' => $tahunAjaranAktif ? ['nama' => $tahunAjaranAktif->nama, 'semester' => $tahunAjaranAktif->semester] : null,
+        'santris'          => $santris,
+    ]);
+}
 
     /**
      * Tampilkan detail setoran per santri.
@@ -289,7 +245,8 @@ class SetoranController extends Controller
         $setoranMurajaah = $setorans->where('kategori_setoran', 'Murajaah');
         $setoranTilawah  = $setorans->where('kategori_setoran', 'Tilawah');
 
-        $isIqro = ($santri->target_metode?->value ?? 'quran') === 'iqro';
+        $metodeSantri = $santri->target_metode?->value ?? 'quran';
+        $isIqro       = in_array($metodeSantri, ['iqro', 'aisar']);
 
         $halamanIqroPerKategori = ['Hafalan' => 0, 'Murajaah' => 0, 'Tilawah' => 0];
         $totalHalamanIqro = 0;
@@ -299,8 +256,9 @@ class SetoranController extends Controller
             foreach ($mapKat as $kat => $col) {
                 $jumlah = 0;
                 foreach ($col as $s) {
-                    if (!preg_match('/^Iqro Jilid (\d+)/i', (string)$s->surat_start, $mj)) continue;
-                    if ($kat === 'Hafalan' && (int)$mj[1] !== $targetJilid) continue;
+                    if (!preg_match('/^(Iqro|Aisar) Jilid (\d+)/i', (string)$s->surat_start, $mj)) continue;
+                    if (strtolower($mj[1]) !== $metodeSantri) continue; // jangan campur Iqro vs Aisar
+                    if ($kat === 'Hafalan' && (int)$mj[2] !== $targetJilid) continue;
                     $h1 = (int)$s->ayat_start;
                     $h2 = (int)($s->ayat_end ?: $s->ayat_start);
                     if ($h1 > 0 && $h2 >= $h1) $jumlah += ($h2 - $h1 + 1);
@@ -310,31 +268,73 @@ class SetoranController extends Controller
             $totalHalamanIqro = $halamanIqroPerKategori['Hafalan'];
         }
 
-        return view('guru.setorans.detail', compact(
-            'santri',
-            'guru',
-            'kelas',
-            'setoranStats',
-            'presensiStats',
-            'totalHafalanJuz',
-            'targetJuz',
-            'progressHafalan',
-            'setoranHafalan',
-            'setoranMurajaah',
-            'setoranTilawah',
-            'tanggalMulai',
-            'tanggalAkhir',
-            'tahunAjaranAktif',
-            'isIqro',
-            'halamanIqroPerKategori',
-            'totalHalamanIqro',
-            'taList',
-            'taTerpilih',
-            'taObjekTerpilih',
-            'kelasKonteks',
-            'isSemesterAktif'
-        ));
+        $fmt = fn ($col) => $col->values()->map(fn ($s) => [
+        'id'        => $s->id,
+        'tanggal'   => $s->tanggal->format('d/m/Y'),
+        'range'     => $this->formatRangeSetoran($s),
+        'total_juz' => (float) $s->total_juz,
+        'nilai'     => $s->nilai,
+        'has_audio' => (bool) $s->audio_path,
+        'audio_url' => $s->audio_path ? route('guru.setorans.audio', $s->id) : null,
+        'pdf_url'   => $s->koreksi_pdf_path ? asset('storage/' . $s->koreksi_pdf_path) : null,
+        'catatan'   => $s->catatan_guru,
+    ]);
+
+    return Inertia::render('Guru/Setoran/Detail', [
+        'santri' => [
+            'id'           => $santri->id,
+            'name'         => $santri->name,
+            'nis'          => $santri->nis,
+            'gender'       => $santri->gender,
+            'photo_url'    => $santri->user?->profile_photo ? asset('storage/' . $santri->user->profile_photo) : null,
+            'kelas_name'   => $santri->kelas->name ?? '-',
+            'target_jilid' => $santri->target_jilid,
+        ],
+        'isIqro' => $isIqro,
+        'taList' => $taList->map(fn ($ta) => [
+            'id'            => $ta->id,
+            'nama'          => $ta->nama,
+            'semester'      => $ta->semester,
+            'kelas_konteks' => $ta->kelas_konteks,
+            'aktif'         => $ta->id === optional($tahunAjaranAktif)->id,
+        ])->values(),
+        'taTerpilih'      => $taTerpilih,
+        'taObjekTerpilih' => $taObjekTerpilih ? ['nama' => $taObjekTerpilih->nama, 'semester' => $taObjekTerpilih->semester] : null,
+        'kelasKonteks'    => $kelasKonteks,
+        'isSemesterAktif' => $isSemesterAktif,
+        'filter'          => ['tanggal_mulai' => $tanggalMulai, 'tanggal_akhir' => $tanggalAkhir],
+        'progress'        => [
+            'total_hafalan_juz'  => $totalHafalanJuz,
+            'target_juz'         => $targetJuz,
+            'progress_persen'    => round($progressHafalan, 2),
+            'total_halaman_iqro' => $totalHalamanIqro,
+        ],
+        'stats' => [
+            'hafalan'  => ['total' => $setoranStats->get('Hafalan')->total,  'total_juz' => $setoranStats->get('Hafalan')->total_juz,  'halaman' => $halamanIqroPerKategori['Hafalan']],
+            'murajaah' => ['total' => $setoranStats->get('Murajaah')->total, 'total_juz' => $setoranStats->get('Murajaah')->total_juz, 'halaman' => $halamanIqroPerKategori['Murajaah']],
+            'tilawah'  => ['total' => $setoranStats->get('Tilawah')->total,  'total_juz' => $setoranStats->get('Tilawah')->total_juz,  'halaman' => $halamanIqroPerKategori['Tilawah']],
+        ],
+        'setoran' => [
+            'hafalan'  => $fmt($setoranHafalan),
+            'murajaah' => $fmt($setoranMurajaah),
+            'tilawah'  => $fmt($setoranTilawah),
+        ],
+    ]);
+
     }
+
+    private function formatRangeSetoran($s): string
+{
+    if (preg_match('/^(Iqro|Aisar) Jilid (\d+)/i', (string) $s->surat_start, $m)) {
+        $metode = $m[1];
+        $jilid  = $m[2];
+        $h1 = $s->ayat_start;
+        $h2 = $s->ayat_end;
+        $sep = ($h1 == $h2) ? '' : '–' . $h2;
+        return "{$metode} Jilid {$jilid} · Hal {$h1}{$sep}";
+    }
+    return "{$s->surat_start}:{$s->ayat_start} → {$s->surat_end}:{$s->ayat_end}";
+}
 
     /**
      * Tampilkan form edit setoran

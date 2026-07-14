@@ -27,7 +27,7 @@
         /* ================================================== */
         .accent-bar {
             height: 4px;
-            background-color: #4f46e5;
+            background-color: #D97757;
             margin: 0 0 22px 0;
             border-radius: 2px;
             font-size: 0;
@@ -51,7 +51,7 @@
         .doc-brand {
             font-size: 8.5px;
             font-weight: 700;
-            color: #4f46e5;
+            color: #D97757;
             letter-spacing: 2.5px;
             text-transform: uppercase;
             margin-bottom: 4px;
@@ -128,11 +128,11 @@
             text-align: center;
             margin-bottom: 18px;
             padding: 8px 14px;
-            background: #eef2ff;
-            border-left: 3px solid #4f46e5;
+            background: #FBF0EB;
+            border-left: 3px solid #D97757;
             border-radius: 3px;
             font-size: 9px;
-            color: #3730a3;
+            color: #A85638;
         }
         .period-line .period-label {
             font-weight: 700;
@@ -143,7 +143,7 @@
         }
         .period-line .period-value {
             font-weight: 700;
-            color: #1e1b4b;
+            color: #7C3D26;
         }
 
         /* ================================================== */
@@ -162,7 +162,7 @@
         }
         .sect-heading-bar {
             width: 3px;
-            background: #4f46e5;
+            background: #D97757;
             height: 14px;
             display: inline-block;
         }
@@ -243,7 +243,7 @@
             margin-top: 8px;
             padding: 8px 10px;
             border-radius: 3px;
-            border-left: 3px solid #4f46e5;
+            border-left: 3px solid #D97757;
         }
         .stat-highlight-table {
             width: 100%;
@@ -251,7 +251,7 @@
         .stat-highlight-lbl {
             font-size: 8px;
             font-weight: 700;
-            color: #4f46e5;
+            color: #D97757;
             text-transform: uppercase;
             letter-spacing: 0.8px;
         }
@@ -259,7 +259,7 @@
             text-align: right;
             font-size: 14px;
             font-weight: 700;
-            color: #1e1b4b;
+            color: #7C3D26;
         }
 
         /* ================================================== */
@@ -307,12 +307,12 @@
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: #4f46e5;
+            background: #D97757;
             margin-right: 6px;
         }
-        .cat-dot-hafalan  { background: #059669; }
-        .cat-dot-murajaah { background: #2563eb; }
-        .cat-dot-tilawah  { background: #9333ea; }
+        .cat-dot-hafalan  { background: #D97757; }
+        .cat-dot-murajaah { background: #F59E0B; }
+        .cat-dot-tilawah  { background: #14B8A6; }
 
         /* ================================================== */
         /* TABLE                                               */
@@ -378,9 +378,9 @@
             border: 1px solid #a7f3d0;
         }
         .nilai-b {
-            background: #eff6ff;
-            color: #1e40af;
-            border: 1px solid #bfdbfe;
+            background: #FBF0EB;
+            color: #A85638;
+            border: 1px solid #F0CBBC;
         }
         .nilai-c {
             background: #fefce8;
@@ -437,7 +437,7 @@
             font-weight: 700;
         }
         .total-row td {
-            border-top: 2px solid #4f46e5 !important;
+            border-top: 2px solid #D97757 !important;
             color: #111827 !important;
             padding-top: 11px !important;
             padding-bottom: 11px !important;
@@ -533,7 +533,7 @@
         }
         .footer-center {
             text-align: center;
-            color: #4f46e5;
+            color: #D97757;
             font-weight: 700;
             letter-spacing: 1px;
             text-transform: uppercase;
@@ -583,7 +583,7 @@
             letter-spacing:0.5px; text-transform:uppercase; line-height:1.15;
         }
         .kop-sub {
-            font-size:9px; font-weight:700; color:#4f46e5;
+            font-size:9px; font-weight:700; color:#D97757;
             letter-spacing:1.2px; text-transform:uppercase; margin-top:2px;
         }
         .kop-alamat { font-size:8px; color:#6b7280; margin-top:4px; line-height:1.5; }
@@ -650,6 +650,16 @@
     // Kelas & guru sesuai KONTEKS rapot (histori → kelas lama; aktif → kelas sekarang)
     $kelasNama = ($kelasRapot->name ?? null) ?? ($santri->kelas->name ?? '-');
     $guruNama  = ($guruRapot->name  ?? null) ?? ($santri->guru->name  ?? '-');
+
+    // ====== METODE: jilid-based (Iqro / Aisar) atau Al-Qur'an ======
+    $isJilid       = $statistikSetoran['is_iqro'] ?? false;
+    $metodeLabel   = $statistikSetoran['metode_label'] ?? 'Iqro';          // "Iqro" / "Aisar"
+    $jilidAktif    = $statistikSetoran['target_jilid'] ?? 1;
+    $halTersetor   = $statistikSetoran['total_halaman_iqro'] ?? 0;
+    $halTotalJilid = $statistikSetoran['total_halaman_jilid'] ?? 0;
+    $progressJilid = $statistikSetoran['progress_iqro'] ?? 0;
+    $jilidDiketahui= $statistikSetoran['iqro_persen_diketahui'] ?? false;
+    $metodeTeks    = $isJilid ? $metodeLabel.' — Jilid '.$jilidAktif : "Al-Qur'an";
 @endphp
 
 {{-- ============================================================ --}}
@@ -690,6 +700,7 @@
                 <tr><td class="id-label">Nomor Induk</td><td class="id-sep">:</td><td class="id-value">{{ $santri->nis ?? '-' }}</td></tr>
                 <tr><td class="id-label">Kelas</td><td class="id-sep">:</td><td class="id-value">{{ $kelasNama }}</td></tr>
                 <tr><td class="id-label">Guru Pembimbing</td><td class="id-sep">:</td><td class="id-value">{{ $guruNama }}</td></tr>
+                <tr><td class="id-label">Metode</td><td class="id-sep">:</td><td class="id-value">{{ $metodeTeks }}</td></tr>
                 @if(isset($tahunAjaranAktif) && $tahunAjaranAktif)
                 <tr><td class="id-label">Tahun Ajaran</td><td class="id-sep">:</td><td class="id-value">{{ $tahunAjaranAktif->nama ?? '-' }}@if($tahunAjaranAktif->semester) · Semester {{ $tahunAjaranAktif->semester == 1 ? 'Ganjil' : 'Genap' }}@endif</td></tr>
                 @endif
@@ -739,33 +750,72 @@
             <div class="stat-card">
                 <div class="stat-card-header">Statistik Setoran</div>
                 <div class="stat-card-body">
-                    <table class="stat-row">
+                <table class="stat-row">
+                    <tr>
+                        <td class="lbl">Total Setoran</td>
+                        <td class="val">{{ $statistikSetoran['total_setoran'] }} kali</td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Rata-rata Nilai</td>
+                        <td class="val">{{ $statistikSetoran['rata_nilai'] }}</td>
+                    </tr>
+                    @if($isJilid)
+                    <tr>
+                        <td class="lbl">Jilid Aktif</td>
+                        <td class="val">{{ $metodeLabel }} Jilid {{ $jilidAktif }}</td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Halaman Disetor</td>
+                        <td class="val">
+                            {{ $halTersetor }}@if($jilidDiketahui) / {{ $halTotalJilid }}@endif halaman
+                        </td>
+                    </tr>
+                    @else
+                    <tr>
+                        <td class="lbl">Total Juz</td>
+                        <td class="val">{{ $statistikSetoran['total_juz'] }} Juz</td>
+                    </tr>
+                    @endif
+                    <tr>
+                        <td class="lbl"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#059669;margin-right:6px;"></span>Hafalan</td>
+                        <td class="val">{{ $statistikSetoran['hafalan'] }} kali</td>
+                    </tr>
+                    <tr>
+                        <td class="lbl"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#2563eb;margin-right:6px;"></span>Murajaah</td>
+                        <td class="val">{{ $statistikSetoran['murajaah'] }} kali</td>
+                    </tr>
+                    <tr>
+                        <td class="lbl"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#9333ea;margin-right:6px;"></span>Tilawah</td>
+                        <td class="val">{{ $statistikSetoran['tilawah'] }} kali</td>
+                    </tr>
+                </table>
+
+                @if($isJilid && $jilidDiketahui)
+                <div class="stat-highlight">
+                    <table class="stat-highlight-table">
                         <tr>
-                            <td class="lbl">Total Setoran</td>
-                            <td class="val">{{ $statistikSetoran['total_setoran'] }} kali</td>
-                        </tr>
-                        <tr>
-                            <td class="lbl">Rata-rata Nilai</td>
-                            <td class="val">{{ $statistikSetoran['rata_nilai'] }}</td>
-                        </tr>
-                        <tr>
-                            <td class="lbl">Total Juz</td>
-                            <td class="val">{{ $statistikSetoran['total_juz'] }} Juz</td>
-                        </tr>
-                        <tr>
-                            <td class="lbl"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#059669;margin-right:6px;"></span>Hafalan</td>
-                            <td class="val">{{ $statistikSetoran['hafalan'] }} kali</td>
-                        </tr>
-                        <tr>
-                            <td class="lbl"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#2563eb;margin-right:6px;"></span>Murajaah</td>
-                            <td class="val">{{ $statistikSetoran['murajaah'] }} kali</td>
-                        </tr>
-                        <tr>
-                            <td class="lbl"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#9333ea;margin-right:6px;"></span>Tilawah</td>
-                            <td class="val">{{ $statistikSetoran['tilawah'] }} kali</td>
+                            <td>
+                                <div class="stat-highlight-lbl">Progress {{ $metodeLabel }} Jilid {{ $jilidAktif }}</div>
+                                <div style="font-size:8.5px;color:#6b7280;">{{ $halTersetor }} dari {{ $halTotalJilid }} halaman (Hafalan)</div>
+                            </td>
+                            <td class="stat-highlight-val">{{ $progressJilid }}%</td>
                         </tr>
                     </table>
                 </div>
+                @elseif(!$isJilid)
+                <div class="stat-highlight">
+                    <table class="stat-highlight-table">
+                        <tr>
+                            <td>
+                                <div class="stat-highlight-lbl">Pencapaian Target Hafalan</div>
+                                <div style="font-size:8.5px;color:#6b7280;">{{ $statistikSetoran['total_juz_hafalan'] }} dari {{ $statistikSetoran['target_juz'] }} Juz</div>
+                            </td>
+                            <td class="stat-highlight-val">{{ $statistikSetoran['persentase_target'] }}%</td>
+                        </tr>
+                    </table>
+                </div>
+                @endif
+            </div>
             </div>
         </td>
 
@@ -823,7 +873,7 @@
 {{-- ============================================================ --}}
 <div class="page-break"></div>
 
-<table class="accent-bar" style="width:100%;border-collapse:collapse;"><tr><td style="height:4px;background-color:#4f46e5;font-size:0;line-height:0;border-radius:2px;">&nbsp;</td></tr></table>
+<table class="accent-bar" style="width:100%;border-collapse:collapse;"><tr><td style="height:4px;background-color:#D97757;font-size:0;line-height:0;border-radius:2px;">&nbsp;</td></tr></table>
 
 <div class="doc-header">
     <table class="doc-header-table">
@@ -871,7 +921,7 @@
                             <span class="cat-dot {{ $dotClass }}"></span>
                             <span class="cat-name">{{ $kategori }}</span>
                         </td>
-                        <td class="cat-count">{{ count($setorans[$kategori]) }} surat</td>
+                        <td class="cat-count">{{ count($setorans[$kategori]) }} {{ $isJilid ? 'jilid' : 'surat' }}</td>
                     </tr>
                 </table>
             </div>
@@ -879,7 +929,7 @@
                 <thead>
                     <tr>
                         <th style="width:6%;" class="tc">No</th>
-                        <th style="width:56%;">Surah &amp; Ayat</th>
+                        <th style="width:56%;">{{ $isJilid ? 'Jilid & Halaman' : 'Surah & Ayat' }}</th>
                         <th style="width:18%;" class="tc">Jumlah</th>
                         <th style="width:20%;" class="tc">Rata-rata</th>
                     </tr>
@@ -887,11 +937,15 @@
                 <tbody>
                     @php $no = 1; @endphp
                     @foreach($setorans[$kategori] as $suratKey => $data)
+                    @php
+                        // Baris ini jilid-based? (Iqro / Aisar / Ummi)
+                        $barisJilid = (bool) preg_match('/^(Iqro|Aisar|Ummi)\s+Jilid\s+\d+/i', (string) $data['surat_start']);
+                    @endphp
                     <tr>
                         <td class="tc"><span class="row-num">{{ str_pad($no++, 2, '0', STR_PAD_LEFT) }}</span></td>
                         <td>
                             <span class="surat-name">{{ $data['surat_start'] }}@if($data['surat_start'] != $data['surat_end']) — {{ $data['surat_end'] }}@endif</span>
-                            <span class="ayat-range">Ayat {{ $data['ayat_start_min'] }}–{{ $data['ayat_end_max'] }}</span>
+                            <span class="ayat-range">{{ $barisJilid ? 'Halaman' : 'Ayat' }} {{ $data['ayat_start_min'] }}–{{ $data['ayat_end_max'] }}</span>
                         </td>
                         <td class="tc"><span class="count-pill">{{ $data['jumlah_setoran'] }}×</span></td>
                         <td class="tc">
@@ -922,7 +976,7 @@
 {{-- ============================================================ --}}
 <div class="page-break"></div>
 
-<table class="accent-bar" style="width:100%;border-collapse:collapse;"><tr><td style="height:4px;background-color:#4f46e5;font-size:0;line-height:0;border-radius:2px;">&nbsp;</td></tr></table>
+<table class="accent-bar" style="width:100%;border-collapse:collapse;"><tr><td style="height:4px;background-color:#D97757;font-size:0;line-height:0;border-radius:2px;">&nbsp;</td></tr></table>
 
 <div class="doc-header">
     <table class="doc-header-table">
@@ -993,15 +1047,15 @@
 @php
     $pctHadirFull = $statistikPresensi['total_hari'] > 0 ? round(($statistikPresensi['hadir'] / $statistikPresensi['total_hari']) * 100, 1) : 0;
 @endphp
-<div style="margin-top:6px; padding:14px 16px; background:#eef2ff; border-left:3px solid #4f46e5; border-radius:3px;">
+<div style="margin-top:6px; padding:14px 16px; background:#FBF0EB; border-left:3px solid #D97757; border-radius:3px;">
     <table style="width:100%;">
         <tr>
             <td>
-                <div style="font-size:8px; font-weight:700; color:#4f46e5; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:2px;">Persentase Kehadiran</div>
+                <div style="font-size:8px; font-weight:700; color:#D97757; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:2px;">Persentase Kehadiran</div>
                 <div style="font-size:8.5px; color:#6b7280;">{{ $statistikPresensi['hadir'] }} dari {{ $statistikPresensi['total_hari'] }} hari</div>
             </td>
             <td style="text-align:right;">
-                <div style="font-size:22px; font-weight:700; color:#1e1b4b; line-height:1;">{{ $pctHadirFull }}%</div>
+                <div style="font-size:22px; font-weight:700; color:#7C3D26; line-height:1;">{{ $pctHadirFull }}%</div>
             </td>
         </tr>
     </table>

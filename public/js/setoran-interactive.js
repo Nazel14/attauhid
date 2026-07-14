@@ -472,7 +472,7 @@ function _sliceCanvasFixed(canvas, maxPageHeight) {
     console.log(`🔍 Pre-computing row map (cH=${cH})...`);
     const rowMap = new Uint8Array(cH);
 
-    const BG_R = 30, BG_G = 58, BG_B = 95, COLOR_THRESHOLD = 25;
+    const BG_R = 62, BG_G = 61, BG_B = 58, COLOR_THRESHOLD = 25;
     const fullData = ctx2.getImageData(0, 0, cW, cH).data;
 
     for (let y = 0; y < cH; y++) {
@@ -666,7 +666,7 @@ function _sliceCanvasFixed(canvas, maxPageHeight) {
         pc.height = maxPageHeight;
         const ctx = pc.getContext('2d');
 
-        ctx.fillStyle = '#1e3a5f';
+        ctx.fillStyle = '#3E3D3A';
         ctx.fillRect(0, 0, cW, maxPageHeight);
 
         ctx.drawImage(
@@ -722,10 +722,16 @@ async function captureDesktop_v11_2(quranDisplay) {
     clonedElement.style.cssText = [
         'position:absolute', 'left:-9999px', 'top:0',
         'overflow:visible!important', 'max-height:none!important', 'height:auto!important',
-        `width:${effectiveWidth}px`, 'background-color:#1e3a5f',
+        `width:${effectiveWidth}px`, 'background-color:#3E3D3A',
         'padding:12px 12px 60px 12px',
         "font-family:'Amiri Quran',serif"
     ].join(';');
+
+    // ✅ FIX: matiin border/ring/radius bawaan #quranDisplay → garis terluar hilang
+    clonedElement.style.setProperty('border',        'none', 'important');
+    clonedElement.style.setProperty('box-shadow',    'none', 'important'); // ring Tailwind = box-shadow
+    clonedElement.style.setProperty('border-radius', '0',    'important');
+    clonedElement.style.setProperty('outline',       'none', 'important');
 
     const fontShrinkStyle = document.createElement('style');
     fontShrinkStyle.textContent = `
@@ -743,7 +749,7 @@ async function captureDesktop_v11_2(quranDisplay) {
 
     const canvas = await html2canvas(clonedElement, {
         scale: 2, useCORS: true, allowTaint: true,
-        backgroundColor: '#1e3a5f', logging: false,
+        backgroundColor: '#3E3D3A', logging: false,
         width: clonedElement.scrollWidth, height: clonedElement.scrollHeight,
         windowWidth: clonedElement.scrollWidth, windowHeight: clonedElement.scrollHeight,
         scrollX: 0, scrollY: 0
@@ -812,10 +818,16 @@ async function captureMobile_v11_61(quranDisplay, renderWidth) {
         'max-height:none!important',
         'height:auto!important',
         `width:${RENDER_WIDTH}px`,
-        'background-color:#1e3a5f',
+        'background-color:#3E3D3A',
         'padding:16px 24px 60px 24px',
         "font-family:'Amiri Quran',serif",
     ].join(';');
+
+    // ✅ FIX: matiin border/ring/radius bawaan #quranDisplay → garis terluar hilang
+    clonedElement.style.setProperty('border',        'none', 'important');
+    clonedElement.style.setProperty('box-shadow',    'none', 'important');
+    clonedElement.style.setProperty('border-radius', '0',    'important');
+    clonedElement.style.setProperty('outline',       'none', 'important');
 
     document.body.appendChild(clonedElement);
     await new Promise(resolve => setTimeout(resolve, 2500));
@@ -828,7 +840,7 @@ async function captureMobile_v11_61(quranDisplay, renderWidth) {
         scale: SCALE,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#1e3a5f',
+        backgroundColor: '#3E3D3A',
         logging: false,
         width: RENDER_WIDTH,
         height: actualHeight,
@@ -853,7 +865,7 @@ async function captureTabletMobile_v11_37(quranDisplay, renderWidth, pageRatio) 
     wrapper.id    = `quranDisplay-fullwrap-${Date.now()}`;
     wrapper.style.cssText = [
         'position:absolute', 'left:-9999px', 'top:0', 'overflow:visible',
-        `width:${renderWidth}px`, 'background-color:#1e3a5f',
+        `width:${renderWidth}px`, 'background-color:#3E3D3A',
         'padding:0px 64px 60px 64px', 'margin:0', 'border:none',
         "font-family:'Amiri Quran',serif"
     ].join(';');
@@ -880,7 +892,7 @@ async function captureTabletMobile_v11_37(quranDisplay, renderWidth, pageRatio) 
 
     const canvas = await html2canvas(wrapper, {
         scale: 3, useCORS: true, allowTaint: true,
-        backgroundColor: '#1e3a5f', logging: false,
+        backgroundColor: '#3E3D3A', logging: false,
         width: wrapper.scrollWidth, height: wrapper.scrollHeight,
         windowWidth: wrapper.scrollWidth, windowHeight: wrapper.scrollHeight,
         scrollX: 0, scrollY: 0
@@ -912,7 +924,29 @@ async function captureQuranScreenshots(deviceType) {
 }
 
 // =====================================================
-// generatePDFContent — v11.74
+// generatePDFContent — v12.0 (DESAIN BARU: terracotta + cream, minimalis)
+//
+// GANTI SELURUH fungsi generatePDFContent LAMA di setoran-interactive.js
+// dengan fungsi ini. Semua logika ekstraksi data TIDAK diubah — hanya
+// template pdfHTML (CSS + markup) yang di-redesign.
+//
+// CATATAN:
+//   - Halaman INFO (header, tabel, nilai) = cream ivory + aksen terracotta.
+//   - Halaman SCREENSHOT Arab/Iqro TETAP navy #3E3D3A (teks putih) —
+//     tidak diubah, hanya menempel di bawah lewat ${screenshotHTML}.
+//   - DomPDF-safe: table-based, warna solid, TANPA flexbox / gradient.
+//     Kalau border-radius kecil tidak sempurna di DomPDF, jatuhnya jadi
+//     kotak — tetap rapi.
+//
+// PALETTE (design system raport-tahfizh):
+//   Terracotta  #D97757   (aksen utama)
+//   Terracotta-  #BE5D3D  (aksen gelap / teks di atas tint)
+//   Ivory       #FAF9F5   (latar halaman)
+//   Cream       #F5F4EF   (header tabel)
+//   Tint        #FBEDE7   (latar nilai / pill aksen)
+//   Ink         #3E3D3A   (teks utama - coal)
+//   Muted       #78716C   (label - stone)
+//   Line        #ECE9E3   (border hangat)
 // =====================================================
 async function generatePDFContent(deviceType = 'desktop') {
     try {
@@ -924,11 +958,12 @@ async function generatePDFContent(deviceType = 'desktop') {
 
         const formEl             = document.getElementById(activeMode === 'Combined' ? 'formCombined' : 'formSetoranOnly');
         const screenshotDataUrls = await captureQuranScreenshots(deviceType);
+
         // ✅ Deteksi mode Iqro untuk PDF
         const metodeVal = formEl?.querySelector('[name="metode"]')?.value || '';
-        const isIqro = (metodeVal === 'Iqro' || metodeVal === 'Ummi') ||
-                       !!document.getElementById('quranDisplay')?.querySelector('.iqro-page');
-         const iqroJilid    = formEl?.querySelector('[name="iqro_jilid"]')?.value
+        const isIqro = ['Iqro', 'Ummi', 'Aisar'].includes(metodeVal) ||
+               !!document.getElementById('quranDisplay')?.querySelector('.iqro-page');
+        const iqroJilid    = formEl?.querySelector('[name="iqro_jilid"]')?.value
                           || document.getElementById('iqroJilidHidden' + activeMode)?.value
                           || (document.getElementById('displayJuzRange')?.textContent || '').replace(/\D+/g, '')
                           || '1';
@@ -955,12 +990,10 @@ async function generatePDFContent(deviceType = 'desktop') {
         const santriSelectId = activeMode === 'SetoranOnly' ? 'santriSelectSetoranOnly' : 'santriSelectCombined';
         const santriSelectEl = document.getElementById(santriSelectId);
         if (santriSelectEl) {
-            // Coba ambil dari option yang ter-select
             if (santriSelectEl.selectedIndex > 0) {
                 const txt = santriSelectEl.options[santriSelectEl.selectedIndex]?.text?.trim();
                 if (txt && txt !== '-- Pilih Santri --') namaSantri = txt;
             }
-            // Fallback: kalau pakai custom select widget, baca dari form
             if (namaSantri === '-' && formEl) {
                 const santriIdVal = formEl.querySelector('[name="santri_id"]')?.value;
                 if (santriIdVal) {
@@ -1016,8 +1049,26 @@ async function generatePDFContent(deviceType = 'desktop') {
                 screenshotHTML += `<div class="sp-page"><img class="sp-img" src="${dataUrl}"></div>\n`;
             });
         } else {
-            screenshotHTML = '<p style="color:#999;font-size:9px;padding:10px;">Screenshot tidak tersedia.</p>';
+            screenshotHTML = '<p style="color:#A8A29E;font-size:9px;padding:10px;">Screenshot tidak tersedia.</p>';
         }
+
+        // ── Baris tabel info (cabang Iqro / Al-Qur'an) ────────────────────
+        const rowsHTML = isIqro ? `
+            <tr><td class="k">Nama Santri</td> <td class="v">${namaSantri}</td></tr>
+            <tr><td class="k">Metode</td>      <td class="v">${metodeVal || 'Iqro'}</td></tr>
+            <tr><td class="k">Jilid</td>       <td class="v">Jilid ${iqroJilid}</td></tr>
+            <tr><td class="k">Halaman</td>     <td class="v">${iqroHalStart} &ndash; ${iqroHalEnd} <span class="muted">(Total ${iqroJumlahHal})</span></td></tr>
+            <tr><td class="k">Total Kata</td>  <td class="v">${totalKata}</td></tr>
+            <tr><td class="k">Catatan Guru</td><td class="v">${catatanGuru || '-'}</td></tr>
+        ` : `
+            <tr><td class="k">Nama Santri</td> <td class="v">${namaSantri}</td></tr>
+            <tr><td class="k">Surat</td>       <td class="v">${suratStart} &ndash; ${suratEnd}</td></tr>
+            <tr><td class="k">Ayat</td>        <td class="v">${ayatStart} &ndash; ${ayatEnd}</td></tr>
+            <tr><td class="k">Halaman</td>     <td class="v">${pageStart} &ndash; ${pageEnd} <span class="muted">(Total ${totalPage})</span></td></tr>
+            <tr><td class="k">Total Juz</td>   <td class="v">${totalJuz}</td></tr>
+            <tr><td class="k">Total Kata</td>  <td class="v">${totalKata}</td></tr>
+            <tr><td class="k">Catatan Guru</td><td class="v">${catatanGuru || '-'}</td></tr>
+        `;
 
         const pdfHTML = `<!DOCTYPE html>
 <html>
@@ -1027,89 +1078,99 @@ async function generatePDFContent(deviceType = 'desktop') {
 @page { margin: 0; size: ${cfg.pageSize}; }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; orphans: 1; widows: 1; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #fff; color: #111; font-size: ${f.body}; line-height: 1.6; }
-.page-info { display: block; padding: ${cfg.pageInfoPadding}; page-break-after: always; break-after: page; }
-.header { text-align:center; margin-bottom:14px; padding-bottom:8px; border-bottom:2.5px solid #1e3a5f; }
-h1 { font-size:${f.h1}; font-weight:700; color:#1e3a5f; margin-bottom:4px; line-height:1.2; }
-.subtitle { font-size:${f.body}; color:#555; }
-h2 { font-size:${f.h2}; font-weight:700; margin:14px 0 6px 0; padding-bottom:3px; border-bottom:1.5px solid #d0d8f0; color:#1e3a5f; }
-.info-table { width:100%; border-collapse:collapse; margin-bottom:8px; }
-.info-table td { padding:5px 8px; border:none; font-size:${f.body}; line-height:1.8; vertical-align:top; }
-.info-table td:first-child { font-weight:700; color:#444; width:130px; white-space:nowrap; }
-.info-table td:last-child { color:#111; }
-.info-table tr:nth-child(even) td { background-color:#f7f9ff; }
-table.ct { width:100%; border-collapse:collapse; margin-top:6px; }
-table.ct th, table.ct td { padding:${cfg.infoPadding}; text-align:left; border:1px solid #dde3f0; font-size:${cfg.tableFontSize}; line-height:1.7; }
-table.ct th { background:#eef2ff; font-weight:700; color:#1e3a5f; }
-table.ct td { color:#222; }
-.score { text-align:center; margin:14px 0 8px 0; padding:12px 10px; border:2.5px solid #1e3a5f; border-radius:8px; background:#f4f7ff; }
-.score-label { font-size:${f.body}; font-weight:600; color:#555; margin-bottom:5px; }
-.score-value { font-size:${f.score}; font-weight:700; color:#1e3a5f; line-height:1; }
-.footer { margin-top:12px; text-align:center; font-size:9px; color:#aaa; border-top:1px solid #eee; padding-top:5px; }
+body {
+    font-family: 'DejaVu Sans', Arial, sans-serif;
+    background: #FAF9F5; color: #3E3D3A;
+    font-size: ${f.body}; line-height: 1.6;
+}
+.page-info { display: block; padding: ${cfg.pageInfoPadding}; background: #FAF9F5; }
 
-.sp-page { 
-    width: 100%; 
-    margin: 0; 
-    padding: 0;
-    overflow: hidden; 
-    background: #1e3a5f; 
-    page-break-after: always;
-    break-after: page;
-    page-break-inside: avoid;
-    break-inside: avoid;
+/* ── Header ─────────────────────────────────────── */
+.hdr { padding-bottom: 16px; margin-bottom: 20px; border-bottom: 1px solid #ECE9E3; }
+.accent-line { width: 46px; height: 4px; background: #D97757; border-radius: 3px; margin-bottom: 12px; }
+.brand { font-size: ${f.h1}; font-weight: 700; letter-spacing: -0.6px; color: #3E3D3A; margin: 0 0 10px 0; line-height: 1.1; }
+.pill {
+    display: inline-block; padding: 4px 12px; border-radius: 20px;
+    font-size: ${f.body}; font-weight: 600; margin-right: 7px;
+    background: #F1EEE8; color: #57534E; border: 1px solid #E7E3DB;
 }
-.sp-page:last-child {
-    page-break-after: auto;
-    break-after: auto;
+.pill-accent { background: #FBEDE7; color: #BE5D3D; border-color: #F1D4C7; }
+
+/* ── Section label ──────────────────────────────── */
+.sec { font-size: ${f.h2}; font-weight: 700; color: #3E3D3A; margin: 20px 0 9px 0; letter-spacing: -0.2px; }
+.sec-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #D97757; margin-right: 8px; vertical-align: middle; }
+
+/* ── Info card ──────────────────────────────────── */
+.card { background: #FFFFFF; border: 1px solid #ECE9E3; border-radius: 12px; overflow: hidden; }
+.info-table { width: 100%; border-collapse: collapse; }
+.info-table td { padding: 10px 16px; font-size: ${f.body}; line-height: 1.5; vertical-align: top; border-bottom: 1px solid #F2EFEA; }
+.info-table tr:last-child td { border-bottom: none; }
+.info-table td.k { font-weight: 600; color: #78716C; width: 140px; white-space: nowrap; }
+.info-table td.v { color: #3E3D3A; }
+.muted { color: #A8A29E; font-weight: 400; }
+
+/* ── Detail Koreksi ─────────────────────────────── */
+table.ct { width: 100%; border-collapse: collapse; background: #FFFFFF; border: 1px solid #ECE9E3; border-radius: 12px; overflow: hidden; }
+table.ct th { background: #F5F4EF; font-weight: 700; color: #57534E; text-align: left; padding: ${cfg.infoPadding}; font-size: ${cfg.tableFontSize}; border-bottom: 1px solid #ECE9E3; }
+table.ct td { padding: ${cfg.infoPadding}; font-size: ${cfg.tableFontSize}; color: #3E3D3A; border-bottom: 1px solid #F2EFEA; }
+table.ct tr:last-child td { border-bottom: none; }
+.err-name { font-weight: 600; padding-left: 14px !important; }
+.err-k { border-left: 3px solid #22c55e; }
+.err-t { border-left: 3px solid #eab308; }
+.err-p { border-left: 3px solid #ef4444; }
+.ket { color: #A8A29E; }
+
+/* ── Nilai ──────────────────────────────────────── */
+.score { margin-top: 18px; background: #FBEDE7; border: 1px solid #F1D4C7; border-radius: 14px; padding: 16px; text-align: center; }
+.score-label { font-size: ${f.body}; font-weight: 700; color: #BE5D3D; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.6px; }
+.score-value { font-size: ${f.score}; font-weight: 800; color: #D97757; line-height: 1; }
+
+.footer { margin-top: 18px; text-align: center; font-size: 9px; color: #A8A29E; }
+
+/* ── Halaman screenshot (TETAP navy) ────────────── */
+.sp-page {
+    width: 100%; margin: 0; padding: 0; overflow: hidden;
+    background: #3E3D3A;
+    page-break-after: always; break-after: page;
+    page-break-inside: avoid; break-inside: avoid;
 }
-.sp-img { 
-    display: block; 
-    width: 100%; 
-    height: auto; 
-    margin: 0; 
-    padding: 0; 
-    border: 0; 
-}
+.sp-page:last-child { page-break-after: auto; break-after: auto; }
+.sp-img { display: block; width: 100%; height: auto; margin: 0; padding: 0; border: 0; }
 </style>
 </head>
 <body>
 <div class="page-info">
-    <div class="header">
-        <h1>Setoran Tahfizh</h1>
-        <div class="subtitle">${tanggal}&nbsp;&nbsp;|&nbsp;&nbsp;${kategori}</div>
+    <div class="hdr">
+        <div class="accent-line"></div>
+        <div class="brand">Setoran Tahfizh</div>
+        <div>
+            <span class="pill">${tanggal}</span>
+            <span class="pill pill-accent">${kategori}</span>
+        </div>
     </div>
-    <h2>Info Setoran</h2>
-    <table class="info-table">
-        ${isIqro ? `
-        <tr><td>Nama Santri</td>  <td>${namaSantri}</td></tr>
-        <tr><td>Metode</td>       <td>${metodeVal || 'Iqro'}</td></tr>
-        <tr><td>Jilid</td>        <td>Jilid ${iqroJilid}</td></tr>
-        <tr><td>Halaman</td>      <td>${iqroHalStart} - ${iqroHalEnd} (Total: ${iqroJumlahHal})</td></tr>
-        <tr><td>Total Kata</td>   <td>${totalKata}</td></tr>
-        <tr><td>Catatan Guru</td> <td>${catatanGuru || '-'}</td></tr>
-        ` : `
-        <tr><td>Nama Santri</td>  <td>${namaSantri}</td></tr>
-        <tr><td>Surat</td>        <td>${suratStart} - ${suratEnd}</td></tr>
-        <tr><td>Ayat</td>         <td>${ayatStart} - ${ayatEnd}</td></tr>
-        <tr><td>Halaman</td>      <td>${pageStart} - ${pageEnd} (Total: ${totalPage})</td></tr>
-        <tr><td>Total Juz</td>    <td>${totalJuz}</td></tr>
-        <tr><td>Total Kata</td>   <td>${totalKata}</td></tr>
-        <tr><td>Catatan Guru</td> <td>${catatanGuru || '-'}</td></tr>
-        `}
-    </table>
-    <h2>Detail Koreksi</h2>
+
+    <div class="sec"><span class="sec-dot"></span>Info Setoran</div>
+    <div class="card">
+        <table class="info-table">${rowsHTML}</table>
+    </div>
+
+    <div class="sec"><span class="sec-dot"></span>Detail Koreksi</div>
     <table class="ct">
-        <thead><tr><th>Jenis Kesalahan</th><th>Jumlah</th><th>Keterangan</th></tr></thead>
+        <thead>
+            <tr><th>Jenis Kesalahan</th><th>Jumlah</th><th>Keterangan</th></tr>
+        </thead>
         <tbody>
-            <tr><td style="border-left:4px solid #22c55e;padding-left:8px;">Kelancaran</td><td>${fmtCount(kesalahanCount.kelancaran)}</td><td>-4 poin per kata</td></tr>
-            <tr><td style="border-left:4px solid #eab308;padding-left:8px;">Tajwid</td><td>${fmtCount(kesalahanCount.tajwid)}</td><td>-4 poin per kata</td></tr>
-            <tr><td style="border-left:4px solid #ef4444;padding-left:8px;">Pelafalan</td><td>${fmtCount(kesalahanCount.pelafalan)}</td><td>-4 poin per kata</td></tr>
+            <tr><td class="err-name err-k">Kelancaran</td><td>${fmtCount(kesalahanCount.kelancaran)}</td><td class="ket">-4 poin per kata</td></tr>
+            <tr><td class="err-name err-t">Tajwid</td>    <td>${fmtCount(kesalahanCount.tajwid)}</td>    <td class="ket">-4 poin per kata</td></tr>
+            <tr><td class="err-name err-p">Pelafalan</td> <td>${fmtCount(kesalahanCount.pelafalan)}</td> <td class="ket">-4 poin per kata</td></tr>
         </tbody>
     </table>
+
     <div class="score">
         <div class="score-label">Nilai Akhir</div>
         <div class="score-value">${nilai}</div>
     </div>
+
     <div class="footer">Dicetak: ${new Date().toLocaleString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
 </div>${screenshotHTML}</body>
 </html>`;
@@ -1206,13 +1267,13 @@ function setupNativeFormValidation() {
             if (!sesi)      { e.preventDefault(); alert('⚠️ Pilih sesi terlebih dahulu!'); return; }
             if (!kategori)  { e.preventDefault(); alert('⚠️ Pilih kategori setoran!'); return; }
             const metodeVal = form.querySelector('[name="metode"]')?.value || '';
-            const isIqroMode = (metodeVal === 'Iqro' || metodeVal === 'Ummi');
+            const isIqroMode = ['Iqro', 'Ummi', 'Aisar'].includes(metodeVal);
 
             if (!isIqroMode && (!suratStart || !ayatStart || !suratEnd || !ayatEnd)) { e.preventDefault(); alert('⚠️ Lengkapi range surat dan ayat!'); return; }
             const quranDisplay = document.getElementById('quranDisplay');
             if (!quranDisplay || quranDisplay.innerHTML.trim() === '') {
                 e.preventDefault();
-                alert(isIqroMode ? '⚠️ Klik tombol "Tampilkan Halaman Iqro" terlebih dahulu sebelum menyimpan!' : "⚠️ Klik tombol \"Tampilkan Al-Qur'an\" terlebih dahulu sebelum menyimpan!");
+                alert(isIqroMode ? '⚠️ Klik tombol "Tampilkan Halaman" terlebih dahulu sebelum menyimpan!' : "⚠️ Klik tombol \"Tampilkan Al-Qur'an\" terlebih dahulu sebelum menyimpan!");
                 return;
             }
             e.preventDefault();

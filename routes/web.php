@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\MonitoringController as AdminMonitoringController
 use App\Http\Controllers\Admin\LogActivityController as AdminLogActivityController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\TahunAjaranController;
+use App\Http\Controllers\Admin\KenaikanController as AdminKenaikanController; 
 
 // --- Imports Controller Guru ---
 use App\Http\Controllers\Guru\DashboardController as GuruDashboardController;
@@ -60,6 +61,11 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+// Ambil CSRF token terbaru — dipakai form native (InputSetoran) sebelum submit
+Route::get('/csrf-token', fn () => response()->json(['token' => csrf_token()]))
+    ->middleware('web')
+    ->name('csrf.token');
 
 /* --------------------------------------
  * 2. Rute ADMIN & SUPER ADMIN
@@ -177,7 +183,9 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
     // Dashboard
     Route::get('/dashboard', [GuruDashboardController::class, 'index'])->name('dashboard');
     // Naik Jilid Iqro (konfirmasi guru)
-    Route::post('/naik-jilid', [GuruDashboardController::class, 'naikkanJilid'])->name('naik-jilid');
+    Route::post('/santri/{santri}/naik-jilid', [GuruDashboardController::class, 'naikkanJilid'])
+    ->whereNumber('santri')
+    ->name('santri.naik-jilid');
     // Naik Kelas massal (guru langsung eksekusi, tanpa admin)
     Route::post('/naik-kelas', [GuruKenaikanController::class, 'naikkan'])->name('naik-kelas');
 
@@ -292,42 +300,48 @@ Route::middleware(['auth', 'role:guru'])->prefix('guru')->name('guru.')->group(f
             return response()->json([]);
         }
 
-        // Ambil semua setoran Iqro santri (deteksi via label "Iqro Jilid X")
-        $kelasId = \App\Models\Santri::where('id', $santriId)->value('kelas_id');
+        // Ambil semua setoran Iqro/Aisar santri (deteksi via label "Iqro Jilid X" / "Aisar Jilid X")
+$kelasId = \App\Models\Santri::where('id', $santriId)->value('kelas_id');
 
-        $rows = \App\Models\Setoran::where('santri_id', $santriId)
-            ->when($kelasId, fn($q) => $q->where('kelas_id', $kelasId))
-            ->where(function ($q) {
-                $q->where('surat_start', 'like', 'Iqro Jilid %')
-                ->orWhere('surat_end', 'like', 'Iqro Jilid %');
-            })
-            ->get(['surat_start', 'surat_end', 'ayat_start', 'ayat_end']);
+$rows = \App\Models\Setoran::where('santri_id', $santriId)
+    ->when($kelasId, fn($q) => $q->where('kelas_id', $kelasId))
+    ->where(function ($q) {
+        $q->where('surat_start', 'like', 'Iqro Jilid %')
+        ->orWhere('surat_start', 'like', 'Aisar Jilid %')
+        ->orWhere('surat_end', 'like', 'Iqro Jilid %')
+        ->orWhere('surat_end', 'like', 'Aisar Jilid %');
+    })
+    ->get(['surat_start', 'surat_end', 'ayat_start', 'ayat_end']);
 
-        // Hasil: { "1": [1,2,3,...], "2": [...] }  (jilid => daftar halaman)
-        $result = [];
-        foreach ($rows as $r) {
-            $label = $r->surat_start ?: $r->surat_end;
-            if (!preg_match('/Iqro Jilid (\d+)/', (string) $label, $m)) {
-                continue;
-            }
-            $jilid = (string) ((int) $m[1]);
+// Hasil: { "iqro": { "1": [1,2,...] }, "aisar": { "1": [46,...] } }
+$result = ['iqro' => [], 'aisar' => []];
+foreach ($rows as $r) {
+    $label = $r->surat_start ?: $r->surat_end;
+    if (!preg_match('/(Iqro|Aisar) Jilid (\d+)/', (string) $label, $m)) {
+        continue;
+    }
+    $metode = strtolower($m[1]);
+    $jilid  = (string) ((int) $m[2]);
 
-            $start = (int) $r->ayat_start;
-            $end   = (int) ($r->ayat_end ?: $r->ayat_start);
-            if ($start <= 0) continue;
-            if ($end < $start) { [$start, $end] = [$end, $start]; }
+    $start = (int) $r->ayat_start;
+    $end   = (int) ($r->ayat_end ?: $r->ayat_start);
+    if ($start <= 0) continue;
+    if ($end < $start) { [$start, $end] = [$end, $start]; }
 
-            for ($p = $start; $p <= $end; $p++) {
-                $result[$jilid][] = $p;
-            }
-        }
+    for ($p = $start; $p <= $end; $p++) {
+        $result[$metode][$jilid][] = $p;
+    }
+}
 
-        foreach ($result as $jilid => &$list) {
-            $list = array_values(array_unique($list));
-            sort($list);
-        }
+foreach ($result as $metode => &$byJilid) {
+    foreach ($byJilid as $jilid => &$list) {
+        $list = array_values(array_unique($list));
+        sort($list);
+    }
+}
+unset($byJilid, $list);
 
-        return response()->json($result);
+return response()->json($result);
     })->name('guru.iqro-santri');
     
     // Unified Input

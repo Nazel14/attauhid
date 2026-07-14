@@ -7,6 +7,7 @@ use App\Models\LogActivity;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class LogActivityController extends Controller
 {
@@ -47,22 +48,82 @@ class LogActivityController extends Controller
             $query->search($request->search);
         }
 
-        $logs          = $query->paginate(20)->withQueryString()->onEachSide(0);
+        $logs = $query->paginate(20)->withQueryString()->onEachSide(0);
+
+        // ✅ Serialize setiap item log jadi array plain agar field yang dipakai
+        // di frontend (formatted_activity_type, formatted_module, dsb) selalu
+        // ikut terkirim, terlepas dari $appends di model.
+        $logs->getCollection()->transform(function (LogActivity $log) {
+            return [
+                'id' => $log->id,
+                'user' => $log->user ? [
+                    'id' => $log->user->id,
+                    'name' => $log->user->name,
+                ] : null,
+                'role' => $log->role,
+                'activity_type' => $log->activity_type,
+                'formatted_activity_type' => $log->formatted_activity_type,
+                'module' => $log->module,
+                'formatted_module' => $log->formatted_module,
+                'description' => $log->description,
+                'created_at_full' => optional($log->created_at)->format('d/m/Y H:i'),
+                'created_at_short' => optional($log->created_at)->format('d/m H:i'),
+            ];
+        });
+
         $users         = User::orderBy('name')->get(['id', 'name', 'role']);
         $roles         = ['admin', 'guru', 'santri'];
         $modules       = $this->getModules();
         $activityTypes = $this->getActivityTypes();
         $stats         = $this->getStatistics($request);
 
-        return view('admin.logs.index', compact(
-            'logs', 'users', 'roles', 'modules', 'activityTypes', 'stats'
-        ));
+        // ✅ FIXED: sebelumnya view('admin.logs.index', ...) padahal frontend-nya
+        // React/Inertia. Ini menyebabkan halaman gagal merender komponen React.
+        return Inertia::render('Admin/Logs/Index', [
+            'logs'          => $logs,
+            'users'         => $users,
+            'roles'         => $roles,
+            'modules'       => $modules,
+            'activityTypes' => $activityTypes,
+            'stats'         => $stats,
+            'filters'       => $request->only([
+                'tab', 'role', 'module', 'activity_type', 'user_id', 'date_from', 'date_to', 'search',
+            ]),
+            'canManage' => auth()->user()->hasPermissionTo('kelola-admin'),
+        ]);
     }
 
     public function show(LogActivity $log)
     {
         $log->load('user');
-        return view('admin.logs.show', compact('log'));
+
+        // ✅ FIXED: view() -> Inertia::render(), data di-flatten jadi array plain.
+        return Inertia::render('Admin/Logs/Show', [
+            'log' => [
+                'id' => $log->id,
+                'user' => $log->user ? [
+                    'id' => $log->user->id,
+                    'name' => $log->user->name,
+                ] : null,
+                'role' => $log->role,
+                'activity_type' => $log->activity_type,
+                'formatted_activity_type' => $log->formatted_activity_type,
+                'module' => $log->module,
+                'formatted_module' => $log->formatted_module,
+                'description' => $log->description,
+                'ip_address' => $log->ip_address,
+                'user_agent' => $log->user_agent,
+                'old_values' => $log->old_values,
+                'new_values' => $log->new_values,
+                'model_type' => $log->model_type,
+                'model_type_short' => $log->model_type ? class_basename($log->model_type) : null,
+                'model_id' => $log->model_id,
+                'created_at_date' => optional($log->created_at)->format('d F Y'),
+                'created_at_time' => optional($log->created_at)->format('H:i:s'),
+                'created_at_human' => optional($log->created_at)->diffForHumans(),
+            ],
+            'canManage' => auth()->user()->hasPermissionTo('kelola-admin'),
+        ]);
     }
 
     public function cleanup(Request $request)
@@ -80,7 +141,7 @@ class LogActivityController extends Controller
 
         if ($count === 0) {
             return redirect()->route('admin.logs.index')
-                ->with('info', 'Tidak ada log yang perlu dihapus untuk periode yang dipilih.');
+                ->with('success', 'Tidak ada log yang perlu dihapus untuk periode yang dipilih.');
         }
 
         LogActivity::where('created_at', '<', $cutoffDate)->delete();

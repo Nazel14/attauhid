@@ -10,20 +10,52 @@ use App\Models\SantriTargetHafalan;
 use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class TahunAjaranController extends Controller
 {
     use LogsActivity;
 
     /**
-     * Daftar semua tahun ajaran
+     * Daftar semua tahun ajaran (Inertia + React)
      */
     public function index()
     {
-        $tahunAjarans = TahunAjaran::terbaru()->get();
-        $aktif        = TahunAjaran::getAktif();
+        $tahunAjarans = TahunAjaran::terbaru()
+            ->withCount(['presensis', 'setorans'])
+            ->get()
+            ->map(fn ($ta) => [
+                'id'                  => $ta->id,
+                'nama'                => $ta->nama,
+                'semester'            => (int) $ta->semester,
+                'label_lengkap'       => $ta->label_lengkap,
+                'is_aktif'            => (bool) $ta->is_aktif,
+                'keterangan'          => $ta->keterangan,
+                // Untuk tampilan
+                'mulai_fmt'           => $ta->tanggal_mulai->format('d M Y'),
+                'selesai_fmt'         => $ta->tanggal_selesai->format('d M Y'),
+                // Untuk isi form edit (input type=date)
+                'tanggal_mulai'       => $ta->tanggal_mulai->format('Y-m-d'),
+                'tanggal_selesai'     => $ta->tanggal_selesai->format('Y-m-d'),
+                'presensis_count'     => $ta->presensis_count,
+                'setorans_count'      => $ta->setorans_count,
+                // Sudah pernah dipakai & ditutup → terkunci permanen
+                'sudah_dipakai'       => ! is_null($ta->ditutup_pada),
+                'ditutup_fmt'         => $ta->ditutup_pada?->format('d M Y'),
+            ])
+            ->values();
 
-        return view('admin.tahun-ajaran.index', compact('tahunAjarans', 'aktif'));
+        $aktif = TahunAjaran::getAktif();
+
+        return Inertia::render('Admin/TahunAjaran/Index', [
+            'tahunAjarans' => $tahunAjarans,
+            'aktif' => $aktif ? [
+                'id'            => $aktif->id,
+                'label_lengkap' => $aktif->label_lengkap,
+                'mulai_fmt'     => $aktif->tanggal_mulai->format('d M Y'),
+                'selesai_fmt'   => $aktif->tanggal_selesai->format('d M Y'),
+            ] : null,
+        ]);
     }
 
     /**
@@ -38,8 +70,8 @@ class TahunAjaranController extends Controller
             'tanggal_selesai' => 'required|date|after:tanggal_mulai',
             'keterangan'      => 'nullable|string|max:255',
         ], [
-            'nama.required'            => 'Nama tahun ajaran wajib diisi. Contoh: 2025/2026',
-            'tanggal_selesai.after'    => 'Tanggal selesai harus setelah tanggal mulai.',
+            'nama.required'         => 'Nama tahun ajaran wajib diisi. Contoh: 2025/2026',
+            'tanggal_selesai.after' => 'Tanggal selesai harus setelah tanggal mulai.',
         ]);
 
         // Cek duplikat nama + semester
@@ -58,7 +90,8 @@ class TahunAjaranController extends Controller
             'semester'        => $validated['semester'],
             'tanggal_mulai'   => $validated['tanggal_mulai'],
             'tanggal_selesai' => $validated['tanggal_selesai'],
-            'is_aktif'        => false, // Baru dibuat = belum aktif
+            'is_aktif'        => false,
+            'ditutup_pada'    => null,
             'keterangan'      => $validated['keterangan'],
         ]);
 
@@ -69,11 +102,25 @@ class TahunAjaranController extends Controller
     }
 
     /**
-     * Update tahun ajaran
+     * Update tahun ajaran.
+     * Tahun ajaran yang sudah ditutup hanya boleh diubah keterangannya —
+     * mengubah periode/nama akan merusak data historis yang sudah terikat.
      */
     public function update(Request $request, TahunAjaran $tahunAjaran)
     {
         $oldValues = $tahunAjaran->only(['nama', 'semester', 'tanggal_mulai', 'tanggal_selesai', 'keterangan']);
+
+        if ($tahunAjaran->ditutup_pada) {
+            $validated = $request->validate([
+                'keterangan' => 'nullable|string|max:255',
+            ]);
+
+            $tahunAjaran->update(['keterangan' => $validated['keterangan'] ?? null]);
+            $this->logUpdate('tahun-ajaran', $tahunAjaran->label_lengkap, $tahunAjaran, $oldValues);
+
+            return redirect()->route('admin.tahun-ajaran.index')
+                ->with('success', "Keterangan {$tahunAjaran->label_lengkap} diperbarui. Periode tidak dapat diubah karena semester sudah ditutup.");
+        }
 
         $validated = $request->validate([
             'nama'            => 'required|string|max:20',
@@ -99,18 +146,23 @@ class TahunAjaranController extends Controller
         $this->logUpdate('tahun-ajaran', $tahunAjaran->label_lengkap, $tahunAjaran, $oldValues);
 
         return redirect()->route('admin.tahun-ajaran.index')
-            ->with('updated', "Tahun ajaran {$tahunAjaran->label_lengkap} berhasil diperbarui.");
+            ->with('success', "Tahun ajaran {$tahunAjaran->label_lengkap} berhasil diperbarui.");
     }
 
     /**
-     * Jadikan tahun ajaran ini AKTIF
-     * Ini adalah aksi paling penting: hanya 1 yang boleh aktif
+     * Jadikan tahun ajaran ini AKTIF (hanya 1 yang boleh aktif).
+     * Tahun ajaran yang sudah pernah ditutup TIDAK BISA dipakai lagi.
      */
     public function setAktif(TahunAjaran $tahunAjaran)
     {
         if ($tahunAjaran->is_aktif) {
             return redirect()->route('admin.tahun-ajaran.index')
-                ->with('info', "Tahun ajaran ini sudah aktif.");
+                ->with('success', 'Tahun ajaran ini sudah aktif.');
+        }
+
+        if ($tahunAjaran->ditutup_pada) {
+            return redirect()->route('admin.tahun-ajaran.index')
+                ->with('error', "Tahun ajaran {$tahunAjaran->label_lengkap} sudah pernah dipakai dan ditutup pada {$tahunAjaran->ditutup_pada->format('d M Y')}. Buat periode baru untuk melanjutkan.");
         }
 
         TahunAjaran::setAktif($tahunAjaran->id);
@@ -129,10 +181,8 @@ class TahunAjaranController extends Controller
     }
 
     /**
-     * TUTUP SEMESTER / NAIK KELAS
-     * Proses akhir semester:
-     * 1. Catat tanggal keluar semua santri di history kelas
-     * 2. Siapkan kolom untuk tahun ajaran berikutnya
+     * TUTUP SEMESTER / NAIK KELAS.
+     * Setelah ditutup, tahun ajaran lama dikunci permanen (ditutup_pada terisi).
      */
     public function tutupSemester(Request $request, TahunAjaran $tahunAjaran)
     {
@@ -150,15 +200,20 @@ class TahunAjaranController extends Controller
 
         $tahunAjaranBaru = TahunAjaran::findOrFail($request->tahun_ajaran_baru_id);
 
+        // Penjagaan utama: tahun ajaran bekas pakai tidak boleh dipilih lagi.
+        if ($tahunAjaranBaru->ditutup_pada) {
+            return redirect()->back()
+                ->with('error', "Tahun ajaran {$tahunAjaranBaru->label_lengkap} sudah pernah dipakai dan ditutup. Pilih atau buat periode yang belum pernah dipakai.");
+        }
+
         DB::transaction(function () use ($tahunAjaran, $tahunAjaranBaru) {
 
-            // 1. Tutup semua history kelas yang masih aktif (tanggal_keluar = NULL)
+            // 1. Tutup semua history kelas yang masih aktif
             SantriKelasHistory::where('tahun_ajaran_id', $tahunAjaran->id)
                 ->whereNull('tanggal_keluar')
                 ->update(['tanggal_keluar' => $tahunAjaran->tanggal_selesai]);
 
             // 2. Buat history kelas baru untuk tahun ajaran berikutnya
-            //    berdasarkan posisi kelas santri saat ini (santri.kelas_id)
             $santris = Santri::all();
             foreach ($santris as $santri) {
                 SantriKelasHistory::create([
@@ -169,7 +224,7 @@ class TahunAjaranController extends Controller
                     'keterangan'      => 'Otomatis dari tutup semester ' . $tahunAjaran->label_lengkap,
                 ]);
 
-                // 3. Salin target hafalan ke tahun ajaran baru (default sama dengan tahun ini)
+                // 3. Salin target hafalan ke tahun ajaran baru
                 $targetLama = SantriTargetHafalan::where('santri_id', $santri->id)
                     ->where('tahun_ajaran_id', $tahunAjaran->id)
                     ->first();
@@ -186,7 +241,13 @@ class TahunAjaranController extends Controller
                 );
             }
 
-            // 4. Aktifkan tahun ajaran baru, nonaktifkan yang lama
+            // 4. Kunci tahun ajaran lama — tidak bisa dipakai lagi selamanya
+            $tahunAjaran->update([
+                'is_aktif'     => false,
+                'ditutup_pada' => now(),
+            ]);
+
+            // 5. Aktifkan tahun ajaran baru
             TahunAjaran::setAktif($tahunAjaranBaru->id);
         });
 
@@ -195,16 +256,16 @@ class TahunAjaranController extends Controller
             'tahun-ajaran',
             "Menutup semester {$tahunAjaran->label_lengkap} → aktifkan {$tahunAjaranBaru->label_lengkap}",
             $tahunAjaran,
-            null,
-            null
+            ['ditutup_pada' => null],
+            ['ditutup_pada' => now()->toDateTimeString()]
         );
 
         return redirect()->route('admin.tahun-ajaran.index')
-            ->with('success', "Semester {$tahunAjaran->label_lengkap} berhasil ditutup. Sekarang aktif: {$tahunAjaranBaru->label_lengkap}");
+            ->with('success', "Semester {$tahunAjaran->label_lengkap} ditutup permanen. Sekarang aktif: {$tahunAjaranBaru->label_lengkap}");
     }
 
     /**
-     * Hapus tahun ajaran (hanya yang tidak aktif dan tidak punya data)
+     * Hapus tahun ajaran (hanya yang tidak aktif, belum ditutup, dan tidak punya data)
      */
     public function destroy(TahunAjaran $tahunAjaran)
     {
@@ -213,7 +274,11 @@ class TahunAjaranController extends Controller
                 ->with('error', 'Tahun ajaran yang sedang aktif tidak dapat dihapus.');
         }
 
-        // Cek apakah ada data presensi/setoran yang terikat
+        if ($tahunAjaran->ditutup_pada) {
+            return redirect()->route('admin.tahun-ajaran.index')
+                ->with('error', 'Tahun ajaran yang sudah ditutup adalah arsip dan tidak dapat dihapus.');
+        }
+
         $adaPresensi = $tahunAjaran->presensis()->exists();
         $adaSetoran  = $tahunAjaran->setorans()->exists();
 
@@ -229,6 +294,6 @@ class TahunAjaranController extends Controller
         $this->logDelete('tahun-ajaran', $label, $oldValues);
 
         return redirect()->route('admin.tahun-ajaran.index')
-            ->with('deleted', "Tahun ajaran {$label} berhasil dihapus.");
+            ->with('success', "Tahun ajaran {$label} berhasil dihapus.");
     }
 }

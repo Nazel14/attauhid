@@ -11,13 +11,19 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class AuthenticatedSessionController extends Controller
 {
-    public function create(): View
+    /**
+     * Tampilkan halaman login (Inertia + React).
+     */
+    public function create(): Response
     {
-        return view('auth.login');
+        return Inertia::render('Auth/Login', [
+            'status' => session('status'),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -66,7 +72,6 @@ class AuthenticatedSessionController extends Controller
                 'ip_address'    => $request->ip(),
                 'user_agent'    => $request->userAgent(),
             ]);
-
         } catch (\Exception $e) {
             Log::error('Failed to log login activity: ' . $e->getMessage());
         }

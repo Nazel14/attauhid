@@ -195,21 +195,42 @@ class Santri extends Model
     }
 
     public function getTargetDisplayAttribute(): string
-    {
-        return match ($this->target_metode) {
-            \App\Enums\MetodeTarget::Iqro  => 'Jilid ' . ($this->target_jilid ?? '-'),
-            default                        => rtrim(rtrim((string) $this->target_juz, '0'), '.') . ' Juz',
-        };
-    }
+{
+    return match ($this->target_metode) {
+        \App\Enums\MetodeTarget::Iqro,
+        \App\Enums\MetodeTarget::Aisar => 'Jilid ' . ($this->target_jilid ?? '-'),
+        default                        => rtrim(rtrim((string) $this->target_juz, '0'), '.') . ' Juz',
+    };
+}
 
-    // =====================================================
-    // IQRO — DETEKSI NAIK JILID
-    // =====================================================
+public function isIqro(): bool
+{
+    return $this->target_metode === \App\Enums\MetodeTarget::Iqro;
+}
 
-    public function isIqro(): bool
-    {
-        return $this->target_metode === \App\Enums\MetodeTarget::Iqro;
-    }
+public function isAisar(): bool
+{
+    return $this->target_metode === \App\Enums\MetodeTarget::Aisar;
+}
+
+/** Metode berbasis jilid (Iqro / Aisar) */
+public function isJilidBased(): bool
+{
+    return $this->target_metode instanceof \App\Enums\MetodeTarget
+        && $this->target_metode->isJilid();
+}
+
+/** Prefix label jilid sesuai metode target santri: "Iqro Jilid " / "Aisar Jilid " */
+public function jilidLabelPrefix(): string
+{
+    return $this->isAisar() ? 'Aisar Jilid ' : 'Iqro Jilid ';
+}
+
+/** Key config metode jilid: 'iqro' atau 'aisar' */
+public function jilidConfigKey(): string
+{
+    return $this->isAisar() ? 'aisar' : 'iqro';
+}
 
     /**
      * Daftar halaman (unik) yang SUDAH disetor untuk satu jilid Iqro.
@@ -217,9 +238,10 @@ class Santri extends Model
      */
     public function halamanIqroTersetor(int $jilid, ?string $sejak = null): array
 {
-    $label = 'Iqro Jilid ' . $jilid;
+    $label = $this->jilidLabelPrefix() . $jilid;
 
     $rows = $this->setorans()
+        ->where('kategori_setoran', 'Hafalan')   // ← tambah
         ->where(function ($q) use ($label) {
             $q->where('surat_start', $label)->orWhere('surat_end', $label);
         })
@@ -245,15 +267,16 @@ class Santri extends Model
      * dan siap naik ke jilid berikutnya. Tanpa syarat nilai.
      */
     public function isSiapNaikJilid(): bool
-    {
-        if (! $this->isIqro()) return false;
+{
+    if (! $this->isJilidBased()) return false;
 
-        $jilid    = (int) $this->target_jilid;
-        $maxJilid = (int) config('iqro.max_jilid', 6);
+    $cfg      = $this->jilidConfigKey(); // 'iqro' / 'aisar'
+    $jilid    = (int) $this->target_jilid;
+    $maxJilid = (int) config("$cfg.max_jilid", 6);
 
-        if ($jilid < 1 || $jilid >= $maxJilid) return false;
+    if ($jilid < 1 || $jilid >= $maxJilid) return false;
 
-        $totalHal = config("iqro.halaman_per_jilid.$jilid");
+    $totalHal = config("$cfg.halaman_per_jilid.$jilid");
         if (! $totalHal) return false; // jumlah halaman belum diketahui → jangan tebak
 
         $tersetor = $this->halamanIqroTersetor($jilid);
@@ -266,6 +289,32 @@ class Santri extends Model
 
         return true;
     }
+    /** Jilid tertinggi untuk metode aktif (iqro/aisar) */
+public function maxJilid(): int
+{
+    if (! $this->isJilidBased()) return 0;
+
+    $cfg = $this->jilidConfigKey();
+    $max = (int) config("$cfg.max_jilid", 0);
+
+    // fallback: hitung dari daftar halaman_per_jilid
+    return $max > 0 ? $max : count((array) config("$cfg.halaman_per_jilid", []));
+}
+
+/** Sudah di jilid terakhir DAN jilid itu tuntas → tidak ada jilid berikutnya */
+public function isJilidTamat(): bool
+{
+    if (! $this->isJilidBased()) return false;
+
+    $jilid = (int) $this->target_jilid;
+    $max   = $this->maxJilid();
+    if ($max < 1 || $jilid < $max) return false;
+
+    $totalHal = (int) config($this->jilidConfigKey() . ".halaman_per_jilid.$jilid", 0);
+    if ($totalHal < 1) return false;
+
+    return count($this->halamanIqroTersetor($jilid)) >= $totalHal;
+}
 
     /**
      * Scope: hanya santri aktif (belum lulus / keluar)
@@ -293,9 +342,10 @@ public function getTanggalMasukKelasAktif(): ?string
  */
 public function halamanIqroTersetorKelas(int $jilid, ?int $kelasId = null): array
 {
-    $label = 'Iqro Jilid ' . $jilid;
+    $label = $this->jilidLabelPrefix() . $jilid;
 
     $rows = $this->setorans()
+        ->where('kategori_setoran', 'Hafalan')   // ← tambah
         ->where(function ($q) use ($label) {
             $q->where('surat_start', $label)->orWhere('surat_end', $label);
         })

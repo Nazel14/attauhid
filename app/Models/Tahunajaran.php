@@ -18,6 +18,7 @@ class TahunAjaran extends Model
         'tanggal_mulai',
         'tanggal_selesai',
         'is_aktif',
+        'ditutup_pada',
         'keterangan',
     ];
 
@@ -26,6 +27,7 @@ class TahunAjaran extends Model
         'tanggal_mulai'   => 'date',
         'tanggal_selesai' => 'date',
         'is_aktif'        => 'boolean',
+        'ditutup_pada'    => 'datetime',
     ];
 
     // =====================================================
@@ -84,6 +86,22 @@ class TahunAjaran extends Model
         return $query->orderByDesc('tanggal_mulai');
     }
 
+    /**
+     * Scope: belum pernah dipakai — kandidat yang masih boleh diaktifkan
+     */
+    public function scopeBelumDipakai($query)
+    {
+        return $query->whereNull('ditutup_pada');
+    }
+
+    /**
+     * Scope: sudah ditutup — arsip permanen
+     */
+    public function scopeArsip($query)
+    {
+        return $query->whereNotNull('ditutup_pada');
+    }
+
     // =====================================================
     // STATIC HELPERS
     // =====================================================
@@ -107,14 +125,36 @@ class TahunAjaran extends Model
     }
 
     /**
-     * Set tahun ajaran aktif (nonaktifkan yang lain dulu)
+     * Set tahun ajaran aktif (nonaktifkan yang lain dulu).
+     * Tahun ajaran yang sudah ditutup TIDAK BOLEH diaktifkan lagi —
+     * penjagaan terakhir di level model, kalau-kalau ada pemanggil
+     * yang lupa mengecek.
      */
     public static function setAktif(int $id): void
     {
+        $target = self::findOrFail($id);
+
+        if ($target->ditutup_pada) {
+            throw new \RuntimeException(
+                "Tahun ajaran {$target->label_lengkap} sudah ditutup dan tidak dapat diaktifkan kembali."
+            );
+        }
+
         // Nonaktifkan semua
         self::query()->update(['is_aktif' => false]);
         // Aktifkan yang dipilih
         self::where('id', $id)->update(['is_aktif' => true]);
+    }
+
+    /**
+     * Tutup tahun ajaran ini secara permanen (jadi arsip).
+     */
+    public function tutup(): void
+    {
+        $this->update([
+            'is_aktif'     => false,
+            'ditutup_pada' => now(),
+        ]);
     }
 
     // =====================================================
@@ -144,6 +184,32 @@ class TahunAjaran extends Model
     public function getSemesterLabelAttribute(): string
     {
         return $this->semester == 1 ? 'Ganjil' : 'Genap';
+    }
+
+    /**
+     * Sudah pernah dipakai & ditutup → terkunci permanen.
+     */
+    public function getSudahDipakaiAttribute(): bool
+    {
+        return ! is_null($this->ditutup_pada);
+    }
+
+    /**
+     * Boleh dipakai / diaktifkan? (belum pernah ditutup)
+     */
+    public function getBolehDiaktifkanAttribute(): bool
+    {
+        return is_null($this->ditutup_pada) && ! $this->is_aktif;
+    }
+
+    /**
+     * Status ringkas: 'aktif' | 'arsip' | 'belum_dipakai'
+     */
+    public function getStatusAttribute(): string
+    {
+        if ($this->is_aktif) return 'aktif';
+        if ($this->ditutup_pada) return 'arsip';
+        return 'belum_dipakai';
     }
 
     /**

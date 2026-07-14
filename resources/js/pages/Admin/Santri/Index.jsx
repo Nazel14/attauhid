@@ -1,0 +1,193 @@
+import { useState, useEffect } from 'react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+
+/* ============================================================
+ * ICONS (inline, tanpa dependency)
+ * ============================================================ */
+const I = ({ d, className = 'w-4 h-4' }) => (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {d}
+    </svg>
+);
+const XIcon = (p) => <I {...p} d={<path d="M6 18L18 6M6 6l12 12" />} />;
+const ArrowLeftIcon = (p) => <I {...p} d={<path d="M10 19l-7-7m0 0l7-7m-7 7h18" />} />;
+const ArrowRightIcon = (p) => <I {...p} d={<path d="M14 5l7 7m0 0l-7 7m7-7H3" />} />;
+const PlusIcon = (p) => <I {...p} d={<path d="M12 4v16m8-8H4" />} />;
+const CheckCircle = (p) => <I {...p} d={<path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />} />;
+const AlertCircle = (p) => <I {...p} d={<path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />} />;
+const GraduationIcon = (p) => <I {...p} d={<path d="M12 14l9-5-9-5-9 5 9 5zm0 0v6m-9-6.5V15a9 9 0 0018 0v-2.5" />} />;
+
+/* ============================================================
+ * SUB-COMPONENTS
+ * ============================================================ */
+function Toast({ notif, onClose, duration = 10000 }) {
+    if (!notif) return null;
+    const success = notif.type === 'success';
+    return (
+        <>
+            <div
+                key={notif.id}
+                className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-[300] overflow-hidden rounded-2xl border border-stone-200 dark:border-coal-700 bg-white/95 dark:bg-coal-800/95 shadow-2xl backdrop-blur-md"
+                style={{ animation: 'toastIn .3s cubic-bezier(.21,1.02,.73,1)' }}
+                role="alert"
+            >
+                <div className="flex items-start gap-3 p-3.5">
+                    <span className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ${success ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300' : 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-300'}`}>
+                        {success ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                    </span>
+                    <div className="min-w-0 flex-1 pt-0.5">
+                        <p className={`text-xs font-bold ${success ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
+                            {success ? 'Berhasil' : 'Gagal'}
+                        </p>
+                        <p className="mt-0.5 break-words text-sm text-stone-600 dark:text-stone-300" dangerouslySetInnerHTML={{ __html: notif.message }} />
+                    </div>
+                    <button onClick={onClose} className="flex-shrink-0 rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-coal-700 dark:hover:text-stone-200 transition">
+                        <XIcon className="w-4 h-4" />
+                    </button>
+                </div>
+                <div className="h-1 w-full bg-stone-200 dark:bg-coal-700">
+                    <div className={`h-full ${success ? 'bg-emerald-500' : 'bg-red-500'}`}
+                        style={{ animation: `toastBar ${duration}ms linear forwards` }} />
+                </div>
+            </div>
+            <style>{`
+                @keyframes toastIn { from { opacity: 0; transform: translateY(-14px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+                @keyframes toastBar { from { width: 100%; } to { width: 0%; } }
+            `}</style>
+        </>
+    );
+}
+
+/* Preset visual per jenis kelas (gender_restriction) */
+const GENDER_THEME = {
+    campuran: { tint: 'bg-violet-50 dark:bg-violet-500/10', accent: 'text-violet-600 dark:text-violet-300', badge: 'bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-500/15 dark:text-violet-300 dark:border-violet-500/25', dot: 'bg-violet-500', label: 'Campuran' },
+    ikhwan:   { tint: 'bg-blue-50 dark:bg-blue-500/10',     accent: 'text-blue-600 dark:text-blue-300',     badge: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/25',       dot: 'bg-blue-500',   label: 'Ikhwan' },
+    akhwat:   { tint: 'bg-pink-50 dark:bg-pink-500/10',     accent: 'text-pink-600 dark:text-pink-300',     badge: 'bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-500/15 dark:text-pink-300 dark:border-pink-500/25',       dot: 'bg-pink-500',   label: 'Akhwat' },
+};
+
+function KelasCard({ kelas }) {
+    const theme = GENDER_THEME[kelas.gender_restriction] || GENDER_THEME.campuran;
+    const isCampuran = kelas.gender_restriction === 'campuran';
+    const isIkhwan = kelas.gender_restriction === 'ikhwan';
+
+    return (
+        <div className="group flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-stone-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5 dark:bg-coal-800 dark:ring-coal-700 dark:hover:shadow-black/30">
+            {/* Header — tint lembut */}
+            <div className={`px-4 pt-4 pb-3.5 ${theme.tint}`}>
+                <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                        <h3 className="truncate text-base font-bold text-stone-900 dark:text-stone-100">{kelas.name}</h3>
+                        <p className="mt-0.5 truncate text-[11px] text-stone-500 dark:text-stone-400">{kelas.guru_name || 'Belum ada guru'}</p>
+                    </div>
+                    <span className={`inline-flex flex-shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${theme.badge}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${theme.dot}`} />
+                        {theme.label}
+                    </span>
+                </div>
+                <div className="mt-3 flex items-baseline gap-1.5">
+                    <span className={`text-3xl font-black ${theme.accent}`}>{kelas.total_santri}</span>
+                    <span className="text-xs text-stone-500 dark:text-stone-400">santri</span>
+                </div>
+            </div>
+
+            {/* Body: statistik gender */}
+            <div className="flex-1 px-4 py-3">
+                {isCampuran ? (
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-xl border border-blue-200/70 bg-blue-50 px-3 py-2 text-center dark:border-blue-500/20 dark:bg-blue-500/10">
+                            <p className="mb-0.5 text-[10px] text-blue-500 dark:text-blue-400">Ikhwan</p>
+                            <p className="text-lg font-bold text-blue-600 dark:text-blue-300">{kelas.laki_laki}</p>
+                        </div>
+                        <div className="rounded-xl border border-pink-200/70 bg-pink-50 px-3 py-2 text-center dark:border-pink-500/20 dark:bg-pink-500/10">
+                            <p className="mb-0.5 text-[10px] text-pink-500 dark:text-pink-400">Akhwat</p>
+                            <p className="text-lg font-bold text-pink-600 dark:text-pink-300">{kelas.perempuan}</p>
+                        </div>
+                    </div>
+                ) : isIkhwan ? (
+                    <div className="rounded-xl border border-blue-200/70 bg-blue-50 px-3 py-2.5 text-center dark:border-blue-500/20 dark:bg-blue-500/10">
+                        <p className="mb-0.5 text-[10px] text-blue-500 dark:text-blue-400">Khusus Ikhwan</p>
+                        <p className="text-lg font-bold text-blue-600 dark:text-blue-300">{kelas.laki_laki} <span className="text-xs font-normal text-blue-500/70">santri</span></p>
+                    </div>
+                ) : (
+                    <div className="rounded-xl border border-pink-200/70 bg-pink-50 px-3 py-2.5 text-center dark:border-pink-500/20 dark:bg-pink-500/10">
+                        <p className="mb-0.5 text-[10px] text-pink-500 dark:text-pink-400">Khusus Akhwat</p>
+                        <p className="text-lg font-bold text-pink-600 dark:text-pink-300">{kelas.perempuan} <span className="text-xs font-normal text-pink-500/70">santriwati</span></p>
+                    </div>
+                )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 pb-4">
+                <Link href={route('admin.santris.detail', kelas.id)}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-claude-600 py-2.5 text-center text-xs font-bold text-white shadow-sm shadow-claude-500/20 transition hover:bg-claude-500 active:scale-95">
+                    Lihat Detail Santri <ArrowRightIcon className="w-3.5 h-3.5" />
+                </Link>
+            </div>
+        </div>
+    );
+}
+
+/* ============================================================
+ * MAIN PAGE
+ * ============================================================ */
+export default function Index({ kelasWithStats = [] }) {
+    const { flash = {} } = usePage().props;
+
+    const NOTIF_DURATION = 10000;
+    const [notif, setNotif] = useState(null);
+    useEffect(() => {
+        if (flash?.success || flash?.updated || flash?.deleted || flash?.error) {
+            const type = (flash.success || flash.updated || flash.deleted) ? 'success' : 'error';
+            setNotif({ message: flash.success || flash.updated || flash.deleted || flash.error, type, id: Date.now() });
+            const t = setTimeout(() => setNotif(null), NOTIF_DURATION);
+            return () => clearTimeout(t);
+        }
+    }, [flash]);
+
+    return (
+        <AuthenticatedLayout>
+            <Head title="Management Santri per Kelas" />
+            <Toast notif={notif} onClose={() => setNotif(null)} duration={NOTIF_DURATION} />
+
+            <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 py-6">
+
+                {/* Kembali ke Dashboard — mobile saja */}
+                <Link href={route('admin.dashboard')}
+                    className="mb-4 sm:hidden inline-flex items-center gap-1.5 rounded-xl border border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-stone-100 dark:hover:bg-coal-700 active:scale-95">
+                    <ArrowLeftIcon className="w-4 h-4" /> Kembali ke Dashboard
+                </Link>
+
+                {/* ===== HEADER ===== */}
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-claude-500 to-claude-600 flex items-center justify-center shadow-lg shadow-claude-500/25 flex-shrink-0">
+                        <GraduationIcon className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <h1 className="text-lg sm:text-xl font-bold text-stone-900 dark:text-stone-100">Management Santri per Kelas</h1>
+                        <p className="text-[11px] text-stone-500 dark:text-stone-500 mt-0.5">Pilih kelas untuk melihat dan mengelola santri</p>
+                    </div>
+                </div>
+
+                {/* ===== GRID KELAS CARDS ===== */}
+                {kelasWithStats.length === 0 ? (
+                    <div className="bg-white dark:bg-coal-800 border border-stone-200 dark:border-coal-700 rounded-2xl py-20 text-center shadow-sm dark:shadow-none">
+                        <div className="text-5xl mb-4">🏫</div>
+                        <p className="text-sm font-semibold text-stone-600 dark:text-stone-400">Belum ada kelas yang tersedia</p>
+                        <p className="text-xs text-stone-400 dark:text-stone-600 mt-1.5">Silakan tambahkan kelas terlebih dahulu</p>
+                        <Link href={route('admin.kelas.index')} className="inline-flex items-center gap-1.5 mt-4 px-4 py-2 bg-claude-600 hover:bg-claude-500 text-white text-xs font-bold rounded-xl transition">
+                            <PlusIcon className="w-3.5 h-3.5" /> Tambah Kelas
+                        </Link>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                        {kelasWithStats.map((kelas) => (
+                            <KelasCard key={kelas.id} kelas={kelas} />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </AuthenticatedLayout>
+    );
+}

@@ -9,17 +9,16 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\LogActivity;
+use Inertia\Inertia;
 
 class AdminController extends Controller
 {
     /**
-     * Display a listing of admin users.
+     * Display a listing of admin users (Inertia + React).
      */
     public function index(Request $request)
     {
-        // ✅ PERMISSION-BASED: Hanya tampilkan user dengan role 'admin'
-        $query = User::where('role', 'admin')
-            ->with('permissions'); // Load permissions, bukan roles
+        $query = User::where('role', 'admin')->with('permissions');
 
         // Search
         if ($request->filled('search')) {
@@ -27,17 +26,35 @@ class AdminController extends Controller
             $query->where('name', 'like', "%{$search}%");
         }
 
-        $admins = $query->latest()->paginate(10)->withQueryString();
+        $admins = $query->latest()->paginate(10)->withQueryString()
+            ->through(fn ($admin) => [
+                'id'                 => $admin->id,
+                'name'               => $admin->name,
+                'plain_password'     => $admin->plain_password,
+                'profile_photo_url'  => $admin->profile_photo ? asset('storage/' . $admin->profile_photo) : null,
+                'profile_photo_name' => $admin->profile_photo_name,
+                'is_super_admin'     => $admin->hasPermissionTo('kelola-admin'),
+                'is_self'            => $admin->id === auth()->id(),
+            ]);
 
-        return view('admin.admins.index', compact('admins'));
-    }
+        $superAdminCount = User::where('role', 'admin')
+            ->permission('kelola-admin')
+            ->count();
 
-    /**
-     * Show the form for creating a new admin.
-     */
-    public function create()
-    {
-        return view('admin.admins.create');
+        $regularAdminCount = User::where('role', 'admin')
+            ->whereDoesntHave('permissions', fn ($q) => $q->where('name', 'kelola-admin'))
+            ->count();
+
+        return Inertia::render('Admin/Admins/Index', [
+            'admins' => $admins,
+            'counts' => [
+                'superAdmin'   => $superAdminCount,
+                'regularAdmin' => $regularAdminCount,
+            ],
+            'filters' => [
+                'search' => $request->search ?? '',
+            ],
+        ]);
     }
 
     /**
@@ -48,13 +65,12 @@ class AdminController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:users,name'],
             'password' => ['required', 'confirmed', 'min:8'],
-            'is_super_admin' => ['required', 'boolean'], // ✅ Checkbox, bukan dropdown
+            'is_super_admin' => ['required', 'boolean'],
             'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ]);
 
         // ✅ VALIDASI BATASAN JUMLAH ADMIN
         if ($validated['is_super_admin']) {
-            // Hitung super admin = yang punya permission 'kelola-admin'
             $currentSuperAdminCount = User::where('role', 'admin')
                 ->permission('kelola-admin')
                 ->count();
@@ -65,7 +81,6 @@ class AdminController extends Controller
                     ->with('error', 'Maksimal hanya 3 Super Admin yang diperbolehkan!');
             }
         } else {
-            // Hitung admin biasa = yang tidak punya permission 'kelola-admin'
             $currentAdminCount = User::where('role', 'admin')
                 ->whereDoesntHave('permissions', function($q) {
                     $q->where('name', 'kelola-admin');
@@ -81,25 +96,23 @@ class AdminController extends Controller
 
         DB::beginTransaction();
         try {
-            // Create user
             $user = User::create([
                 'name' => $validated['name'],
                 'password' => Hash::make($validated['password']),
                 'plain_password' => $validated['password'],
-                'role' => 'admin', // ✅ Semua admin punya role 'admin'
+                'role' => 'admin',
             ]);
 
-            // ✅ ASSIGN ROLE 'admin' (bukan 'super-admin')
             $user->assignRole('admin');
 
-            // ✅ Upload foto profil jika ada (resize jadi persegi 300x300)
             if ($request->hasFile('profile_photo')) {
-                $user->profile_photo = $this->processProfilePhoto($request->file('profile_photo'));
+                $file = $request->file('profile_photo');
+                $user->profile_photo            = $this->processProfilePhoto($file);
+                $user->profile_photo_name       = $file->getClientOriginalName();
+                $user->profile_photo_updated_at = now();
                 $user->save();
             }
 
-            
-            // Log activity
             LogActivity::create([
                 'user_id'       => auth()->id(),
                 'role'          => 'admin',
@@ -131,65 +144,43 @@ class AdminController extends Controller
     }
 
     /**
-     * Show the form for editing the specified admin.
-     */
-    public function edit($id)
-    {
-        $admin = User::findOrFail($id);
-        
-        // Pastikan user yang diedit adalah admin
-        if ($admin->role !== 'admin') {
-            abort(404, 'User bukan admin');
-        }
-
-        // ✅ Cek apakah super admin berdasarkan permission
-        $isSuperAdmin = $admin->hasPermissionTo('kelola-admin');
-
-        return view('admin.admins.edit', compact('admin', 'isSuperAdmin'));
-    }
-
-    /**
      * Update the specified admin in storage.
      */
     public function update(Request $request, $id)
     {
         $admin = User::findOrFail($id);
-        
-        // Pastikan user yang diedit adalah admin
+
         if ($admin->role !== 'admin') {
             abort(404, 'User bukan admin');
         }
 
-        // Validasi
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:users,name,' . $admin->id],
             'is_super_admin' => ['required', 'boolean'],
             'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'delete_photo' => ['nullable', 'boolean'],
         ]);
 
-        // ✅ VALIDASI BATASAN SAAT MENGUBAH STATUS
         $currentIsSuperAdmin = $admin->hasPermissionTo('kelola-admin');
-        
+
         if ($currentIsSuperAdmin !== $validated['is_super_admin']) {
             if ($validated['is_super_admin']) {
-                // Berubah jadi super admin
                 $currentSuperAdminCount = User::where('role', 'admin')
                     ->permission('kelola-admin')
                     ->count();
-                
+
                 if ($currentSuperAdminCount >= 3) {
                     return back()
                         ->withInput()
                         ->with('error', 'Maksimal hanya 3 Super Admin yang diperbolehkan!');
                 }
             } else {
-                // Berubah jadi admin biasa
                 $currentAdminCount = User::where('role', 'admin')
                     ->whereDoesntHave('permissions', function($q) {
                         $q->where('name', 'kelola-admin');
                     })
                     ->count();
-                
+
                 if ($currentAdminCount >= 5) {
                     return back()
                         ->withInput()
@@ -205,27 +196,37 @@ class AdminController extends Controller
                 'is_super_admin' => $admin->hasPermissionTo('kelola-admin'),
             ];
 
-            // Update user
             $admin->update([
                 'name' => $validated['name'],
             ]);
 
-            // ✅ Update permission (bukan role!)
             if ($validated['is_super_admin']) {
                 $admin->givePermissionTo('kelola-admin');
             } else {
                 $admin->revokePermissionTo('kelola-admin');
             }
-            // ✅ Ganti foto profil jika ada upload baru
+
+            // Hapus foto jika diminta (jadi polosan)
+            if ($request->boolean('delete_photo') && $admin->profile_photo) {
+                if (Storage::disk('public')->exists($admin->profile_photo)) {
+                    Storage::disk('public')->delete($admin->profile_photo);
+                }
+                $admin->profile_photo      = null;
+                $admin->profile_photo_name = null;
+                $admin->save();
+            }
+
             if ($request->hasFile('profile_photo')) {
                 if ($admin->profile_photo && Storage::disk('public')->exists($admin->profile_photo)) {
                     Storage::disk('public')->delete($admin->profile_photo);
                 }
-                $admin->profile_photo = $this->processProfilePhoto($request->file('profile_photo'));
+                $file = $request->file('profile_photo');
+                $admin->profile_photo            = $this->processProfilePhoto($file);
+                $admin->profile_photo_name       = $file->getClientOriginalName();
+                $admin->profile_photo_updated_at = now();
                 $admin->save();
             }
 
-            // Log activity
             LogActivity::create([
                 'user_id'       => auth()->id(),
                 'role'          => 'admin',
@@ -263,18 +264,15 @@ class AdminController extends Controller
     public function destroy($id)
     {
         $admin = User::findOrFail($id);
-        
-        // Pastikan user yang dihapus adalah admin
+
         if ($admin->role !== 'admin') {
             abort(404, 'User bukan admin');
         }
 
-        // Tidak bisa hapus diri sendiri
         if ($admin->id === auth()->id()) {
             return back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri!');
         }
 
-        // ✅ SUPER ADMIN (punya permission kelola-admin) TIDAK BOLEH DIHAPUS
         if ($admin->hasPermissionTo('kelola-admin')) {
             return back()->with('error', 'Super Admin tidak dapat dihapus!');
         }
@@ -284,7 +282,6 @@ class AdminController extends Controller
             $userName = $admin->name;
             $isSuperAdmin = $admin->hasPermissionTo('kelola-admin');
 
-            // Log activity sebelum dihapus
             LogActivity::create([
                 'user_id'       => auth()->id(),
                 'role'          => 'admin',
@@ -300,6 +297,11 @@ class AdminController extends Controller
                 'ip_address'    => request()->ip(),
                 'user_agent'    => (string) request()->userAgent(),
             ]);
+
+            // Hapus file foto profil agar tidak jadi sampah di storage
+            if ($admin->profile_photo && Storage::disk('public')->exists($admin->profile_photo)) {
+                Storage::disk('public')->delete($admin->profile_photo);
+            }
 
             $admin->delete();
 
@@ -318,52 +320,51 @@ class AdminController extends Controller
     /**
      * Resize & crop foto jadi persegi (square) agar avatar tajam.
      */
-  private function processProfilePhoto($file): string
-{
-    $maxSize = 400;
-    $path = $file->store('profile-photos', 'public');
-    $fullPath = Storage::disk('public')->path($path);
+    private function processProfilePhoto($file): string
+    {
+        $maxSize = 400;
+        $path = $file->store('profile-photos', 'public');
+        $fullPath = Storage::disk('public')->path($path);
 
-    $info = getimagesize($fullPath);
-    if (!$info) return $path;
+        $info = getimagesize($fullPath);
+        if (!$info) return $path;
 
-    [$width, $height] = $info;
-    $mime = $info['mime'];
+        [$width, $height] = $info;
+        $mime = $info['mime'];
 
-    $src = match ($mime) {
-        'image/jpeg' => imagecreatefromjpeg($fullPath),
-        'image/png'  => imagecreatefrompng($fullPath),
-        default      => null,
-    };
-    if (!$src) return $path;
+        $src = match ($mime) {
+            'image/jpeg' => imagecreatefromjpeg($fullPath),
+            'image/png'  => imagecreatefrompng($fullPath),
+            default      => null,
+        };
+        if (!$src) return $path;
 
-    $min  = min($width, $height);
-    $srcX = (int) (($width - $min) / 2);
-    $srcY = ($height > $width) ? 0 : (int) (($height - $min) / 2); // ✅ potret crop dari atas
+        $min  = min($width, $height);
+        $srcX = (int) (($width - $min) / 2);
+        $srcY = ($height > $width) ? 0 : (int) (($height - $min) / 2);
 
-    $size  = min($min, $maxSize); // ✅ jangan upscale (anti-buram)
-    $dst   = imagecreatetruecolor($size, $size);
-    $isPng = $mime === 'image/png';
+        $size  = min($min, $maxSize);
+        $dst   = imagecreatetruecolor($size, $size);
+        $isPng = $mime === 'image/png';
 
-    if ($isPng) {
-        imagealphablending($dst, false);
-        imagesavealpha($dst, true);
-        $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
-        imagefill($dst, 0, 0, $transparent);
+        if ($isPng) {
+            imagealphablending($dst, false);
+            imagesavealpha($dst, true);
+            $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
+            imagefill($dst, 0, 0, $transparent);
+        }
+
+        imagecopyresampled($dst, $src, 0, 0, $srcX, $srcY, $size, $size, $min, $min);
+
+        if ($isPng) {
+            imagepng($dst, $fullPath, 6);
+        } else {
+            imagejpeg($dst, $fullPath, 95);
+        }
+
+        imagedestroy($src);
+        imagedestroy($dst);
+
+        return $path;
     }
-
-    imagecopyresampled($dst, $src, 0, 0, $srcX, $srcY, $size, $size, $min, $min);
-
-    if ($isPng) {
-        imagepng($dst, $fullPath, 6);
-    } else {
-        imagejpeg($dst, $fullPath, 95);
-    }
-
-    imagedestroy($src);
-    imagedestroy($dst);
-
-    return $path;
-}
-
 }

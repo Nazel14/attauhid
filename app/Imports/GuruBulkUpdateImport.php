@@ -74,15 +74,30 @@ class GuruBulkUpdateImport implements ToCollection, WithHeadingRow, SkipsEmptyRo
                             if ($guru->user->profile_photo && Storage::disk('public')->exists($guru->user->profile_photo)) {
                                 Storage::disk('public')->delete($guru->user->profile_photo);
                             }
-                            $guru->user->update(['profile_photo' => null]);
-                        } else {
+                            $guru->user->update([
+                                'profile_photo'      => null,
+                                'profile_photo_name' => null,
+                            ]);
+                        } elseif ($rawFoto !== ($guru->user->profile_photo_name ?? '')) {
+                            // hanya proses kalau nama foto BERUBAH dari yang tersimpan
                             $key = strtolower(str_replace(' ', '_', $rawFoto));
+
                             if (isset($this->photos[$key])) {
-                                if ($guru->user->profile_photo && Storage::disk('public')->exists($guru->user->profile_photo)) {
-                                    Storage::disk('public')->delete($guru->user->profile_photo);
-                                }
+                                // proses foto baru DULU — kalau gagal, foto lama tetap aman
                                 $path = $this->processPhoto($this->photos[$key]);
-                                if ($path) $guru->user->update(['profile_photo' => $path]);
+
+                                if ($path) {
+                                    if ($guru->user->profile_photo && Storage::disk('public')->exists($guru->user->profile_photo)) {
+                                        Storage::disk('public')->delete($guru->user->profile_photo);
+                                    }
+                                    $guru->user->update([
+                                        'profile_photo'            => $path,
+                                        'profile_photo_name'       => $rawFoto,
+                                        'profile_photo_updated_at' => now(),
+                                    ]);
+                                } else {
+                                    $this->warnings[] = "Baris {$rowNumber}: foto '{$rawFoto}' gagal diproses, foto lama dipertahankan.";
+                                }
                             } else {
                                 $this->warnings[] = "Baris {$rowNumber}: foto '{$rawFoto}' tidak ditemukan, foto guru tidak diubah.";
                             }

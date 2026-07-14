@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Inertia\Inertia;
 
 class UnifiedInputController extends Controller
 {
@@ -56,15 +57,19 @@ class UnifiedInputController extends Controller
 
         $tahunAjaranAktif = TahunAjaran::getAktif();
 
-        return view('guru.input.create', compact(
-            'santriList',
-            'tanggalHariIni',
-            'guru',
-            'kelas',
-            'daftarSurat',
-            'sesiList',
-            'tahunAjaranAktif'
-        ));
+        return \Inertia\Inertia::render('Guru/InputSetoran', [
+            'santriList' => $santriList->map(fn ($s) => [
+                'id'            => $s->id,
+                'name'          => $s->name,
+                'target_metode' => $s->target_metode?->value ?? 'quran',
+                'target_jilid'  => $s->target_jilid,
+            ])->values(),
+            'sesiList'       => $sesiList->pluck('sesi_name')->values(),
+            'daftarSurat'    => $daftarSurat,
+            'tanggalHariIni' => $tanggalHariIni,
+            'kelasName'      => $kelas->name,
+            'tahunAjaran'    => $tahunAjaranAktif ? ($tahunAjaranAktif->nama ?? $tahunAjaranAktif->name) : null,
+        ]);
     }
 
     public function storePresensi(Request $request)
@@ -149,10 +154,10 @@ class UnifiedInputController extends Controller
             'sesi'                 => 'required|string',
             'kategori_setoran'     => 'required|in:Hafalan,Murajaah,Tilawah',
             'metode'               => 'nullable|string',
-            'surat_start'          => 'required_unless:metode,Iqro,Ummi|nullable|string',
-            'ayat_start'           => 'required_unless:metode,Iqro,Ummi|nullable|integer',
-            'surat_end'            => 'required_unless:metode,Iqro,Ummi|nullable|string',
-            'ayat_end'             => 'required_unless:metode,Iqro,Ummi|nullable|integer',
+            'surat_start' => 'required_unless:metode,Iqro,Ummi,Aisar|nullable|string',
+            'ayat_start'  => 'required_unless:metode,Iqro,Ummi,Aisar|nullable|integer',
+            'surat_end'   => 'required_unless:metode,Iqro,Ummi,Aisar|nullable|string',
+            'ayat_end'    => 'required_unless:metode,Iqro,Ummi,Aisar|nullable|integer',
             'iqro_jilid'           => 'nullable|string',
             'iqro_halaman'         => 'nullable|integer',
             'iqro_halaman_end'     => 'nullable|integer',
@@ -285,10 +290,10 @@ class UnifiedInputController extends Controller
             'status'               => 'required|in:Hadir',
             'kategori_setoran'     => 'required|in:Hafalan,Murajaah,Tilawah',
             'metode'               => 'nullable|string',
-            'surat_start'          => 'required_unless:metode,Iqro,Ummi|nullable|string',
-            'ayat_start'           => 'required_unless:metode,Iqro,Ummi|nullable|integer',
-            'surat_end'            => 'required_unless:metode,Iqro,Ummi|nullable|string',
-            'ayat_end'             => 'required_unless:metode,Iqro,Ummi|nullable|integer',
+            'surat_start' => 'required_unless:metode,Iqro,Ummi,Aisar|nullable|string',
+            'ayat_start'  => 'required_unless:metode,Iqro,Ummi,Aisar|nullable|integer',
+            'surat_end'   => 'required_unless:metode,Iqro,Ummi,Aisar|nullable|string',
+            'ayat_end'    => 'required_unless:metode,Iqro,Ummi,Aisar|nullable|integer',
             'iqro_jilid'           => 'nullable|string',
             'iqro_halaman'         => 'nullable|integer',
             'iqro_halaman_end'     => 'nullable|integer',
@@ -450,17 +455,21 @@ class UnifiedInputController extends Controller
      */
     private function mapSetoranFields(Request $request): array
     {
-        $metode = $request->metode ?: 'Al-Qur\'an';
-        $isIqro = in_array($metode, ['Iqro', 'Ummi']);
+        $metode  = $request->metode ?: 'Al-Qur\'an';
+        $isJilid = in_array($metode, ['Iqro', 'Ummi', 'Aisar']);
 
-        if ($isIqro) {
+        if ($isJilid) {
             $jilid    = $request->iqro_jilid ?: '1';
             $halStart = (int) ($request->iqro_halaman ?: 0);
             $halEnd   = (int) ($request->iqro_halaman_end ?: $halStart);
             if ($halEnd < $halStart) {
                 $halEnd = $halStart;
             }
-            $label = ($metode === 'Ummi' ? 'Ummi Jilid ' : 'Iqro Jilid ') . $jilid;
+            $label = match ($metode) {
+                'Ummi'  => 'Ummi Jilid ',
+                'Aisar' => 'Aisar Jilid ',
+                default => 'Iqro Jilid ',
+            } . $jilid;
 
             return [
                 'metode'      => $metode,
@@ -533,13 +542,23 @@ class UnifiedInputController extends Controller
     }
 
     private function processPdfData(string $pdfHtml): ?string
-    {
-        try {
-            if (strlen($pdfHtml) < 100 || stripos($pdfHtml, '<html') === false) {
-                throw new \Exception('Invalid HTML format');
-            }
+{
+    try {
+        $pdfHtml = trim($pdfHtml);
 
-            $fileName = "pdf_" . time() . "_" . substr(md5(uniqid()), 0, 8) . ".pdf";
+        if (strlen($pdfHtml) < 30) {
+            throw new \Exception('HTML content too short (' . strlen($pdfHtml) . ' chars)');
+        }
+
+        // Kalau HTML fragmen (tanpa tag <html>), bungkus jadi dokumen lengkap
+        // supaya Murajaah/Tilawah yang mengirim potongan HTML tetap bisa jadi PDF.
+        if (stripos($pdfHtml, '<html') === false) {
+            $pdfHtml = '<!DOCTYPE html><html><head><meta charset="utf-8">'
+                . '<style>body{font-family:DejaVu Sans, sans-serif;font-size:12px;}</style>'
+                . '</head><body>' . $pdfHtml . '</body></html>';
+        }
+
+        $fileName = "pdf_" . time() . "_" . substr(md5(uniqid()), 0, 8) . ".pdf";
             $path     = 'pdf_setorans/' . $fileName;
 
             if (!Storage::disk('public')->exists('pdf_setorans')) {

@@ -7,84 +7,113 @@ use App\Models\User;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Santri;
-use App\Models\TahunAjaran; // ← TAMBAHAN BARU
+use App\Models\TahunAjaran;
+use App\Models\LogActivity;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
+use Illuminate\Support\Carbon;
+use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
     /**
-     * Display the admin dashboard.
-     *
-     * @return \Illuminate\View\View
+     * Display the admin dashboard (Inertia + React).
      */
-    public function index()
+    public function index(Request $request)
     {
-        // ✅ PERMISSION-BASED DETECTION (BUKAN ROLE-BASED)
-        
-        // Total Admin (semua user dengan role admin)
+        $user = $request->user();
+
+        // ✅ PERMISSION-BASED DETECTION (sama seperti versi lama)
         $totalAdmins = User::where('role', 'admin')->count();
-        
-        // Total Super Admin (yang punya permission 'kelola-admin')
+
         $totalSuperAdmins = User::where('role', 'admin')
             ->permission('kelola-admin')
             ->count();
-        
-        // Total Regular Admin (yang tidak punya permission 'kelola-admin')
+
         $totalRegularAdmins = User::where('role', 'admin')
-            ->whereDoesntHave('permissions', function($query) {
+            ->whereDoesntHave('permissions', function ($query) {
                 $query->where('name', 'kelola-admin');
             })
             ->count();
 
-        // Total Guru
-        $totalGurus = Guru::count();
+        // Statistik master data
+        $stats = [
+            'totalAdmins'        => $totalAdmins,
+            'totalSuperAdmins'   => $totalSuperAdmins,
+            'totalRegularAdmins' => $totalRegularAdmins,
+            'totalGurus'         => Guru::count(),
+            'totalKelas'         => Kelas::count(),
+            'totalSantris'       => Santri::count(),
+        ];
 
-        // Total Kelas
-        $totalKelas = Kelas::count();
-
-        // Total Santri
-        $totalSantris = Santri::count();
-
-        // ✅ Cek apakah current user adalah Super Admin
-        $isSuperAdmin = auth()->user()->hasPermissionTo('kelola-admin');
-
-        // =========================================
-        // TAMBAHAN BARU: Info Tahun Ajaran Aktif
-        // =========================================
-
-        // Ambil tahun ajaran yang sedang aktif
+        // Tahun ajaran aktif
         $tahunAjaranAktif = TahunAjaran::getAktif();
 
-        // Semua tahun ajaran untuk dropdown di dashboard (jika perlu)
-        $semualTahunAjaran = TahunAjaran::terbaru()->get();
+        // =========================================
+        // GRAFIK: Tren login 7 hari terakhir
+        // =========================================
+        // Untuk tiap hari (6 hari lalu s.d. hari ini) hitung jumlah aktivitas login.
+        $loginTrend = collect(range(6, 0))->map(function ($daysAgo) {
+            $date = Carbon::today()->subDays($daysAgo);
 
-        return view('admin.dashboard', compact(
-            'totalAdmins',
-            'totalSuperAdmins',
-            'totalRegularAdmins',
-            'totalGurus',
-            'totalKelas',
-            'totalSantris',
-            'isSuperAdmin',
-            'tahunAjaranAktif',   // ← TAMBAHAN BARU
-            'semualTahunAjaran'   // ← TAMBAHAN BARU
-        ));
+            return [
+                'date'  => $date->toDateString(),
+                'count' => LogActivity::where('activity_type', 'login')
+                    ->whereDate('created_at', $date)
+                    ->count(),
+            ];
+        })->values();
+
+        // =========================================
+        // KOMPONEN PENDUKUNG: Aktivitas terkini
+        // =========================================
+        $recentActivities = LogActivity::latest()
+            ->take(6)
+            ->get()
+            ->map(function ($log) {
+                return [
+                    'type'        => $log->activity_type,
+                    'description' => $log->description,
+                    'role'        => $log->role,
+                    'created_at'  => optional($log->created_at)->toIso8601String(),
+                ];
+            })
+            ->values();
+
+        // Permission untuk menampilkan menu di React (dievaluasi di server)
+        $gateKeys = [
+            'kelola-admin',
+            'kelola-guru',
+            'kelola-kelas',
+            'kelola-santri',
+            'kelola-presensi-sesi',
+            'lihat-monitoring',
+            'lihat-log-activity',
+        ];
+        $permissions = collect($gateKeys)
+            ->filter(fn ($p) => $user->can($p))
+            ->values();
+
+        return Inertia::render('Admin/Dashboard', [
+            'stats' => $stats,
+            'tahunAjaranAktif' => $tahunAjaranAktif ? [
+                'label_lengkap' => $tahunAjaranAktif->label_lengkap,
+                'label_pendek'  => $tahunAjaranAktif->label_pendek,
+            ] : null,
+            'loginTrend'       => $loginTrend,
+            'recentActivities' => $recentActivities,
+            'permissions'      => $permissions,
+        ]);
     }
 
     /**
-     * Get statistics for dashboard charts (optional).
-     *
-     * @return \Illuminate\Http\JsonResponse
+     * Get statistics for dashboard charts (optional, tetap dipertahankan).
      */
     public function getStats()
     {
-        // Statistik per gender untuk santri
         $santriByGender = Santri::selectRaw('gender, COUNT(*) as total')
             ->groupBy('gender')
             ->get();
 
-        // Statistik per kelas
         $santriPerKelas = Kelas::withCount('santris')
             ->orderBy('santris_count', 'desc')
             ->take(5)
@@ -92,7 +121,7 @@ class DashboardController extends Controller
 
         return response()->json([
             'santriByGender' => $santriByGender,
-            'santriPerKelas' => $santriPerKelas
+            'santriPerKelas' => $santriPerKelas,
         ]);
     }
 }

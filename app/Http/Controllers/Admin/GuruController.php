@@ -17,6 +17,7 @@ use App\Imports\GuruBulkUpdateImport;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class GuruController extends Controller
 {
@@ -27,8 +28,10 @@ class GuruController extends Controller
      */
     public function index()
     {
-        $gurus = Guru::with('user')->get();
-        return view('admin.gurus.index', compact('gurus'));
+        $gurus = Guru::with('user')->orderBy('name')->get();
+        return Inertia::render('Admin/Gurus/Index', [
+            'gurus' => $gurus,
+        ]);
     }
 
     /**
@@ -72,7 +75,10 @@ class GuruController extends Controller
 
             // ✅ Upload foto profil jika ada
             if ($request->hasFile('profile_photo')) {
-                $user->profile_photo = $this->processProfilePhoto($request->file('profile_photo'));
+                $file = $request->file('profile_photo');
+                $user->profile_photo            = $this->processProfilePhoto($file);
+                $user->profile_photo_name       = $file->getClientOriginalName();
+                $user->profile_photo_updated_at = now();
                 $user->save();
             }
 
@@ -156,14 +162,18 @@ class GuruController extends Controller
                         if (Storage::disk('public')->exists($guru->user->profile_photo)) {
                             Storage::disk('public')->delete($guru->user->profile_photo);
                         }
-                        $guru->user->profile_photo = null;
+                        $guru->user->profile_photo      = null;
+                        $guru->user->profile_photo_name = null;
                         $guru->user->save();
                     }
                     if ($request->hasFile('profile_photo')) {
                         if ($guru->user->profile_photo && Storage::disk('public')->exists($guru->user->profile_photo)) {
                             Storage::disk('public')->delete($guru->user->profile_photo);
                         }
-                        $guru->user->profile_photo = $this->processProfilePhoto($request->file('profile_photo'));
+                        $file = $request->file('profile_photo');
+                        $guru->user->profile_photo            = $this->processProfilePhoto($file);
+                        $guru->user->profile_photo_name       = $file->getClientOriginalName();
+                        $guru->user->profile_photo_updated_at = now();
                         $guru->user->save();
                     }
                 }
@@ -171,7 +181,7 @@ class GuruController extends Controller
                 $this->logUpdate('guru', $guru->name, $guru, array_merge($oldValues, ['username' => $oldUsername]));
 
                 return redirect()->route('admin.gurus.index')
-                    ->with('updated', 'Data Guru dan akun login berhasil diperbarui!');
+                    ->with('success', 'Data Guru dan akun login berhasil diperbarui!');
 
             } catch (\Exception $e) {
                 \Log::error("Error updating Guru: " . $e->getMessage());
@@ -196,8 +206,11 @@ class GuruController extends Controller
             // SET guru_id di kelas menjadi NULL (kelas tetap ada, guru dihapus)
             Kelas::where('guru_id', $guru->id)->update(['guru_id' => null]);
 
-            // Hapus user terkait
+            // Hapus user terkait + file fotonya
             if ($guru->user) {
+                if ($guru->user->profile_photo && Storage::disk('public')->exists($guru->user->profile_photo)) {
+                    Storage::disk('public')->delete($guru->user->profile_photo);
+                }
                 $guru->user->delete();
             }
 
@@ -209,7 +222,7 @@ class GuruController extends Controller
             DB::commit();
 
             return redirect()->route('admin.gurus.index')
-                ->with('deleted', 'Guru berhasil dihapus! Kelas yang sebelumnya diajar guru ini tetap ada (tanpa guru).');
+                ->with('success', 'Guru berhasil dihapus! Kelas yang sebelumnya diajar guru ini tetap ada (tanpa guru).');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -243,6 +256,9 @@ class GuruController extends Controller
                 
                 foreach ($gurus as $guru) {
                     if ($guru->user) {
+                        if ($guru->user->profile_photo && Storage::disk('public')->exists($guru->user->profile_photo)) {
+                            Storage::disk('public')->delete($guru->user->profile_photo);
+                        }
                         $guru->user->delete();
                     }
                     $guru->delete();
@@ -259,7 +275,7 @@ class GuruController extends Controller
             );
 
             return redirect()->route('admin.gurus.index')
-                ->with('deleted', "Berhasil menghapus {$deletedCount} guru! Kelas tetap ada.");
+                ->with('success', "Berhasil menghapus {$deletedCount} guru! Kelas tetap ada.");
                 
         } catch (\Exception $e) {
             \Log::error("Error bulk deleting Guru: " . $e->getMessage());
@@ -423,19 +439,20 @@ class GuruController extends Controller
         $row = 2;
         $noUrut = 1;
         foreach ($guruList as $guru) {
-            // Hanya isi nama_file_foto kalau guru SUDAH punya foto.
+            // Pakai NAMA FILE ASLI yang tersimpan saat upload/import.
             // Guru tanpa foto → dibiarkan kosong.
-            $fotoSaran = '';
-            if ($guru->user && $guru->user->profile_photo && $guru->user->name) {
-                $cleanName = preg_replace('/[^A-Za-z0-9._-]/', '', str_replace(' ', '_', $guru->user->name));
-                $fotoSaran = $cleanName . '.jpg';
+            $namaFileFoto = '';
+            if ($guru->user && $guru->user->profile_photo) {
+                $namaFileFoto = $guru->user->profile_photo_name
+                    // fallback: data lama (sebelum kolom profile_photo_name ada)
+                    ?: basename($guru->user->profile_photo);
             }
 
             $sheet->setCellValue('A' . $row, $noUrut);
             $sheet->setCellValue('B' . $row, $guru->name);
             $sheet->setCellValueExplicit('C' . $row, $guru->nip, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue('D' . $row, $guru->user->name ?? '');
-            $sheet->setCellValue('E' . $row, $fotoSaran);
+            $sheet->setCellValue('E' . $row, $namaFileFoto);
 
             $row++;
             $noUrut++;
@@ -455,9 +472,9 @@ class GuruController extends Controller
         $sheet->setCellValue('G5', '• Password TIDAK bisa diubah via Excel');
         $sheet->setCellValue('G6', '');
         $sheet->setCellValue('G7', 'FOTO:');
-        $sheet->setCellValue('G8', '• Isi nama_file_foto sesuai nama file di ZIP (ganti foto)');
-        $sheet->setCellValue('G9', '• Upload foto sebagai 1 ZIP saat update');
-        $sheet->setCellValue('G10', '• Kosongkan = foto tidak diubah');
+        $sheet->setCellValue('G8', '• Kolom nama_file_foto = nama file foto SAAT INI');
+        $sheet->setCellValue('G9', '• Biarkan apa adanya = foto tidak diubah');
+        $sheet->setCellValue('G10', '• Ganti dgn nama file lain + upload ZIP = foto diganti');
         $sheet->setCellValue('G11', '• Tulis HAPUS = foto dihapus jadi tanpa foto');
 
         $sheet->getStyle('G1')->applyFromArray([
@@ -530,7 +547,7 @@ class GuruController extends Controller
                 $msg .= "<br><br><strong>Catatan foto:</strong><br>" . implode('<br>', $warnings);
             }
 
-            return redirect()->route('admin.gurus.index')->with('updated', $msg);
+            return redirect()->route('admin.gurus.index')->with('success', $msg);
 
         } catch (\Exception $e) {
             \Log::error("Error bulk updating guru: " . $e->getMessage());

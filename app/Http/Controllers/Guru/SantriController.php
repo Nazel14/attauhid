@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 use App\Enums\MetodeTarget;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\GuruSantriImport;
@@ -25,19 +26,30 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class SantriController extends Controller
 {
     public function index()
-    {
-        $guruUser = Auth::user();
-        $guru     = Guru::where('user_id', $guruUser->id)->firstOrFail();
-        
-        $santris = Santri::with(['kelas', 'guru', 'user'])
-            ->where('guru_id', $guru->id)
-            ->orderBy('name', 'asc')
-            ->paginate(15);
-        
-        $kelas = Kelas::all();
-        
-        return view('guru.santri.index', compact('santris', 'kelas', 'guru'));
-    }
+{
+    $guruUser = Auth::user();
+    $guru     = Guru::where('user_id', $guruUser->id)->firstOrFail();
+
+    $santris = Santri::with(['kelas', 'guru', 'user'])
+        ->where('guru_id', $guru->id)
+        ->orderBy('name', 'asc')
+        ->paginate(15)
+        ->withQueryString();
+
+    $kelasList = Kelas::where('guru_id', $guru->id)->orderBy('name', 'asc')->get();
+
+    $targetMetodeOptions = collect(MetodeTarget::cases())->map(fn ($case) => [
+        'value' => $case->value,
+        'label' => ucfirst($case->value),
+    ])->values();
+
+    return Inertia::render('Guru/Santri/Index', [
+        'santris' => $santris,
+        'kelasList' => $kelasList,
+        'targetMetodeOptions' => $targetMetodeOptions,
+        'guru' => $guru,
+    ]);
+}
 
    public function store(Request $request)
 {
@@ -46,19 +58,19 @@ class SantriController extends Controller
 
     $validated = $request->validate([
         'nis'           => 'required|string|unique:santris,nis',
-        'name'          => 'required|string|max:255|unique:users,name',
+        'name'          => 'required|string|max:255',
         'gender'        => 'required|in:L,P',
         'target_metode' => ['required', Rule::enum(MetodeTarget::class)],
         'target_juz'    => ['nullable', 'required_if:target_metode,quran', 'numeric', 'min:0', 'max:30'],
-        'target_jilid'  => ['nullable', 'required_if:target_metode,iqro', 'integer', 'min:1', 'max:6'],
-        'kelas_id'      => 'required|exists:kelas,id',
+        'target_jilid'  => ['nullable', 'required_if:target_metode,iqro,aisar', 'integer', 'min:1', 'max:6'],
+        'kelas_id'      => ['required', Rule::exists('kelas', 'id')->where('guru_id', $guru->id)],
         'password'      => 'required|string|min:8|confirmed',
         'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
     ], [
         'password.min'       => 'Password minimal 8 karakter.',
         'password.confirmed' => 'Konfirmasi password tidak cocok.',
         'nis.unique'         => 'NIS sudah terdaftar.',
-        'name.unique'        => 'Nama santri sudah terdaftar, gunakan nama lengkap yang berbeda (contoh: tambahkan nama ayah atau bin/binti).',
+        'kelas_id.exists'    => 'Kelas tidak valid — Anda hanya bisa menambahkan santri ke kelas Anda sendiri.',
     ]);
 
     return DB::transaction(function () use ($validated, $guru, $request) {
@@ -81,7 +93,9 @@ class SantriController extends Controller
             ]);
 
             if ($request->hasFile('profile_photo')) {
-                $santriUser->profile_photo = $this->processProfilePhoto($request->file('profile_photo'));
+                $foto = $request->file('profile_photo');
+                $santriUser->profile_photo      = $this->processProfilePhoto($foto);
+                $santriUser->profile_photo_name = $foto->getClientOriginalName();
                 $santriUser->save();
             }
             
@@ -150,12 +164,13 @@ class SantriController extends Controller
                     'gender'        => 'required|in:L,P',
                     'target_metode' => ['required', Rule::enum(MetodeTarget::class)],
                     'target_juz'    => ['nullable', 'required_if:target_metode,quran', 'numeric', 'min:0', 'max:30'],
-                    'target_jilid'  => ['nullable', 'required_if:target_metode,iqro', 'integer', 'min:1', 'max:6'],
-                    'kelas_id'      => 'required|exists:kelas,id',
+                    'target_jilid'  => ['nullable', 'required_if:target_metode,iqro,aisar', 'integer', 'min:1', 'max:6'],
+                    'kelas_id'      => ['required', Rule::exists('kelas', 'id')->where('guru_id', $guru->id)],
                     'password'      => 'nullable|string|min:8',
                     'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 ], [
-                    'password.min' => 'Password minimal 8 karakter.',
+                    'password.min'    => 'Password minimal 8 karakter.',
+                    'kelas_id.exists' => 'Kelas tidak valid — Anda hanya bisa memindahkan santri di dalam kelas Anda sendiri.',
                 ]);
 
         return DB::transaction(function () use ($validated, $santri, $oldValues, $request) {
@@ -193,14 +208,17 @@ class SantriController extends Controller
                         if (Storage::disk('public')->exists($santri->user->profile_photo)) {
                             Storage::disk('public')->delete($santri->user->profile_photo);
                         }
-                        $santri->user->profile_photo = null;
+                        $santri->user->profile_photo      = null;
+                        $santri->user->profile_photo_name = null;
                         $santri->user->save();
                     }
                     if ($request->hasFile('profile_photo')) {
                         if ($santri->user->profile_photo && Storage::disk('public')->exists($santri->user->profile_photo)) {
                             Storage::disk('public')->delete($santri->user->profile_photo);
                         }
-                        $santri->user->profile_photo = $this->processProfilePhoto($request->file('profile_photo'));
+                        $foto = $request->file('profile_photo');
+                        $santri->user->profile_photo      = $this->processProfilePhoto($foto);
+                        $santri->user->profile_photo_name = $foto->getClientOriginalName();
                         $santri->user->save();
                     }
                 }
@@ -224,7 +242,7 @@ class SantriController extends Controller
                 }
 
                 return redirect()->route('guru.santris.index')
-                    ->with('updated', 'Data santri dan akun login berhasil diperbarui!');
+                    ->with('success', 'Data santri dan akun login berhasil diperbarui!');
                     
             } catch (\Exception $e) {
                 Log::error("Error updating Santri by guru: " . $e->getMessage());
@@ -276,7 +294,7 @@ class SantriController extends Controller
             }
 
             return redirect()->route('guru.santris.index')
-                ->with('deleted', 'Santri dan akun login berhasil dihapus!');
+                ->with('success', 'Santri dan akun login berhasil dihapus!');
                 
         } catch (\Exception $e) {
             Log::error("Error deleting Santri by guru: " . $e->getMessage());
@@ -300,16 +318,17 @@ class SantriController extends Controller
             'borders'   => ['bottom' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM, 'color' => ['rgb' => 'D1D5DB']]]
         ]);
 
-        $sheet->getStyle('A2:H3')->applyFromArray([
+        $sheet->getStyle('A2:H4')->applyFromArray([
             'fill'    => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFBEB']],
             'font'    => ['size' => 9, 'color' => ['rgb' => '78716C'], 'italic' => true],
-            'borders' => ['outline' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => 'FDE68A']]]
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => 'FDE68A']]]
         ]);
 
-        // Satu contoh quran, satu iqro
+        // Contoh: quran, iqro, aisar
         $exampleData = [
-            ['12345 (Contoh)', 'Ahmad Zaki',       'L', 'quran', '5.50', '',  'pass1234', 'ahmad.jpg'],
-            ['12346 (Contoh)', 'Aisyah Rahmawati', 'P', 'iqro',  '',     '3', 'pass8765', 'aisyah.jpg'],
+            ['12345 (Contoh)', 'Ahmad',       'L', 'quran', '5.50', '',  'pass1234', 'ahmad.jpg'],
+            ['12346 (Contoh)', 'Aisyah', 'P', 'iqro',  '',     '3', 'pass8765', 'aisyah.jpg'],
+            ['12347 (Contoh)', 'Bilal',      'L', 'aisar', '',     '1', 'pass5678', 'bilal.jpg'],
         ];
         foreach ($exampleData as $rowIndex => $row) {
             $actualRow = $rowIndex + 2;
@@ -319,6 +338,13 @@ class SantriController extends Controller
                 $col++;
             }
         }
+
+        // Area input baris 5-104: putih bergaris (cegah Excel auto-extend format contoh)
+        $sheet->getStyle('A5:H104')->applyFromArray([
+            'fill'    => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFFFF']],
+            'font'    => ['italic' => false, 'bold' => false, 'size' => 10, 'color' => ['rgb' => '111827']],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => 'D1D5DB']]]
+        ]);
 
         $sheet->getColumnDimension('A')->setWidth(16);  // nis
         $sheet->getColumnDimension('B')->setWidth(28);  // nama
@@ -335,17 +361,17 @@ class SantriController extends Controller
         $sheet->setCellValue('J2', '1. NIS: Nomor Induk Santri (unik)');
         $sheet->setCellValue('J3', '2. Nama: Nama lengkap santri');
         $sheet->setCellValue('J4', '3. Gender: L (Laki-laki) atau P (Perempuan)');
-        $sheet->setCellValue('J5', '4. Metode: quran atau iqro');
+        $sheet->setCellValue('J5', '4. Metode: quran, iqro, atau aisar');
         $sheet->setCellValue('J6', '5. Target Juz: 0.00 - 30.00 (isi bila metode quran)');
-        $sheet->setCellValue('J7', '6. Target Jilid: 1 - 6 (isi bila metode iqro)');
+        $sheet->setCellValue('J7', '6. Target Jilid: 1 - 6 (isi bila metode iqro/aisar)');
         $sheet->setCellValue('J8', '7. Password: Minimal 4 karakter');
         $sheet->setCellValue('J9', '8. Nama File Foto: tanpa spasi, mis: ahmad.jpg (opsional)');
         $sheet->setCellValue('J10', '');
         $sheet->setCellValue('J11', 'CATATAN:');
         $sheet->setCellValue('J12', '• Metode quran → isi Target Juz, kosongkan Target Jilid');
-        $sheet->setCellValue('J13', '• Metode iqro → isi Target Jilid, kosongkan Target Juz');
+        $sheet->setCellValue('J13', '• Metode iqro / aisar → isi Target Jilid, kosongkan Target Juz');
         $sheet->setCellValue('J14', '• Foto diupload terpisah sebagai 1 ZIP saat import');
-        $sheet->setCellValue('J15', '• Baris 2-3 adalah CONTOH, hapus sebelum import');
+        $sheet->setCellValue('J15', '• Baris 2-4 adalah CONTOH, hapus sebelum import');
         $sheet->setCellValue('J16', '• NIS yang mengandung "(Contoh)" akan diabaikan');
         $sheet->setCellValue('J17', '• Santri akan otomatis masuk ke kelas Anda');
 
@@ -424,21 +450,21 @@ class SantriController extends Controller
         $row    = 2;
         $noUrut = 1;
         foreach ($santris as $santri) {
-            $metodeVal = $santri->target_metode?->value ?? 'quran';
+            $metodeVal    = $santri->target_metode?->value ?? 'quran';
+            $isJilidBased = in_array($metodeVal, ['iqro', 'aisar'], true);
 
             $sheet->setCellValue('A' . $row, $noUrut);
             $sheet->setCellValue('B' . $row, $santri->nis);
             $sheet->setCellValue('C' . $row, $santri->name);
             $sheet->setCellValue('D' . $row, $santri->gender === 'Laki-laki' ? 'L' : 'P');
             $sheet->setCellValue('E' . $row, $metodeVal);
-            $sheet->setCellValue('F' . $row, $metodeVal === 'iqro' ? '' : $santri->target_juz);
-            $sheet->setCellValue('G' . $row, $metodeVal === 'iqro' ? $santri->target_jilid : '');
+            $sheet->setCellValue('F' . $row, $isJilidBased ? '' : $santri->target_juz);
+            $sheet->setCellValue('G' . $row, $isJilidBased ? $santri->target_jilid : '');
 
-            // nama_file_foto: isi saran HANYA jika santri sudah punya foto
+            // nama_file_foto: nama file asli saat diupload (bukan dikarang dari nama santri)
             $fotoSaran = '';
             if ($santri->user && $santri->user->profile_photo) {
-                $cleanName = preg_replace('/[^A-Za-z0-9._-]/', '', str_replace(' ', '_', $santri->name));
-                $fotoSaran = $cleanName . '.jpg';
+                $fotoSaran = $santri->user->profile_photo_name ?: basename($santri->user->profile_photo);
             }
             $sheet->setCellValue('H' . $row, $fotoSaran);
 
@@ -469,14 +495,14 @@ class SantriController extends Controller
         $sheet->setCellValue('J7', '• Password tidak bisa diubah via Excel');
         $sheet->setCellValue('J8', '');
         $sheet->setCellValue('J9', '📝 METODE & TARGET:');
-        $sheet->setCellValue('J10', '• Metode: quran atau iqro');
+        $sheet->setCellValue('J10', '• Metode: quran, iqro, atau aisar');
         $sheet->setCellValue('J11', '• quran → isi Target Juz (0-30), Jilid kosong');
-        $sheet->setCellValue('J12', '• iqro → isi Target Jilid (1-6), Juz kosong');
+        $sheet->setCellValue('J12', '• iqro / aisar → isi Target Jilid (1-6), Juz kosong');
         $sheet->setCellValue('J13', '');
         $sheet->setCellValue('J14', '📷 FOTO:');
-        $sheet->setCellValue('J15', '• Isi nama_file_foto = nama file di ZIP (ganti foto)');
-        $sheet->setCellValue('J16', '• Upload foto sebagai 1 ZIP saat update');
-        $sheet->setCellValue('J17', '• Kosongkan = foto tidak diubah');
+        $sheet->setCellValue('J15', '• Kolom nama_file_foto = nama file foto SAAT INI');
+        $sheet->setCellValue('J16', '• Biarkan apa adanya = foto tidak diubah');
+        $sheet->setCellValue('J17', '• Ganti dgn nama file lain + upload ZIP = foto diganti');
         $sheet->setCellValue('J18', '• Tulis HAPUS = foto dihapus jadi tanpa foto');
 
         $sheet->getStyle('J1')->applyFromArray([
@@ -621,7 +647,7 @@ class SantriController extends Controller
                 $msg .= "<br><br><strong>Catatan foto:</strong><br>" . implode('<br>', $warnings);
             }
 
-            return redirect()->route('guru.santris.index')->with('updated', $msg);
+            return redirect()->route('guru.santris.index')->with('success', $msg);
 
         } catch (\Exception $e) {
             Log::error("Error bulk updating santri (guru): " . $e->getMessage());
@@ -653,6 +679,9 @@ class SantriController extends Controller
                 foreach ($santris as $santri) {
                     $santriNames[] = $santri->name;
                     if ($santri->user) {
+                        if ($santri->user->profile_photo && Storage::disk('public')->exists($santri->user->profile_photo)) {
+                            Storage::disk('public')->delete($santri->user->profile_photo);
+                        }
                         $santri->user->delete();
                     }
                     $santri->delete();
@@ -681,7 +710,7 @@ class SantriController extends Controller
             }
 
             return redirect()->route('guru.santris.index')
-                ->with('deleted', "Berhasil menghapus {$deletedCount} santri!");
+                ->with('success', "Berhasil menghapus {$deletedCount} santri!");
                 
         } catch (\Exception $e) {
             Log::error("Error bulk deleting Santri (guru): " . $e->getMessage());

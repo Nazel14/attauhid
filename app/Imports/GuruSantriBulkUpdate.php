@@ -95,37 +95,39 @@ class GuruSantriBulkUpdate implements ToCollection, WithHeadingRow, SkipsEmptyRo
                         $updateData['gender'] = $genderFull;
                     }
 
-                    // === METODE & TARGET (quran / iqro) ===
+                   // === METODE & TARGET (quran / iqro / aisar) ===
                     $metodeInput = !empty($row['metode']) ? strtolower(trim($row['metode'])) : null;
-                    if ($metodeInput !== null && !in_array($metodeInput, ['quran', 'iqro'])) {
-                        throw new \Exception("Metode harus 'quran' atau 'iqro'");
+                    if ($metodeInput !== null && !in_array($metodeInput, ['quran', 'iqro', 'aisar'])) {
+                        throw new \Exception("Metode harus 'quran', 'iqro', atau 'aisar'");
                     }
 
                     $metodeEfektif = $metodeInput ?? ($santri->target_metode?->value ?? 'quran');
+                    $isJilidBased  = in_array($metodeEfektif, ['iqro', 'aisar'], true);
 
                     if ($metodeInput !== null) {
                         $updateData['target_metode'] = $metodeInput;
                     }
 
-                    if ($metodeEfektif === 'iqro') {
+                    if ($isJilidBased) {
                         if (isset($row['target_jilid']) && $row['target_jilid'] !== '') {
                             $jilid = (int) $row['target_jilid'];
                             if ($jilid < 1 || $jilid > 6) {
                                 throw new \Exception("Target Jilid harus angka antara 1-6");
                             }
                             $updateData['target_jilid'] = $jilid;
-                        } elseif ($metodeInput === 'iqro') {
-                            throw new \Exception("Metode iqro wajib mengisi Target Jilid (1-6)");
+                        } elseif ($metodeInput !== null) {
+                            throw new \Exception("Metode {$metodeEfektif} wajib mengisi Target Jilid (1-6)");
                         }
-                        if ($metodeInput === 'iqro') {
+                        if ($metodeInput !== null) {
                             $updateData['target_juz'] = null;
                         }
                     } else { // quran
                         if (isset($row['target_juz']) && $row['target_juz'] !== '') {
-                            if (!is_numeric($row['target_juz']) || $row['target_juz'] < 0 || $row['target_juz'] > 30) {
+                            $juz = str_replace(',', '.', (string) $row['target_juz']);
+                            if (!is_numeric($juz) || $juz < 0 || $juz > 30) {
                                 throw new \Exception("Target Juz harus angka antara 0-30");
                             }
-                            $updateData['target_juz'] = $row['target_juz'];
+                            $updateData['target_juz'] = (float) $juz;
                         } elseif ($metodeInput === 'quran') {
                             throw new \Exception("Metode quran wajib mengisi Target Juz (0-30)");
                         }
@@ -145,21 +147,34 @@ class GuruSantriBulkUpdate implements ToCollection, WithHeadingRow, SkipsEmptyRo
 
                     // ✅ Foto: ganti / hapus
                     if ($santri->user && !empty($row['nama_file_foto'])) {
-                        $rawFoto = trim((string) $row['nama_file_foto']);
+                        $rawFoto   = trim((string) $row['nama_file_foto']);
                         $fotoUpper = strtoupper(preg_replace('/\s+/', '', $rawFoto));
                         if (in_array($fotoUpper, ['HAPUS', '-', 'DELETE'])) {
                             if ($santri->user->profile_photo && Storage::disk('public')->exists($santri->user->profile_photo)) {
                                 Storage::disk('public')->delete($santri->user->profile_photo);
                             }
-                            $santri->user->update(['profile_photo' => null]);
-                        } else {
+                            $santri->user->update([
+                                'profile_photo'      => null,
+                                'profile_photo_name' => null,
+                            ]);
+                        } elseif ($rawFoto !== ($santri->user->profile_photo_name ?? '')) {
+                            // hanya proses kalau nama foto BERUBAH dari yang tersimpan
                             $key = strtolower(str_replace(' ', '_', $rawFoto));
                             if (isset($this->photos[$key])) {
-                                if ($santri->user->profile_photo && Storage::disk('public')->exists($santri->user->profile_photo)) {
-                                    Storage::disk('public')->delete($santri->user->profile_photo);
-                                }
+                                // proses foto baru DULU — kalau gagal, foto lama tetap aman
                                 $path = $this->processPhoto($this->photos[$key]);
-                                if ($path) $santri->user->update(['profile_photo' => $path]);
+
+                                if ($path) {
+                                    if ($santri->user->profile_photo && Storage::disk('public')->exists($santri->user->profile_photo)) {
+                                        Storage::disk('public')->delete($santri->user->profile_photo);
+                                    }
+                                    $santri->user->update([
+                                        'profile_photo'      => $path,
+                                        'profile_photo_name' => $rawFoto,
+                                    ]);
+                                } else {
+                                    $this->warnings[] = "Baris {$rowNumber}: foto '{$rawFoto}' gagal diproses, foto lama dipertahankan.";
+                                }
                             } else {
                                 $this->warnings[] = "Baris {$rowNumber}: foto '{$rawFoto}' tidak ditemukan, foto santri tidak diubah.";
                             }

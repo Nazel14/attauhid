@@ -20,6 +20,7 @@ class User extends Authenticatable
         'plain_password',
         'role',
         'profile_photo',
+        'profile_photo_name',
         'profile_photo_updated_at',
     ];
 

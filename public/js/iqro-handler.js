@@ -38,7 +38,7 @@
  *   - Warna sel/judul/border/navbar pakai CSS var (--q-fg, --q-line,
  *     --q-box-border, --q-nav-*) DENGAN fallback putih. Di layar bisa
  *     terang/gelap; saat PDF (wrapper .iqro-cap) var dipaksa gelap → PDF
- *     tetap putih di latar #1e3a5f apa pun tema layar.
+ *     tetap putih di latar #3E3D3A apa pun tema layar.
  *   - Rename label statistik (Mushaf<->Iqro) tidak lagi bergantung pada
  *     class .bg-gray-900 (blok kini theme-aware).
  *
@@ -67,7 +67,8 @@
         if (!jilidEl || !startEl || !endEl) return;
 
         const jilid = jilidEl.value;
-        const total = (window.IQRO_JUMLAH_HALAMAN && window.IQRO_JUMLAH_HALAMAN[jilid]) || 0;
+        const src   = getJilidSource(metodeForMode(mode));
+        const total = src.jumlah[jilid] || 0;
 
         const optsStart = ['<option value="">-- Mulai --</option>'];
         const optsEnd   = ['<option value="">-- Selesai --</option>'];
@@ -91,7 +92,8 @@
         if (!jilidEl || !startEl || !endEl) return;
 
         const jilid = jilidEl.value;
-        const total = (window.IQRO_JUMLAH_HALAMAN && window.IQRO_JUMLAH_HALAMAN[jilid]) || 0;
+        const src   = getJilidSource(metodeForMode(mode));
+        const total = src.jumlah[jilid] || 0;
         const start = parseInt(startEl.value, 10);
         const from = isNaN(start) ? 1 : start;
 
@@ -116,7 +118,7 @@
     function toggleMetode(mode) {
         const metodeEl = document.getElementById('metode' + mode);
         if (!metodeEl) return;
-        const isIqro = (metodeEl.value === 'Iqro' || metodeEl.value === 'Ummi');
+        const isIqro = isJilidMetode(metodeEl.value);
 
         const rangeBlock = document.getElementById('rangeAyatBlock' + mode);
         const iqroBlock  = document.getElementById('iqroBlock' + mode);
@@ -144,6 +146,7 @@
 
         window.currentFormContext = mode;
         window.currentMetode = metodeEl.value;
+        if (isIqro) fillHalamanDropdown(mode);
     }
 
     function buildIqroPageHtml(data, pageIdx) {
@@ -255,7 +258,10 @@
         return '' +
             '<div class="iqro-page" data-idx="' + pageIdx + '" data-halaman="' + data.halaman + '" style="margin-bottom:8px;' + displayStyle + '">' +
                 '<div style="text-align:center;margin-bottom:10px;color:var(--q-fg,#fff);">' +
-                    '<p style="font-size:14px;opacity:.65;font-family:system-ui;">اقرأ ' + data.jilid + ' &nbsp;·&nbsp; Halaman ' + data.halaman + '</p>' +
+                    '<p style="font-size:14px;opacity:.65;font-family:system-ui;">' +
+                    // Aisar dirender oleh aisar-handler.js; baris ini fallback bila handler gagal load
+                    (window.currentMetode === 'Aisar' ? 'Aisar ' : 'اقرأ ') + data.jilid +
+                    ' &nbsp;·&nbsp; Halaman ' + data.halaman + '</p>' +
                     (data.instruksi ? '<p style="font-size:18px;font-family:\'Amiri\',serif;direction:rtl;margin-top:6px;opacity:.85;">' + data.instruksi + '</p>' : '') +
                 '</div>' +
                 '<div style="border:1.5px solid var(--q-box-border,rgba(255,255,255,0.85));margin:8px auto 16px auto;max-width:760px;overflow-x:auto;overflow-y:visible;border-radius:4px;">' +
@@ -383,6 +389,19 @@
             if (typeof fitPageRowsScreen === 'function') fitPageRowsScreen(container);
         }, 100);
     }
+    // ---- Fit SEMUA baris di satu halaman (dipakai saat capture PDF).
+    //      Meneruskan ke fitInnerToWidth per .iqro-row-inner: baris yang muat
+    //      tetap font penuh, baris kepanjangan dikecilkan sampai minFactor,
+    //      lalu boleh wrap kalau masih lebih (allowWrap).
+    function fitPageRows(pageEl, minFactor, allowWrap) {
+        if (!pageEl) return;
+        pageEl.querySelectorAll('.iqro-row-inner').forEach(inner => {
+            fitInnerToWidth(inner, minFactor, allowWrap);
+        });
+        // Combo cell tidak dibungkus .iqro-row-inner → tangani sebagai satu grup
+        const comboWrap = pageEl.querySelector('.iqro-combo-cell')?.parentElement;
+        if (comboWrap) fitInnerToWidth(comboWrap, minFactor, allowWrap);
+    }
 
     function iqroNavGo(btn, dir) {
         const container = btn.closest('#quranDisplay, #quranDisplayDrawer')
@@ -407,8 +426,10 @@
         const missing  = [];
         let pageIdx = 0;
 
+        const src = getJilidSource(window.currentMetode);
+
         for (let h = start; h <= end; h++) {
-            const data = window.IQRO_DATA && window.IQRO_DATA[String(jilid)] && window.IQRO_DATA[String(jilid)][String(h)];
+            const data = src.data[String(jilid)] && src.data[String(jilid)][String(h)];
             if (!data) { missing.push(h); continue; }
             pagesHtml += buildIqroPageHtml(data, pageIdx);
             rendered.push(h);
@@ -623,10 +644,10 @@
 
             const wrapper = document.createElement('div');
             wrapper.className = 'iqro-cap';
-            // PDF SELALU GELAP: set var theme ke gelap di wrapper + latar #1e3a5f.
+            // PDF SELALU GELAP: set var theme ke gelap di wrapper + latar #3E3D3A.
             wrapper.style.cssText = [
                 'position:absolute', 'left:-9999px', 'top:0', 'overflow:visible',
-                'width:' + RENDER_WIDTH + 'px', 'background-color:#1e3a5f',
+                'width:' + RENDER_WIDTH + 'px', 'background-color:#3E3D3A',
                 'padding:24px 12px', 'box-sizing:border-box',
                 "font-family:'Amiri Quran','Amiri',serif",
                 '--q-fg:#ffffff', '--q-line:rgba(255,255,255,0.3)',
@@ -642,7 +663,15 @@
                 'padding-bottom:' + IQRO_PDF_CELL_PADBOT + 'px !important; box-sizing:border-box !important; }' +
                 '.iqro-cap .word-item.iqro-combo-cell { font-size:' + IQRO_PDF_FONT_SIZE + 'px !important; ' +
                 'height:auto !important; min-height:' + IQRO_PDF_CELL_HEIGHT + 'px !important; ' +
-                'padding-bottom:' + IQRO_PDF_CELL_PADBOT + 'px !important; }';
+                'padding-bottom:' + IQRO_PDF_CELL_PADBOT + 'px !important; }' +
+                // ── AISAR PDF FIX: judul & basmallah "tenggelam" ke bawah ──
+                // Glyph Amiri ukuran besar punya descender dalam; beri ruang
+                // ekstra bawah + line-height longgar supaya tidak menimpa band.
+                '.iqro-cap .aisar-judul { line-height:2 !important; padding:20px 10px 52px 10px !important; overflow:visible !important; }' +
+                '.iqro-cap .aisar-basmallah { line-height:2.4 !important; margin:0 !important; padding:12px 0 28px 0 !important; overflow:visible !important; }' +
+                // Sel Aisar (2 huruf pendek) tidak butuh 150px seperti Iqro;
+                // line-height dinaikkan agar harakat atas & descender aman.
+                '.iqro-cap .aisar-page .word-item { min-height:120px !important; line-height:1.9 !important; padding-bottom:26px !important; white-space:nowrap !important; }';
             wrapper.appendChild(styleEl);
 
             const clonePage = srcPage.cloneNode(true);
@@ -656,12 +685,12 @@
 
             // PDF: shrink baris panjang; floor lebih rendah + wrap fallback supaya
             // kalimat jilid 4–6 yang panjang tidak terpotong.
-            fitPageRows(clonePage, 0.42, true);
+            fitPageRows(clonePage, 0.42, true);   // ← sekarang terdefinisi (lihat fungsi baru di bawah)
             await new Promise(r => setTimeout(r, 60));
 
             const pageCanvas = await html2canvas(wrapper, {
                 scale: SCALE, useCORS: true, allowTaint: true,
-                backgroundColor: '#1e3a5f', logging: false,
+                backgroundColor: '#3E3D3A', logging: false,
                 width: RENDER_WIDTH, height: wrapper.scrollHeight,
                 windowWidth: RENDER_WIDTH, windowHeight: wrapper.scrollHeight,
                 scrollX: 0, scrollY: 0
@@ -676,7 +705,7 @@
             a4.width  = cW;
             a4.height = a4H;
             const ctx = a4.getContext('2d');
-            ctx.fillStyle = '#1e3a5f';
+            ctx.fillStyle = '#3E3D3A';
             ctx.fillRect(0, 0, cW, a4H);
 
             let drawW = cW, drawH = pageCanvas.height;
@@ -689,7 +718,7 @@
             const dy = (IQRO_PDF_VALIGN === 'top') ? 0 : Math.floor((a4H - drawH) / 2);
             ctx.drawImage(pageCanvas, 0, 0, pageCanvas.width, pageCanvas.height, dx, dy, drawW, drawH);
 
-            slices.push(a4.toDataURL('image/png', 1.0));
+            slices.push(a4.toDataURL('image/jpeg', 0.82));
             console.log('✂️ Iqro page ' + (idx + 1) + '/' + pages.length + ' -> 1 halaman A4');
         }
 
@@ -754,6 +783,32 @@
         wrapCaptureForIqro();
 
         console.log('✅ iqro-handler.js v4.5 (font layar ' + IQRO_SCREEN_FONT_SIZE + 'px, konstanta) ready');
+    }
+    // ==== SUMBER DATA PER METODE (Iqro / Aisar) ====
+    const JILID_METODES = ['Iqro', 'Ummi', 'Aisar'];
+
+    function isJilidMetode(val) {
+        return JILID_METODES.indexOf(val) !== -1;
+    }
+
+    function getJilidSource(metode) {
+        if (metode === 'Aisar') {
+            return {
+                data:   window.AISAR_DATA || {},
+                jumlah: window.AISAR_JUMLAH_HALAMAN || {},
+                nama:   'Aisar',
+            };
+        }
+        return {
+            data:   window.IQRO_DATA || {},
+            jumlah: window.IQRO_JUMLAH_HALAMAN || {},
+            nama:   'Iqro',
+        };
+    }
+
+    function metodeForMode(mode) {
+        const el = document.getElementById('metode' + mode);
+        return (el && el.value) || window.currentMetode || 'Iqro';
     }
 
     document.readyState === 'loading'

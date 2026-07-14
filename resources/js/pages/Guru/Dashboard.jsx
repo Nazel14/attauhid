@@ -1,0 +1,386 @@
+import { useMemo, useState } from 'react';
+import { Head, usePage, router } from '@inertiajs/react';
+import GuruAuthenticatedLayout from '@/Layouts/GuruAuthenticatedLayout';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+
+/* ============================================================
+ * IKON — monokrom line, konsisten seantero panel
+ * ============================================================ */
+const I = ({ d, className = 'w-5 h-5', ...p }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" {...p}>{d}</svg>
+);
+const DashboardIcon = (p) => <I {...p} d={<path d="M4 5a1 1 0 011-1h5a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 12a1 1 0 011-1h5a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2zM13 5a1 1 0 011-1h5a1 1 0 011 1v2a1 1 0 01-1 1h-5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h5a1 1 0 011 1v6a1 1 0 01-1 1h-5a1 1 0 01-1-1v-6z" />} />;
+const UsersIcon = (p) => <I {...p} d={<path d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z" />} />;
+const TrendIcon = (p) => <I {...p} d={<path d="M3 17l6-6 4 4 8-8m0 0h-5m5 0v5" />} />;
+const CheckIcon = (p) => <I {...p} d={<path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />} />;
+const BookIcon = (p) => <I {...p} d={<path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />} />;
+const ChartIcon = (p) => <I {...p} d={<path d="M3 3v18h18M9 17V9m4 8V5m4 12v-6" />} />;
+const ArrowUpIcon = (p) => <I {...p} d={<path d="M5 10l7-7m0 0l7 7m-7-7v18" />} />;
+const TrophyIcon  = (p) => <I {...p} d={<path d="M8 21h8m-4-4v4m6-17H6v4a6 6 0 0012 0V4zM6 6H4a2 2 0 000 4h2m12-4h2a2 2 0 010 4h-2" />} />;
+
+/* ============================================================
+ * KONSTANTA
+ * ============================================================ */
+const METODE_COLORS = { quran: '#D97757', iqro: '#D4A24E', aisar: '#7C9885' };
+const STATUS = {
+    hadir: { dot: 'bg-emerald-500', label: 'Hadir', text: 'text-emerald-600' },
+    sakit: { dot: 'bg-orange-500', label: 'Sakit', text: 'text-orange-600' },
+    izin: { dot: 'bg-amber-500', label: 'Izin', text: 'text-amber-600' },
+    alpha: { dot: 'bg-red-500', label: 'Alpha', text: 'text-red-600' },
+};
+const METODE_BADGE = {
+    quran: 'bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 ring-claude-200 dark:ring-claude-500/20',
+    iqro:  'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-amber-100 dark:ring-amber-500/20',
+    aisar: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-500/20',
+};
+
+const getProgress = (s) => Number(s.progress_persen ?? s.progress ?? s.persentase ?? 0);
+
+const formatTanggalID = (str) => {
+    if (!str) return '';
+    const d = new Date(str);
+    return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+};
+
+/* ============================================================
+ * KOMPONEN KECIL
+ * ============================================================ */
+function StatCard({ icon, label, value, sub, tone = 'stone' }) {
+    const toneMap = {
+        stone: 'bg-stone-100 dark:bg-coal-700 text-stone-500 dark:text-stone-400',
+        claude: 'bg-claude-100 dark:bg-claude-500/15 text-claude-600 dark:text-claude-400',
+        emerald: 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+    };
+    return (
+        <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-4 flex items-center gap-3">
+            <span className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${toneMap[tone]}`}>{icon}</span>
+            <div className="min-w-0">
+                <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">{label}</p>
+                <p className="text-lg font-bold tracking-tight text-stone-900 dark:text-stone-100 leading-tight">{value}</p>
+                {sub && <p className="text-[10px] text-stone-400 truncate">{sub}</p>}
+            </div>
+        </div>
+    );
+}
+
+function MiniStat({ tone, value, label }) {
+    const map = {
+        emerald: 'bg-emerald-50 dark:bg-emerald-500/10 ring-emerald-100 dark:ring-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+        orange: 'bg-orange-50 dark:bg-orange-500/10 ring-orange-100 dark:ring-orange-500/20 text-orange-600 dark:text-orange-400',
+        amber: 'bg-amber-50 dark:bg-amber-500/10 ring-amber-100 dark:ring-amber-500/20 text-amber-600 dark:text-amber-400',
+        red: 'bg-red-50 dark:bg-red-500/10 ring-red-100 dark:ring-red-500/20 text-red-600 dark:text-red-400',
+    };
+    const dot = { emerald: 'bg-emerald-500', orange: 'bg-orange-500', amber: 'bg-amber-500', red: 'bg-red-500' };
+    return (
+        <div className={`rounded-xl ring-1 p-3 text-center ${map[tone]}`}>
+            <p className="text-2xl font-bold tracking-tight leading-none">{value}</p>
+            <p className="mt-1.5 flex items-center justify-center gap-1 text-[11px] font-medium">
+                <span className={`w-1.5 h-1.5 rounded-full ${dot[tone]}`} /> {label}
+            </p>
+        </div>
+    );
+}
+
+/* ============================================================
+ * HALAMAN
+ * ============================================================ */
+export default function Dashboard({ santriList = [], santriSiapNaik = [], santriTamat = [], presensiHariIni = null }) {
+    const { auth } = usePage().props;
+    const guruName = auth?.user?.name ?? 'Ustadz/Ustadzah';
+
+    const [busyId, setBusyId] = useState(null);
+    const sahkanNaik = (s) => {
+        if (!window.confirm(`Sahkan ${s.name} naik ke ${s.metode} Jilid ${s.jilid_berikutnya}?`)) return;
+        setBusyId(s.id);
+        router.post(route('guru.santri.naik-jilid', s.id), {}, {
+            preserveScroll: true,
+            onFinish: () => setBusyId(null),
+        });
+    };
+
+    /* ---- distribusi metode (client-side dari santriList) ---- */
+    const metodeData = useMemo(() => {
+        let quran = 0, iqro = 0, aisar = 0;
+        santriList.forEach((s) => {
+            const m = (s.target_metode || '').toLowerCase();
+            if (m === 'aisar') aisar++;
+            else if (m === 'iqro' || m === 'jilid') iqro++;
+            else quran++;
+        });
+        return [
+            { key: 'quran', name: 'Al-Quran', value: quran, color: METODE_COLORS.quran },
+            { key: 'iqro',  name: 'Iqro',     value: iqro,  color: METODE_COLORS.iqro },
+            { key: 'aisar', name: 'Aisar',    value: aisar, color: METODE_COLORS.aisar },
+        ].filter((d) => d.value > 0);
+    }, [santriList]);
+
+    
+
+    const presensi = presensiHariIni ?? {
+        tanggal: new Date().toISOString().slice(0, 10),
+        summary: { hadir: 0, sakit: 0, izin: 0, alpha: 0 },
+        rows: [],
+    };
+    const totalSetoran = (presensi.rows || []).reduce((a, r) => a + Number(r.jumlah_setoran || 0), 0);
+    const progressById = useMemo(
+        () => Object.fromEntries(santriList.map((s) => [s.id, getProgress(s)])),
+        [santriList]
+    );
+
+    // { id: { label, tone } } — metode + jilid per santri
+    const metodeById = useMemo(() => {
+        const map = {};
+        santriList.forEach((s) => {
+            const m = (s.target_metode || '').toLowerCase();
+            if (m === 'aisar')      map[s.id] = { label: `Aisar ${s.target_jilid ?? '-'}`, tone: 'aisar' };
+            else if (m === 'iqro')  map[s.id] = { label: `Iqro ${s.target_jilid ?? '-'}`,  tone: 'iqro' };
+            else                    map[s.id] = { label: 'Al-Quran', tone: 'quran' };
+        });
+        return map;
+    }, [santriList]);
+
+    return (
+        <GuruAuthenticatedLayout>
+            <Head title="Dashboard" />
+
+            <div className="max-w-6xl mx-auto px-3 sm:px-4 py-5">
+
+                {/* ===== HEADER ===== */}
+                <div className="flex items-center gap-3 mb-5">
+                    <div className="w-11 h-11 rounded-2xl bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 flex items-center justify-center flex-shrink-0">
+                        <DashboardIcon className="w-6 h-6 text-stone-600 dark:text-stone-300" />
+                    </div>
+                    <div className="min-w-0">
+                        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">
+                            Assalamu'alaikum, {guruName}
+                        </h1>
+                        <p className="text-[11px] text-stone-500 mt-0.5">Ringkasan santri ampuan &amp; presensi hari ini</p>
+                    </div>
+                </div>
+
+                {/* ===== USULAN NAIK JILID ===== */}
+{(santriSiapNaik.length > 0 || santriTamat.length > 0) && (
+    <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-5 mb-5">
+        <div className="flex items-center gap-2 mb-4">
+            <span className="w-6 h-6 bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400">
+                <ArrowUpIcon className="w-3.5 h-3.5" />
+            </span>
+            <h2 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">Usulan Naik Jilid</h2>
+            {santriSiapNaik.length > 0 && (
+                <span className="ml-auto text-[11px] font-semibold px-2 py-0.5 rounded-full bg-claude-100 dark:bg-claude-500/15 text-claude-600 dark:text-claude-400">
+                    {santriSiapNaik.length} siap naik
+                </span>
+            )}
+        </div>
+
+        <div className="space-y-2">
+            {santriSiapNaik.map((s) => (
+                <div key={s.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-stone-50 dark:bg-coal-700/40 ring-1 ring-stone-200 dark:ring-coal-700">
+                    <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-stone-800 dark:text-stone-100 truncate">{s.name}</p>
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                            {s.metode} Jilid {s.jilid_sekarang}
+                            <span className="mx-1 text-claude-500">→</span>
+                            Jilid {s.jilid_berikutnya}
+                            <span className="text-stone-400 dark:text-stone-500"> · {s.halaman_tersetor}/{s.total_halaman} halaman tuntas</span>
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => sahkanNaik(s)}
+                        disabled={busyId === s.id}
+                        className="shrink-0 px-3 py-1.5 rounded-lg bg-claude-500 hover:bg-claude-600 disabled:opacity-50 text-white text-xs font-semibold transition-colors active:scale-95"
+                    >
+                        {busyId === s.id ? 'Memproses…' : 'Sahkan'}
+                    </button>
+                </div>
+            ))}
+
+            {santriTamat.map((s) => (
+                <div key={`t-${s.id}`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100 dark:ring-emerald-500/20">
+                    <TrophyIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-stone-800 dark:text-stone-100 truncate">{s.name}</p>
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400">Tuntas seluruh jilid {s.metode} (Jilid {s.jilid})</p>
+                    </div>
+                    <span className="shrink-0 text-[10px] font-bold px-2 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">
+                        Selesai
+                    </span>
+                </div>
+            ))}
+        </div>
+
+        {santriSiapNaik.length === 0 && (
+            <p className="mt-2 text-[11px] text-stone-400">Belum ada santri yang memenuhi syarat naik jilid.</p>
+        )}
+    </div>
+)}
+
+                {/* ===== STAT CARDS ===== */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                    <StatCard tone="claude" icon={<UsersIcon className="w-5 h-5" />} label="Total Santri" value={santriList.length} />
+                    <StatCard tone="emerald" icon={<CheckIcon className="w-5 h-5" />} label="Hadir Hari Ini" value={presensi.summary.hadir} sub={`dari ${santriList.length} santri`} />
+                    <StatCard tone="stone" icon={<BookIcon className="w-5 h-5" />} label="Setoran Hari Ini" value={totalSetoran} sub="total setoran" />
+                </div>
+
+                {/* ===== GRID: METODE CHART + PRESENSI ===== */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+                    {/* ---- DONUT METODE ---- */}
+                    <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-5">
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="w-6 h-6 bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400">
+                                <ChartIcon className="w-3.5 h-3.5" />
+                            </span>
+                            <h2 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">Distribusi Metode</h2>
+                        </div>
+
+                        {metodeData.length ? (
+                            <>
+                                <div className="relative h-44">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie data={metodeData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={52} outerRadius={72} paddingAngle={3} stroke="none">
+                                                {metodeData.map((d) => <Cell key={d.key} fill={d.color} />)}
+                                            </Pie>
+                                            <Tooltip
+                                                contentStyle={{ borderRadius: 12, border: '1px solid #e7e5e4', fontSize: 12, padding: '6px 10px' }}
+                                                formatter={(v, n) => [`${v} santri`, n]}
+                                            />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                        <span className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100">{santriList.length}</span>
+                                        <span className="text-[10px] text-stone-400 -mt-0.5">Santri</span>
+                                    </div>
+                                </div>
+                                <div className="mt-3 space-y-2">
+                                    {metodeData.map((d) => (
+                                        <div key={d.key} className="flex items-center justify-between text-xs">
+                                            <span className="flex items-center gap-2 text-stone-600 dark:text-stone-300">
+                                                <span className="w-2.5 h-2.5 rounded-full" style={{ background: d.color }} />
+                                                {d.name}
+                                            </span>
+                                            <span className="font-bold text-stone-800 dark:text-stone-200">
+                                                {d.value}
+                                                <span className="text-stone-400 font-normal ml-1">
+                                                    ({Math.round((d.value / santriList.length) * 100)}%)
+                                                </span>
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="h-44 flex items-center justify-center text-xs text-stone-400">Belum ada data santri</div>
+                        )}
+                    </div>
+
+                    {/* ---- PRESENSI HARI INI ---- */}
+                    <div className="lg:col-span-2 bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-5">
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="w-6 h-6 bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400">
+                                <CheckIcon className="w-3.5 h-3.5" />
+                            </span>
+                            <h2 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">
+                                Presensi Hari Ini
+                            </h2>
+                            <span className="ml-auto text-[11px] text-stone-400">{formatTanggalID(presensi.tanggal)}</span>
+                        </div>
+
+                        {/* mini stats */}
+                        <div className="grid grid-cols-4 gap-2 mb-4">
+                            <MiniStat tone="emerald" value={presensi.summary.hadir} label="Hadir" />
+                            <MiniStat tone="orange" value={presensi.summary.sakit} label="Sakit" />
+                            <MiniStat tone="amber" value={presensi.summary.izin} label="Izin" />
+                            <MiniStat tone="red" value={presensi.summary.alpha} label="Alpha" />
+                        </div>
+
+                        {/* legend */}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-3 text-[11px] text-stone-500 dark:text-stone-400">
+                            {Object.entries(STATUS).map(([k, v]) => (
+                                <span key={k} className="flex items-center gap-1.5">
+                                    <span className={`w-2 h-2 rounded-full ${v.dot}`} /> {v.label}
+                                </span>
+                            ))}
+                            <span className="flex items-center gap-1.5">
+                                <span className="w-4 h-4 rounded bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 flex items-center justify-center text-stone-500 dark:text-stone-400">
+                                    <BookIcon className="w-2.5 h-2.5" />
+                                </span>
+                                Setoran
+                            </span>
+                        </div>
+
+                        {/* tabel */}
+                        <div className="rounded-xl ring-1 ring-stone-200 dark:ring-coal-700 overflow-hidden">
+                            <div className="grid grid-cols-[32px_1fr_100px_92px] sm:grid-cols-[32px_1fr_96px_100px_92px] gap-2 px-3 py-2 bg-stone-50 dark:bg-coal-700/40 text-[11px] font-semibold text-stone-500 dark:text-stone-400">
+                                <span>No</span>
+                                <span>Nama Santri</span>
+                                <span className="hidden sm:block">Metode</span>
+                                <span>Progress</span>
+                                <span className="text-right">Materi</span>
+                            </div>
+                            <div className="divide-y divide-stone-100 dark:divide-coal-700/60">
+                                {(presensi.rows || []).length ? (
+                                    presensi.rows.map((r, i) => {
+                                        const st = STATUS[(r.status || '').toLowerCase()] ?? null;
+                                        return (
+                                            <div key={r.id ?? i} className="grid grid-cols-[32px_1fr_100px_92px] sm:grid-cols-[32px_1fr_96px_100px_92px] gap-2 px-3 py-2.5 items-center">
+                                                <span className="text-xs text-stone-400">{i + 1}</span>
+                                                <span className="min-w-0">
+                                                    <span className="block text-sm text-stone-700 dark:text-stone-200 truncate">{r.name}</span>
+                                                    {/* metode versi mobile — muncul di bawah nama */}
+                                                    <span className={`sm:hidden inline-flex mt-0.5 items-center px-1.5 py-0.5 rounded-md ring-1 text-[10px] font-semibold ${METODE_BADGE[metodeById[r.id]?.tone ?? 'quran']}`}>
+                                                        {metodeById[r.id]?.label ?? '-'}
+                                                    </span>
+                                                </span>
+                                                {/* metode versi desktop — kolom sendiri */}
+                                                <span className="hidden sm:flex">
+                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md ring-1 text-[10px] font-semibold truncate ${METODE_BADGE[metodeById[r.id]?.tone ?? 'quran']}`}>
+                                                        {metodeById[r.id]?.label ?? '-'}
+                                                    </span>
+                                                </span>
+                                                <span className="flex items-center gap-1.5 min-w-0">
+                                                    <span className="flex-1 h-1.5 rounded-full bg-stone-200 dark:bg-coal-700 overflow-hidden">
+                                                        <span className="block h-full rounded-full bg-claude-500" style={{ width: `${Math.min(progressById[r.id] ?? 0, 100)}%` }} />
+                                                    </span>
+                                                    <span className="text-[10px] font-semibold text-stone-500 dark:text-stone-400 tabular-nums">{progressById[r.id] ?? 0}%</span>
+                                                </span>
+                                                <span className="flex items-center justify-end gap-3">
+                                                {/* slot badge setoran — lebar tetap */}
+                                                <span className="w-11 flex justify-end">
+                                                    {Number(r.jumlah_setoran) > 0 ? (
+                                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 text-[10px] font-semibold text-stone-600 dark:text-stone-300">
+                                                            <BookIcon className="w-3 h-3" /> {r.jumlah_setoran}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-stone-300 dark:text-coal-600">–</span>
+                                                    )}
+                                                </span>
+                                                {/* slot status — lebar tetap */}
+                                                <span className="w-9 flex flex-col items-center">
+                                                    {st ? (
+                                                        <>
+                                                            <span className={`w-3.5 h-3.5 rounded-full ${st.dot}`} title={st.label} />
+                                                            {r.waktu && <span className="text-[9px] text-stone-400 tabular-nums mt-0.5">{r.waktu}</span>}
+                                                        </>
+                                                    ) : (
+                                                        <span className="w-4 h-4 rounded-full ring-1 ring-stone-300 dark:ring-coal-600" title="Belum presensi" />
+                                                    )}
+                                                </span>
+                                            </span>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="px-3 py-8 text-center text-xs text-stone-400">
+                                        Belum ada presensi tercatat hari ini.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </GuruAuthenticatedLayout>
+    );
+}
