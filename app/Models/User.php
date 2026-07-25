@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Crypt;
 use Spatie\Permission\Traits\HasRoles;
+use Spatie\Permission\Models\Role;
 
 class User extends Authenticatable
 {
@@ -32,6 +33,24 @@ class User extends Authenticatable
     protected $casts = [
         'profile_photo_updated_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(function (self $user) {
+            if (!$user->role) {
+                return;
+            }
+
+            // Jangan lempar RoleDoesNotExist bila role belum di-seed.
+            $role = Role::where('guard_name', 'web')
+                ->where('name', $user->role)
+                ->first();
+
+            if ($role) {
+                $user->assignRole($role);
+            }
+        });
+    }
 
     public function getPlainPasswordAttribute($value)
     {
@@ -84,20 +103,40 @@ class User extends Authenticatable
         return $this->role === 'santri';
     }
 
+    /**
+     * Modul yang boleh diakses user ini.
+     * Dipakai halaman pemilih modul setelah login (step 6).
+     * Role keuangan belum ada sampai modul-nya di-port — hasAnyRole()
+     * cukup mengembalikan false, tidak error.
+     */
+    public function availableModules(): array
+    {
+        $map = [
+            'raport'   => ['super-admin', 'admin', 'guru', 'santri'],
+            'keuangan' => ['super-admin', 'bendahara', 'kepala-sekolah', 'pihak-yayasan', 'hrd'],
+        ];
+
+        $modules = [];
+
+        foreach ($map as $module => $roles) {
+            if (!config("modules.$module")) {
+                continue;
+            }
+
+            // Cek Spatie dulu, lalu fallback kolom — konsisten dengan RoleMiddleware.
+            if ($this->hasAnyRole($roles) || in_array($this->role, $roles, true)) {
+                $modules[] = $module;
+            }
+        }
+
+        return $modules;
+    }
+
     public function isSuperAdmin(): bool
     {
         return $this->hasRole('super-admin');
     }
 
-    public function isAdminSenior(): bool
-    {
-        return $this->hasRole('admin');
-    }
-
-    public function isAdminBiasa(): bool
-    {
-        return $this->hasRole('admin');
-    }
 
     public function getProfilePhotoUrlAttribute()
     {

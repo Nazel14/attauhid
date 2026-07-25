@@ -68,7 +68,7 @@ class RolePermissionSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission, 'guard_name' => 'web']);
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
         // =====================================================
@@ -76,8 +76,8 @@ class RolePermissionSeeder extends Seeder
         // =====================================================
         
         // 1. SUPER ADMIN - Full Access (Raja Admin)
-        $superAdmin = Role::create(['name' => 'super-admin', 'guard_name' => 'web']);
-        $superAdmin->givePermissionTo(Permission::all()); // Semua permission
+        $superAdmin = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $superAdmin->syncPermissions(Permission::all()); // Semua permission
         
         // 2. ADMIN - Full access kecuali kelola admin & hapus log
         $admin = Role::create(['name' => 'admin', 'guard_name' => 'web']);

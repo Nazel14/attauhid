@@ -18,7 +18,7 @@ class AdminController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::where('role', 'admin')->with('permissions');
+        $query = User::where('role', 'admin')->with('roles');
 
         // Search
         if ($request->filled('search')) {
@@ -33,16 +33,16 @@ class AdminController extends Controller
                 'plain_password'     => $admin->plain_password,
                 'profile_photo_url'  => $admin->profile_photo ? asset('storage/' . $admin->profile_photo) : null,
                 'profile_photo_name' => $admin->profile_photo_name,
-                'is_super_admin'     => $admin->hasPermissionTo('kelola-admin'),
+                'is_super_admin'     => $admin->hasRole('super-admin'),
                 'is_self'            => $admin->id === auth()->id(),
             ]);
 
         $superAdminCount = User::where('role', 'admin')
-            ->permission('kelola-admin')
+            ->whereHas('roles', fn ($q) => $q->where('name', 'super-admin'))
             ->count();
 
         $regularAdminCount = User::where('role', 'admin')
-            ->whereDoesntHave('permissions', fn ($q) => $q->where('name', 'kelola-admin'))
+            ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'super-admin'))
             ->count();
 
         return Inertia::render('Admin/Admins/Index', [
@@ -72,7 +72,7 @@ class AdminController extends Controller
         // ✅ VALIDASI BATASAN JUMLAH ADMIN
         if ($validated['is_super_admin']) {
             $currentSuperAdminCount = User::where('role', 'admin')
-                ->permission('kelola-admin')
+                ->whereHas('roles', fn ($q) => $q->where('name', 'super-admin'))
                 ->count();
 
             if ($currentSuperAdminCount >= 3) {
@@ -82,8 +82,8 @@ class AdminController extends Controller
             }
         } else {
             $currentAdminCount = User::where('role', 'admin')
-                ->whereDoesntHave('permissions', function($q) {
-                    $q->where('name', 'kelola-admin');
+                ->whereDoesntHave('roles', function($q) {
+                    $q->where('name', 'super-admin');
                 })
                 ->count();
 
@@ -104,6 +104,12 @@ class AdminController extends Controller
             ]);
 
             $user->assignRole('admin');
+
+            // BUG LAMA: is_super_admin divalidasi & dicatat ke log, tapi tidak
+            // pernah diterapkan, jadi admin baru selalu jadi admin biasa.
+            if ($validated['is_super_admin']) {
+                $user->assignRole('super-admin');
+            }
 
             if ($request->hasFile('profile_photo')) {
                 $file = $request->file('profile_photo');
@@ -161,12 +167,12 @@ class AdminController extends Controller
             'delete_photo' => ['nullable', 'boolean'],
         ]);
 
-        $currentIsSuperAdmin = $admin->hasPermissionTo('kelola-admin');
+        $currentIsSuperAdmin = $admin->hasRole('super-admin');
 
         if ($currentIsSuperAdmin !== $validated['is_super_admin']) {
             if ($validated['is_super_admin']) {
                 $currentSuperAdminCount = User::where('role', 'admin')
-                    ->permission('kelola-admin')
+                    ->whereHas('roles', fn ($q) => $q->where('name', 'super-admin'))
                     ->count();
 
                 if ($currentSuperAdminCount >= 3) {
@@ -176,8 +182,8 @@ class AdminController extends Controller
                 }
             } else {
                 $currentAdminCount = User::where('role', 'admin')
-                    ->whereDoesntHave('permissions', function($q) {
-                        $q->where('name', 'kelola-admin');
+                    ->whereDoesntHave('roles', function($q) {
+                        $q->where('name', 'super-admin');
                     })
                     ->count();
 
@@ -193,7 +199,7 @@ class AdminController extends Controller
         try {
             $oldData = [
                 'name' => $admin->name,
-                'is_super_admin' => $admin->hasPermissionTo('kelola-admin'),
+                'is_super_admin' => $admin->hasRole('super-admin'),
             ];
 
             $admin->update([
@@ -201,8 +207,10 @@ class AdminController extends Controller
             ]);
 
             if ($validated['is_super_admin']) {
-                $admin->givePermissionTo('kelola-admin');
+                $admin->assignRole('super-admin');
             } else {
+                $admin->removeRole('super-admin');
+                // Bersihkan sisa assignment langsung dari skema lama, kalau ada.
                 $admin->revokePermissionTo('kelola-admin');
             }
 
@@ -273,14 +281,14 @@ class AdminController extends Controller
             return back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri!');
         }
 
-        if ($admin->hasPermissionTo('kelola-admin')) {
+        if ($admin->hasRole('super-admin')) {
             return back()->with('error', 'Super Admin tidak dapat dihapus!');
         }
 
         DB::beginTransaction();
         try {
             $userName = $admin->name;
-            $isSuperAdmin = $admin->hasPermissionTo('kelola-admin');
+            $isSuperAdmin = $admin->hasRole('super-admin');
 
             LogActivity::create([
                 'user_id'       => auth()->id(),

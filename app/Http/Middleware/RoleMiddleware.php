@@ -17,16 +17,17 @@ class RoleMiddleware
 
         $user = Auth::user();
 
-        // ✅ CEK APAKAH USER PUNYA SALAH SATU ROLE YANG DIMINTA
         foreach ($roles as $role) {
-            // Cek native role (users.role column)
-            if ($user->role === $role) {
+            // 1. Spatie role — sumber kebenaran utama.
+            //    Modul keuangan hanya punya jalur ini (bendahara, hrd, dst.)
+            //    karena role-nya tidak ada padanannya di kolom users.role.
+            if ($user->hasRole($role)) {
                 return $next($request);
             }
-            
-            // ✅ BACKWARD COMPATIBILITY: 
-            // Jika route minta 'super-admin', cek permission 'kelola-admin'
-            if ($role === 'super-admin' && $user->hasPermissionTo('kelola-admin')) {
+
+            // 2. Fallback kolom users.role — dipertahankan agar user lama
+            //    yang belum ter-assign Spatie role tetap bisa masuk.
+            if ($user->role === $role) {
                 return $next($request);
             }
         }
