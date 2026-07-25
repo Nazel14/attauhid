@@ -542,11 +542,11 @@ Route::middleware(['auth'])->prefix('api')->name('api.')->group(function () {
     })->name('presensi.hari-ini');
 
     Route::get('/laporan/unread', function () {
-        // Salin PERSIS ekspresi penghitung unreadLaporan dari HandleInertiaRequests.php
-        // ke sini (atau ekstrak jadi static method, mis. Laporan::unreadCountFor(Auth::user())
-        // lalu panggil dari dua tempat supaya tidak duplikat logika).
+        // Sumber angka yang sama dengan prop `unreadLaporan` di
+        // HandleInertiaRequests, supaya badge sidebar dan polling
+        // LaporanNotifier tidak pernah berbeda.
         return response()->json([
-            'unread' => \App\Models\Laporan::unreadCountFor(Auth::user()),
+            'unread' => \App\Models\Laporan::totalUnreadFor(Auth::user()),
         ]);
     })->name('laporan.unread');
 });
