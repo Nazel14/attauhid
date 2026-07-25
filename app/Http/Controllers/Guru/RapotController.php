@@ -10,6 +10,7 @@ use App\Models\Kelas;
 use App\Models\Guru;
 use App\Models\TahunAjaran;
 use App\Models\SantriKelasHistory;
+use App\Models\RapotAkses;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -18,6 +19,8 @@ use Inertia\Inertia;
 
 class RapotController extends Controller
 {
+    use \App\Traits\UsesKelasAktif;
+
     /**
      * Default tanggal mulai & akhir berdasarkan TahunAjaran aktif.
      * Dipakai sebagai dasar rentang PRESENSI (presensi tak punya kolom kelas_id).
@@ -64,7 +67,9 @@ class RapotController extends Controller
      */
     private function historiAlumniGuru(Guru $guru)
     {
-        $kelasIdsGuru = Kelas::where('guru_id', $guru->id)->pluck('id');
+        // Riwayat di-scope ke KELAS AKTIF saja — guru yang sedang membuka 8A
+        // tidak boleh melihat alumni 6A.
+        $kelasIdsGuru = collect(array_filter([$this->kelasAktifId()]));
         if ($kelasIdsGuru->isEmpty()) {
             return collect();
         }
@@ -91,7 +96,7 @@ class RapotController extends Controller
      */
     private function resolveAksesRapot(Guru $guru, Santri $santri): ?array
     {
-        $kelasIdsGuru = Kelas::where('guru_id', $guru->id)->pluck('id');
+        $kelasIdsGuru = collect(array_filter([$this->kelasAktifId()]));
         if ($kelasIdsGuru->isEmpty()) return null;
 
         // Akses aktif
@@ -201,8 +206,8 @@ class RapotController extends Controller
      */
     public function index()
     {
-        $guru  = Guru::where('user_id', Auth::id())->first();
-        $kelas = $guru ? Kelas::where('guru_id', $guru->id)->first() : null;
+        $guru  = $this->guruAktif();
+        $kelas = $this->kelasAktif();
 
         $tahunAjaranAktif = TahunAjaran::getAktif();
         $tahunAjaranId    = $tahunAjaranAktif?->id;
@@ -260,13 +265,27 @@ class RapotController extends Controller
             ? Santri::with('user')->where('kelas_id', $kelas->id)->orderBy('name')->get()
             : collect();
 
+        // ── Kunci PDF rapot santri ──
+        // Tidak adanya baris di rapot_akses = TERKUNCI, jadi tidak perlu seeding.
+        $jendelaRapot   = RapotAkses::jendela($tahunAjaranAktif);
+        $bolehAturRapot = $jendelaRapot['boleh'];
+
+        $aksesMap = ($tahunAjaranId && $santriList->isNotEmpty())
+            ? RapotAkses::where('tahun_ajaran_id', $tahunAjaranId)
+                ->whereIn('santri_id', $santriList->pluck('id'))
+                ->get()
+                ->keyBy('santri_id')
+            : collect();
+
         // Progress per KELAS (kelas_id). Target tetap level-kelas (per TA / fallback target_juz).
-        $santriList->each(function ($santri) use ($tahunAjaranAktif, $tahunAjaranId) {
+        $santriList->each(function ($santri) use ($tahunAjaranAktif, $tahunAjaranId, $aksesMap) {
             $kelasId = $santri->kelas_id;
             $isIqro  = $santri->isJilidBased(); // iqro ATAU aisar
             $santri->is_iqro = $isIqro;
 
-            if ($isIqro) {
+            $santri->rapot_dibuka = (bool) ($aksesMap[$santri->id]->dibuka_at ?? null);
+
+           if ($isIqro) {
                 $targetJilid   = (int)($santri->target_jilid ?? 1);
                 $totalHalaman  = count($santri->halamanIqroTersetorKelas($targetJilid, $kelasId));
                 $totalHalJilid = (int)(config($santri->jilidConfigKey() . '.halaman_per_jilid.' . $targetJilid) ?? 0);
@@ -279,6 +298,29 @@ class RapotController extends Controller
                 $santri->hafalan_persen        = $totalHalJilid > 0
                     ? min(100, round(($totalHalaman / $totalHalJilid) * 100, 1))
                     : 0;
+
+                // Target Al-Qur'an sekunder (metode 2 = quran)
+                $hasQuran2 = $santri->hasQuranSecondary();
+                $santri->has_quran_secondary = $hasQuran2;
+                if ($hasQuran2) {
+                    $targetJuz2 = (float)($santri->target_juz ?? 0);
+                    // Setoran jilid ber-total_juz null → sum ini murni porsi Al-Qur'an
+                    $capaianJuz2 = Setoran::where('santri_id', $santri->id)
+                        ->where('kelas_id', $kelasId)
+                        ->where('kategori_setoran', 'Hafalan')
+                        ->sum('total_juz') ?? 0;
+
+                    $santri->target_juz_2     = $targetJuz2;
+                    $santri->capaian_juz_2    = round($capaianJuz2, 2);
+                    $santri->hafalan_persen_2 = $targetJuz2 > 0
+                        ? min(100, round(($capaianJuz2 / $targetJuz2) * 100, 1))
+                        : 0;
+                    $santri->target_display  .= ' + ' . rtrim(rtrim(number_format($targetJuz2, 2), '0'), '.') . ' Juz';
+                } else {
+                    $santri->target_juz_2     = 0;
+                    $santri->capaian_juz_2    = 0;
+                    $santri->hafalan_persen_2 = 0;
+                }
             } else {
                 $targetJuz = $tahunAjaranAktif
                     ? ($santri->getTargetJuzByTahunAjaran($tahunAjaranId) ?: ($santri->target_juz > 0 ? $santri->target_juz : 30))
@@ -298,20 +340,129 @@ class RapotController extends Controller
                 $santri->hafalan_persen        = $targetJuz > 0
                     ? min(100, round(($totalJuz / $targetJuz) * 100, 1))
                     : 0;
+
+                $santri->has_quran_secondary = false;
+                $santri->target_juz_2        = 0;
+                $santri->capaian_juz_2       = 0;
+                $santri->hafalan_persen_2    = 0;
             }
         });
 
-        return Inertia::render('Guru/Rapot/Index', compact(
-            'kelas',
-            'santriList',
-            'guru',
-            'tahunAjaranAktif',
-            'bolehNaik',
-            'tglMulaiNaikFormatted',
-            'kelasTujuanList',
-            'sudahNaikIds',
-            'alasanTutup'
-        ));
+        return Inertia::render('Guru/Rapot/Index', [
+            'kelas'                 => $kelas,
+            'santriList'            => $santriList,
+            'guru'                  => $guru,
+            'tahunAjaranAktif'      => $tahunAjaranAktif,
+            'bolehNaik'             => $bolehNaik,
+            'tglMulaiNaikFormatted' => $tglMulaiNaikFormatted,
+            'kelasTujuanList'       => $kelasTujuanList,
+            'sudahNaikIds'          => $sudahNaikIds,
+            'alasanTutup'           => $alasanTutup,
+
+            // Kunci PDF rapot
+            'bolehAturRapot'   => $bolehAturRapot,
+            'rapotJendelaText' => $jendelaRapot['teks'],
+            'rapotJendelaInfo' => $jendelaRapot['pesan'],
+        ]);
+    }
+
+    /**
+     * Buka / kunci akses PDF rapot untuk satu santri.
+     * Hanya boleh dilakukan dalam jendela 1 bulan sebelum s/d 7 hari setelah
+     * semester selesai — di luar itu tombolnya mati dan request ditolak.
+     */
+    public function toggleAksesRapot(Request $request, Santri $santri)
+    {
+        $guru     = $this->guruAktif();
+        $kelasIds = collect(array_filter([$this->kelasAktifId()]));
+
+        abort_unless($guru && $kelasIds->contains((int) $santri->kelas_id), 403,
+            'Santri ini tidak ada di kelas yang sedang aktif.');
+
+        $ta = TahunAjaran::getAktif();
+        if (! $ta) {
+            return back()->with('error', 'Tahun ajaran aktif belum diatur.');
+        }
+
+        $jendela = RapotAkses::jendela($ta);
+        if (! $jendela['boleh']) {
+            return back()->with('error', $jendela['pesan']);
+        }
+
+        $akses = RapotAkses::firstOrNew([
+            'santri_id'       => $santri->id,
+            'tahun_ajaran_id' => $ta->id,
+        ]);
+
+        if ($akses->dibuka_at) {
+            $akses->dibuka_at   = null;
+            $akses->dibuka_oleh = null;
+            $akses->save();
+
+            return back()->with('success', "Akses PDF rapot {$santri->name} dikunci kembali.");
+        }
+
+        $akses->dibuka_at   = now();
+        $akses->dibuka_oleh = Auth::id();
+        $akses->save();
+
+        return back()->with('success', "Akses PDF rapot {$santri->name} dibuka.");
+    }
+
+    /**
+     * Buka / kunci akses PDF rapot untuk BANYAK santri sekaligus.
+     * Berbeda dengan toggle per-santri: di sini aksinya eksplisit
+     * ('buka' / 'kunci'), bukan membalik status. Kalau membalik, santri yang
+     * sudah terbuka justru ikut terkunci saat guru menekan "Buka Terpilih".
+     */
+    public function bulkAksesRapot(Request $request)
+    {
+        $data = $request->validate([
+            'santri_ids'   => 'required|array|min:1',
+            'santri_ids.*' => 'integer|exists:santris,id',
+            'aksi'         => 'required|in:buka,kunci',
+        ]);
+
+        $guru     = $this->guruAktif();
+        $kelasIds = collect(array_filter([$this->kelasAktifId()]));
+
+        abort_unless($guru && $kelasIds->isNotEmpty(), 403, 'Kelas aktif tidak valid.');
+
+        $ta = TahunAjaran::getAktif();
+        if (! $ta) {
+            return back()->with('error', 'Tahun ajaran aktif belum diatur.');
+        }
+
+        $jendela = RapotAkses::jendela($ta);
+        if (! $jendela['boleh']) {
+            return back()->with('error', $jendela['pesan']);
+        }
+
+        // Hanya santri bimbingan guru ini yang boleh diproses.
+        $santriIds = Santri::whereIn('id', $data['santri_ids'])
+            ->whereIn('kelas_id', $kelasIds)
+            ->pluck('id');
+
+        if ($santriIds->isEmpty()) {
+            return back()->with('error', 'Tidak ada santri bimbingan Anda pada pilihan tersebut.');
+        }
+
+        $buka = $data['aksi'] === 'buka';
+
+        foreach ($santriIds as $id) {
+            $akses = RapotAkses::firstOrNew([
+                'santri_id'       => $id,
+                'tahun_ajaran_id' => $ta->id,
+            ]);
+
+            $akses->dibuka_at   = $buka ? now() : null;
+            $akses->dibuka_oleh = $buka ? Auth::id() : null;
+            $akses->save();
+        }
+
+        $kata = $buka ? 'dibuka' : 'dikunci kembali';
+
+        return back()->with('success', "Akses PDF rapot {$santriIds->count()} santri {$kata}.");
     }
 
     /**
@@ -320,7 +471,7 @@ class RapotController extends Controller
      */
     public function riwayatSantri()
     {
-        $guru = Guru::where('user_id', Auth::id())->first();
+        $guru = $this->guruAktif();
 
         $ringkasan = collect();
 
@@ -369,7 +520,7 @@ class RapotController extends Controller
      */
     public function detailRiwayatSantri($tahunAjaranId)
     {
-        $guru = Guru::where('user_id', Auth::id())->first();
+        $guru = $this->guruAktif();
         if (!$guru) abort(403, 'Data guru tidak ditemukan.');
 
         $tahunAjaran = TahunAjaran::find($tahunAjaranId);
@@ -442,7 +593,7 @@ class RapotController extends Controller
      */
     public function show(Request $request, Santri $santri)
     {
-        $guru  = Guru::where('user_id', Auth::id())->first();
+        $guru = $this->guruAktif();
         $akses = $guru ? $this->resolveAksesRapot($guru, $santri) : null;
 
         if (!$akses) {
@@ -523,6 +674,9 @@ class RapotController extends Controller
             'target_jilid'          => $santri->target_jilid ?? 1,
             'iqro_persen_diketahui' => $totalHalamanJilid > 0,
             'metode_label'          => $santri->isAisar() ? 'Aisar' : 'Iqro',
+            // Target Al-Qur'an sekunder — untuk santri jilid + quran.
+            // total_juz_hafalan sudah = porsi Al-Qur'an (entri jilid total_juz null).
+            'has_quran_secondary'   => $santri->hasQuranSecondary(),
         ];
 
         $statistikPresensi = [
@@ -567,7 +721,7 @@ class RapotController extends Controller
      */
     public function downloadPdf(Request $request, Santri $santri)
     {
-        $guru  = Guru::where('user_id', Auth::id())->first();
+        $guru = $this->guruAktif();
         $akses = $guru ? $this->resolveAksesRapot($guru, $santri) : null;
 
         if (!$akses) {
@@ -651,6 +805,9 @@ class RapotController extends Controller
             'target_jilid'          => $santri->target_jilid ?? 1,
             'iqro_persen_diketahui' => $totalHalamanJilid > 0,
             'metode_label'          => $santri->isAisar() ? 'Aisar' : 'Iqro',
+            // Target Al-Qur'an sekunder — untuk santri jilid + quran.
+            // total_juz_hafalan sudah = porsi Al-Qur'an (entri jilid total_juz null).
+            'has_quran_secondary'   => $santri->hasQuranSecondary(),
         ];
 
         $statistikPresensi = [
@@ -669,26 +826,53 @@ class RapotController extends Controller
             ? Guru::find($kelasRapot->guru_id)
             : $santri->guru;
 
-        $pdf = Pdf::loadView('santri.rapot.pdf', compact(
-            'santri',
-            'setorans',
-            'presensis',
-            'statistikSetoran',
-            'statistikPresensi',
-            'tanggalMulai',
-            'tanggalAkhir',
-            'tahunAjaranAktif',
-            'kelasRapot',
-            'guruRapot'
-        ));
-        $pdf->setPaper('A4', 'portrait');
+        // Status kenaikan kelas — hanya terisi pada semester genap & setelah
+        // keputusan kenaikan diambil. null = tidak dicetak di PDF.
+        $statusKenaikan = SantriKelasHistory::statusKenaikan($santri, $tahunAjaranAktif, $kelasRapotId);
+
+        // Cache-busting: ikut perubahan data setoran/presensi/history + file blade
+        $stamp = max(
+            (string) ($setoransRaw->max('updated_at') ?? '0'),
+            (string) ($presensis->max('updated_at') ?? '0'),
+            (string) (SantriKelasHistory::where('santri_id', $santri->id)->max('updated_at') ?? '0'),
+            (string) filemtime(resource_path('views/santri/rapot/pdf.blade.php'))
+        );
+        $cacheKey = "rapot_pdf_{$santri->id}_{$kelasRapotId}_{$tanggalMulai}_{$tanggalAkhir}_" . md5($stamp);
+
+        $pdfOutput = \Illuminate\Support\Facades\Cache::store('file')->remember($cacheKey, now()->addDays(7), function () use (
+            $santri, $setorans, $presensis, $statistikSetoran, $statistikPresensi,
+            $tanggalMulai, $tanggalAkhir, $tahunAjaranAktif, $kelasRapot, $guruRapot,
+            $statusKenaikan
+        ) {
+            $pdf = Pdf::loadView('santri.rapot.pdf', compact(
+                'santri',
+                'setorans',
+                'presensis',
+                'statistikSetoran',
+                'statistikPresensi',
+                'tanggalMulai',
+                'tanggalAkhir',
+                'tahunAjaranAktif',
+                'kelasRapot',
+                'guruRapot',
+                'statusKenaikan'
+            ));
+            $pdf->setPaper('A4', 'portrait');
+            return $pdf->output();
+        });
 
         if ($request->boolean('preview')) {
-            return $pdf->stream();
+            return response($pdfOutput, 200, [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="rapot.pdf"',
+            ]);
         }
 
         $filename = 'Rapot_' . str_replace(' ', '_', $santri->name) . '_' . date('Y-m-d') . '.pdf';
-        return $pdf->download($filename);
+        return response($pdfOutput, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     /**

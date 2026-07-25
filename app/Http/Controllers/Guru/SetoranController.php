@@ -20,6 +20,8 @@ use Inertia\Inertia;
 
 class SetoranController extends Controller
 {
+    use \App\Traits\UsesKelasAktif;
+
     /**
      * Tampilkan daftar setoran.
      * Progress per KELAS (kelas_id) — kebal-tanggal, reset saat naik kelas,
@@ -31,7 +33,7 @@ class SetoranController extends Controller
     $guru   = Guru::where('user_id', $userId)->first();
     if (!$guru)  return redirect()->route('guru.dashboard')->with('error', 'Data guru tidak ditemukan.');
 
-    $kelas = Kelas::where('guru_id', $guru->id)->first();
+    $kelas = $this->kelasAktif();
     if (!$kelas) return redirect()->route('guru.dashboard')->with('error', 'Anda belum ditugaskan sebagai wali kelas.');
 
     $tahunAjaranAktif = TahunAjaran::getAktif();
@@ -48,6 +50,12 @@ class SetoranController extends Controller
             $isIqro       = $santri->isJilidBased(); // iqro ATAU aisar
             $metodeSantri = $santri->jilidConfigKey(); // 'iqro' / 'aisar'
 
+            // Default target sekunder (dipakai hanya oleh santri jilid + quran)
+            $hasQuran2    = false;
+            $targetJuz2   = 0.0;
+            $capaianJuz2  = 0.0;
+            $progressJuz2 = 0;
+
             if ($isIqro) {
                 $targetJilid   = (int) ($santri->target_jilid ?? 1);
                 $totalHalaman  = count($santri->halamanIqroTersetorKelas($targetJilid, $kelasId)); // dedup, scope kelas, label otomatis ikut metode santri
@@ -56,6 +64,16 @@ class SetoranController extends Controller
                 $progress      = $persenTahu ? min(round(($totalHalaman / $totalHalJilid) * 100), 100) : 0;
                 $targetDisplay = 'Jilid ' . $targetJilid;
                 $capaianJuz    = 0.0;
+
+                // Target Al-Qur'an sekunder (metode 2 = quran)
+                $hasQuran2 = $santri->hasQuranSecondary();
+                if ($hasQuran2) {
+                    $targetJuz2   = (float) ($santri->target_juz ?? 0);
+                    // Hafalan jilid ber-total_juz null → sum ini murni porsi Al-Qur'an
+                    $capaianJuz2  = round($setorans->where('kategori_setoran', 'Hafalan')->sum('total_juz'), 2);
+                    $progressJuz2 = $targetJuz2 > 0 ? (int) min(round(($capaianJuz2 / $targetJuz2) * 100), 100) : 0;
+                    $targetDisplay .= ' + ' . rtrim(rtrim(number_format($targetJuz2, 2), '0'), '.') . ' Juz';
+                }
             } else {
                 $totalHafalanJuz = round($setorans->where('kategori_setoran', 'Hafalan')->sum('total_juz'), 2);
                 $targetJuz       = $santri->target_juz ?? 1.00;
@@ -79,6 +97,10 @@ class SetoranController extends Controller
                 'total_tilawah'         => $setorans->where('kategori_setoran', 'Tilawah')->count(),
                 'total_setoran'         => $setorans->count(),
                 'capaian_juz'           => $capaianJuz,
+                'has_quran_secondary'   => $hasQuran2,
+                'target_juz_2'          => $targetJuz2,
+                'capaian_juz_2'         => $capaianJuz2,
+                'progress_juz2'         => $progressJuz2,
                 'total_halaman_iqro'    => $totalHalaman,
                 'total_halaman_jilid'   => $totalHalJilid,
                 'iqro_persen_diketahui' => $persenTahu,
@@ -125,7 +147,7 @@ class SetoranController extends Controller
                 ->with('error', 'Data guru tidak ditemukan.');
         }
 
-        $kelas = Kelas::where('guru_id', $guru->id)->first();
+        $kelas = $this->kelasAktif();
 
         if (!$kelas) {
             return redirect()->route('guru.dashboard')
@@ -290,7 +312,8 @@ class SetoranController extends Controller
             'kelas_name'   => $santri->kelas->name ?? '-',
             'target_jilid' => $santri->target_jilid,
         ],
-        'isIqro' => $isIqro,
+        'isIqro'             => $isIqro,
+        'hasQuranSecondary'  => $santri->hasQuranSecondary(),
         'taList' => $taList->map(fn ($ta) => [
             'id'            => $ta->id,
             'nama'          => $ta->nama,
@@ -349,7 +372,7 @@ class SetoranController extends Controller
                 ->with('error', 'Data guru tidak ditemukan.');
         }
 
-        $kelas = Kelas::where('guru_id', $guru->id)->first();
+        $kelas = $this->kelasAktif();
 
         if (!$kelas) {
             return redirect()->route('guru.dashboard')
@@ -403,7 +426,7 @@ class SetoranController extends Controller
                 ->with('error', 'Data guru tidak ditemukan.');
         }
 
-        $kelas = Kelas::where('guru_id', $guru->id)->first();
+        $kelas = $this->kelasAktif();
 
         if (!$kelas) {
             return redirect()->route('guru.dashboard')
@@ -559,8 +582,9 @@ class SetoranController extends Controller
 
         $setoran = Setoran::with('santri')->findOrFail($id);
 
-        if ($setoran->guru_id !== $guru->id) {
-            abort(403, 'Anda tidak memiliki akses untuk menghapus data ini.');
+        if ($setoran->guru_id !== $guru->id
+            || (int) $setoran->santri?->kelas_id !== $this->kelasAktifId()) {
+            abort(403, 'Setoran ini tidak ada di kelas yang sedang aktif.');
         }
 
         $santriId = $setoran->santri_id;
@@ -596,11 +620,12 @@ class SetoranController extends Controller
      */
     public function audio(int $setoranId)
     {
-        $setoran = Setoran::findOrFail($setoranId);
-        $userId  = Auth::id();
-        $guru    = Guru::where('user_id', $userId)->first();
+        $setoran = Setoran::with('santri')->findOrFail($setoranId);
+        $guru    = $this->guruAktif();
 
-        if ($setoran->guru_id !== $guru->id) {
+        if (! $guru
+            || $setoran->guru_id !== $guru->id
+            || (int) $setoran->santri?->kelas_id !== $this->kelasAktifId()) {
             abort(403, 'Unauthorized access');
         }
 
@@ -622,11 +647,12 @@ class SetoranController extends Controller
      */
     public function downloadPdf(int $setoranId)
     {
-        $setoran = Setoran::findOrFail($setoranId);
-        $userId  = Auth::id();
-        $guru    = Guru::where('user_id', $userId)->first();
+        $setoran = Setoran::with('santri')->findOrFail($setoranId);
+        $guru    = $this->guruAktif();
 
-        if (!$guru || $setoran->guru_id !== $guru->id) {
+        if (!$guru
+            || $setoran->guru_id !== $guru->id
+            || (int) $setoran->santri?->kelas_id !== $this->kelasAktifId()) {
             abort(403, 'Unauthorized access');
         }
 

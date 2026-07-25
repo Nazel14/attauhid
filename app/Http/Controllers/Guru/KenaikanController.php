@@ -17,6 +17,8 @@ use Carbon\Carbon;
 
 class KenaikanController extends Controller
 {
+    use \App\Traits\UsesKelasAktif;
+
     /**
      * Guru langsung menaikkan satu / banyak santri ke kelas tujuan.
      * Mencatat history kelas (asal & tujuan) + notifikasi ke wali kelas tujuan.
@@ -32,8 +34,8 @@ class KenaikanController extends Controller
         $guru = Guru::where('user_id', Auth::id())->first();
         if (!$guru) return back()->with('error', 'Data guru tidak ditemukan.');
 
-        $kelasAsal = Kelas::where('guru_id', $guru->id)->first();
-        if (!$kelasAsal) return back()->with('error', 'Kelas asal tidak ditemukan.');
+        $kelasAsal = $this->kelasAktif();
+        if (!$kelasAsal) return back()->with('error', 'Kelas aktif tidak valid. Silakan pilih kelas kembali.');
 
         $tahunAjaran = TahunAjaran::getAktif();
         if (!$tahunAjaran) return back()->with('error', 'Belum ada tahun ajaran aktif.');

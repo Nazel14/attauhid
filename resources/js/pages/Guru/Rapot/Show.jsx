@@ -172,13 +172,12 @@ export default function Show({
     kelasKonteks, pdfBoleh = true, pdfBatasFormatted = null,
     backUrl, backLabel = 'Kembali ke Rapot',
 }) {
-    const [showPdfPreview, setShowPdfPreview] = useState(false);
-
+const [showPdfPreview, setShowPdfPreview] = useState(false);
+    const [pdfLoading, setPdfLoading] = useState(true);
     const pdfDownloadUrl = route('guru.rapot.pdf', { santri: santri.id });
     const pdfPreviewUrl = route('guru.rapot.pdf', { santri: santri.id, preview: 1 });
 
-    const openPdfPreview = () => { setShowPdfPreview(true); document.body.style.overflow = 'hidden'; };
-    const closePdfPreview = () => { setShowPdfPreview(false); document.body.style.overflow = 'auto'; };
+    const openPdfPreview = () => { setPdfLoading(true); setShowPdfPreview(true); document.body.style.overflow = 'hidden'; };    const closePdfPreview = () => { setShowPdfPreview(false); document.body.style.overflow = 'auto'; };
     useEffect(() => {
         const onKey = (e) => { if (e.key === 'Escape') closePdfPreview(); };
         document.addEventListener('keydown', onKey);
@@ -237,7 +236,7 @@ export default function Show({
 
                     {/* ===== BADGE TAHUN AJARAN ===== */}
                     {tahunAjaranAktif && (
-                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 border rounded-xl text-xs mb-4 ${isHistori ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/40' : 'bg-claude-50 dark:bg-claude-950/40 border-claude-200 dark:border-claude-800/40'}`}>
+                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 border rounded-xl text-xs mb-4 ${isHistori ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/25' : 'bg-claude-50 dark:bg-claude-500/10 border-claude-200 dark:border-claude-500/25'}`}>
                             <CalendarIcon className={`w-3.5 h-3.5 flex-shrink-0 ${isHistori ? 'text-amber-500 dark:text-amber-400' : 'text-claude-500 dark:text-claude-400'}`} />
                             <span className="text-stone-900 dark:text-stone-100 font-medium">
                                 {tahunAjaranAktif.nama || tahunAjaranAktif.name}
@@ -320,6 +319,22 @@ export default function Show({
                                                         <p className="text-xs text-stone-500 italic">Jumlah halaman Jilid {statistikSetoran.target_jilid} belum diatur di konfigurasi</p>
                                                     </div>
                                                 )}
+
+                                                {statistikSetoran.has_quran_secondary && (
+                                                    <div className="mt-4 pt-3 border-t border-stone-200 dark:border-coal-700">
+                                                        <div className="flex justify-between items-center mb-2">
+                                                            <span className="text-xs text-stone-500">Pencapaian Target Al-Qur'an</span>
+                                                            <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{statistikSetoran.persentase_target}%</span>
+                                                        </div>
+                                                        <div className="w-full bg-stone-200 dark:bg-coal-700 rounded-full h-3">
+                                                            <div className="bg-gradient-to-r from-emerald-600 to-emerald-400 h-3 rounded-full transition-all duration-500" style={{ width: `${statistikSetoran.persentase_target}%` }} />
+                                                        </div>
+                                                        <div className="flex justify-between text-[10px] text-stone-500 dark:text-stone-600 mt-1">
+                                                            <span>Tercapai: {statistikSetoran.total_juz_hafalan} Juz</span>
+                                                            <span>Target: {statistikSetoran.target_juz} Juz</span>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </>
                                         );
                                     })()
@@ -353,7 +368,12 @@ export default function Show({
                                     {statistikSetoran.is_iqro ? (
                                         <>
                                             <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{statistikSetoran.total_halaman_iqro}</div>
-                                            <div className="text-[11px] text-purple-500 dark:text-purple-300/70 mt-0.5">Total Halaman</div>
+                                            <div className="text-[11px] text-purple-500 dark:text-purple-300/70 mt-0.5">
+                                                Total Halaman
+                                                {statistikSetoran.has_quran_secondary && (
+                                                    <span className="block text-purple-400 dark:text-purple-300/50">+ {statistikSetoran.total_juz_hafalan} Juz</span>
+                                                )}
+                                            </div>
                                         </>
                                     ) : (
                                         <>
@@ -454,7 +474,7 @@ export default function Show({
                                         </div>
                                     );
                                 })()}
-                                <div className="mt-3 px-3 py-2 bg-claude-50 dark:bg-claude-950/40 border border-claude-200 dark:border-claude-800/30 rounded-xl flex items-center justify-between">
+                                <div className="mt-3 px-3 py-2 bg-claude-50 dark:bg-claude-500/10 border border-claude-200 dark:border-claude-500/25 rounded-xl flex items-center justify-between">
                                     <span className="text-xs font-semibold text-claude-700 dark:text-claude-300">Total Hari Presensi</span>
                                     <span className="text-xl font-bold text-claude-600 dark:text-claude-400">{statistikPresensi.total_hari}</span>
                                 </div>
@@ -535,8 +555,23 @@ export default function Show({
                                     </button>
                                 </div>
                             </div>
-                            <div className="p-4">
-                                <iframe src={pdfPreviewUrl} className="w-full rounded-lg border border-stone-200 dark:border-coal-700" style={{ height: '75vh' }} />
+                            <div className="p-4 relative">
+                                {pdfLoading && (
+                                    <div className="absolute inset-4 rounded-lg border border-stone-200 dark:border-coal-700 bg-stone-50 dark:bg-coal-800 flex flex-col items-center justify-center gap-3 z-10">
+                                        <span className="w-9 h-9 rounded-full border-[3px] border-stone-300 dark:border-coal-600 border-t-claude-500 animate-spin" />
+                                        <p className="text-xs text-stone-500 dark:text-stone-400">Menyiapkan PDF… (bisa memakan beberapa detik)</p>
+                                        <a href={pdfPreviewUrl} target="_blank" rel="noreferrer"
+                                            className="text-[11px] font-semibold text-claude-600 dark:text-claude-400 hover:underline">
+                                            Buka di tab baru
+                                        </a>
+                                    </div>
+                                )}
+                                <iframe
+                                    src={pdfPreviewUrl}
+                                    onLoad={() => setPdfLoading(false)}
+                                    className="w-full rounded-lg border border-stone-200 dark:border-coal-700"
+                                    style={{ height: '75vh' }}
+                                />
                             </div>
                         </div>
                     </div>

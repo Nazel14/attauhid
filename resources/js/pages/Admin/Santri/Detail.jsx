@@ -41,9 +41,11 @@ const smartCapitalize = (value) => value.replace(/\b\w/g, (c) => c.toUpperCase()
 const isJilidMetode = (m) => m === 'iqro' || m === 'aisar';
 const targetDisplay = (s) => {
     const m = String(s.target_metode ?? 'quran').toLowerCase();
-    if (m === 'iqro')  return `Iqro Jilid ${s.target_jilid ?? '-'}`;
-    if (m === 'aisar') return `Aisar Jilid ${s.target_jilid ?? '-'}`;
-    return `${Number(s.target_juz ?? 0).toFixed(2)} Juz`;
+    const hasQuran2 = String(s.target_metode_2 ?? '').toLowerCase() === 'quran';
+    const juz = `${Number(s.target_juz ?? 0).toFixed(2)} Juz`;
+    if (m === 'iqro')  return `Iqro Jilid ${s.target_jilid ?? '-'}${hasQuran2 ? ` + ${juz}` : ''}`;
+    if (m === 'aisar') return `Aisar Jilid ${s.target_jilid ?? '-'}${hasQuran2 ? ` + ${juz}` : ''}`;
+    return juz;
 };
 
 /* ============================================================
@@ -223,6 +225,7 @@ export default function Detail({
         _method: 'POST',
         nis: '', name: '', gender: 'L',
         target_metode: 'quran', target_juz: '1.00', target_jilid: '1',
+        target_metode_2: '',
         kelas_id: kelas.id,
         password: '', password_confirmation: '',
         profile_photo: null, delete_photo: '0',
@@ -235,6 +238,7 @@ export default function Detail({
             _method: 'POST',
             nis: '', name: '', gender: 'L',
             target_metode: 'quran', target_juz: '1.00', target_jilid: '1',
+            target_metode_2: '',
             kelas_id: kelas.id,
             password: '', password_confirmation: '',
             profile_photo: null, delete_photo: '0',
@@ -251,7 +255,8 @@ export default function Detail({
             _method: 'PUT',
             nis: s.nis || '', name: s.name || '', gender: genderCode,
             target_metode: metode,
-            target_juz: isJilidMetode(metode) ? '' : (s.target_juz ?? '1.00'),
+            target_metode_2: String(s.target_metode_2 ?? '').toLowerCase() === 'quran' ? 'quran' : '',
+            target_juz: s.target_juz ?? '1.00',
             target_jilid: isJilidMetode(metode) ? (s.target_jilid ?? '1') : '',
             kelas_id: s.kelas_id ?? kelas.id,
             password: '', password_confirmation: '',
@@ -268,7 +273,9 @@ export default function Detail({
         santriForm.setData((prev) => ({
             ...prev,
             target_metode: value,
-            target_juz: value === 'quran' ? (prev.target_juz || '1.00') : '',
+            // Al-Qur'an sebagai metode 1 → tidak ada metode 2
+            target_metode_2: value === 'quran' ? '' : prev.target_metode_2,
+            target_juz: prev.target_juz || '1.00',
             target_jilid: isJilidMetode(value) ? (prev.target_jilid || '1') : '',
         }));
     };
@@ -632,7 +639,7 @@ export default function Detail({
                                 {err(santriForm.errors.target_metode)}
                             </div>
 
-                            {santriForm.data.target_metode === 'quran' ? (
+                             {santriForm.data.target_metode === 'quran' ? (
                                 <div>
                                     <label className={LBL}>Target Juz</label>
                                     <input type="number" step="0.25" min="0" max="30" placeholder="cth: 5.50"
@@ -640,17 +647,39 @@ export default function Detail({
                                     {err(santriForm.errors.target_juz)}
                                 </div>
                             ) : (
-                                <div>
-                                    <label className={LBL}>Target Jilid</label>
-                                    <select value={santriForm.data.target_jilid} onChange={(e) => santriForm.setData('target_jilid', e.target.value)} className={INP}>
-                                        {jilidOptions.map((i) => (
-                                            <option key={i} value={i}>
-                                                {santriForm.data.target_metode === 'aisar' ? 'Aisar' : 'Iqro'} Jilid {i}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {err(santriForm.errors.target_jilid)}
-                                </div>
+                                <>
+                                    <div>
+                                        <label className={LBL}>Target Jilid</label>
+                                        <select value={santriForm.data.target_jilid} onChange={(e) => santriForm.setData('target_jilid', e.target.value)} className={INP}>
+                                            {jilidOptions.map((i) => (
+                                                <option key={i} value={i}>
+                                                    {santriForm.data.target_metode === 'aisar' ? 'Aisar' : 'Iqro'} Jilid {i}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {err(santriForm.errors.target_jilid)}
+                                    </div>
+
+                                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                                        <input type="checkbox"
+                                            checked={santriForm.data.target_metode_2 === 'quran'}
+                                            onChange={(e) => santriForm.setData('target_metode_2', e.target.checked ? 'quran' : '')}
+                                            className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 focus:ring-claude-500" />
+                                        <span className="text-[11px] font-semibold text-stone-600 dark:text-stone-400">
+                                            + Tambah target Al-Qur'an (Juz)
+                                        </span>
+                                    </label>
+                                    {err(santriForm.errors.target_metode_2)}
+
+                                    {santriForm.data.target_metode_2 === 'quran' && (
+                                        <div>
+                                            <label className={LBL}>Target Juz (Al-Qur'an)</label>
+                                            <input type="number" step="0.25" min="0" max="30" placeholder="cth: 2.00"
+                                                value={santriForm.data.target_juz} onChange={(e) => santriForm.setData('target_juz', e.target.value)} className={INP} />
+                                            {err(santriForm.errors.target_juz)}
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
                         <div>

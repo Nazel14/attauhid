@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\HasMany; // ✅ TAMBAHKAN
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Crypt;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -110,5 +110,20 @@ class User extends Authenticatable
     public function hasProfilePhoto(): bool
     {
         return !is_null($this->profile_photo);
+    }
+
+    /**
+     * Nama asli untuk ditampilkan di UI (navbar, dashboard, sapaan).
+     * guru   → gurus.name   (nama lengkap + gelar)
+     * santri → santris.name
+     * admin  → users.name   (admin tidak punya tabel profil)
+     */
+    public function getDisplayNameAttribute(): string
+    {
+        return match ($this->role) {
+            'guru'   => $this->guru?->name   ?: $this->name,
+            'santri' => $this->santri?->name ?: $this->name,
+            default  => $this->name,
+        };
     }
 }

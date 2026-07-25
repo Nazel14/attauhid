@@ -18,18 +18,29 @@ class GuruSantriBulkUpdate implements ToCollection, WithHeadingRow, SkipsEmptyRo
     protected $successCount = 0;
     protected $failedCount = 0;
     protected $guruId;
+    protected $kelasId;
     protected $totalSantri = 0;
     protected $santrisByNoUrut = [];
     protected $photos = [];
 
-    public function __construct($guruId, array $photos = [])
+    public function __construct(int $guruId, ?int $kelasId, array $photos = [])
     {
-        $this->guruId = $guruId;
-        $this->photos = $photos;
-        $this->totalSantri = Santri::where('guru_id', $guruId)->count();
+        if (! $kelasId) {
+            throw new \Exception('Kelas aktif tidak valid. Silakan pilih kelas kembali.');
+        }
 
-        // Bangun peta no_urut → santri SEKALI di awal, urutan SAMA seperti ekspor.
+        $this->guruId  = $guruId;
+        $this->kelasId = $kelasId;
+        $this->photos  = $photos;
+        $this->totalSantri = Santri::where('guru_id', $guruId)
+            ->where('kelas_id', $kelasId)
+            ->count();
+
+        // Bangun peta no_urut → santri SEKALI di awal.
+        // Filter & urutan WAJIB identik dengan exportForEdit(), kalau tidak
+        // no_urut akan menunjuk santri yang salah.
         $santriList = Santri::where('guru_id', $guruId)
+            ->where('kelas_id', $kelasId)
             ->orderBy('name', 'asc')
             ->get();
         $noUrut = 1;
@@ -52,7 +63,7 @@ class GuruSantriBulkUpdate implements ToCollection, WithHeadingRow, SkipsEmptyRo
                 DB::transaction(function () use ($row, $rowNumber) {
                     $noUrut = (int) $row['no_urut'];
                     if (!isset($this->santrisByNoUrut[$noUrut])) {
-                        throw new \Exception("No Urut {$noUrut} tidak ditemukan di kelas Anda.");
+                        throw new \Exception("No Urut {$noUrut} tidak ada di kelas yang sedang aktif. Pastikan Excel-nya hasil export dari kelas ini.");
                     }
 
                     $santri = $this->santrisByNoUrut[$noUrut];
@@ -95,44 +106,74 @@ class GuruSantriBulkUpdate implements ToCollection, WithHeadingRow, SkipsEmptyRo
                         $updateData['gender'] = $genderFull;
                     }
 
-                   // === METODE & TARGET (quran / iqro / aisar) ===
+                    // === METODE & TARGET (quran / iqro / aisar) + metode_2 opsional ===
                     $metodeInput = !empty($row['metode']) ? strtolower(trim($row['metode'])) : null;
                     if ($metodeInput !== null && !in_array($metodeInput, ['quran', 'iqro', 'aisar'])) {
                         throw new \Exception("Metode harus 'quran', 'iqro', atau 'aisar'");
                     }
 
-                    $metodeEfektif = $metodeInput ?? ($santri->target_metode?->value ?? 'quran');
-                    $isJilidBased  = in_array($metodeEfektif, ['iqro', 'aisar'], true);
-
                     if ($metodeInput !== null) {
-                        $updateData['target_metode'] = $metodeInput;
-                    }
+                        // Metode diisi → tetapkan ulang SELURUH state metode/target
+                        $isJilidBased = in_array($metodeInput, ['iqro', 'aisar'], true);
 
-                    if ($isJilidBased) {
-                        if (isset($row['target_jilid']) && $row['target_jilid'] !== '') {
+                        $metode2 = strtolower(trim((string) ($row['metode_2'] ?? '')));
+                        if ($metode2 !== '' && $metode2 !== 'quran') {
+                            throw new \Exception("Metode 2 hanya boleh kosong atau 'quran'");
+                        }
+                        if ($metodeInput === 'quran') $metode2 = '';
+                        $hasQuran2 = $metode2 === 'quran';
+
+                        $updateData['target_metode']   = $metodeInput;
+                        $updateData['target_metode_2'] = $hasQuran2 ? 'quran' : null;
+
+                        if ($isJilidBased) {
+                            if (!isset($row['target_jilid']) || $row['target_jilid'] === '') {
+                                throw new \Exception("Metode {$metodeInput} wajib mengisi Target Jilid (1-6)");
+                            }
                             $jilid = (int) $row['target_jilid'];
                             if ($jilid < 1 || $jilid > 6) {
                                 throw new \Exception("Target Jilid harus angka antara 1-6");
                             }
                             $updateData['target_jilid'] = $jilid;
-                        } elseif ($metodeInput !== null) {
-                            throw new \Exception("Metode {$metodeEfektif} wajib mengisi Target Jilid (1-6)");
+
+                            if ($hasQuran2) {
+                                $juz = str_replace(',', '.', (string) ($row['target_juz'] ?? ''));
+                                if ($juz === '' || !is_numeric($juz) || $juz < 0 || $juz > 30) {
+                                    throw new \Exception("Metode 2 quran wajib mengisi Target Juz (0-30)");
+                                }
+                                $updateData['target_juz'] = (float) $juz;
+                            } else {
+                                $updateData['target_juz'] = null;
+                            }
+                        } else { // quran
+                            $juz = str_replace(',', '.', (string) ($row['target_juz'] ?? ''));
+                            if ($juz === '' || !is_numeric($juz) || $juz < 0 || $juz > 30) {
+                                throw new \Exception("Metode quran wajib mengisi Target Juz (0-30)");
+                            }
+                            $updateData['target_juz']   = (float) $juz;
+                            $updateData['target_jilid'] = null;
                         }
-                        if ($metodeInput !== null) {
-                            $updateData['target_juz'] = null;
+                    } else {
+                        // Metode kosong → jangan sentuh field metode/metode_2.
+                        // Hanya izinkan koreksi juz/jilid ringan sesuai metode yang sudah ada.
+                        $metodeEfektif = $santri->target_metode?->value ?? 'quran';
+                        $isJilidBased  = in_array($metodeEfektif, ['iqro', 'aisar'], true);
+
+                        if ($isJilidBased) {
+                            if (isset($row['target_jilid']) && $row['target_jilid'] !== '') {
+                                $jilid = (int) $row['target_jilid'];
+                                if ($jilid < 1 || $jilid > 6) {
+                                    throw new \Exception("Target Jilid harus angka antara 1-6");
+                                }
+                                $updateData['target_jilid'] = $jilid;
+                            }
                         }
-                    } else { // quran
                         if (isset($row['target_juz']) && $row['target_juz'] !== '') {
                             $juz = str_replace(',', '.', (string) $row['target_juz']);
                             if (!is_numeric($juz) || $juz < 0 || $juz > 30) {
                                 throw new \Exception("Target Juz harus angka antara 0-30");
                             }
                             $updateData['target_juz'] = (float) $juz;
-                        } elseif ($metodeInput === 'quran') {
-                            throw new \Exception("Metode quran wajib mengisi Target Juz (0-30)");
-                        }
-                        if ($metodeInput === 'quran') {
-                            $updateData['target_jilid'] = null;
                         }
                     }
 

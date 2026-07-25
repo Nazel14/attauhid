@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kelas;
+use App\Models\Santri;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -48,6 +50,82 @@ class ProfileController extends Controller
             default                 => 'Santri',
         };
 
+        // Daftar field profil per role. `kategori` = kategori laporan yang
+        // otomatis terpilih saat bendera di baris itu diklik; null artinya
+        // baris hanya informasi dan tidak punya tombol lapor (mis. data
+        // turunan seperti jumlah santri, yang tidak diinput manual).
+        $fields    = [];
+        $bisaLapor = false;
+        $kategori  = [];
+        $tujuan    = '';
+        $fotoLapor = null;
+
+        if ($user->role === 'santri') {
+            $santri = $user->santri;
+            $santri?->loadMissing(['kelas', 'guru']);
+
+            // Tanpa guru pembimbing, laporan santri tidak punya penerima.
+            $bisaLapor = (bool) $santri?->guru?->user_id;
+            $tujuan    = 'Guru Pembimbing';
+
+            $kategori = [
+                'nama_salah'   => 'Nama Salah',
+                'nis_salah'    => 'NIS Salah',
+                'gender_salah' => 'Jenis Kelamin Salah',
+                'kelas_salah'  => 'Kelas Salah',
+                'foto_salah'   => 'Foto Profil Salah',
+                'lainnya'      => 'Lainnya',
+            ];
+
+            // Username login sengaja tidak ditampilkan: isinya sama dengan
+            // nama, jadi hanya menambah baris tanpa menambah informasi.
+            $fields = [
+                ['label' => 'Nama Lengkap',    'value' => $santri?->name,             'kategori' => 'nama_salah'],
+                ['label' => 'NIS',             'value' => $santri?->nis,              'kategori' => 'nis_salah'],
+                ['label' => 'Jenis Kelamin',   'value' => $this->labelGender($santri?->gender), 'kategori' => 'gender_salah'],
+                ['label' => 'Kelas',           'value' => $santri?->kelas?->name,     'kategori' => 'kelas_salah'],
+                ['label' => 'Guru Pembimbing', 'value' => $santri?->guru?->name,      'kategori' => 'lainnya'],
+                ['label' => 'Target Jilid',    'value' => $santri?->target_jilid,     'kategori' => 'lainnya'],
+            ];
+
+            $fotoLapor = ['label' => 'Foto Profil', 'value' => null, 'kategori' => 'foto_salah'];
+        } elseif ($user->role === 'guru') {
+            $guru = $user->guru;
+
+            $daftarKelas  = $guru
+                ? Kelas::where('guru_id', $guru->id)->orderBy('name')->pluck('name')->implode(', ')
+                : null;
+            $jumlahSantri = $guru ? Santri::where('guru_id', $guru->id)->count() : 0;
+
+            $bisaLapor = true;
+            $tujuan    = 'Admin';
+
+            $kategori = [
+                'nama_salah'     => 'Nama Salah',
+                'nip_salah'      => 'NIP Salah',
+                'username_salah' => 'Username Salah',
+                'kelas_salah'    => 'Kelas yang Diampu Salah',
+                'foto_salah'     => 'Foto Profil Salah',
+                'lainnya'        => 'Lainnya',
+            ];
+
+            $fotoLapor = ['label' => 'Foto Profil', 'value' => null, 'kategori' => 'foto_salah'];
+
+            $fields = [
+                ['label' => 'Nama Lengkap',   'value' => $guru?->name,   'kategori' => 'nama_salah'],
+                ['label' => 'NIP',            'value' => $guru?->nip,    'kategori' => 'nip_salah'],
+                ['label' => 'Username Login', 'value' => $user->name,    'kategori' => 'username_salah'],
+                ['label' => 'Kelas Diampu',   'value' => $daftarKelas,   'kategori' => 'kelas_salah'],
+                ['label' => 'Jumlah Santri',  'value' => $jumlahSantri . ' santri', 'kategori' => null],
+            ];
+        } else {
+            // Admin mengelola datanya sendiri, jadi tidak perlu melapor.
+            $fields = [
+                ['label' => 'Username Login', 'value' => $user->name, 'kategori' => null],
+                ['label' => 'Role',           'value' => $roleLabel,  'kategori' => null],
+            ];
+        }
+
         return Inertia::render('Profile/Edit', [
             'user' => [
                 'id'            => $user->id,
@@ -62,7 +140,21 @@ class ProfileController extends Controller
             'nextUpdateDate'    => $nextUpdateDate,
             // 0 = tanpa cooldown (admin)
             'photoCooldownDays' => $user->role === 'guru' ? self::PHOTO_COOLDOWN_DAYS : 0,
+            'fields'            => $fields,
+            'bisaLapor'         => $bisaLapor,
+            'kategoriLapor'     => $kategori,
+            'tujuanLapor'       => $tujuan,
+            'fotoLapor'         => $fotoLapor,
         ]);
+    }
+
+    private function labelGender(?string $gender): ?string
+    {
+        return match ($gender) {
+            'L', 'Laki-laki' => 'Laki-laki',
+            'P', 'Perempuan' => 'Perempuan',
+            default          => $gender,
+        };
     }
 
     /**

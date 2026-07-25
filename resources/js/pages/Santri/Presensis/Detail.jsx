@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
 import SantriAuthenticatedLayout from '@/Layouts/SantriAuthenticatedLayout';
+import LaporanModal from '@/Components/LaporanModal';
 
 /* ============================================================
  * IKON — monokrom line
@@ -19,6 +20,7 @@ const P = {
     clock: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
     trend: 'M3 17l6-6 4 4 8-8m0 0h-5m5 0v5',
     user: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+    flag: 'M3 3v18M3 4.5h12.75l-2.25 3 2.25 3H3',
 };
 
 // ── helpers ──
@@ -84,17 +86,22 @@ export default function Detail({
     statistik = {}, bulan = '', status = '', tahunAjaranAktif = null,
     tahunAjaranList = [], tahunAjaranId = '', periodeMulai = '', periodeAkhir = '',
 }) {
+    // `bulan` tidak lagi dikirim — periode ditentukan sepenuhnya oleh
+    // tahun ajaran yang dipilih.
     const [f, setF] = useState({
-        bulan,
         status: status || '',
         tahun_ajaran_id: tahunAjaranId || '',
     });
     const [mobileTab, setMobileTab] = useState('hadir');
+    const [lapor, setLapor] = useState(null); // presensi yang mau dilaporkan
 
     const apply = () => router.get(route('santri.presensis.detail'), f, { preserveScroll: true, preserveState: true });
+
+    // Reset hanya membersihkan status; periode tetap di tahun ajaran yang dipilih.
     const reset = () => {
-        setF({ bulan: f.bulan, status: '', tahun_ajaran_id: '' });
-        router.get(route('santri.presensis.detail'), { bulan: f.bulan }, { preserveScroll: true });
+        const next = { status: '', tahun_ajaran_id: f.tahun_ajaran_id };
+        setF(next);
+        router.get(route('santri.presensis.detail'), next, { preserveScroll: true });
     };
 
     const taTerpilih = tahunAjaranList.find((t) => String(t.id) === String(f.tahun_ajaran_id));
@@ -158,7 +165,7 @@ export default function Detail({
                             title="Filter Data"
                             hint={periodeMulai ? `Periode: ${periodeMulai} s/d ${periodeAkhir}` : null}
                         />
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div>
                                 <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1.5">Tahun Ajaran &amp; Semester</label>
                                 <select
@@ -166,23 +173,12 @@ export default function Detail({
                                     onChange={(e) => setF({ ...f, tahun_ajaran_id: e.target.value })}
                                     className={inputCls}
                                 >
-                                    <option value="">Per Bulan</option>
                                     {tahunAjaranList.map((t) => (
                                         <option key={t.id} value={t.id}>
                                             {t.label}{t.is_aktif ? ' • Aktif' : ''}
                                         </option>
                                     ))}
                                 </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1.5">Bulan</label>
-                                <input
-                                    type="month"
-                                    value={f.bulan}
-                                    onChange={(e) => setF({ ...f, bulan: e.target.value })}
-                                    disabled={!!f.tahun_ajaran_id}
-                                    className={`${inputCls} disabled:opacity-50 disabled:cursor-not-allowed`}
-                                />
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1.5">Status</label>
@@ -198,16 +194,19 @@ export default function Detail({
                                 <button onClick={apply} className="flex-1 px-4 py-2.5 rounded-xl bg-claude-500 hover:bg-claude-600 text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors shadow-sm active:scale-95">
                                     <Icon path={P.search} className="w-4 h-4" /> Terapkan
                                 </button>
-                                {(status || tahunAjaranId) && (
+                                {status && (
                                     <button onClick={reset} className="px-4 py-2.5 rounded-xl bg-white dark:bg-coal-800 text-stone-700 dark:text-stone-200 ring-1 ring-stone-200 dark:ring-coal-700 text-sm font-medium hover:bg-stone-100 dark:hover:bg-coal-700 transition whitespace-nowrap">Reset</button>
                                 )}
                             </div>
                         </div>
-                        {taTerpilih && (
-                            <p className="mt-2.5 text-[11px] text-stone-400 dark:text-stone-500">
-                                Menampilkan seluruh presensi pada <span className="font-semibold text-stone-600 dark:text-stone-300">{taTerpilih.label}</span> ({taTerpilih.tanggal_mulai} s/d {taTerpilih.tanggal_selesai ?? '-'}). Filter bulan dinonaktifkan.
-                            </p>
-                        )}
+
+                        <p className="mt-2.5 text-[11px] text-stone-400 dark:text-stone-500">
+                            Periode:{' '}
+                            <span className="font-semibold text-stone-600 dark:text-stone-300">
+                                {periodeMulai} s/d {periodeAkhir}
+                            </span>{' '}
+                            — mengikuti tahun ajaran yang dipilih.
+                        </p>
                     </Card>
 
                     {/* Mini stats — pola guru */}
@@ -228,7 +227,7 @@ export default function Detail({
                                 <div>
                                     <h2 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">Persentase Kehadiran</h2>
                                     <p className="text-[11px] text-stone-400 dark:text-stone-500">
-                                        {taTerpilih ? `Distribusi status presensi — ${taTerpilih.label}` : 'Distribusi status presensi bulan ini'}
+                                        {taTerpilih ? `Distribusi status presensi — ${taTerpilih.label}` : 'Distribusi status presensi'}
                                     </p>
                                 </div>
                             </div>
@@ -268,11 +267,22 @@ export default function Detail({
 
                     {/* Panels */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-                        <HadirPanel className={mobileTab === 'hadir' ? 'lg:block' : 'hidden lg:block'} rows={presensisHadir} />
-                        <AbsenPanel className={mobileTab === 'absen' ? 'lg:block' : 'hidden lg:block'} rows={presensisAbsen} />
+                        <HadirPanel className={mobileTab === 'hadir' ? 'lg:block' : 'hidden lg:block'} rows={presensisHadir} onLapor={setLapor} />
+                        <AbsenPanel className={mobileTab === 'absen' ? 'lg:block' : 'hidden lg:block'} rows={presensisAbsen} onLapor={setLapor} />
                     </div>
                 </div>
             </div>
+
+            {lapor && (
+                <LaporanModal
+                    key={lapor.id}
+                    open={true}
+                    onClose={() => setLapor(null)}
+                    reportableType="presensi"
+                    reportableId={lapor.id}
+                    konteks={`${lapor.status} · ${fmtDate(lapor.tanggal)}${lapor.sesi ? ` · Sesi ${lapor.sesi}` : ''}`}
+                />
+            )}
         </SantriAuthenticatedLayout>
     );
 }
@@ -283,7 +293,7 @@ const Th = ({ children, className = '' }) => (
 const Td = ({ children, className = '' }) => <td className={`px-3 sm:px-4 py-3 ${className}`}>{children}</td>;
 
 // ── Panel Kehadiran ──
-function HadirPanel({ rows, className = '' }) {
+function HadirPanel({ rows, className = '', onLapor }) {
     const pg = usePaged(rows, 15);
     return (
         <div className={`bg-white dark:bg-coal-800 rounded-2xl ring-1 ring-stone-200 dark:ring-coal-700 overflow-hidden flex flex-col ${className}`}>
@@ -306,7 +316,7 @@ function HadirPanel({ rows, className = '' }) {
                 <>
                     <div className="overflow-x-auto flex-1">
                         <table className="min-w-full">
-                            <thead><tr className="bg-stone-50 dark:bg-coal-700/40"><Th className="w-8">#</Th><Th>Tanggal</Th><Th className="hidden sm:table-cell">Hari</Th><Th>Sesi</Th></tr></thead>
+                            <thead><tr className="bg-stone-50 dark:bg-coal-700/40"><Th className="w-8">#</Th><Th>Tanggal</Th><Th className="hidden sm:table-cell">Hari</Th><Th>Sesi</Th><Th className="w-12 text-center">Aksi</Th></tr></thead>
                             <tbody className="divide-y divide-stone-100 dark:divide-coal-700/60">
                                 {pg.slice.map((p, i) => (
                                     <tr key={p.id ?? i} className="hover:bg-stone-50 dark:hover:bg-coal-700/40 transition-colors">
@@ -318,6 +328,12 @@ function HadirPanel({ rows, className = '' }) {
                                         <Td className="text-xs text-stone-500 dark:text-stone-400 whitespace-nowrap hidden sm:table-cell">{dayName(p.tanggal)}</Td>
                                         <Td>
                                             {p.sesi ? <span className="inline-flex items-center rounded-lg px-2 py-0.5 text-[10px] sm:text-xs font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-100 dark:ring-emerald-500/20">{p.sesi}</span> : <span className="text-[10px] text-stone-300 dark:text-stone-600">−</span>}
+                                        </Td>
+                                        <Td className="text-center">
+                                            <button onClick={() => onLapor(p)} title="Laporkan kesalahan data"
+                                                className="p-1.5 rounded-lg text-stone-400 dark:text-stone-500 hover:text-claude-500 hover:bg-claude-100 dark:hover:bg-claude-500/15 transition-colors active:scale-90">
+                                                <Icon path={P.flag} className="w-4 h-4" />
+                                            </button>
                                         </Td>
                                     </tr>
                                 ))}
@@ -332,7 +348,7 @@ function HadirPanel({ rows, className = '' }) {
 }
 
 // ── Panel Ketidakhadiran ──
-function AbsenPanel({ rows, className = '' }) {
+function AbsenPanel({ rows, className = '', onLapor }) {
     const pg = usePaged(rows, 10);
     return (
         <div className={`bg-white dark:bg-coal-800 rounded-2xl ring-1 ring-stone-200 dark:ring-coal-700 overflow-hidden flex flex-col ${className}`}>
@@ -355,7 +371,7 @@ function AbsenPanel({ rows, className = '' }) {
                 <>
                     <div className="overflow-x-auto flex-1">
                         <table className="min-w-full">
-                            <thead><tr className="bg-stone-50 dark:bg-coal-700/40"><Th className="w-8">#</Th><Th>Tanggal</Th><Th className="hidden sm:table-cell">Hari</Th><Th className="w-20 text-center">Status</Th><Th>Keterangan</Th></tr></thead>
+                            <thead><tr className="bg-stone-50 dark:bg-coal-700/40"><Th className="w-8">#</Th><Th>Tanggal</Th><Th className="hidden sm:table-cell">Hari</Th><Th className="w-20 text-center">Status</Th><Th>Keterangan</Th><Th className="w-12 text-center">Aksi</Th></tr></thead>
                             <tbody className="divide-y divide-stone-100 dark:divide-coal-700/60">
                                 {pg.slice.map((p, i) => (
                                     <tr key={p.id ?? i} className="hover:bg-stone-50 dark:hover:bg-coal-700/40 transition-colors">
@@ -370,6 +386,12 @@ function AbsenPanel({ rows, className = '' }) {
                                         </Td>
                                         <Td className="text-[10px] sm:text-sm text-stone-500 dark:text-stone-400">
                                             {p.keterangan ? <span className="italic leading-snug">{p.keterangan}</span> : <span className="text-[9px] sm:text-xs text-stone-300 dark:text-stone-600 italic">{p.status === 'Alpha' ? 'Tanpa keterangan' : '—'}</span>}
+                                        </Td>
+                                        <Td className="text-center">
+                                            <button onClick={() => onLapor(p)} title="Laporkan kesalahan data"
+                                                className="p-1.5 rounded-lg text-stone-400 dark:text-stone-500 hover:text-claude-500 hover:bg-claude-100 dark:hover:bg-claude-500/15 transition-colors active:scale-90">
+                                                <Icon path={P.flag} className="w-4 h-4" />
+                                            </button>
                                         </Td>
                                     </tr>
                                 ))}

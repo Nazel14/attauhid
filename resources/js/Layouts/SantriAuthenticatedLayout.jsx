@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import LogoutButton from '@/Components/LogoutButton';
 import AppLogo from '@/Components/AppLogo';
+import LaporanNotifier from '@/Components/LaporanNotifier';
+
 
 
 // ---- Toggle tema ----
@@ -24,13 +26,13 @@ function ThemeToggle({ dark, onToggle }) {
     );
 }
 
-function NavItem({ href, active, icon, children, onClick, collapsed }) {
+function NavItem({ href, active, icon, children, onClick, collapsed, badge = 0 }) {
     return (
         <Link
             href={href}
             onClick={onClick}
             title={collapsed ? children : undefined}
-            className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${collapsed ? 'justify-center' : ''} ${
+            className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${collapsed ? 'justify-center' : ''} ${
                 active
                     ? 'bg-gradient-to-r from-claude-500 to-claude-600 text-white shadow-lg shadow-claude-500/25'
                     : 'text-stone-500 hover:bg-cream-200 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-coal-600/60 dark:hover:text-white'
@@ -40,12 +42,20 @@ function NavItem({ href, active, icon, children, onClick, collapsed }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={icon} />
             </svg>
             {!collapsed && <span className="truncate">{children}</span>}
+            {!collapsed && badge > 0 && (
+                <span className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? 'bg-white/25 text-white' : 'bg-claude-500 text-white'}`}>
+                    {badge > 99 ? '99+' : badge}
+                </span>
+            )}
+            {collapsed && badge > 0 && (
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-claude-500 ring-2 ring-cream-100 dark:ring-coal-700" />
+            )}
         </Link>
     );
 }
 
 export default function SantriAuthenticatedLayout({ header, children }) {
-    const { auth } = usePage().props;
+    const { auth, unreadLaporan } = usePage().props;
     const user = auth?.user;
 
     const [open, setOpen] = useState(false); // drawer mobile
@@ -73,6 +83,7 @@ export default function SantriAuthenticatedLayout({ header, children }) {
         setoran: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
         presensi: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
         profil: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+        komplain: 'M3 3v18M3 4.5h12.75l-2.25 3 2.25 3H3',
     };
 
     // route() aman — kalau nama route belum ada, item disembunyikan (hindari blank page)
@@ -86,6 +97,7 @@ export default function SantriAuthenticatedLayout({ header, children }) {
         { href: r('santri.rapot.show'),      label: 'Rapot',           icon: I.rapot,    active: cur('santri.rapot.*') },
         { href: r('santri.setorans.detail'), label: 'Detail Setoran',  icon: I.setoran,  active: cur('santri.setorans.*') },
         { href: r('santri.presensis.detail'),label: 'Detail Presensi', icon: I.presensi, active: cur('santri.presensis.*') },
+        { href: r('santri.laporan.index'),   label: 'Komplain Data',   icon: I.komplain, active: cur('santri.laporan.*'), badge: unreadLaporan },
     ].filter((m) => m.href);
 
     const akun = [
@@ -138,7 +150,7 @@ export default function SantriAuthenticatedLayout({ header, children }) {
                     <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-600">Laporan</p>
                 )}
                 {laporan.map((m) => (
-                    <NavItem key={m.label} href={m.href} active={m.active} icon={m.icon} onClick={closeNav} collapsed={isMini}>{m.label}</NavItem>
+                    <NavItem key={m.label} href={m.href} active={m.active} icon={m.icon} onClick={closeNav} collapsed={isMini} badge={m.badge || 0}>{m.label}</NavItem>
                 ))}
 
                 {akun.length > 0 && (
@@ -157,15 +169,19 @@ export default function SantriAuthenticatedLayout({ header, children }) {
             <div className={`space-y-3 border-t border-cream-300 py-3 dark:border-coal-600 ${isMini ? 'px-2' : 'px-3'}`}>
                 {isMini ? (
                     <div className="flex flex-col items-center gap-2">
+                        {/* Ikon menunjukkan tema yang SEDANG aktif, bukan aksinya —
+                            supaya sama dengan baris "Dark Mode / Light Mode" di
+                            sidebar lebar. Sebelumnya terbalik: mode gelap justru
+                            menampilkan ikon matahari. */}
                         <button
                             onClick={() => setDark((d) => !d)}
-                            title={dark ? 'Mode terang' : 'Mode gelap'}
+                            title={dark ? 'Dark Mode' : 'Light Mode'}
                             className="flex h-9 w-9 items-center justify-center rounded-xl text-stone-400 transition hover:bg-cream-200 hover:text-stone-600 dark:text-stone-500 dark:hover:bg-coal-600 dark:hover:text-stone-300"
                         >
                             {dark ? (
-                                <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path strokeLinecap="round" d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
-                            ) : (
                                 <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>
+                            ) : (
+                                <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path strokeLinecap="round" d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
                             )}
                         </button>
                         {user?.profile_photo ? (
@@ -234,7 +250,12 @@ export default function SantriAuthenticatedLayout({ header, children }) {
                     <button onClick={() => setOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-600 hover:bg-cream-200 dark:text-stone-400 dark:hover:bg-coal-600">
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
                     </button>
-                    <span className="text-sm font-bold">Rapot Tahfizh</span>
+                    <span className="text-sm font-bold">Laporan Tahfizh</span>
+
+                    {/* Toggle tema mobile */}
+                    <div className="ml-auto flex items-center">
+                        <ThemeToggle dark={dark} onToggle={() => setDark((d) => !d)} />
+                    </div>
                 </header>
 
                 <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -242,6 +263,9 @@ export default function SantriAuthenticatedLayout({ header, children }) {
                     {children}
                 </main>
             </div>
+
+            <LaporanNotifier href={r('santri.laporan.index')} />            
+            
         </div>
     );
 }

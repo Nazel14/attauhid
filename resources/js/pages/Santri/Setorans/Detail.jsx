@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
 import SantriAuthenticatedLayout from '@/Layouts/SantriAuthenticatedLayout';
+import LaporanModal from '@/Components/LaporanModal';
 
 /* ============================================================
  * IKON — monokrom line
@@ -25,6 +26,7 @@ const P = {
     close: 'M6 18L18 6M6 6l12 12',
     download: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4',
     user: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+    flag: 'M3 3v18M3 4.5h12.75l-2.25 3 2.25 3H3',
 };
 
 // ── helpers ──
@@ -84,13 +86,14 @@ function CardHead({ icon, title, hint, right }) {
 export default function Detail({
     santri, setoranHafalan = [], setoranMurajaah = [], setoranTilawah = [],
     statistik = {}, kategori = '', tanggalMulai = '', tanggalAkhir = '',
-    tahunAjaranAktif = null, isIqro = false, totalHalamanIqro = 0, metodeLabel = 'Iqro',
+   tahunAjaranAktif = null, isIqro = false, totalHalamanIqro = 0, metodeLabel = 'Iqro',
+    hasQuranSecondary = false, totalJuzHafalan = 0, targetJuz = 0,
     tahunAjaranList = [], tahunAjaranId = '',
 }) {
+    // tanggal_mulai / tanggal_akhir tidak lagi dikirim — periode ditentukan
+    // sepenuhnya oleh tahun ajaran yang dipilih.
     const [f, setF] = useState({
         kategori: kategori || '',
-        tanggal_mulai: tanggalMulai,
-        tanggal_akhir: tanggalAkhir,
         tahun_ajaran_id: tahunAjaranId || '',
     });
     const [mobileTab, setMobileTab] = useState('hafalan');
@@ -146,6 +149,8 @@ export default function Detail({
                                     {isIqro && (
                                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-coal-700 text-stone-600 dark:text-stone-300 font-semibold ring-1 ring-stone-200 dark:ring-coal-600">
                                             {metodeLabel} · Jilid {santri?.target_jilid ?? 1}
+                                            {hasQuranSecondary && <span className="opacity-40 mx-1">+</span>}
+                                            {hasQuranSecondary && "Al-Qur'an"}
                                         </span>
                                     )}
                                     <span className="text-xs text-stone-500 dark:text-stone-400 inline-flex items-center gap-1">
@@ -163,7 +168,7 @@ export default function Detail({
                             title="Filter Data"
                             hint={taTerpilih ? `${taTerpilih.tanggal_mulai} s/d ${taTerpilih.tanggal_selesai ?? '-'}` : null}
                         />
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div>
                                 <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1.5">Tahun Ajaran &amp; Semester</label>
                                 <select
@@ -171,7 +176,6 @@ export default function Detail({
                                     onChange={(e) => setF({ ...f, tahun_ajaran_id: e.target.value })}
                                     className={inputCls}
                                 >
-                                    <option value="">Rentang Tanggal (manual)</option>
                                     {tahunAjaranList.map((t) => (
                                         <option key={t.id} value={t.id}>
                                             {t.label}{t.is_aktif ? ' • Aktif' : ''}
@@ -188,36 +192,24 @@ export default function Detail({
                                     <option value="Tilawah">Tilawah</option>
                                 </select>
                             </div>
-                            <div>
-                                <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1.5">Tanggal Mulai</label>
-                                <input
-                                    type="date"
-                                    value={taTerpilih ? (taTerpilih.tanggal_mulai ?? '') : f.tanggal_mulai}
-                                    onChange={(e) => setF({ ...f, tanggal_mulai: e.target.value })}
-                                    disabled={!!f.tahun_ajaran_id}
-                                    className={`${inputCls} disabled:opacity-50 disabled:cursor-not-allowed`}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1.5">Tanggal Akhir</label>
-                                <input
-                                    type="date"
-                                    value={taTerpilih ? (taTerpilih.tanggal_selesai ?? '') : f.tanggal_akhir}
-                                    onChange={(e) => setF({ ...f, tanggal_akhir: e.target.value })}
-                                    disabled={!!f.tahun_ajaran_id}
-                                    className={`${inputCls} disabled:opacity-50 disabled:cursor-not-allowed`}
-                                />
-                            </div>
                             <div className="flex items-end">
                                 <button onClick={apply} className="w-full px-4 py-2.5 rounded-xl bg-claude-500 hover:bg-claude-600 text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors shadow-sm active:scale-95">
                                     <Icon path={P.search} className="w-4 h-4" /> Terapkan
                                 </button>
                             </div>
                         </div>
+
+                        <p className="mt-2.5 text-[11px] text-stone-400 dark:text-stone-500">
+                            Periode:{' '}
+                            <span className="font-semibold text-stone-600 dark:text-stone-300">
+                                {tanggalMulai} s/d {tanggalAkhir}
+                            </span>{' '}
+                            — mengikuti tahun ajaran yang dipilih.
+                        </p>
                     </Card>
 
                     {/* Stat cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                     <div className={`grid grid-cols-1 gap-3 ${hasQuranSecondary ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3'}`}>
                         <StatCard tone="claude" icon={<Icon path={P.book} className="w-5 h-5" />} label="Total Setoran" value={statistik.total_setoran ?? 0} sub="kali setoran" />
                         <StatCard tone="amber" icon={<Icon path={P.star} className="w-5 h-5" />} label="Rata Nilai" value={statistik.rata_nilai ?? 0} sub="dari 100 poin" />
                         {isIqro ? (
@@ -231,6 +223,15 @@ export default function Detail({
                         ) : (
                             <StatCard tone="stone" icon={<Icon path={P.book} className="w-5 h-5" />} label="Total Juz" value={statistik.total_juz ?? 0} sub="juz tercapai" />
                         )}
+                        {hasQuranSecondary && (
+                            <StatCard
+                                tone="emerald"
+                                icon={<Icon path={P.book} className="w-5 h-5" />}
+                                label="Juz Al-Qur'an"
+                                value={totalJuzHafalan}
+                                sub={targetJuz > 0 ? `dari target ${targetJuz} juz` : 'juz hafalan'}
+                            />
+                        )}
                     </div>
 
                     {/* Mobile tab switcher */}
@@ -242,9 +243,9 @@ export default function Detail({
 
                     {/* Panels */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-                        <SetoranPanel className={`lg:row-span-2 ${showOn('hafalan')}`} tone="claude" title="Hafalan" rows={setoranHafalan} perPage={15} onFile={setModal} isIqro={isIqro} />
-                        <SetoranPanel className={showOn('murajaah')} tone="amber" title="Murajaah" rows={setoranMurajaah} perPage={6} onFile={setModal} isIqro={isIqro} />
-                        <SetoranPanel className={showOn('tilawah')} tone="teal" title="Tilawah" rows={setoranTilawah} perPage={6} onFile={setModal} isIqro={isIqro} />
+                         <SetoranPanel className={`lg:row-span-2 ${showOn('hafalan')}`} tone="claude" title="Hafalan" rows={setoranHafalan} perPage={15} onFile={setModal} isIqro={isIqro} isDual={hasQuranSecondary} />
+                        <SetoranPanel className={showOn('murajaah')} tone="amber" title="Murajaah" rows={setoranMurajaah} perPage={6} onFile={setModal} isIqro={isIqro} isDual={hasQuranSecondary} />
+                        <SetoranPanel className={showOn('tilawah')} tone="teal" title="Tilawah" rows={setoranTilawah} perPage={6} onFile={setModal} isIqro={isIqro} isDual={hasQuranSecondary} />
                     </div>
                 </div>
             </div>
@@ -274,6 +275,16 @@ export default function Detail({
                         <p className="text-xs sm:text-sm text-stone-800 dark:text-stone-200 whitespace-pre-wrap leading-relaxed">{modal.text}</p>
                     </div>
                 </Modal>
+            )}
+            {modal?.type === 'lapor' && (
+                <LaporanModal
+                    key={modal.setoran.id}
+                    open={true}
+                    onClose={() => setModal(null)}
+                    reportableType="setoran"
+                    reportableId={modal.setoran.id}
+                    konteks={`${formatRange(modal.setoran).range} · ${formatRange(modal.setoran).sub} · ${fmtDate(modal.setoran.tanggal)} · Nilai ${modal.setoran.nilai}`}
+                />
             )}
         </SantriAuthenticatedLayout>
     );
@@ -315,8 +326,7 @@ function TabBtn({ active, onClick, tone, label, count }) {
 }
 
 // ── Panel per kategori ──
-function SetoranPanel({ tone, title, rows, perPage, onFile, className = '', isIqro = false }) {
-    const t = TONE[tone] ?? TONE.claude;
+function SetoranPanel({ tone, title, rows, perPage, onFile, className = '', isIqro = false, isDual = false }) {    const t = TONE[tone] ?? TONE.claude;
     const pg = usePaged(rows, perPage);
 
     return (
@@ -344,8 +354,7 @@ function SetoranPanel({ tone, title, rows, perPage, onFile, className = '', isIq
                                 <tr className="bg-stone-50 dark:bg-coal-700/40">
                                     <Th className="w-8">No</Th>
                                     <Th className="w-24">Tanggal</Th>
-                                    <Th>{isIqro ? 'Jilid & Halaman' : 'Surah & Ayat'}</Th>
-                                    <Th className="w-16 text-center">Nilai</Th>
+                                    <Th>{isDual ? 'Materi Setoran' : (isIqro ? 'Jilid & Halaman' : 'Surah & Ayat')}</Th>                                    <Th className="w-16 text-center">Nilai</Th>
                                     <Th className="w-20 text-center">Aksi</Th>
                                 </tr>
                             </thead>
@@ -369,7 +378,7 @@ function SetoranPanel({ tone, title, rows, perPage, onFile, className = '', isIq
                                                     {s.audio_path && <ActBtn tone="claude" title="Audio" onClick={() => onFile({ type: 'audio', id: s.id })} icon={P.audio} fill />}
                                                     {s.koreksi_pdf_path && <ActBtn tone="red" title="PDF" onClick={() => onFile({ type: 'pdf', id: s.id })} icon={P.pdf} />}
                                                     {s.catatan_guru && <ActBtn tone="amber" title="Catatan" onClick={() => onFile({ type: 'note', text: s.catatan_guru, guru: s.guru?.name ?? 'Guru' })} icon={P.note} />}
-                                                    {!s.audio_path && !s.koreksi_pdf_path && !s.catatan_guru && <span className="text-[10px] text-stone-300 dark:text-stone-600">−</span>}
+                                                    <ActBtn tone="stone" title="Laporkan kesalahan data" onClick={() => onFile({ type: 'lapor', setoran: s })} icon={P.flag} />
                                                 </div>
                                             </Td>
                                         </tr>
@@ -396,6 +405,7 @@ const ACT = {
     claude: 'text-claude-600 dark:text-claude-400 hover:bg-claude-100 dark:hover:bg-claude-500/15',
     red: 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10',
     amber: 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10',
+    stone: 'text-stone-400 dark:text-stone-500 hover:text-claude-500 hover:bg-claude-100 dark:hover:bg-claude-500/15',
 };
 function ActBtn({ tone, title, onClick, icon, fill }) {
     return (

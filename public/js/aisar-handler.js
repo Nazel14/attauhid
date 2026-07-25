@@ -19,8 +19,8 @@
     'use strict';
 
     // ==== UKURAN FONT LAYAR ====
-    const AISAR_SCREEN_FONT_SIZE = 40;  // sel baris
-    const AISAR_JUDUL_FONT_SIZE  = 52;  // judul besar (أَبَ)
+    const AISAR_SCREEN_FONT_SIZE = 34;  // sel baris
+    const AISAR_JUDUL_FONT_SIZE  = 48;  // judul besar (أَبَ)
     const AISAR_BASMALLAH_SIZE   = 26;
 
     const LINE   = 'var(--q-line,rgba(255,255,255,0.3))';
@@ -33,14 +33,39 @@
     function cellSpan(txt, hl, size) {
     const fontSize = size || AISAR_SCREEN_FONT_SIZE;
     const fgStyle = hl ? 'color:var(--q-accent-fg,#fff);font-weight:700;' : 'color:' + FG + ';';
+    // pemisah • dirender sebagai bulatan kecil ber-border (sesuai cetakan buku)
+    const disp = String(txt).replace(/\s*•\s*/g,
+        '<span class="aisar-dot" style="display:inline-block;width:20px;height:20px;' +
+        'border:2px solid currentColor;border-radius:50%;opacity:.6;' +
+        'margin:0 14px;flex:0 0 auto;align-self:center;"></span>');
     return '<span class="word-item" data-word="' + txt + '" data-mark-state="0" ' +
         'onclick="markWord(this)" ' +
         'style="display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;' +
         'cursor:pointer;padding:6px 12px;border-radius:8px;min-height:90px;height:auto;line-height:1.6;' +
         'text-align:center;box-sizing:border-box;' +
         "font-family:'Amiri Quran','Amiri',serif;font-size:" + fontSize + 'px;' + fgStyle +
-        'transition:all 0.25s cubic-bezier(0.4,0,0.2,1);">' + txt + '</span>';
+        'transition:all 0.25s cubic-bezier(0.4,0,0.2,1);">' + disp + '</span>';
 }
+
+    // ---- bulat waqaf (replika iqro-handler) ----
+    function bulatSpan() {
+        return '<span class="iqro-bulat" aria-label="isi waqaf" style="display:inline-block;width:30px;height:30px;' +
+            'border:2px solid ' + FG + ';border-radius:50%;opacity:.7;flex:0 0 auto;"></span>';
+    }
+
+    // sel "◯"/"○" = lingkaran tunggal; withBulat = titik + bulat di belakang frasa
+    function cellHtml(txt, hl, size, withBulat, titik) {
+        if (txt === '◯' || txt === '○') {
+            return '<span class="iqro-waqaf-cell" style="display:inline-flex;align-items:center;justify-content:center;">' + bulatSpan() + '</span>';
+        }
+        if (!withBulat || hl) return cellSpan(txt, hl, size);
+        const decoHtml = titik
+            ? '<span class="iqro-deco" style="font-family:\'Amiri\',serif;font-size:26px;line-height:1;color:' + FG + ';opacity:.55;letter-spacing:2px;">' + titik + '</span>'
+            : '';
+        return '<span class="iqro-waqaf-cell" style="display:inline-flex;align-items:center;gap:10px;">' +
+            cellSpan(txt, hl, size) + decoHtml + bulatSpan() +
+        '</span>';
+    }
 
     // ---- band teks (instruksi di bawah judul / pembatas tengah) ----
     function bandHtml(text) {
@@ -50,7 +75,11 @@
     }
 
     // ---- baris N kolom, RTL: index 0 = paling kanan, garis pemisah antar kolom ----
-    function renderRow(row) {
+    function renderRow(row, rowIdx, page) {
+        const isWaqaf   = !!(page && page.pola === 'waqaf');
+        const withBulat = isWaqaf ||
+            (page && Array.isArray(page.bulatBaris) && page.bulatBaris.indexOf(rowIdx) !== -1);
+        const titik = (page && page.titik !== undefined) ? page.titik : '…';
         // band pembatas di tengah halaman: { divider: "teks" }
         if (row && !Array.isArray(row) && typeof row === 'object' && row.divider) {
             return bandHtml(row.divider);
@@ -61,10 +90,10 @@
             const inner = (row.rows || []).map(function (r, ri) {
                 const cells = Array.isArray(r) ? r : [r];
                 const top = ri > 0 ? 'border-top:1px solid ' + LINE + ';' : '';
-                return '<div style="display:flex;direction:rtl;align-items:stretch;' + top + '">' +
+                return '<div class="iqro-row-scroll" style="display:flex;direction:rtl;align-items:stretch;overflow-x:auto;scrollbar-width:thin;' + top + '">' +
                     cells.map(function (c, i) {
                         const sep = (i < cells.length - 1) ? 'border-left:1px solid ' + LINE + ';' : '';
-                        return '<div class="aisar-cell" style="flex:1;display:flex;justify-content:center;align-items:center;padding:2px 4px;' + sep + '">' + cellSpan(c) + '</div>';
+                        return '<div class="aisar-cell" style="flex:1;display:flex;justify-content:center;align-items:center;padding:2px 4px;' + sep + '">' + cellHtml(c, false, null, withBulat, titik) + '</div>';
                     }).join('') +
                 '</div>';
             }).join('');
@@ -83,36 +112,51 @@
         const cells = Array.isArray(row) ? row : [row];
 
         // 1 sel = baris rangkuman penuh
+        // justify flex-start (RTL = mulai kanan): center + overflow membuat
+        // ujung kanan terpotong dan tidak terjangkau scroll.
         if (cells.length === 1) {
             return '' +
-                '<div style="display:flex;direction:rtl;justify-content:center;align-items:center;border-top:1px solid ' + LINE + ';padding:2px 4px;">' +
-                    cellSpan(cells[0]) +
+                '<div class="iqro-row-scroll" style="display:flex;direction:rtl;justify-content:flex-start;align-items:center;border-top:1px solid ' + LINE + ';padding:2px 4px;overflow-x:auto;scrollbar-width:thin;">' +
+                    '<div style="margin-inline:auto;display:flex;">' + cellHtml(cells[0], false, null, withBulat, titik) + '</div>' +
                 '</div>';
         }
 
         // N kolom: border-left di semua sel kecuali sel terakhir (paling kiri)
         // sel bisa: "teks" | { hl: "teks" } | { text: "teks", span: 2 } (lebar setara N kolom)
         return '' +
-            '<div style="display:flex;direction:rtl;align-items:stretch;border-top:1px solid ' + LINE + ';">' +
+            '<div class="iqro-row-scroll" style="display:flex;direction:rtl;align-items:stretch;border-top:1px solid ' + LINE + ';overflow-x:auto;scrollbar-width:thin;">' +
                 (function () {
                     // total unit kolom baris ini (span dihitung)
                     const totalUnits = cells.reduce(function (t, c) {
                         return t + ((c && typeof c === 'object' && c.span) ? c.span : 1);
                     }, 0);
+                    // baris yang punya sel narrow: sel lain mengisi sisa lebar
+                    const hasNarrow = cells.some(function (c) {
+                        return c && typeof c === 'object' && c.narrow;
+                    });
                     return cells.map(function (c, i) {
                         const sep   = (i < cells.length - 1) ? 'border-left:1px solid ' + LINE + ';' : '';
                         const isObj = c && typeof c === 'object';
                         const isHl  = isObj && c.hl;
                         const txt   = isHl ? c.hl : (isObj ? c.text : c);
-                        const size  = (isObj && c.size) ? c.size : null;   // ← tambahkan baris ini
+                        const size  = (isObj && c.size) ? c.size : null;
                         const label = (isObj && c.label)
                             ? '<div style="font-family:\'Amiri\',serif;font-size:13px;color:' + FG + ';opacity:.65;text-align:center;padding-top:4px;line-height:1;">' + c.label + '</div>'
                             : '';
                         const span  = (isObj && c.span) ? c.span : 1;
                         const bg    = isHl ? 'background:var(--q-accent,#2E86AB);' : '';
-                        const pct   = (span / totalUnits * 100).toFixed(4) + '%';
-                        return '<div class="aisar-cell" style="flex:0 0 ' + pct + ';max-width:' + pct + ';box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:2px 4px;' + bg + sep + '">' +
-                            label + cellSpan(txt, isHl, size) +
+                        const isNarrow = isObj && c.narrow;
+                        let widthStyle;
+                        if (isNarrow) {
+                            widthStyle = 'flex:0 0 auto;min-width:96px;max-width:130px;';
+                        } else if (hasNarrow) {
+                            widthStyle = 'flex:1 1 auto;';
+                        } else {
+                            const pct = (span / totalUnits * 100).toFixed(4) + '%';
+                            widthStyle = 'flex:0 0 auto;min-width:' + pct + ';';
+                        }
+                        return '<div class="aisar-cell" style="' + widthStyle + 'box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:2px 4px;' + bg + sep + '">' +
+                            label + cellHtml(txt, isHl, size, withBulat, titik) +
                         '</div>';
                     }).join('');
                 })() +
@@ -139,15 +183,24 @@
         let judulHtml = '';
         if (data.judul && data.judul.length) {
             const judulText = data.judul.join(' ');
-            const isArabJudul = /[\u0600-\u06FF]/.test(judulText);
+            const isArabJudul = /[\u0600-\u06FF]/.test(judulText) &&
+                !/[A-Za-z]/.test(judulText); // campuran (mis. "HUKUM ... (نْ) KE DALAM (ي)") = Latin
             judulHtml = isArabJudul
                 ? '<div class="aisar-judul" style="text-align:center;direction:rtl;padding:16px 10px;border-top:1px solid ' + LINE + ';font-family:\'Amiri Quran\',\'Amiri\',serif;font-size:' + AISAR_JUDUL_FONT_SIZE + 'px;font-weight:700;color:' + FG + ';line-height:1.5;">' + judulText + '</div>'
-                : '<div style="text-align:center;padding:10px;border-top:1px solid ' + LINE + ';font-family:system-ui;font-size:16px;font-weight:700;letter-spacing:.3px;color:' + FG + ';">' + judulText + '</div>';
+                : '<div style="text-align:center;padding:8px 10px;border-top:1px solid ' + LINE + ';font-family:system-ui;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:' + FG + ';background:var(--q-band,rgba(127,127,127,0.14));">' + judulText + '</div>';
         }
 
-        const rowsHtml = (data.baris || []).map(renderRow).join('');
+        const rowsHtml = (data.baris || []).map(function (r, i) { return renderRow(r, i, data); }).join('');
 
         const catatanHtml = data.catatan ? bandHtml(data.catatan) : '';
+
+        // Urutan header: judul Latin (judul bab) tampil DI ATAS basmallah,
+        // sesuai cetakan buku. Judul Arab (mis. أَبَ di Jilid 1) tetap di bawah basmallah.
+        const isLatinJudul = !!(data.judul && data.judul.length) &&
+            (!/[\u0600-\u06FF]/.test(data.judul.join(' ')) || /[A-Za-z]/.test(data.judul.join(' ')));
+        const headerHtml = isLatinJudul
+            ? (judulHtml + basmallahHtml + instruksiHtml)
+            : (basmallahHtml + judulHtml + instruksiHtml);
 
         const displayStyle = pageIdx === 0 ? '' : 'display:none;';
         // class iqro-page DIPERTAHANKAN → navigasi & PDF capture existing tetap jalan
@@ -157,9 +210,7 @@
                     '<p style="font-size:14px;opacity:.65;font-family:system-ui;">Aisar ' + data.jilid + ' &nbsp;·&nbsp; Halaman ' + data.halaman + '</p>' +
                 '</div>' +
                 '<div style="border:1.5px solid ' + BORDER + ';margin:8px auto 16px auto;max-width:760px;overflow:hidden;border-radius:6px;">' +
-                    basmallahHtml +
-                    judulHtml +
-                    instruksiHtml +
+                    headerHtml +
                     renderKolomHeader(data.kolomHeader) +
                     rowsHtml +
                     catatanHtml +
@@ -170,14 +221,17 @@
     // ---- nav bar (markup sama dgn iqro, tombol pakai iqroNavGo global) ----
     function buildNavBar(pageNumbers) {
         if (pageNumbers.length <= 1) return '';
-        const btnStyle = 'background:var(--q-nav-btn,#374151);color:var(--q-nav-btn-fg,#e5e7eb);border:none;border-radius:6px;' +
-                         'padding:5px 10px;font-size:11px;cursor:pointer;white-space:nowrap;font-weight:600;line-height:1.2;';
+        const btnStyle = 'background:var(--q-nav-btn,#374151);color:var(--q-nav-btn-fg,#e5e7eb);border:none;border-radius:9999px;' +
+                         'width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;' +
+                         'font-size:16px;line-height:1;cursor:pointer;font-weight:700;flex:0 0 auto;' +
+                         'transition:opacity .15s ease;';
         return '' +
             '<div class="iqro-nav" data-idx="0" data-total="' + pageNumbers.length + '" data-html2canvas-ignore="true"' +
-            ' style="position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;' +
-            'gap:6px;background:var(--q-nav-bg,rgba(17,24,39,0.96));padding:5px 8px;border-radius:6px;margin-bottom:10px;">' +
-                '<button type="button" class="iqro-prev" onclick="iqroNavGo(this,-1)" style="' + btnStyle + 'opacity:0.45;cursor:not-allowed;">←</button>' +
-                '<span class="iqro-nav-label" style="font-size:11px;color:var(--q-nav-label,#cbd5e1);font-weight:700;white-space:nowrap;">' +
+            ' style="position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:center;' +
+            'gap:16px;background:var(--q-nav-bg,rgba(17,24,39,0.96));padding:7px 12px;border-radius:9999px;' +
+            'margin:0 auto 12px auto;width:fit-content;max-width:100%;box-shadow:0 2px 8px rgba(0,0,0,0.25);">' +
+                '<button type="button" class="iqro-prev" onclick="iqroNavGo(this,-1)" style="' + btnStyle + 'opacity:0.4;cursor:not-allowed;">←</button>' +
+                '<span class="iqro-nav-label" style="font-size:13px;color:var(--q-nav-label,#cbd5e1);font-weight:700;white-space:nowrap;min-width:110px;text-align:center;">' +
                     'Hal ' + pageNumbers[0] + ' (1/' + pageNumbers.length + ')' +
                 '</span>' +
                 '<button type="button" class="iqro-next" onclick="iqroNavGo(this,1)" style="' + btnStyle + '">→</button>' +

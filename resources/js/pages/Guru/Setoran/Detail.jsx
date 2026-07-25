@@ -162,7 +162,7 @@ function useToast() {
  * HALAMAN
  * ============================================================ */
 export default function Detail({
-    santri, isIqro, taList = [], taTerpilih, taObjekTerpilih,
+    santri, isIqro, hasQuranSecondary = false, taList = [], taTerpilih, taObjekTerpilih,
     kelasKonteks, isSemesterAktif, filter = {}, progress, stats, setoran,
 }) {
     const { flash } = usePage().props;
@@ -335,16 +335,35 @@ export default function Detail({
                         <h2 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">Progress Hafalan</h2>
                     </div>
 
-                    {isIqro ? (
-                        <div className="flex items-center justify-between rounded-xl bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100 dark:ring-emerald-500/20 px-4 py-3">
-                            <div>
-                                <p className="text-xs text-stone-500 dark:text-stone-400">Target: Jilid {santri.target_jilid ?? '-'}</p>
-                                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">Progress diukur per halaman yang disetor (Hafalan)</p>
+                     {isIqro ? (
+                        <>
+                            <div className="flex items-center justify-between rounded-xl bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100 dark:ring-emerald-500/20 px-4 py-3">
+                                <div>
+                                    <p className="text-xs text-stone-500 dark:text-stone-400">Target: Jilid {santri.target_jilid ?? '-'}</p>
+                                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">Progress diukur per halaman yang disetor (Hafalan)</p>
+                                </div>
+                                <span className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
+                                    {progress.total_halaman_iqro}<span className="text-xs font-medium ml-1">hal</span>
+                                </span>
                             </div>
-                            <span className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
-                                {progress.total_halaman_iqro}<span className="text-xs font-medium ml-1">hal</span>
-                            </span>
-                        </div>
+
+                            {hasQuranSecondary && (
+                                <div className="mt-3">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs text-stone-500 dark:text-stone-400">Target Al-Qur'an: <strong className="text-stone-800 dark:text-stone-200">{progress.target_juz} Juz</strong></span>
+                                        <span className="text-sm font-bold text-claude-600 dark:text-claude-400 tabular-nums">{nf2(progress.total_hafalan_juz)} Juz ({nf2(progress.progress_persen)}%)</span>
+                                    </div>
+                                    <div className="w-full h-3 rounded-full bg-stone-200 dark:bg-coal-700 overflow-hidden">
+                                        <div className="h-full rounded-full bg-claude-500 transition-all duration-500" style={{ width: `${pctBar}%` }} />
+                                    </div>
+                                    {progress.progress_persen >= 100 ? (
+                                        <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1.5">Target Al-Qur'an tercapai.</p>
+                                    ) : (
+                                        <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Sisa: {nf2(progress.target_juz - progress.total_hafalan_juz)} Juz</p>
+                                    )}
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div>
                             <div className="flex items-center justify-between mb-2">
@@ -368,8 +387,10 @@ export default function Detail({
                             <div key={kat} className={`rounded-xl ring-1 p-3 text-center ${KAT[kat].head} ring-stone-200 dark:ring-coal-700`}>
                                 <p className={`text-[10px] font-bold uppercase mb-1 ${KAT[kat].text}`}>{kat}</p>
                                 <p className={`text-xl font-bold tracking-tight tabular-nums ${KAT[kat].text}`}>{data.total}<span className="text-xs font-medium">x</span></p>
-                                <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-0.5">
-                                    {isIqro ? `${data.halaman} halaman` : `${nf2(data.total_juz)} juz`}
+                               <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-0.5">
+                                    {isIqro
+                                        ? (hasQuranSecondary ? `${data.halaman} hal · ${nf2(data.total_juz)} juz` : `${data.halaman} halaman`)
+                                        : `${nf2(data.total_juz)} juz`}
                                 </p>
                             </div>
                         ))}

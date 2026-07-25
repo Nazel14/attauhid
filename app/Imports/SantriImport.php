@@ -52,6 +52,7 @@ class SantriImport implements ToCollection, WithHeadingRow
             $nama       = trim((string) ($row['nama'] ?? ''));
             $gender     = strtoupper(trim((string) ($row['gender'] ?? '')));
             $metode     = strtolower(trim((string) ($row['metode'] ?? 'quran')));
+            $metode2    = strtolower(trim((string) ($row['metode_2'] ?? '')));
             $targetJuz  = isset($row['target_juz']) && $row['target_juz'] !== ''
                 ? str_replace(',', '.', (string) $row['target_juz'])
                 : null;
@@ -81,6 +82,13 @@ class SantriImport implements ToCollection, WithHeadingRow
                 $rowErrors[] = "Metode harus quran, iqro, atau aisar (ditemukan: {$metode})";
             }
 
+           // Metode 2 (opsional) — hanya boleh kosong atau "quran", dan hanya untuk metode jilid
+            if ($metode2 !== '' && $metode2 !== 'quran') {
+                $rowErrors[] = "Metode 2 hanya boleh kosong atau 'quran' (ditemukan: {$metode2})";
+            }
+            if ($metode === 'quran') $metode2 = '';
+            $hasQuran2 = $metode2 === 'quran';
+
             $isJilidBased = in_array($metode, ['iqro', 'aisar'], true);
 
             if ($isJilidBased) {
@@ -90,6 +98,14 @@ class SantriImport implements ToCollection, WithHeadingRow
                     $rowErrors[] = "Target Jilid wajib diisi untuk metode " . ucfirst($metode);
                 } elseif (!is_numeric($targetJilid) || (int) $targetJilid < 1 || (int) $targetJilid > $maxJilid) {
                     $rowErrors[] = "Target Jilid harus 1-{$maxJilid} untuk metode " . ucfirst($metode);
+                }
+                // Target Al-Qur'an sekunder wajib bila metode 2 diisi
+                if ($hasQuran2) {
+                    if ($targetJuz === null || $targetJuz === '') {
+                        $rowErrors[] = "Metode 2 quran wajib mengisi Target Juz (0-30)";
+                    } elseif (!is_numeric($targetJuz) || (float) $targetJuz < 0 || (float) $targetJuz > 30) {
+                        $rowErrors[] = "Target Juz harus 0-30";
+                    }
                 }
             } elseif ($metode === 'quran') {
                 // quran → wajib target_juz
@@ -134,8 +150,7 @@ class SantriImport implements ToCollection, WithHeadingRow
 
             // ===== SIMPAN =====
             try {
-                DB::transaction(function () use ($nis, $nama, $gender, $metode, $targetJuz, $targetJilid, $kelas, $password, $namaFoto, $rowNum) {
-                    $name = preg_replace_callback('/\b\w+/', function ($m) {
+                DB::transaction(function () use ($nis, $nama, $gender, $metode, $metode2, $hasQuran2, $targetJuz, $targetJilid, $kelas, $password, $namaFoto, $rowNum) {                    $name = preg_replace_callback('/\b\w+/', function ($m) {
                         return ucfirst(strtolower($m[0]));
                     }, $nama);
 
@@ -173,9 +188,11 @@ class SantriImport implements ToCollection, WithHeadingRow
                         'nis'           => $nis,
                         'name'          => $name,
                         'gender'        => $genderFull,
-                        'target_metode' => $metode,
-                        'target_juz'    => $isJilidBased ? null : (float) $targetJuz,
-                        'target_jilid'  => $isJilidBased ? (int) $targetJilid : null,
+                        'target_metode'   => $metode,
+                        'target_metode_2' => $hasQuran2 ? 'quran' : null,
+                        // Metode jilid: juz hanya dipakai bila ada metode 2 = quran
+                        'target_juz'      => $isJilidBased ? ($hasQuran2 ? (float) $targetJuz : null) : (float) $targetJuz,
+                        'target_jilid'    => $isJilidBased ? (int) $targetJilid : null,
                     ]);
                 });
 

@@ -216,15 +216,18 @@
         };
 
         const renderJudulRow = (cells) => {
-            const inner = cells.map(t =>
-                t === '|'
-                    ? '<span style="display:inline-block;width:28px;"></span>'
-                    : '<span>' + t + '</span>'
-            ).join('');
-            return '<div style="display:flex;justify-content:center;align-items:center;gap:14px;direction:rtl;padding:18px 10px;line-height:1.6;' +
-                   "font-family:'Amiri Quran','Amiri',serif;font-size:42px;font-weight:700;color:var(--q-fg,#fff);flex-wrap:wrap;\">" + inner + '</div>';
-        };
-
+        const inner = cells.map(t =>
+            t === '|'
+                ? '<span style="display:inline-block;width:28px;"></span>'
+                : '<span>' + t + '</span>'
+        ).join('');
+        // FIX: glyph Amiri (ج ح ع م dll) punya descender dalam + harakat tinggi.
+        // line-height 1.6 membuat huruf melewati border baris di bawahnya.
+        // Solusi: class iqro-judul + line-height longgar + padding bawah ekstra.
+        return '<div class="iqro-judul" style="display:flex;justify-content:center;align-items:center;gap:14px;direction:rtl;' +
+            'padding:14px 10px 46px 10px;line-height:2.1;overflow:visible;' +
+            "font-family:'Amiri Quran','Amiri',serif;font-size:42px;font-weight:700;color:var(--q-fg,#fff);flex-wrap:wrap;\">" + inner + '</div>';
+    };
         const renderJudul = (judul) => {
             if (!judul || !judul.length) return '';
             const rows = Array.isArray(judul[0]) ? judul : [judul];
@@ -286,7 +289,20 @@
             c.style.removeProperty('text-align');
         });
 
-        const avail = inner.clientWidth;
+        // FIX: jangan percaya clientWidth inner (flex item bisa melar ikut isi).
+        // Pakai lebar baris induk dikurangi lebar label & dibagi jumlah inner
+        // (baris grouped punya beberapa inner sejajar).
+        let avail = inner.clientWidth;
+        const row = inner.closest('.iqro-row-scroll');
+        if (row) {
+            let labelW = 0, innerCount = 0;
+            Array.from(row.children).forEach(ch => {
+                if (ch.classList.contains('iqro-row-inner')) innerCount++;
+                else labelW += ch.offsetWidth;
+            });
+            const share = Math.floor((row.clientWidth - labelW - 8) / Math.max(1, innerCount));
+            if (share > 0) avail = Math.min(avail || share, share);
+        }
         if (avail < 200) return;
 
         let needed = inner.scrollWidth;
@@ -335,14 +351,17 @@
 
     function buildNavBar(pageNumbers) {
         if (pageNumbers.length <= 1) return '';
-        const btnStyle = 'background:var(--q-nav-btn,#374151);color:var(--q-nav-btn-fg,#e5e7eb);border:none;border-radius:6px;' +
-                         'padding:5px 10px;font-size:11px;cursor:pointer;white-space:nowrap;font-weight:600;line-height:1.2;';
+        const btnStyle = 'background:var(--q-nav-btn,#374151);color:var(--q-nav-btn-fg,#e5e7eb);border:none;border-radius:9999px;' +
+                         'width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;' +
+                         'font-size:16px;line-height:1;cursor:pointer;font-weight:700;flex:0 0 auto;' +
+                         'transition:opacity .15s ease;';
         return '' +
             '<div class="iqro-nav" data-idx="0" data-total="' + pageNumbers.length + '" data-html2canvas-ignore="true"' +
-            ' style="position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;' +
-            'gap:6px;background:var(--q-nav-bg,rgba(17,24,39,0.96));padding:5px 8px;border-radius:6px;margin-bottom:10px;">' +
-                '<button type="button" class="iqro-prev" onclick="iqroNavGo(this,-1)" style="' + btnStyle + 'opacity:0.45;cursor:not-allowed;">←</button>' +
-                '<span class="iqro-nav-label" style="font-size:11px;color:var(--q-nav-label,#cbd5e1);font-weight:700;white-space:nowrap;">' +
+            ' style="position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:center;' +
+            'gap:16px;background:var(--q-nav-bg,rgba(17,24,39,0.96));padding:7px 12px;border-radius:9999px;' +
+            'margin:0 auto 12px auto;width:fit-content;max-width:100%;box-shadow:0 2px 8px rgba(0,0,0,0.25);">' +
+                '<button type="button" class="iqro-prev" onclick="iqroNavGo(this,-1)" style="' + btnStyle + 'opacity:0.4;cursor:not-allowed;">←</button>' +
+                '<span class="iqro-nav-label" style="font-size:13px;color:var(--q-nav-label,#cbd5e1);font-weight:700;white-space:nowrap;min-width:110px;text-align:center;">' +
                     'Hal ' + pageNumbers[0] + ' (1/' + pageNumbers.length + ')' +
                 '</span>' +
                 '<button type="button" class="iqro-next" onclick="iqroNavGo(this,1)" style="' + btnStyle + '">→</button>' +
@@ -668,10 +687,18 @@
                 // Glyph Amiri ukuran besar punya descender dalam; beri ruang
                 // ekstra bawah + line-height longgar supaya tidak menimpa band.
                 '.iqro-cap .aisar-judul { line-height:2 !important; padding:20px 10px 52px 10px !important; overflow:visible !important; }' +
+                // FIX: judul Iqro di PDF juga butuh ruang descender (kasus sama dgn Aisar)
+                '.iqro-cap .iqro-judul { line-height:2.2 !important; padding:16px 10px 56px 10px !important; overflow:visible !important; }' +
                 '.iqro-cap .aisar-basmallah { line-height:2.4 !important; margin:0 !important; padding:12px 0 28px 0 !important; overflow:visible !important; }' +
                 // Sel Aisar (2 huruf pendek) tidak butuh 150px seperti Iqro;
                 // line-height dinaikkan agar harakat atas & descender aman.
-                '.iqro-cap .aisar-page .word-item { min-height:120px !important; line-height:1.9 !important; padding-bottom:26px !important; white-space:nowrap !important; }';
+                '.iqro-cap .aisar-page .word-item { min-height:120px !important; line-height:1.9 !important; padding-bottom:26px !important; white-space:nowrap !important; }' +
+                // FIX (Jilid 5 hal 21 dkk): flex min-width:auto membuat .iqro-row-inner MELAR
+                // mengikuti isi nowrap → clientWidth == scrollWidth → auto-fit mengira muat.
+                // min-width:0 mengunci lebar inner ke jatah kolomnya sehingga ukuran overflow
+                // terbaca benar dan font baris panjang benar-benar dikecilkan.
+                '.iqro-cap .iqro-row-inner { min-width:0 !important; }' +
+                '.iqro-cap .iqro-row-scroll { overflow:hidden !important; }';
             wrapper.appendChild(styleEl);
 
             const clonePage = srcPage.cloneNode(true);

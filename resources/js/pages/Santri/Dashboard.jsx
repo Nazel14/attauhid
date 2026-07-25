@@ -98,6 +98,48 @@ function MiniStat({ tone, value, label }) {
     );
 }
 
+/* Gauge progress — dipakai dua kali untuk santri 2 metode
+   (jilid + Al-Qur'an), jadi dijadikan komponen agar tidak duplikat.
+   `padat` = mode berdampingan: cincin & angka diperkecil supaya
+   dua gauge tetap terbaca di kartu selebar 1/3 grid. */
+function GaugeProgress({ persen, warna, track, label, nilai, satuan, padat = false }) {
+    const v = Math.min(Math.max(Number(persen) || 0, 0), 100);
+    return (
+        <div className="min-w-0">
+            <div className={padat ? 'relative h-32' : 'relative h-44'}>
+                <ResponsiveContainer width="100%" height="100%">
+                    <RadialBarChart
+                        cx="50%" cy="50%"
+                        innerRadius="72%" outerRadius="100%"
+                        barSize={padat ? 10 : 14}
+                        data={[{ value: v }]}
+                        startAngle={90} endAngle={-270}
+                    >
+                        <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+                        <RadialBar background={{ fill: track }} dataKey="value" cornerRadius={12} fill={warna} angleAxisId={0} />
+                    </RadialBarChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className={`${padat ? 'text-lg' : 'text-2xl'} font-bold tracking-tight text-stone-900 dark:text-stone-100 tabular-nums`}>
+                        {v}%
+                    </span>
+                    <span className="text-[10px] text-stone-400 -mt-0.5">tercapai</span>
+                </div>
+            </div>
+            <div className="mt-2.5 flex items-center justify-between gap-2 text-xs">
+                <span className="flex items-center gap-1.5 min-w-0 text-stone-600 dark:text-stone-300">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: warna }} />
+                    <span className="truncate">{label}</span>
+                </span>
+                <span className="font-bold text-stone-800 dark:text-stone-200 tabular-nums whitespace-nowrap">
+                    {nilai}
+                    {satuan && <span className="text-stone-400 font-normal ml-1">{satuan}</span>}
+                </span>
+            </div>
+        </div>
+    );
+}
+
 /* header card kecil — icon tile w-6 h-6 rounded-lg persis guru */
 function CardHead({ icon, title, hint }) {
     return (
@@ -131,7 +173,7 @@ export default function Dashboard({ santris = [], tahunAjaranAktif = null, messa
                     </div>
                     <div className="min-w-0 flex-1">
                         <h1 className="text-lg sm:text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">
-                            Assalamu'alaikum, {santriName}
+                            Selamat Datang, {santriName}
                         </h1>
                         <p className="text-[11px] text-stone-500 mt-0.5">Ringkasan hafalan, nilai &amp; presensi Anda</p>
                     </div>
@@ -187,6 +229,9 @@ function SantriBoard({ santri }) {
     const jilidPersen = isIqro && jilidHalTotal > 0 ? Math.min(100, Math.round((jilidHal / jilidHalTotal) * 1000) / 10) : 0;
     const progressPct = isIqro ? jilidPersen : progressJuz;
 
+    // metode 2 (opsional): target Al-Qur'an untuk santri jilid
+    const hasQuran2 = s.has_quran_secondary ?? false;
+
     // nilai
     const nilaiOverall = s.rata_nilai ?? 0;
     const totalSetoran = s.total_setoran ?? 0;
@@ -238,6 +283,8 @@ function SantriBoard({ santri }) {
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 font-semibold">{santri.kelas?.name ?? '-'}</span>
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 text-stone-600 dark:text-stone-300 font-semibold">
                                 {isIqro ? `${metodeLabel} · Jilid ${jilidAktif}` : 'Al-Quran'}
+                                {hasQuran2 && <span className="opacity-40 mx-1">+</span>}
+                                {hasQuran2 && 'Al-Quran'}
                             </span>
                         </div>
                     </div>
@@ -261,7 +308,13 @@ function SantriBoard({ santri }) {
                     icon={<LayersIcon className="w-5 h-5" />}
                     label={isIqro ? `Halaman ${metodeLabel}` : 'Juz Hafalan'}
                     value={isIqro ? jilidHal : num(totalHafalan, 2)}
-                    sub={isIqro ? `halaman hafalan · Jilid ${jilidAktif}` : 'juz tercapai'}
+                    sub={
+                        isIqro
+                            ? (hasQuran2
+                                ? `Jilid ${jilidAktif} · ${num(totalHafalan, 2)} juz Al-Qur'an`
+                                : `halaman hafalan · Jilid ${jilidAktif}`)
+                            : 'juz tercapai'
+                    }
                 />
                 <StatCard tone="emerald" icon={<CheckIcon className="w-5 h-5" />} label="Kehadiran" value={`${pctHadir}%`} sub={`${totHadir}/${totHari} hari`} />
             </div>
@@ -277,38 +330,60 @@ function SantriBoard({ santri }) {
                         hint={isIqro ? `${metodeLabel} · Jilid ${jilidAktif}` : null}
                     />
                     {isIqro && !jilidDiketahui ? (
-                        <div className="h-44 flex flex-col items-center justify-center text-center">
-                            <p className="text-3xl font-bold tracking-tight text-claude-600 dark:text-claude-400 tabular-nums">{jilidHal}</p>
-                            <p className="text-xs text-stone-400 mt-1">halaman disetor ({metodeLabel} Jilid {jilidAktif})</p>
-                            <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-2 italic px-4">
-                                Jumlah halaman jilid ini belum diatur di konfigurasi
-                            </p>
+                        <>
+                            <div className="h-44 flex flex-col items-center justify-center text-center">
+                                <p className="text-3xl font-bold tracking-tight text-claude-600 dark:text-claude-400 tabular-nums">{jilidHal}</p>
+                                <p className="text-xs text-stone-400 mt-1">halaman disetor ({metodeLabel} Jilid {jilidAktif})</p>
+                                <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-2 italic px-4">
+                                    Jumlah halaman jilid ini belum diatur di konfigurasi
+                                </p>
+                            </div>
+
+                            {/* Gauge Al-Qur'an tetap tampil meski persentase jilid
+                                belum bisa dihitung — datanya tidak saling bergantung. */}
+                            {hasQuran2 && (
+                                <div className="mt-4 pt-4 border-t border-stone-100 dark:border-coal-700">
+                                    <GaugeProgress
+                                        persen={progressJuz}
+                                        warna={C.emerald}
+                                        track={track}
+                                        label="Al-Qur'an"
+                                        nilai={`${num(totalHafalan, 2)}/${num(targetJuz, 2)}`}
+                                        satuan="juz"
+                                    />
+                                </div>
+                            )}
+                        </>
+                    ) : hasQuran2 ? (
+                        <div className="grid grid-cols-2 gap-3">
+                            <GaugeProgress
+                                padat
+                                persen={progressPct}
+                                warna={C.claude}
+                                track={track}
+                                label={metodeLabel}
+                                nilai={`${jilidHal}/${jilidHalTotal}`}
+                                satuan="hal"
+                            />
+                            <GaugeProgress
+                                padat
+                                persen={progressJuz}
+                                warna={C.emerald}
+                                track={track}
+                                label="Al-Qur'an"
+                                nilai={`${num(totalHafalan, 2)}/${num(targetJuz, 2)}`}
+                                satuan="juz"
+                            />
                         </div>
                     ) : (
-                        <>
-                            <div className="relative h-44">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <RadialBarChart cx="50%" cy="50%" innerRadius="72%" outerRadius="100%" barSize={14} data={[{ value: progressPct }]} startAngle={90} endAngle={-270}>
-                                        <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-                                        <RadialBar background={{ fill: track }} dataKey="value" cornerRadius={12} fill={C.claude} angleAxisId={0} />
-                                    </RadialBarChart>
-                                </ResponsiveContainer>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                    <span className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100 tabular-nums">{progressPct}%</span>
-                                    <span className="text-[10px] text-stone-400 -mt-0.5">tercapai</span>
-                                </div>
-                            </div>
-                            <div className="mt-3 flex items-center justify-between text-xs">
-                                <span className="flex items-center gap-2 text-stone-600 dark:text-stone-300">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-claude-500" />
-                                    {isIqro ? 'Halaman' : 'Juz'}
-                                </span>
-                                <span className="font-bold text-stone-800 dark:text-stone-200">
-                                    {isIqro ? `${jilidHal}/${jilidHalTotal}` : `${num(totalHafalan, 2)}/${num(targetJuz, 2)}`}
-                                    <span className="text-stone-400 font-normal ml-1">{isIqro ? 'hal' : 'juz'}</span>
-                                </span>
-                            </div>
-                        </>
+                        <GaugeProgress
+                            persen={progressPct}
+                            warna={C.claude}
+                            track={track}
+                            label={isIqro ? 'Halaman' : 'Juz'}
+                            nilai={isIqro ? `${jilidHal}/${jilidHalTotal}` : `${num(totalHafalan, 2)}/${num(targetJuz, 2)}`}
+                            satuan={isIqro ? 'hal' : 'juz'}
+                        />
                     )}
                 </div>
 

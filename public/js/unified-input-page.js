@@ -754,6 +754,44 @@ function toggleSection(id) {
     btn?.classList.toggle('section-open', isHidden);
 }
 
+// ============================================================
+// Badge metode & bar progress — meniru tabel di Dashboard guru.
+// Sengaja memakai inline style, BUKAN class Tailwind: file ini ada
+// di public/js yang tidak dipindai Tailwind, jadi class baru akan
+// terbuang saat build dan warnanya hilang.
+// ============================================================
+function metaSantri(id) {
+    return (window.__SANTRI_META__ || {})[String(id)] || null;
+}
+
+// Warna diambil dari CSS variable (didefinisikan di blok <style> InputSetoran.jsx),
+// BUKAN hex inline. Alasannya: tabel hanya dirender ulang tiap 30 detik, jadi
+// warna inline akan tertinggal saat pengguna menekan toggle light/dark.
+function htmlBadgeMetode(meta) {
+    if (!meta) return '<span class="pm-empty">–</span>';
+
+    const tone = ['quran', 'iqro', 'aisar'].includes(meta.tone) ? meta.tone : 'quran';
+    const plus = meta.hasQuran2 ? ' <span class="pm-plus">+</span> Qur\'an' : '';
+
+    return `<span class="pm-badge" data-tone="${tone}">${meta.primary}${plus}</span>`;
+}
+
+function htmlProgress(meta) {
+    if (!meta) return '<span class="pm-empty">–</span>';
+
+    const bar = (v, c) => {
+        const w = Math.max(0, Math.min(Number(v) || 0, 100));
+        return `<span class="pm-prog-row">`
+             + `<span class="pm-prog-track"><span class="pm-prog-fill" data-c="${c}" style="width:${w}%"></span></span>`
+             + `<span class="pm-prog-val">${w}%</span></span>`;
+    };
+
+    let out = bar(meta.progress, '1');
+    if (meta.hasQuran2) out += bar(meta.progress2, '2');
+
+    return `<span class="pm-prog">${out}</span>`;
+}
+
 async function loadPresensiHariIni() {
     await loadPresensiHariIniToTarget(null);
 }
@@ -781,7 +819,8 @@ async function loadPresensiHariIniToTarget(target) {
         const sesiHeaders    = data.sesi_aktif || [];
         const tableHeaderRow = getEl('tableHeaderRow');
         if (!tableHeaderRow) return;   // panel presensi belum ada di DOM → skip diam-diam, jangan crash
-        while (tableHeaderRow.children.length > 2) tableHeaderRow.removeChild(tableHeaderRow.lastChild);
+        // 4 kolom tetap: No, Nama, Metode, Progress — sisanya kolom sesi
+        while (tableHeaderRow.children.length > 4) tableHeaderRow.removeChild(tableHeaderRow.lastChild);
         sesiHeaders.forEach(sesi => {
             const th = document.createElement('th');
             th.className = 'px-2 py-2 text-center text-gray-400 font-medium w-14';
@@ -806,10 +845,14 @@ async function loadPresensiHariIniToTarget(target) {
                     }
                     return `<td class="px-1 py-2"><div class="flex justify-center"><div class="w-4 h-4 rounded-full" style="border:1px solid #9ca3af;"></div></div></td>`;
                 }).join('');
-                return `<tr class="hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors"><td class="px-2 py-2 text-gray-500 dark:text-gray-400 text-center">${index + 1}</td><td class="px-2 py-2 text-gray-800 dark:text-gray-200 font-medium">${santri.name}</td>${sesiCells}</tr>`;
+                const meta = metaSantri(santri.id);
+                // Nama dibungkus <div> ber-max-width: pada table-layout auto,
+                // max-width di <td> sering diabaikan browser, tapi di elemen
+                // blok di dalamnya tetap dihormati.
+                return `<tr class="hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors align-top"><td class="px-2 py-2 text-gray-500 dark:text-gray-400 text-center">${index + 1}</td><td class="px-2 py-2"><div class="max-w-[180px] break-words leading-snug text-gray-800 dark:text-gray-200 font-medium">${santri.name}</div></td><td class="px-2 py-2 whitespace-nowrap">${htmlBadgeMetode(meta)}</td><td class="px-2 py-2">${htmlProgress(meta)}</td>${sesiCells}</tr>`;
             }).join('');
         } else {
-            tableBody.innerHTML = `<tr><td colspan="${2 + sesiHeaders.length}" class="text-center py-6 text-gray-600 italic">Tidak ada santri di kelas ini.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="${4 + sesiHeaders.length}" class="text-center py-6 text-gray-600 italic">Tidak ada santri di kelas ini.</td></tr>`;
         }
     } catch (error) {
         console.error('Error loading presensi:', error);
@@ -880,15 +923,16 @@ document.addEventListener('DOMContentLoaded', function () {
         if (dv && !dv.classList.contains('hidden')) loadPresensiHariIni();
     });
 
-    // CSRF: segarkan token sebelum submit native (desktop)
-    ['formCombined', 'formSetoranOnly', 'formPresensiOnly'].forEach((id) => {
-        document.getElementById(id)?.addEventListener('submit', function (e) {
-            if (this.dataset.csrfReady === '1') return;   // sudah disegarkan, lanjutkan
-            e.preventDefault();
-            refreshCsrfToken().then(() => {
-                this.dataset.csrfReady = '1';
-                this.submit();
-            });
+    // CSRF: hanya untuk formPresensiOnly (tidak punya handler PDF).
+    // formCombined & formSetoranOnly di-handle setupNativeFormValidation()
+    // di setoran-interactive.js — jangan pasang listener kedua di sana,
+    // karena akan submit duluan sebelum PDF selesai dibuat.
+    document.getElementById('formPresensiOnly')?.addEventListener('submit', function (e) {
+        if (this.dataset.csrfReady === '1') return;
+        e.preventDefault();
+        refreshCsrfToken().then(() => {
+            this.dataset.csrfReady = '1';
+            this.submit();
         });
     });
 
@@ -1221,7 +1265,7 @@ function resetMarkingCounterForMode(mode) {
         document.addEventListener('click', (e) => { if (openWidget && !openWidget.drop.contains(e.target) && !openWidget.btn.contains(e.target)) closeWidget(openWidget); });
         console.log('Custom Select ready');
     }
-    document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', () => setTimeout(init, 450)) : setTimeout(init, 450);
+    document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', () => setTimeout(init, 100)) : setTimeout(init, 100);
     window._csWidgets = widgets;
 })();
 
@@ -1454,42 +1498,13 @@ function resetMarkingCounterForMode(mode) {
         });
     }
 
-    function applyTargetFor(mode) {
-        const santriId = mode === 'SetoranOnly' ? 'santriSelectSetoranOnly' : 'santriSelectCombined';
-        const santriEl = document.getElementById(santriId);
-        if (!santriEl) return;
+     function setJilidForMode(mode, targetJilid) {
+        const metodeEl = document.getElementById('metode' + mode);
+        const isJilid  = /iqro|aisar|ummi/i.test(metodeEl?.value || '');
 
-        const opt = santriEl.options[santriEl.selectedIndex];
-
-        // Combined / SetoranOnly: buka blok setelah santri dipilih, tutup saat dikosongkan
-        if (mode === 'Combined') {
-            toggleCombinedSections(!!(opt && opt.value));
-        }
-        if (mode === 'SetoranOnly') {
-            toggleSetoranSections(!!(opt && opt.value));
-        }
-
-        if (!opt || !opt.value) return;
-
-        const targetMetode = (opt.dataset.targetMetode || 'quran').toLowerCase();
-        const targetJilid  = opt.dataset.targetJilid || '';
-
-        const isJilidTarget = ['iqro', 'ummi', 'aisar'].includes(targetMetode);
-
-            const metodeEl = document.getElementById('metode' + mode);
-            if (metodeEl) {
-                metodeEl.value = targetMetode === 'aisar' ? 'Aisar'
-                            : isJilidTarget            ? 'Iqro'
-                            : "Al-Qur'an";
-                if (typeof window._csSyncFromNative === 'function') window._csSyncFromNative('metode' + mode);
-                if (typeof window.toggleMetode === 'function') window.toggleMetode(mode);
-            }
-
-            // Metode jilid (Iqro/Aisar) -> set jilid & isi halaman
-            if (isJilidTarget && targetJilid) {
+        if (isJilid && targetJilid) {
             const jilidEl = document.getElementById('iqroJilid' + mode);
             if (jilidEl) {
-                // Pastikan opsi jilid target tersedia
                 if (![...jilidEl.options].some(o => o.value === String(targetJilid))) {
                     const o = document.createElement('option');
                     o.value = String(targetJilid);
@@ -1501,12 +1516,38 @@ function resetMarkingCounterForMode(mode) {
                 if (typeof window._csSyncFromNative === 'function') window._csSyncFromNative('iqroJilid' + mode);
             }
         }
+
+        if (typeof window.toggleMetode === 'function') window.toggleMetode(mode);
+    }
+
+    function applyTargetFor(mode) {
+        const santriId = mode === 'SetoranOnly' ? 'santriSelectSetoranOnly' : 'santriSelectCombined';
+        const santriEl = document.getElementById(santriId);
+        if (!santriEl) return;
+
+        const opt = santriEl.options[santriEl.selectedIndex];
+
+        if (mode === 'Combined')    toggleCombinedSections(!!(opt && opt.value));
+        if (mode === 'SetoranOnly') toggleSetoranSections(!!(opt && opt.value));
+
+        if (!opt || !opt.value) return;
+
+        // Pemilihan metode (kunci / 2 opsi) ditangani applyMetodeForSantri() di InputSetoran.jsx.
+        // Di sini cukup set jilid mengikuti metode yang sedang aktif.
+        setJilidForMode(mode, opt.dataset.targetJilid || '');
     }
 
     function init() {
         ['Combined', 'SetoranOnly'].forEach(mode => {
             const santriId = mode === 'SetoranOnly' ? 'santriSelectSetoranOnly' : 'santriSelectCombined';
             document.getElementById(santriId)?.addEventListener('change', () => applyTargetFor(mode));
+
+            // Guru ganti metode (santri 2 metode: Iqro/Aisar <-> Al-Qur'an)
+            document.getElementById('metode' + mode)?.addEventListener('change', () => {
+                const sEl = document.getElementById(santriId);
+                const o = sEl?.options[sEl.selectedIndex];
+                setJilidForMode(mode, o?.dataset.targetJilid || '');
+            });
         });
         console.log('Auto-set metode & jilid (target santri) ready');
     }

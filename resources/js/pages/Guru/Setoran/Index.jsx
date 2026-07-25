@@ -80,6 +80,12 @@ function SantriCard({ santri, index }) {
         ? `${santri.total_halaman_iqro}/${santri.total_halaman_jilid} halaman`
         : `${Number(santri.capaian_juz).toFixed(2)} / ${santri.target_display}`;
 
+    // Santri metode ganda (Iqro/Aisar + Al-Qur'an) → tampilkan bar juz sekunder
+    const hasQuran2 = !!santri.has_quran_secondary;
+    const pct2  = santri.progress_juz2 ?? 0;
+    const tone2 = progressTone(pct2);
+    const label1 = santri.is_iqro ? 'Jilid' : 'Progres';
+
     // blok progres dipakai ulang (desktop kolom & mobile full-width)
     const ProgressBlock = () => (
         belumDiatur ? (
@@ -87,13 +93,28 @@ function SantriCard({ santri, index }) {
         ) : (
             <>
                 <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-medium text-stone-400 dark:text-stone-500">Progres</span>
+                    <span className="text-[10px] font-medium text-stone-400 dark:text-stone-500">{label1}</span>
                     <span className={`text-sm font-bold tabular-nums ${tone.text}`}>{pct}%</span>
                 </div>
                 <span className="mt-1 block h-1.5 rounded-full bg-stone-200 dark:bg-coal-700 overflow-hidden">
                     <span className={`block h-full rounded-full transition-all duration-500 ${tone.bar}`} style={{ width: `${Math.min(pct, 100)}%` }} />
                 </span>
                 <span className="mt-1 block text-[10px] text-stone-400 dark:text-stone-500">{caption}</span>
+
+                {hasQuran2 && (
+                    <div className="mt-2 pt-2 border-t border-stone-100 dark:border-coal-700/60">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-medium text-stone-400 dark:text-stone-500">Al-Qur'an</span>
+                            <span className={`text-sm font-bold tabular-nums ${tone2.text}`}>{pct2}%</span>
+                        </div>
+                        <span className="mt-1 block h-1.5 rounded-full bg-stone-200 dark:bg-coal-700 overflow-hidden">
+                            <span className={`block h-full rounded-full transition-all duration-500 ${tone2.bar}`} style={{ width: `${Math.min(pct2, 100)}%` }} />
+                        </span>
+                        <span className="mt-1 block text-[10px] text-stone-400 dark:text-stone-500">
+                            {Number(santri.capaian_juz_2).toFixed(2)} / {Number(santri.target_juz_2).toFixed(2)} Juz
+                        </span>
+                    </div>
+                )}
             </>
         )
     );

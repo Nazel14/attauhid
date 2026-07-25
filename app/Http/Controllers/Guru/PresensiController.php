@@ -18,6 +18,8 @@ use Inertia\Inertia;
 
 class PresensiController extends Controller
 {
+    use \App\Traits\UsesKelasAktif;
+
     /**
      * Tampilkan daftar presensi
      */
@@ -27,8 +29,8 @@ class PresensiController extends Controller
     $guru   = Guru::where('user_id', $userId)->first();
     if (!$guru)  return redirect()->route('guru.dashboard')->with('error', 'Data guru tidak ditemukan.');
 
-    $kelas = Kelas::where('guru_id', $guru->id)->first();
-    if (!$kelas) return redirect()->route('guru.dashboard')->with('error', 'Anda belum ditugaskan sebagai wali kelas.');
+    $kelas = $this->kelasAktif();
+    if (!$kelas) return redirect()->route('guru.dashboard')->with('error', 'Kelas aktif tidak valid. Silakan pilih kelas kembali.');
 
     $tahunAjaranAktif = TahunAjaran::getAktif();
     $tahunAjaranId    = $tahunAjaranAktif?->id;
@@ -83,8 +85,8 @@ class PresensiController extends Controller
     $guru   = Guru::where('user_id', $userId)->first();
     if (!$guru)  return redirect()->route('guru.dashboard')->with('error', 'Data guru tidak ditemukan.');
 
-    $kelas = Kelas::where('guru_id', $guru->id)->first();
-    if (!$kelas) return redirect()->route('guru.dashboard')->with('error', 'Anda belum ditugaskan sebagai wali kelas.');
+    $kelas = $this->kelasAktif();
+    if (!$kelas) return redirect()->route('guru.dashboard')->with('error', 'Kelas aktif tidak valid. Silakan pilih kelas kembali.');
 
     $santri = Santri::where('id', $santriId)->where('kelas_id', $kelas->id)->with(['kelas', 'user'])->firstOrFail();
 
@@ -151,11 +153,11 @@ class PresensiController extends Controller
                 ->with('error', 'Data guru tidak ditemukan.');
         }
 
-        $kelas = Kelas::where('guru_id', $guru->id)->first();
+        $kelas = $this->kelasAktif();
         
         if (!$kelas) {
             return redirect()->route('guru.dashboard')
-                ->with('error', 'Anda belum ditugaskan sebagai wali kelas.');
+                ->with('error', 'Kelas aktif tidak valid. Silakan pilih kelas kembali.');
         }
 
         $presensi = Presensi::with('santri')->findOrFail($id);
@@ -199,11 +201,11 @@ class PresensiController extends Controller
                 ->with('error', 'Data guru tidak ditemukan.');
         }
 
-        $kelas = Kelas::where('guru_id', $guru->id)->first();
+        $kelas = $this->kelasAktif();
         
         if (!$kelas) {
             return redirect()->route('guru.dashboard')
-                ->with('error', 'Anda belum ditugaskan sebagai wali kelas.');
+                ->with('error', 'Kelas aktif tidak valid. Silakan pilih kelas kembali.');
         }
 
         $presensi = Presensi::with('santri')->findOrFail($id);
@@ -276,11 +278,11 @@ class PresensiController extends Controller
                 ->with('error', 'Data guru tidak ditemukan.');
         }
 
-        $kelas = Kelas::where('guru_id', $guru->id)->first();
+        $kelas = $this->kelasAktif();
         
         if (!$kelas) {
             return redirect()->route('guru.dashboard')
-                ->with('error', 'Anda belum ditugaskan sebagai wali kelas.');
+                ->with('error', 'Kelas aktif tidak valid. Silakan pilih kelas kembali.');
         }
 
         $presensi = Presensi::with('santri', 'setorans')->findOrFail($id);

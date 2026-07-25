@@ -55,6 +55,7 @@ const PRES = { Hadir: 'bg-emerald-500', Izin: 'bg-blue-500', Sakit: 'bg-amber-50
 export default function Show({
     santri, setorans = {}, statistikSetoran = {}, statistikPresensi = {},
     tanggalMulai = '', tanggalAkhir = '', semesterLabel = 'Semester Aktif', tahunAjaranAktif = null,
+    pdfBoleh = false, pdfPesan = null,
 }) {
     const [mobileTab, setMobileTab] = useState('Hafalan');
     const [pdfOpen, setPdfOpen] = useState(false);
@@ -69,6 +70,9 @@ export default function Show({
     const ss = statistikSetoran, sp = statistikPresensi;
     const isIqro = ss.is_iqro ?? false;
     const metodeLabel = ss.metode_label ?? 'Iqro';   // "Iqro" / "Aisar"
+    // Metode 2 (opsional): target Al-Qur'an untuk santri jilid.
+    // total_juz_hafalan / target_juz / persentase_target sudah = porsi Al-Qur'an.
+    const hasQuran2 = (ss.has_quran_secondary ?? false) && isIqro;
 
     const photo = santri?.user?.profile_photo;
     const isPr = santri?.gender === 'P' || santri?.gender === 'Perempuan';
@@ -115,6 +119,8 @@ export default function Show({
                                     {isIqro && (
                                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-coal-700 text-stone-600 dark:text-stone-300 font-semibold ring-1 ring-stone-200 dark:ring-coal-600">
                                             {metodeLabel} · Jilid {ss.target_jilid}
+                                            {hasQuran2 && <span className="opacity-40 mx-1">+</span>}
+                                            {hasQuran2 && "Al-Qur'an"}
                                         </span>
                                     )}
                                     <span className="text-xs text-stone-500 dark:text-stone-400 hidden sm:inline-flex items-center gap-1"><Icon path={P.user} className="w-3 h-3" /> {santri?.guru?.name ?? '-'}</span>
@@ -136,13 +142,29 @@ export default function Show({
                                     <p className="text-[10px] text-stone-400 mt-0.5">{fmtDate(tanggalMulai)} — {fmtDate(tanggalAkhir)}</p>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => setPdfOpen(true)}
-                                className="px-4 py-2.5 rounded-xl bg-claude-500 hover:bg-claude-600 text-white text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm active:scale-95"
-                            >
-                                <Icon path={P.pdf} className="w-4 h-4" /> Preview PDF
-                            </button>
+                            {pdfBoleh ? (
+                                <button
+                                    onClick={() => setPdfOpen(true)}
+                                    className="px-4 py-2.5 rounded-xl bg-claude-500 hover:bg-claude-600 text-white text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm active:scale-95"
+                                >
+                                    <Icon path={P.pdf} className="w-4 h-4" /> Preview PDF
+                                </button>
+                            ) : (
+                                <span className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-stone-100 dark:bg-coal-700 text-stone-500 dark:text-stone-400 ring-1 ring-stone-200 dark:ring-coal-600 text-sm font-semibold cursor-not-allowed">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.7" viewBox="0 0 24 24">
+                                        <rect x="4.5" y="11" width="15" height="10" rx="2" />
+                                        <path strokeLinecap="round" d="M8 11V7a4 4 0 018 0v4" />
+                                    </svg>
+                                    PDF Terkunci
+                                </span>
+                            )}
                         </div>
+
+                        {!pdfBoleh && pdfPesan && (
+                            <p className="mt-3 text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed">
+                                {pdfPesan}
+                            </p>
+                        )}
                     </Card>
 
                     {/* Ringkasan statistik */}
@@ -181,13 +203,34 @@ export default function Show({
                                             )}
                                         </>
                                     )}
-                                </div>
+                                 </div>
+
+                                {hasQuran2 && (
+                                    <div className="rounded-xl p-3.5 bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100 dark:ring-emerald-500/20">
+                                        <div className="flex justify-between items-start mb-2.5">
+                                            <div>
+                                                <p className="text-xs text-stone-500 dark:text-stone-400 mb-0.5">Pencapaian Target</p>
+                                                <p className="text-xs font-semibold text-stone-900 dark:text-stone-100">Al-Qur'an — Hafalan Juz</p>
+                                            </div>
+                                            <div className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 leading-none tabular-nums">{ss.persentase_target}%</div>
+                                        </div>
+                                        <Bar value={ss.persentase_target} tone="emerald" />
+                                        <div className="flex justify-between text-[11px] mt-2">
+                                            <span className="text-stone-500 dark:text-stone-400">Tercapai: <strong className="text-stone-900 dark:text-stone-100">{num(ss.total_juz_hafalan, 2)}</strong> Juz</span>
+                                            <span className="text-stone-500 dark:text-stone-400">Target: <strong className="text-stone-900 dark:text-stone-100">{num(ss.target_juz, 2)}</strong> Juz</span>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="grid grid-cols-2 gap-2.5">
                                     <Mini value={ss.total_setoran} label="Total Setoran" />
                                     <Mini value={num(ss.rata_nilai, 1)} label="Rata-rata Nilai" />
-                                    <Mini value={isIqro ? ss.total_halaman_iqro : num(ss.total_juz, 2)} label={isIqro ? `Halaman ${metodeLabel}` : 'Total Juz'} />
-                                    <Mini value={num(ss.total_kata)} label="Total Kata" />
+ <Mini
+                                        value={isIqro ? ss.total_halaman_iqro : num(ss.total_juz, 2)}
+                                        label={isIqro
+                                            ? (hasQuran2 ? `Halaman ${metodeLabel} · +${num(ss.total_juz_hafalan, 2)} Juz` : `Halaman ${metodeLabel}`)
+                                            : 'Total Juz'}
+                                    />                                    <Mini value={num(ss.total_kata)} label="Total Kata" />
                                 </div>
 
                                 <div className="pt-4 border-t border-stone-100 dark:border-coal-700">
@@ -277,9 +320,9 @@ export default function Show({
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-                                    <RapotPanel className={`lg:row-span-2 ${mobileTab === 'Hafalan' ? 'lg:block' : 'hidden lg:block'}`} cat="Hafalan" rows={groups.Hafalan} isIqro={isIqro} />
-                                    <RapotPanel className={mobileTab === 'Murajaah' ? 'lg:block' : 'hidden lg:block'} cat="Murajaah" rows={groups.Murajaah} isIqro={isIqro} />
-                                    <RapotPanel className={mobileTab === 'Tilawah' ? 'lg:block' : 'hidden lg:block'} cat="Tilawah" rows={groups.Tilawah} isIqro={isIqro} />
+                                      <RapotPanel className={`lg:row-span-2 ${mobileTab === 'Hafalan' ? 'lg:block' : 'hidden lg:block'}`} cat="Hafalan" rows={groups.Hafalan} isIqro={isIqro} isDual={hasQuran2} />
+                                    <RapotPanel className={mobileTab === 'Murajaah' ? 'lg:block' : 'hidden lg:block'} cat="Murajaah" rows={groups.Murajaah} isIqro={isIqro} isDual={hasQuran2} />
+                                    <RapotPanel className={mobileTab === 'Tilawah' ? 'lg:block' : 'hidden lg:block'} cat="Tilawah" rows={groups.Tilawah} isIqro={isIqro} isDual={hasQuran2} />
                                 </div>
                             </div>
                         )}
@@ -359,8 +402,7 @@ const Th = ({ children, className = '' }) => (
 );
 const Td = ({ children, className = '' }) => <td className={`px-3 py-2.5 text-xs ${className}`}>{children}</td>;
 
-function RapotPanel({ cat, rows, className = '', isIqro = false }) {
-    const t = CAT[cat];
+function RapotPanel({ cat, rows, className = '', isIqro = false, isDual = false }) {    const t = CAT[cat];
     const pg = usePaged(rows, t.perPage);
     return (
         <div className={`bg-white dark:bg-coal-800 rounded-2xl ring-1 ring-stone-200 dark:ring-coal-700 overflow-hidden flex flex-col ${className}`}>
@@ -369,8 +411,7 @@ function RapotPanel({ cat, rows, className = '', isIqro = false }) {
                     <span className={`w-2 h-2 rounded-full ${t.dot}`} />
                     <h4 className="font-bold tracking-tight text-sm text-stone-800 dark:text-stone-200">{cat}</h4>
                 </div>
-                <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold tabular-nums ring-1 ${t.chip} ${t.text}`}>{rows.length} {isIqro ? 'jilid' : 'surat'}</span>
-            </div>
+                <span className={`text-[10px] px-2.5 py-1 rounded-full font-semibold tabular-nums ring-1 ${t.chip} ${t.text}`}>{rows.length} {isDual ? 'entri' : (isIqro ? 'jilid' : 'surat')}</span>            </div>
 
             {rows.length === 0 ? (
                 <div className="flex-1 grid place-items-center p-8 text-center min-h-[120px]">
@@ -386,8 +427,7 @@ function RapotPanel({ cat, rows, className = '', isIqro = false }) {
                             <thead>
                                 <tr className="bg-stone-50 dark:bg-coal-700/40">
                                     <Th className="w-8">No</Th>
-                                    <Th>{isIqro ? 'Jilid & Halaman' : 'Surah & Ayat'}</Th>
-                                    <Th className="w-12 text-center">Jml</Th>
+                                    <Th>{isDual ? 'Materi Setoran' : (isIqro ? 'Jilid & Halaman' : 'Surah & Ayat')}</Th>                                    <Th className="w-12 text-center">Jml</Th>
                                     <Th className="w-16 text-center">Nilai</Th>
                                 </tr>
                             </thead>

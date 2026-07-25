@@ -22,26 +22,36 @@ use Inertia\Inertia;
 
 class UnifiedInputController extends Controller
 {
+    use \App\Traits\UsesKelasAktif;
+
     public function create()
     {
-        $userId = Auth::id();
-        $guru   = Guru::where('user_id', $userId)->first();
+        $guru = $this->guruAktif();
 
         if (!$guru) {
             return redirect()->route('guru.dashboard')
                 ->with('error', 'Data guru tidak ditemukan.');
         }
 
-        $kelas = Kelas::where('guru_id', $guru->id)->first();
+        $kelas = $this->kelasAktif();
 
         if (!$kelas) {
             return redirect()->route('guru.dashboard')
-                ->with('error', 'Anda belum ditugaskan sebagai wali kelas.');
+                ->with('error', 'Kelas aktif tidak valid. Silakan pilih kelas kembali.');
         }
 
         $santriList = Santri::where('kelas_id', $kelas->id)
             ->orderBy('name')
             ->get();
+
+        // Agregat juz hafalan — dasar progress santri Al-Qur'an. Santri
+        // Iqro/Aisar dihitung lewat helper model, bukan dari agregat ini.
+        $hafalanPerSantri = Setoran::whereIn('santri_id', $santriList->pluck('id'))
+            ->where('kategori_setoran', 'Hafalan')
+            ->selectRaw('santri_id, SUM(total_juz) as total_juz')
+            ->groupBy('santri_id')
+            ->get()
+            ->keyBy('santri_id');
 
         $tanggalHariIni = Carbon::now()->format('Y-m-d');
         $daftarSurat    = $this->getDaftarSurat();
@@ -59,10 +69,13 @@ class UnifiedInputController extends Controller
 
         return \Inertia\Inertia::render('Guru/InputSetoran', [
             'santriList' => $santriList->map(fn ($s) => [
-                'id'            => $s->id,
-                'name'          => $s->name,
-                'target_metode' => $s->target_metode?->value ?? 'quran',
-                'target_jilid'  => $s->target_jilid,
+                'id'              => $s->id,
+                'name'            => $s->name,
+                'target_metode'   => $s->target_metode?->value ?? 'quran',
+                'target_metode_2' => $s->target_metode_2?->value,
+                'target_jilid'    => $s->target_jilid,
+                'progress_persen' => $this->hitungProgressPersen($s, $hafalanPerSantri->get($s->id)),
+                'progress_juz2'   => $this->hitungProgressJuz2($s, $hafalanPerSantri->get($s->id)),
             ])->values(),
             'sesiList'       => $sesiList->pluck('sesi_name')->values(),
             'daftarSurat'    => $daftarSurat,
@@ -83,6 +96,12 @@ class UnifiedInputController extends Controller
         ]);
 
         $guru = Guru::where('user_id', Auth::id())->firstOrFail();
+
+        if (! $this->santriDiKelasAktif($request->santri_id)) {
+            return redirect()->route('guru.input.create')
+                ->withInput()
+                ->with('error', 'Santri tersebut tidak ada di kelas yang sedang aktif.');
+        }
 
         $exists = Presensi::where('santri_id', $request->santri_id)
             ->whereDate('tanggal', $request->tanggal)
@@ -178,6 +197,12 @@ class UnifiedInputController extends Controller
         ]);
 
         $guru = Guru::where('user_id', Auth::id())->firstOrFail();
+
+        if (! $this->santriDiKelasAktif($request->santri_id)) {
+            return redirect()->route('guru.input.create')
+                ->withInput()
+                ->with('error', 'Santri tersebut tidak ada di kelas yang sedang aktif.');
+        }
 
         $presensi = Presensi::where('santri_id', $request->santri_id)
             ->whereDate('tanggal', $request->tanggal)
@@ -314,6 +339,12 @@ class UnifiedInputController extends Controller
         ]);
 
         $guru = Guru::where('user_id', Auth::id())->firstOrFail();
+
+        if (! $this->santriDiKelasAktif($request->santri_id)) {
+            return redirect()->route('guru.input.create')
+                ->withInput()
+                ->with('error', 'Santri tersebut tidak ada di kelas yang sedang aktif.');
+        }
 
         $exists = Presensi::where('santri_id', $request->santri_id)
             ->whereDate('tanggal', $request->tanggal)
@@ -502,6 +533,16 @@ class UnifiedInputController extends Controller
         ];
     }
 
+    /**
+     * Pastikan santri benar-benar ada di kelas yang sedang aktif.
+     */
+    private function santriDiKelasAktif($santriId): bool
+    {
+        return Santri::whereKey($santriId)
+            ->where('kelas_id', $this->kelasAktifId())
+            ->exists();
+    }
+
     private function processAudioData(string $audioData): ?string
     {
         try {
@@ -586,6 +627,39 @@ class UnifiedInputController extends Controller
             Log::error('❌ Failed to generate PDF: ' . $e->getMessage());
             return null;
         }
+    }
+
+    /* ================================================================
+     * HELPER PROGRESS — sengaja disalin dari Guru\DashboardController
+     * agar rumusnya identik. Kalau salah satu diubah, ubah keduanya.
+     * ================================================================ */
+    private function hitungProgressPersen(Santri $santri, $agg): int
+    {
+        if ($santri->isJilidBased()) { // iqro ATAU aisar
+            $jilid  = (int) ($santri->target_jilid ?? 1);
+            $target = (int) (config($santri->jilidConfigKey() . '.halaman_per_jilid.' . $jilid) ?? 0);
+            if ($target <= 0) return 0;
+
+            $totalHalaman = count($santri->halamanIqroTersetorKelas($jilid, $santri->kelas_id));
+            return (int) round(min($totalHalaman / $target * 100, 100));
+        }
+
+        $totalJuz = (float) ($agg->total_juz ?? 0);
+        $target   = (float) ($santri->target_juz ?? 30);
+        if ($target <= 0) return 0;
+
+        return (int) round(min($totalJuz / $target * 100, 100));
+    }
+
+    private function hitungProgressJuz2(Santri $santri, $agg): int
+    {
+        if (! $santri->hasQuranSecondary()) return 0;
+
+        $target = (float) ($santri->target_juz ?? 0);
+        if ($target <= 0) return 0;
+
+        $totalJuz = (float) ($agg->total_juz ?? 0);
+        return (int) round(min($totalJuz / $target * 100, 100));
     }
 
     private function getDaftarSurat()

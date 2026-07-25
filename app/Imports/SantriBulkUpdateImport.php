@@ -67,7 +67,8 @@ class SantriBulkUpdateImport implements ToCollection, WithHeadingRow
             $nis         = trim((string) ($row['nis'] ?? ''));
             $nama        = trim((string) ($row['nama'] ?? ''));
             $gender      = strtoupper(trim((string) ($row['gender'] ?? '')));
-            $metode      = strtolower(trim((string) ($row['metode'] ?? '')));
+             $metode      = strtolower(trim((string) ($row['metode'] ?? '')));
+            $metode2     = strtolower(trim((string) ($row['metode_2'] ?? '')));
             $targetJuz   = $row['target_juz'] ?? null;
             $targetJilid = $row['target_jilid'] ?? null;
             $noKelasBaru = $row['no_kelas_baru'] ?? null;
@@ -99,6 +100,13 @@ class SantriBulkUpdateImport implements ToCollection, WithHeadingRow
                 $rowErrors[] = "Metode harus quran, iqro, atau aisar (ditemukan: {$metodeEfektif})";
             }
 
+            // Metode 2 (opsional) — kosong berarti tidak ada target Al-Qur'an sekunder
+            if ($metode2 !== '' && $metode2 !== 'quran') {
+                $rowErrors[] = "Metode 2 hanya boleh kosong atau 'quran' (ditemukan: {$metode2})";
+            }
+            if ($metodeEfektif === 'quran') $metode2 = '';
+            $hasQuran2 = $metode2 === 'quran';
+
             $isJilidBased = in_array($metodeEfektif, ['iqro', 'aisar'], true);
 
             if ($isJilidBased) {
@@ -107,6 +115,13 @@ class SantriBulkUpdateImport implements ToCollection, WithHeadingRow
                     $rowErrors[] = "Target Jilid wajib diisi untuk metode " . ucfirst($metodeEfektif);
                 } elseif (!is_numeric($targetJilid) || (int) $targetJilid < 1 || (int) $targetJilid > $maxJilid) {
                     $rowErrors[] = "Target Jilid harus 1-{$maxJilid} untuk metode " . ucfirst($metodeEfektif);
+                }
+                if ($hasQuran2) {
+                    if ($targetJuz === null || $targetJuz === '') {
+                        $rowErrors[] = "Metode 2 quran wajib mengisi Target Juz (0-30)";
+                    } elseif (!is_numeric($targetJuz) || (float) $targetJuz < 0 || (float) $targetJuz > 30) {
+                        $rowErrors[] = "Target Juz harus 0-30";
+                    }
                 }
             } elseif ($metodeEfektif === 'quran') {
                 if ($targetJuz === null || $targetJuz === '') {
@@ -151,8 +166,7 @@ class SantriBulkUpdateImport implements ToCollection, WithHeadingRow
 
             // ===== UPDATE =====
             try {
-                DB::transaction(function () use ($santri, $nis, $nama, $gender, $metodeEfektif, $isJilidBased, $targetJuz, $targetJilid, $kelasTujuan, $namaFoto, $rowNum) {
-                    $name = preg_replace_callback('/\b\w+/', function ($m) {
+                DB::transaction(function () use ($santri, $nis, $nama, $gender, $metodeEfektif, $hasQuran2, $isJilidBased, $targetJuz, $targetJilid, $kelasTujuan, $namaFoto, $rowNum) {                    $name = preg_replace_callback('/\b\w+/', function ($m) {
                         return ucfirst(strtolower($m[0]));
                     }, $nama);
 
@@ -162,9 +176,10 @@ class SantriBulkUpdateImport implements ToCollection, WithHeadingRow
                         'nis'           => $nis,
                         'name'          => $name,
                         'gender'        => $genderFull,
-                        'target_metode' => $metodeEfektif,
-                        'target_juz'    => $isJilidBased ? null : (float) $targetJuz,
-                        'target_jilid'  => $isJilidBased ? (int) $targetJilid : null,
+                        'target_metode'   => $metodeEfektif,
+                        'target_metode_2' => $hasQuran2 ? 'quran' : null,
+                        'target_juz'      => $isJilidBased ? ($hasQuran2 ? (float) $targetJuz : null) : (float) $targetJuz,
+                        'target_jilid'    => $isJilidBased ? (int) $targetJilid : null,
                     ];
 
                     if ($kelasTujuan) {

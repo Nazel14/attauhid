@@ -23,10 +23,10 @@ class Guru extends Model
         return $this->hasOne(Kelas::class, 'guru_id');
     }
 
-    // Jika relasi banyak kelas (alternatif)
-    public function kelasKoordinator(): HasMany
+    // Semua kelas yang diampu guru ini (bisa lebih dari satu)
+    public function kelasDiampu(): HasMany
     {
-        return $this->hasMany(Kelas::class, 'guru_id')->onDelete('set null');
+        return $this->hasMany(Kelas::class, 'guru_id');
     }
 
     // Santri yang dibimbing

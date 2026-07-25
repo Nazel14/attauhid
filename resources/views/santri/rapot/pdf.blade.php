@@ -547,6 +547,33 @@
         }
 
         /* ================================================== */
+        /* KEPUTUSAN KENAIKAN KELAS                            */
+        /* ================================================== */
+        .kenaikan-box {
+            margin-top: 12px;
+            padding: 14px 16px;
+            border: 1px solid #e5e7eb;
+            border-left: 4px solid #D97757;
+            border-radius: 5px;
+            background: #f9fafb;
+            page-break-inside: avoid;
+        }
+        .kenaikan-box.naik    { border-left-color:#059669; background:#f0fdf4; }
+        .kenaikan-box.tinggal { border-left-color:#dc2626; background:#fef2f2; }
+        .kenaikan-label {
+            font-size:8px; font-weight:700; text-transform:uppercase;
+            letter-spacing:0.8px; color:#6b7280; margin-bottom:3px;
+        }
+        .kenaikan-teks { font-size:13px; font-weight:700; color:#111827; line-height:1.25; }
+        .kenaikan-sub  { font-size:8.5px; color:#6b7280; margin-top:3px; }
+        .kenaikan-badge {
+            display:inline-block; padding:4px 12px; border-radius:12px;
+            font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px;
+        }
+        .kenaikan-badge.naik    { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
+        .kenaikan-badge.tinggal { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
+
+        /* ================================================== */
         /* NO DATA                                             */
         /* ================================================== */
         .no-data {
@@ -659,7 +686,13 @@
     $halTotalJilid = $statistikSetoran['total_halaman_jilid'] ?? 0;
     $progressJilid = $statistikSetoran['progress_iqro'] ?? 0;
     $jilidDiketahui= $statistikSetoran['iqro_persen_diketahui'] ?? false;
-    $metodeTeks    = $isJilid ? $metodeLabel.' — Jilid '.$jilidAktif : "Al-Qur'an";
+
+    // Metode 2 (opsional): Al-Qur'an sebagai target sekunder untuk santri jilid.
+    // total_juz_hafalan / target_juz / persentase_target sudah = porsi Al-Qur'an,
+    // karena setoran jilid tidak mengisi total_juz.
+    $hasQuran2   = ($statistikSetoran['has_quran_secondary'] ?? false) && $isJilid;
+    $metodeTeks  = $isJilid ? $metodeLabel.' — Jilid '.$jilidAktif : "Al-Qur'an";
+    if ($hasQuran2) $metodeTeks .= " + Al-Qur'an";
 @endphp
 
 {{-- ============================================================ --}}
@@ -770,6 +803,12 @@
                             {{ $halTersetor }}@if($jilidDiketahui) / {{ $halTotalJilid }}@endif halaman
                         </td>
                     </tr>
+                    @if($hasQuran2)
+                    <tr>
+                        <td class="lbl">Hafalan Al-Qur'an</td>
+                        <td class="val">{{ $statistikSetoran['total_juz_hafalan'] }} / {{ $statistikSetoran['target_juz'] }} Juz</td>
+                    </tr>
+                    @endif
                     @else
                     <tr>
                         <td class="lbl">Total Juz</td>
@@ -788,7 +827,7 @@
                         <td class="lbl"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#9333ea;margin-right:6px;"></span>Tilawah</td>
                         <td class="val">{{ $statistikSetoran['tilawah'] }} kali</td>
                     </tr>
-                </table>
+              </table>
 
                 @if($isJilid && $jilidDiketahui)
                 <div class="stat-highlight">
@@ -802,7 +841,23 @@
                         </tr>
                     </table>
                 </div>
-                @elseif(!$isJilid)
+                @endif
+
+                @if($hasQuran2)
+                <div class="stat-highlight" style="border-left-color:#059669;">
+                    <table class="stat-highlight-table">
+                        <tr>
+                            <td>
+                                <div class="stat-highlight-lbl" style="color:#059669;">Pencapaian Target Al-Qur'an</div>
+                                <div style="font-size:8.5px;color:#6b7280;">{{ $statistikSetoran['total_juz_hafalan'] }} dari {{ $statistikSetoran['target_juz'] }} Juz</div>
+                            </td>
+                            <td class="stat-highlight-val" style="color:#065f46;">{{ $statistikSetoran['persentase_target'] }}%</td>
+                        </tr>
+                    </table>
+                </div>
+                @endif
+
+                @if(!$isJilid)
                 <div class="stat-highlight">
                     <table class="stat-highlight-table">
                         <tr>
@@ -921,17 +976,15 @@
                             <span class="cat-dot {{ $dotClass }}"></span>
                             <span class="cat-name">{{ $kategori }}</span>
                         </td>
-                        <td class="cat-count">{{ count($setorans[$kategori]) }} {{ $isJilid ? 'jilid' : 'surat' }}</td>
-                    </tr>
-                </table>
+<td class="cat-count">{{ count($setorans[$kategori]) }} {{ $hasQuran2 ? 'entri' : ($isJilid ? 'jilid' : 'surat') }}</td>
+                    </tr>                </table>
             </div>
             <table class="data-table">
                 <thead>
                     <tr>
                         <th style="width:6%;" class="tc">No</th>
-                        <th style="width:56%;">{{ $isJilid ? 'Jilid & Halaman' : 'Surah & Ayat' }}</th>
-                        <th style="width:18%;" class="tc">Jumlah</th>
-                        <th style="width:20%;" class="tc">Rata-rata</th>
+<th style="width:56%;">{{ $hasQuran2 ? 'Materi Setoran' : ($isJilid ? 'Jilid & Halaman' : 'Surah & Ayat') }}</th>
+                        <th style="width:18%;" class="tc">Jumlah</th>                        <th style="width:20%;" class="tc">Rata-rata</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1065,6 +1118,38 @@
         <div class="no-data-title">Tidak Ada Data Presensi</div>
         <div>Belum ada catatan presensi dalam periode yang dipilih</div>
     </div>
+@endif
+
+{{-- ===== KEPUTUSAN KENAIKAN KELAS (hanya semester genap) ===== --}}
+@php $sk = $statusKenaikan ?? null; @endphp
+@if($sk)
+<div class="sect-heading" style="margin-top:20px;">
+    <table class="sect-heading-table">
+        <tr>
+            <td>
+                <span class="sect-heading-bar"></span>
+                <span class="sect-heading-text">Keputusan Akhir Tahun Ajaran</span>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div class="kenaikan-box {{ $sk['naik'] ? 'naik' : 'tinggal' }}">
+    <table style="width:100%;">
+        <tr>
+            <td>
+                <div class="kenaikan-label">Status Kenaikan Kelas</div>
+                <div class="kenaikan-teks">{{ $sk['teks'] }}</div>
+                <div class="kenaikan-sub">
+                    Kelas asal: {{ $sk['kelas_asal'] }}@if($sk['keterangan']) &nbsp;·&nbsp; {{ $sk['keterangan'] }}@endif
+                </div>
+            </td>
+            <td style="width:120px; text-align:right; vertical-align:middle;">
+                <span class="kenaikan-badge {{ $sk['naik'] ? 'naik' : 'tinggal' }}">{{ $sk['judul'] }}</span>
+            </td>
+        </tr>
+    </table>
+</div>
 @endif
 
 <!-- Tanda Tangan -->

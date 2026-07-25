@@ -81,12 +81,40 @@ function MiniStat({ tone, value, label }) {
     );
 }
 
+function MethodBadge({ meta }) {
+    if (!meta) return <span className="text-stone-300 dark:text-coal-600 text-[10px]">–</span>;
+    return (
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ring-1 text-[10px] font-semibold whitespace-nowrap ${METODE_BADGE[meta.tone]}`}>
+            {meta.primary}
+            {meta.hasQuran2 && (
+                <>
+                    <span className="opacity-40">+</span>
+                    <span>Qur'an</span>
+                </>
+            )}
+        </span>
+    );
+}
+
+function ProgressBar({ value, color = 'bg-claude-500', dot = null, title }) {
+    const v = Math.min(Number(value) || 0, 100);
+    return (
+        <span className="flex items-center gap-1.5 min-w-0" title={title}>
+            {dot && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />}
+            <span className="flex-1 h-1 rounded-full bg-stone-200 dark:bg-coal-700 overflow-hidden">
+                <span className={`block h-full rounded-full ${color}`} style={{ width: `${v}%` }} />
+            </span>
+            <span className="text-[10px] font-semibold text-stone-500 dark:text-stone-400 tabular-nums w-7 text-right">{v}%</span>
+        </span>
+    );
+}
+
 /* ============================================================
  * HALAMAN
  * ============================================================ */
 export default function Dashboard({ santriList = [], santriSiapNaik = [], santriTamat = [], presensiHariIni = null }) {
     const { auth } = usePage().props;
-    const guruName = auth?.user?.name ?? 'Ustadz/Ustadzah';
+    const guruName = auth?.user?.display_name ?? auth?.user?.name ?? 'Ustadz/Ustadzah';
 
     const [busyId, setBusyId] = useState(null);
     const sahkanNaik = (s) => {
@@ -99,6 +127,9 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
     };
 
     /* ---- distribusi metode (client-side dari santriList) ---- */
+   /* ---- distribusi metode (client-side dari santriList) ----
+     * Santri 2-metode (Iqro/Aisar + Al-Qur'an) dihitung di KEDUA metode,
+     * jadi total angka bisa > jumlah santri. */
     const metodeData = useMemo(() => {
         let quran = 0, iqro = 0, aisar = 0;
         santriList.forEach((s) => {
@@ -106,6 +137,9 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
             if (m === 'aisar') aisar++;
             else if (m === 'iqro' || m === 'jilid') iqro++;
             else quran++;
+
+            // metode sekunder (opsional, hanya quran)
+            if ((s.target_metode_2 || '').toLowerCase() === 'quran') quran++;
         });
         return [
             { key: 'quran', name: 'Al-Quran', value: quran, color: METODE_COLORS.quran },
@@ -127,14 +161,22 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
         [santriList]
     );
 
-    // { id: { label, tone } } — metode + jilid per santri
-    const metodeById = useMemo(() => {
+    // { id: { primary, tone, hasQuran2, progress2 } } — 1 pill gabungan per santri
+    const metaById = useMemo(() => {
         const map = {};
         santriList.forEach((s) => {
             const m = (s.target_metode || '').toLowerCase();
-            if (m === 'aisar')      map[s.id] = { label: `Aisar ${s.target_jilid ?? '-'}`, tone: 'aisar' };
-            else if (m === 'iqro')  map[s.id] = { label: `Iqro ${s.target_jilid ?? '-'}`,  tone: 'iqro' };
-            else                    map[s.id] = { label: 'Al-Quran', tone: 'quran' };
+            let primary, tone;
+            if (m === 'aisar')      { primary = `Aisar ${s.target_jilid ?? '-'}`; tone = 'aisar'; }
+            else if (m === 'iqro')  { primary = `Iqro ${s.target_jilid ?? '-'}`;  tone = 'iqro'; }
+            else                    { primary = 'Al-Quran';                       tone = 'quran'; }
+
+            map[s.id] = {
+                primary,
+                tone,
+                hasQuran2: (s.target_metode_2 || '').toLowerCase() === 'quran',
+                progress2: Number(s.progress_juz2 ?? 0),
+            };
         });
         return map;
     }, [santriList]);
@@ -152,7 +194,7 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
                     </div>
                     <div className="min-w-0">
                         <h1 className="text-lg sm:text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">
-                            Assalamu'alaikum, {guruName}
+                            Selamat Datang, {guruName}
                         </h1>
                         <p className="text-[11px] text-stone-500 mt-0.5">Ringkasan santri ampuan &amp; presensi hari ini</p>
                     </div>
@@ -260,10 +302,10 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
                                                 <span className="w-2.5 h-2.5 rounded-full" style={{ background: d.color }} />
                                                 {d.name}
                                             </span>
-                                            <span className="font-bold text-stone-800 dark:text-stone-200">
+                                           <span className="font-bold text-stone-800 dark:text-stone-200">
                                                 {d.value}
                                                 <span className="text-stone-400 font-normal ml-1">
-                                                    ({Math.round((d.value / santriList.length) * 100)}%)
+                                                    ({Math.round((d.value / metodeData.reduce((a, x) => a + x.value, 0)) * 100)}%)
                                                 </span>
                                             </span>
                                         </div>
@@ -276,7 +318,7 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
                     </div>
 
                     {/* ---- PRESENSI HARI INI ---- */}
-                    <div className="lg:col-span-2 bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-5">
+                    <div className="lg:col-span-2 bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-3.5 sm:p-5">
                         <div className="flex items-center gap-2 mb-4">
                             <span className="w-6 h-6 bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400">
                                 <CheckIcon className="w-3.5 h-3.5" />
@@ -310,12 +352,76 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
                             </span>
                         </div>
 
-                        {/* tabel */}
-                        <div className="rounded-xl ring-1 ring-stone-200 dark:ring-coal-700 overflow-hidden">
-                            <div className="grid grid-cols-[32px_1fr_100px_92px] sm:grid-cols-[32px_1fr_96px_100px_92px] gap-2 px-3 py-2 bg-stone-50 dark:bg-coal-700/40 text-[11px] font-semibold text-stone-500 dark:text-stone-400">
-                                <span>No</span>
+                        {/* ===== MOBILE: card list ===== */}
+                        <div className="sm:hidden space-y-2">
+                            {(presensi.rows || []).length ? (
+                                presensi.rows.map((r, i) => {
+                                    const st = STATUS[(r.status || '').toLowerCase()] ?? null;
+                                    const pr = Math.min(progressById[r.id] ?? 0, 100);
+                                    return (
+                                        <div key={r.id ?? i} className="rounded-xl ring-1 ring-stone-200 dark:ring-coal-700 p-3">
+                                            <div className="flex items-start gap-2.5">
+                                                <span className="mt-0.5 w-5 h-5 shrink-0 rounded-md bg-stone-100 dark:bg-coal-700 text-[10px] font-bold text-stone-500 dark:text-stone-400 flex items-center justify-center">
+                                                    {i + 1}
+                                                </span>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm font-semibold text-stone-800 dark:text-stone-100 leading-tight break-words">
+                                                        {r.name}
+                                                    </p>
+                                                   <span className="block mt-1">
+                                                        <MethodBadge meta={metaById[r.id]} />
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    {Number(r.jumlah_setoran) > 0 && (
+                                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 text-[10px] font-semibold text-stone-600 dark:text-stone-300">
+                                                            <BookIcon className="w-3 h-3" /> {r.jumlah_setoran}
+                                                        </span>
+                                                    )}
+                                                    <span className="flex flex-col items-center">
+                                                        {st ? (
+                                                            <>
+                                                                <span className={`w-3.5 h-3.5 rounded-full ${st.dot}`} title={st.label} />
+                                                                {r.waktu && <span className="text-[9px] text-stone-400 tabular-nums mt-0.5">{r.waktu}</span>}
+                                                            </>
+                                                        ) : (
+                                                            <span className="w-4 h-4 rounded-full ring-1 ring-stone-300 dark:ring-coal-600" title="Belum presensi" />
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-2.5 flex flex-col gap-1">
+                                                <ProgressBar
+                                                    value={pr}
+                                                    color="bg-claude-500"
+                                                    dot={metaById[r.id]?.hasQuran2 ? 'bg-claude-500' : null}
+                                                    title={metaById[r.id]?.hasQuran2 ? 'Progress jilid' : 'Progress'}
+                                                />
+                                                {metaById[r.id]?.hasQuran2 && (
+                                                    <ProgressBar
+                                                        value={metaById[r.id].progress2}
+                                                        color="bg-emerald-500"
+                                                        dot="bg-emerald-500"
+                                                        title="Progress Al-Qur'an"
+                                                    />
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="rounded-xl ring-1 ring-stone-200 dark:ring-coal-700 px-3 py-8 text-center text-xs text-stone-400">
+                                    Belum ada presensi tercatat hari ini.
+                                </div>
+                            )}
+                        </div>
+
+                        {/* ===== DESKTOP: tabel ===== */}
+                        <div className="hidden sm:block rounded-xl ring-1 ring-stone-200 dark:ring-coal-700 overflow-hidden">
+                            <div className="grid grid-cols-[32px_1fr_140px_120px_84px] gap-2 px-3 py-2 bg-stone-50 dark:bg-coal-700/40 text-[11px] font-semibold text-stone-500 dark:text-stone-400">                                <span>No</span>
                                 <span>Nama Santri</span>
-                                <span className="hidden sm:block">Metode</span>
+                                <span>Metode</span>
                                 <span>Progress</span>
                                 <span className="text-right">Materi</span>
                             </div>
@@ -324,28 +430,32 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
                                     presensi.rows.map((r, i) => {
                                         const st = STATUS[(r.status || '').toLowerCase()] ?? null;
                                         return (
-                                            <div key={r.id ?? i} className="grid grid-cols-[32px_1fr_100px_92px] sm:grid-cols-[32px_1fr_96px_100px_92px] gap-2 px-3 py-2.5 items-center">
-                                                <span className="text-xs text-stone-400">{i + 1}</span>
+                                            <div key={r.id ?? i} className="grid grid-cols-[32px_1fr_140px_120px_84px] gap-2 px-3 py-2.5 items-center">                                                <span className="text-xs text-stone-400">{i + 1}</span>
                                                 <span className="min-w-0">
-                                                    <span className="block text-sm text-stone-700 dark:text-stone-200 truncate">{r.name}</span>
-                                                    {/* metode versi mobile — muncul di bawah nama */}
-                                                    <span className={`sm:hidden inline-flex mt-0.5 items-center px-1.5 py-0.5 rounded-md ring-1 text-[10px] font-semibold ${METODE_BADGE[metodeById[r.id]?.tone ?? 'quran']}`}>
-                                                        {metodeById[r.id]?.label ?? '-'}
-                                                    </span>
+                                                {/* break-words, bukan truncate — nama panjang turun baris
+                                                    daripada terpotong elipsis. */}
+                                                <span className="block text-sm leading-snug text-stone-700 dark:text-stone-200 break-words">{r.name}</span>
+                                            </span>
+                                            {/* metode — 1 pill gabungan */}
+                                            <span className="flex items-center">
+                                                    <MethodBadge meta={metaById[r.id]} />
                                                 </span>
-                                                {/* metode versi desktop — kolom sendiri */}
-                                                <span className="hidden sm:flex">
-                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md ring-1 text-[10px] font-semibold truncate ${METODE_BADGE[metodeById[r.id]?.tone ?? 'quran']}`}>
-                                                        {metodeById[r.id]?.label ?? '-'}
-                                                    </span>
-                                                </span>
-                                                <span className="flex items-center gap-1.5 min-w-0">
-                                                    <span className="flex-1 h-1.5 rounded-full bg-stone-200 dark:bg-coal-700 overflow-hidden">
-                                                        <span className="block h-full rounded-full bg-claude-500" style={{ width: `${Math.min(progressById[r.id] ?? 0, 100)}%` }} />
-                                                    </span>
-                                                    <span className="text-[10px] font-semibold text-stone-500 dark:text-stone-400 tabular-nums">{progressById[r.id] ?? 0}%</span>
-                                                </span>
-                                                <span className="flex items-center justify-end gap-3">
+                                                <span className="flex flex-col gap-1 min-w-0 justify-center">
+                                                    <ProgressBar
+                                                        value={progressById[r.id] ?? 0}
+                                                        color="bg-claude-500"
+                                                        dot={metaById[r.id]?.hasQuran2 ? 'bg-claude-500' : null}
+                                                        title={metaById[r.id]?.hasQuran2 ? 'Progress jilid' : 'Progress'}
+                                                    />
+                                                    {metaById[r.id]?.hasQuran2 && (
+                                                        <ProgressBar
+                                                            value={metaById[r.id].progress2}
+                                                            color="bg-emerald-500"
+                                                            dot="bg-emerald-500"
+                                                            title="Progress Al-Qur'an"
+                                                        />
+                                                    )}
+                                                </span>                                                <span className="flex items-center justify-end gap-3">
                                                 {/* slot badge setoran — lebar tetap */}
                                                 <span className="w-11 flex justify-end">
                                                     {Number(r.jumlah_setoran) > 0 ? (

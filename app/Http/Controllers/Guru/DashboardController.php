@@ -21,11 +21,15 @@ class DashboardController extends Controller
         /* ============================================================
          * 1. AMBIL SANTRI YANG DIAMPU GURU
          * ============================================================ */
-        $guru = $user->guru;
+        $guru       = $user->guru;
+        $kelasAktif = session('kelas_aktif_id');
 
         $santris = $guru
-            ? $guru->santriBimbingan()->orderBy('name')->get()
-            : Santri::query()->orderBy('name')->get();
+            ? $guru->santriBimbingan()
+                ->where('kelas_id', $kelasAktif)
+                ->orderBy('name')
+                ->get()
+            : collect();
 
         $ids = $santris->pluck('id');
 
@@ -48,15 +52,19 @@ class DashboardController extends Controller
          * 3. BENTUK santriList (chart metode + progress)
          * ============================================================ */
         $santriList = $santris->map(function (Santri $s) use ($hafalanPerSantri) {
+            $agg = $hafalanPerSantri->get($s->id);
             return [
-                'id'              => $s->id,
-                'name'            => $s->name,
-                'nis'             => $s->nis ?? null,
-                'target_metode'   => $s->target_metode?->value ?? 'quran',
-                'target_jilid'    => $s->target_jilid ?? null,
-                'progress_persen' => $this->hitungProgressPersen($s, $hafalanPerSantri->get($s->id)),
+                'id'                => $s->id,
+                'name'              => $s->name,
+                'nis'               => $s->nis ?? null,
+                'target_metode'     => $s->target_metode?->value ?? 'quran',
+                'target_metode_2'   => $s->target_metode_2?->value,
+                'target_jilid'      => $s->target_jilid ?? null,
+                'target_juz'        => $s->target_juz,
+                'progress_persen'   => $this->hitungProgressPersen($s, $agg),
+                'progress_juz2'     => $this->hitungProgressJuz2($s, $agg),
             ];
-        })->values();
+        })->values();;
 
         /* ============================================================
          * 4. PRESENSI HARI INI + JUMLAH SETORAN HARI INI
@@ -152,10 +160,14 @@ class DashboardController extends Controller
      */
     public function naikkanJilid(Request $request, Santri $santri)
     {
-        $guru = Auth::user()->guru;
+        $guru       = Auth::user()->guru;
+        $kelasAktif = session('kelas_aktif_id');
 
-        if (! $guru || ! $guru->santriBimbingan()->whereKey($santri->id)->exists()) {
-            return back()->with('error', 'Santri ini bukan bimbingan Anda.');
+        if (! $guru || ! $guru->santriBimbingan()
+                ->whereKey($santri->id)
+                ->where('kelas_id', $kelasAktif)
+                ->exists()) {
+            return back()->with('error', 'Santri ini bukan bimbingan Anda di kelas yang sedang aktif.');
         }
 
         if (! $santri->isJilidBased()) {
@@ -199,6 +211,17 @@ class DashboardController extends Controller
         $target   = (float) ($santri->target_juz ?? 30);
         if ($target <= 0) return 0;
 
+        return (int) round(min($totalJuz / $target * 100, 100));
+    }
+    
+    private function hitungProgressJuz2(Santri $santri, $agg): int
+    {
+        if (! $santri->hasQuranSecondary()) return 0;
+
+        $target = (float) ($santri->target_juz ?? 0);
+        if ($target <= 0) return 0;
+
+        $totalJuz = (float) ($agg->total_juz ?? 0);
         return (int) round(min($totalJuz / $target * 100, 100));
     }
 }

@@ -956,7 +956,17 @@ async function generatePDFContent(deviceType = 'desktop') {
         const formSetoranOnly = document.getElementById('formSetoranOnly');
         if (formSetoranOnly && !formSetoranOnly.classList.contains('hidden')) activeMode = 'SetoranOnly';
 
-        const formEl             = document.getElementById(activeMode === 'Combined' ? 'formCombined' : 'formSetoranOnly');
+        const formEl = document.getElementById(activeMode === 'Combined' ? 'formCombined' : 'formSetoranOnly');
+
+        // Tunggu konten benar-benar termuat — jangan jepret placeholder "Memuat..."
+        const _disp = document.getElementById('quranDisplay');
+        for (let i = 0; i < 40; i++) {
+            const h = _disp?.innerHTML?.trim() || '';
+            if (h.length > 100 && !/Memuat/i.test(h)) break;
+            console.log('⏳ Menunggu konten quranDisplay siap... (' + (i + 1) + ')');
+            await new Promise(r => setTimeout(r, 250));
+        }
+
         const screenshotDataUrls = await captureQuranScreenshots(deviceType);
 
         // ✅ Deteksi mode Iqro untuk PDF
@@ -1053,21 +1063,23 @@ async function generatePDFContent(deviceType = 'desktop') {
         }
 
         // ── Baris tabel info (cabang Iqro / Al-Qur'an) ────────────────────
+        // Titik dua ditulis langsung di label, bukan lewat td.k::after —
+        // DomPDF tidak konsisten merender pseudo-element `content`.
         const rowsHTML = isIqro ? `
-            <tr><td class="k">Nama Santri</td> <td class="v">${namaSantri}</td></tr>
-            <tr><td class="k">Metode</td>      <td class="v">${metodeVal || 'Iqro'}</td></tr>
-            <tr><td class="k">Jilid</td>       <td class="v">Jilid ${iqroJilid}</td></tr>
-            <tr><td class="k">Halaman</td>     <td class="v">${iqroHalStart} &ndash; ${iqroHalEnd} <span class="muted">(Total ${iqroJumlahHal})</span></td></tr>
-            <tr><td class="k">Total Kata</td>  <td class="v">${totalKata}</td></tr>
-            <tr><td class="k">Catatan Guru</td><td class="v">${catatanGuru || '-'}</td></tr>
+            <tr><td class="k">Nama Santri :</td> <td class="v">${namaSantri}</td></tr>
+            <tr><td class="k">Metode :</td>      <td class="v">${metodeVal || 'Iqro'}</td></tr>
+            <tr><td class="k">Jilid :</td>       <td class="v">Jilid ${iqroJilid}</td></tr>
+            <tr><td class="k">Halaman :</td>     <td class="v">${iqroHalStart} &ndash; ${iqroHalEnd} <span class="muted">(Total ${iqroJumlahHal})</span></td></tr>
+            <tr><td class="k">Total Kata :</td>  <td class="v">${totalKata}</td></tr>
+            <tr><td class="k">Catatan Guru :</td><td class="v">${catatanGuru || '-'}</td></tr>
         ` : `
-            <tr><td class="k">Nama Santri</td> <td class="v">${namaSantri}</td></tr>
-            <tr><td class="k">Surat</td>       <td class="v">${suratStart} &ndash; ${suratEnd}</td></tr>
-            <tr><td class="k">Ayat</td>        <td class="v">${ayatStart} &ndash; ${ayatEnd}</td></tr>
-            <tr><td class="k">Halaman</td>     <td class="v">${pageStart} &ndash; ${pageEnd} <span class="muted">(Total ${totalPage})</span></td></tr>
-            <tr><td class="k">Total Juz</td>   <td class="v">${totalJuz}</td></tr>
-            <tr><td class="k">Total Kata</td>  <td class="v">${totalKata}</td></tr>
-            <tr><td class="k">Catatan Guru</td><td class="v">${catatanGuru || '-'}</td></tr>
+            <tr><td class="k">Nama Santri :</td> <td class="v">${namaSantri}</td></tr>
+            <tr><td class="k">Surat :</td>       <td class="v">${suratStart} &ndash; ${suratEnd}</td></tr>
+            <tr><td class="k">Ayat :</td>        <td class="v">${ayatStart} &ndash; ${ayatEnd}</td></tr>
+            <tr><td class="k">Halaman :</td>     <td class="v">${pageStart} &ndash; ${pageEnd} <span class="muted">(Total ${totalPage})</span></td></tr>
+            <tr><td class="k">Total Juz :</td>   <td class="v">${totalJuz}</td></tr>
+            <tr><td class="k">Total Kata :</td>  <td class="v">${totalKata}</td></tr>
+            <tr><td class="k">Catatan Guru :</td><td class="v">${catatanGuru || '-'}</td></tr>
         `;
 
         const pdfHTML = `<!DOCTYPE html>
@@ -1297,6 +1309,9 @@ function setupNativeFormValidation() {
             // drop PDF-nya agar setoran TETAP tersimpan & notifikasi sukses tetap muncul.
             guardPdfPayloadSize(form, mode);
 
+            if (typeof window.refreshCsrfToken === 'function') {
+                await window.refreshCsrfToken();
+            }
             form.submit();
         });
     });

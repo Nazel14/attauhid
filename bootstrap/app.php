@@ -1,10 +1,13 @@
 <?php
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Session\TokenMismatchException;
+use Inertia\Inertia;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -17,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
+            'kelas.aktif' => \App\Http\Middleware\SetKelasAktif::class,
         ]);
 
         // ✅ DAFTARKAN INERTIA KE GRUP WEB (ini yang bikin "auth" terkirim ke React)
@@ -75,12 +79,58 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json(['message' => $pesan], 419);
             }
 
-            // Request Inertia: kirim redirect 409 agar klien memuat ulang ke login
+            // Request Inertia WAJIB dijawab 409 + X-Inertia-Location.
+            // Redirect 302 biasa akan dianggap response tidak valid oleh klien
+            // dan memunculkan modal "419 PAGE EXPIRED".
             if ($request->header('X-Inertia')) {
-                return redirect()->guest(route('login'))->with('error', $pesan);
+                $request->session()->flash('error', $pesan);
+                return Inertia::location(route('login'));
             }
 
             return redirect()->route('login')->with('error', $pesan);
+        });
+
+        /**
+         * ============================================================
+         * 401 — Belum/sudah tidak login
+         * ============================================================
+         * Request yang masih "in-flight" saat logout akan mendarat di sini.
+         * Untuk Inertia harus full page visit, bukan redirect XHR.
+         */
+        $exceptions->render(function (AuthenticationException $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Belum terautentikasi.'], 401);
+            }
+
+            if ($request->header('X-Inertia')) {
+                return Inertia::location(route('login'));
+            }
+
+            return redirect()->guest(route('login'));
+        });
+
+        /**
+         * ============================================================
+         * 403 — Akses ditolak
+         * ============================================================
+         * Kalau user sudah TIDAK login lagi (efek samping logout), jangan
+         * tampilkan halaman 403 — arahkan ke login. Kalau masih login,
+         * biarkan 403 asli tampil karena itu memang pelanggaran izin.
+         */
+        $exceptions->render(function (HttpException $e, Request $request) {
+            if ($e->getStatusCode() !== 403 || $request->user()) {
+                return null;
+            }
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Sesi berakhir.'], 401);
+            }
+
+            if ($request->header('X-Inertia')) {
+                return Inertia::location(route('login'));
+            }
+
+            return redirect()->route('login');
         });
 
     })->create();

@@ -20,14 +20,16 @@ class Santri extends Model
         'gender',
         'target_juz',
         'target_metode',
+        'target_metode_2',
         'target_jilid',
         'status',
     ];
 
     protected $casts = [
-    'target_juz'    => 'decimal:2',
-    'target_jilid'  => 'integer',
-    'target_metode' => \App\Enums\MetodeTarget::class,
+    'target_juz'      => 'decimal:2',
+    'target_jilid'    => 'integer',
+    'target_metode'   => \App\Enums\MetodeTarget::class,
+    'target_metode_2' => \App\Enums\MetodeTarget::class,
     ];
 
     // =====================================================
@@ -196,11 +198,33 @@ class Santri extends Model
 
     public function getTargetDisplayAttribute(): string
 {
-    return match ($this->target_metode) {
+    $primary = match ($this->target_metode) {
         \App\Enums\MetodeTarget::Iqro,
         \App\Enums\MetodeTarget::Aisar => 'Jilid ' . ($this->target_jilid ?? '-'),
         default                        => rtrim(rtrim((string) $this->target_juz, '0'), '.') . ' Juz',
     };
+
+    // Metode utama jilid + target Al-Qur'an sekunder
+    if ($this->hasQuranSecondary()) {
+        $primary .= ' + ' . rtrim(rtrim((string) $this->target_juz, '0'), '.') . ' Juz';
+    }
+
+    return $primary;
+}
+
+/** true jika santri punya target Al-Qur'an sekunder (metode 2 = quran) */
+public function hasQuranSecondary(): bool
+{
+    return $this->target_metode_2 === \App\Enums\MetodeTarget::Quran;
+}
+
+/** Daftar value metode yang di-target santri, untuk membatasi pilihan di form input */
+public function metodeTargets(): array
+{
+    $out = [$this->target_metode?->value];
+    if ($this->hasQuranSecondary()) $out[] = 'quran';
+
+    return array_values(array_unique(array_filter($out)));
 }
 
 public function isIqro(): bool

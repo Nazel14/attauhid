@@ -24,6 +24,8 @@ const FileTextIcon = (p) => <I {...p} d={<path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-
 const EmptyIcon = (p) => <I {...p} d={<path d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />} />;
 const AlertTriangleIcon = (p) => <I {...p} d={<path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />} />;
 const RapotIcon = (p) => <I {...p} d={<path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />} />;
+const LockIcon = (p) => <I {...p} d={<><rect x="4.5" y="11" width="15" height="10" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></>} />;
+const UnlockIcon = (p) => <I {...p} d={<><rect x="4.5" y="11" width="15" height="10" rx="2" /><path d="M8 11V7a4 4 0 017.5-2" /></>} />;
 
 /* ============================================================
  * SHARED CLASSES
@@ -94,8 +96,21 @@ export default function Index({
     kelas, santriList = [], guru, tahunAjaranAktif,
     bolehNaik = false, tglMulaiNaikFormatted = null,
     kelasTujuanList = [], sudahNaikIds = [], alasanTutup = null,
+    bolehAturRapot = false, rapotJendelaText = null, rapotJendelaInfo = null,
 }) {
     const { flash = {} } = usePage().props;
+
+    /* ---- Kunci PDF rapot per santri ---- */
+    const [rapotBusyId, setRapotBusyId] = useState(null);
+    const toggleRapot = (santri) => {
+        const aksi = santri.rapot_dibuka ? 'mengunci kembali' : 'membuka';
+        if (!confirm(`Yakin ${aksi} akses PDF rapot untuk ${santri.name}?`)) return;
+        setRapotBusyId(santri.id);
+        router.post(route('guru.rapot.toggle-akses', santri.id), {}, {
+            preserveScroll: true,
+            onFinish: () => setRapotBusyId(null),
+        });
+    };
 
     /* ---- Toast dari flash ---- */
     const [notif, setNotif] = useState(null);
@@ -117,42 +132,74 @@ export default function Index({
     const sudahNaikSet = new Set((sudahNaikIds || []).map(String));
     const isDpNaik = (s) => bolehNaik && !sudahNaikSet.has(String(s.id));
 
-    /* ---- Seleksi untuk naik kelas ---- */
+    /* ---- Seleksi bersama: dipakai naik kelas DAN kunci PDF ----
+     * Kunci PDF berlaku untuk semua santri, sedangkan naik kelas hanya untuk
+     * yang belum naik. Jadi kandidat centang = gabungan keduanya, lalu saat
+     * aksi naik kelas dijalankan, pilihan disaring lagi. */
     const [selected, setSelected] = useState([]);
-    const visibleEligibleIds = useMemo(
-        () => santriList.filter((s) => isDpNaik(s) && isVisible(s)).map((s) => String(s.id)),
-        [santriList, query, bolehNaik, sudahNaikIds]
+    const bisaPilih = bolehNaik || bolehAturRapot;
+
+    const selectableIds = useMemo(
+        () => santriList
+            .filter((s) => isVisible(s) && (bolehAturRapot || isDpNaik(s)))
+            .map((s) => String(s.id)),
+        [santriList, query, bolehNaik, bolehAturRapot, sudahNaikIds]
     );
-    const allSelected = visibleEligibleIds.length > 0 && selected.length === visibleEligibleIds.length && visibleEligibleIds.every((id) => selected.includes(id));
-    const toggleAll = () => setSelected(allSelected ? [] : visibleEligibleIds);
+    const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.includes(id));
+    const toggleAll = () => setSelected(allSelected ? [] : selectableIds);
     const toggleOne = (id) => setSelected((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+
+    // Hanya yang benar-benar memenuhi syarat naik kelas
+    const selectedNaikIds = useMemo(
+        () => selected.filter((id) => {
+            const s = santriList.find((x) => String(x.id) === id);
+            return s && isDpNaik(s);
+        }),
+        [selected, santriList, bolehNaik, sudahNaikIds]
+    );
+
+    /* ---- Bulk kunci PDF ---- */
+    const [rapotBulkBusy, setRapotBulkBusy] = useState(false);
+    const bulkRapot = (aksi) => {
+        if (!selected.length) return;
+        const label = aksi === 'buka' ? 'membuka' : 'mengunci kembali';
+        if (!confirm(`Yakin ${label} akses PDF rapot untuk ${selected.length} santri terpilih?`)) return;
+        setRapotBulkBusy(true);
+        router.post(route('guru.rapot.bulk-akses'), { santri_ids: selected, aksi }, {
+            preserveScroll: true,
+            onSuccess: () => setSelected([]),
+            onFinish: () => setRapotBulkBusy(false),
+        });
+    };
 
     /* ---- Modal Naik Kelas ---- */
     const [showNaik, setShowNaik] = useState(false);
     const [naikLabel, setNaikLabel] = useState('');
+    const [naikIds, setNaikIds] = useState([]);      // terpisah dari `selected`
     const [kelasTujuan, setKelasTujuan] = useState('');
     const [naikProcessing, setNaikProcessing] = useState(false);
 
     const openNaikSingle = (id, name) => {
-        setSelected([String(id)]);
+        setNaikIds([String(id)]);
         setNaikLabel(name);
         setKelasTujuan('');
         setShowNaik(true);
     };
     const openNaikBulk = () => {
-        if (!selected.length) return;
-        setNaikLabel(`${selected.length} santri terpilih`);
+        if (!selectedNaikIds.length) return;
+        setNaikIds(selectedNaikIds);
+        setNaikLabel(`${selectedNaikIds.length} santri terpilih`);
         setKelasTujuan('');
         setShowNaik(true);
     };
     const submitNaik = (e) => {
         e.preventDefault();
-        if (!kelasTujuan) return;
+        if (!kelasTujuan || !naikIds.length) return;
         if (!confirm(`Naikkan ${naikLabel} ke kelas yang dipilih?`)) return;
         setNaikProcessing(true);
-        router.post(route('guru.naik-kelas'), { santri_ids: selected, kelas_tujuan_id: kelasTujuan }, {
+        router.post(route('guru.naik-kelas'), { santri_ids: naikIds, kelas_tujuan_id: kelasTujuan }, {
             preserveScroll: true,
-            onSuccess: () => { setShowNaik(false); setSelected([]); },
+            onSuccess: () => { setShowNaik(false); setSelected([]); setNaikIds([]); },
             onFinish: () => setNaikProcessing(false),
         });
     };
@@ -223,27 +270,61 @@ export default function Index({
                                     </div>
                                 ) : null}
 
+                                {/* ===== BANNER KUNCI PDF RAPOT ===== */}
+                                <div className={`rounded-xl p-3 mb-4 flex items-start gap-2.5 border ${bolehAturRapot ? 'bg-claude-50 dark:bg-claude-500/10 border-claude-200 dark:border-claude-500/25' : 'bg-stone-50 dark:bg-coal-800/40 border-stone-200 dark:border-coal-700/40'}`}>
+                                    {bolehAturRapot
+                                        ? <UnlockIcon className="w-4 h-4 text-claude-500 flex-shrink-0 mt-0.5" />
+                                        : <LockIcon className="w-4 h-4 text-stone-400 flex-shrink-0 mt-0.5" />}
+                                    <p className={`text-xs ${bolehAturRapot ? 'text-claude-700 dark:text-claude-300' : 'text-stone-600 dark:text-stone-400'}`}>
+                                        {bolehAturRapot ? (
+                                            <>Akses <strong>PDF Rapot</strong> santri sedang bisa diatur. Klik ikon gembok pada santri untuk membuka aksesnya.{rapotJendelaText && <> Periode: <strong>{rapotJendelaText}</strong>.</>}</>
+                                        ) : (
+                                            <>{rapotJendelaInfo ?? 'Akses PDF rapot belum bisa diatur.'} PDF santri tetap terkunci di luar periode ini.{rapotJendelaText && <> Periode: <strong>{rapotJendelaText}</strong>.</>}</>
+                                        )}
+                                    </p>
+                                </div>
+
                                 {/* ===== BULK ACTION BAR ===== */}
-                                {bolehNaik && selected.length > 0 && (
-                                    <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/40 rounded-xl px-4 py-3 mb-4 flex items-center justify-between gap-3">
+                                {selected.length > 0 && (
+                                    <div className="bg-claude-50 dark:bg-claude-500/10 border border-claude-200 dark:border-claude-500/25 rounded-xl px-4 py-3 mb-4 flex flex-wrap items-center justify-between gap-3">
                                         <div>
-                                            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{selected.length} santri dipilih</p>
-                                            <button onClick={() => setSelected([])} className="text-[11px] text-emerald-600 hover:text-emerald-500">Bersihkan pilihan</button>
+                                            <p className="text-sm font-semibold text-claude-700 dark:text-claude-300">{selected.length} santri dipilih</p>
+                                            <button onClick={() => setSelected([])} className="text-[11px] text-claude-600 hover:text-claude-500">Bersihkan pilihan</button>
                                         </div>
-                                        <button onClick={openNaikBulk} className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition flex-shrink-0">
-                                            <ArrowUpIcon className="w-3.5 h-3.5" /> Naikkan Terpilih
-                                        </button>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            {bolehAturRapot && (
+                                                <>
+                                                    <button onClick={() => bulkRapot('buka')} disabled={rapotBulkBusy}
+                                                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-claude-600 hover:bg-claude-500 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition">
+                                                        <UnlockIcon className="w-3.5 h-3.5" /> Buka PDF Terpilih
+                                                    </button>
+                                                    <button onClick={() => bulkRapot('kunci')} disabled={rapotBulkBusy}
+                                                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-stone-200 hover:bg-stone-300 border border-stone-300 text-stone-700 disabled:opacity-50 dark:bg-coal-700 dark:hover:bg-coal-600 dark:border-coal-600 dark:text-stone-200 text-xs font-bold rounded-lg transition">
+                                                        <LockIcon className="w-3.5 h-3.5" /> Kunci PDF Terpilih
+                                                    </button>
+                                                </>
+                                            )}
+                                            {bolehNaik && selectedNaikIds.length > 0 && (
+                                                <button onClick={openNaikBulk}
+                                                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition">
+                                                    <ArrowUpIcon className="w-3.5 h-3.5" /> Naikkan Terpilih ({selectedNaikIds.length})
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
 
                                 {/* ===== MOBILE CARDS ===== */}
                                 <div className="lg:hidden space-y-2">
-                                    {bolehNaik && (
+                                    {bisaPilih && (
                                         <div className="flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-coal-800 border border-stone-200 dark:border-coal-700 rounded-xl">
                                             <input type="checkbox" checked={allSelected} onChange={toggleAll}
-                                                className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-emerald-600 cursor-pointer" />
-                                            <span className="text-xs font-semibold text-stone-600 dark:text-stone-400 flex-1">Pilih Semua (yang belum naik)</span>
-                                            <span className="text-[11px] text-stone-500">{santriList.length} santri</span>
+                                                ref={(el) => { if (el) el.indeterminate = selected.length > 0 && !allSelected; }}
+                                                className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 cursor-pointer" />
+                                            <span className="text-xs font-semibold text-stone-600 dark:text-stone-400 flex-1">
+                                                Pilih Semua{bolehAturRapot ? '' : ' (yang belum naik)'}
+                                            </span>
+                                            <span className="text-[11px] text-stone-500">{selectableIds.length} santri</span>
                                         </div>
                                     )}
 
@@ -263,9 +344,9 @@ export default function Index({
                                         return (
                                             <div key={santri.id} className={`rounded-xl border border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 overflow-hidden transition-all shadow-sm dark:shadow-none ${visible ? '' : 'hidden'}`}>
                                                 <div className="flex items-center gap-3 px-4 py-3">
-                                                    {dpNaik ? (
+                                                    {(bolehAturRapot || dpNaik) ? (
                                                         <input type="checkbox" checked={selected.includes(String(santri.id))} onChange={() => toggleOne(String(santri.id))}
-                                                            className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-emerald-600 flex-shrink-0 cursor-pointer" />
+                                                            className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 flex-shrink-0 cursor-pointer" />
                                                     ) : bolehNaik ? (
                                                         <span className="w-4 h-4 flex-shrink-0 flex items-center justify-center text-emerald-500" title="Sudah naik">
                                                             <CheckIcon className="w-4 h-4" />
@@ -304,7 +385,7 @@ export default function Index({
                                                     </div>
                                                 </div>
 
-                                                <div className="px-4 py-2.5 border-t border-stone-200 dark:border-coal-700/50">
+                                                <div className="px-4 py-2.5 border-t border-stone-200 dark:border-coal-700/50 space-y-1.5">
                                                     {isIqro && !iqroKnown ? (
                                                         <span className="text-[10px] text-stone-500 dark:text-stone-600 italic">Halaman Jilid {santri.target_jilid ?? '-'} belum diatur</span>
                                                     ) : (
@@ -317,16 +398,35 @@ export default function Index({
                                                             </span>
                                                         </div>
                                                     )}
+                                                    {santri.has_quran_secondary && (
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="flex-1 bg-stone-200 dark:bg-coal-700 rounded-full h-1.5">
+                                                                <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.min(santri.hafalan_persen_2 ?? 0, 100)}%` }} />
+                                                            </div>
+                                                            <span className="text-[11px] text-stone-500 whitespace-nowrap">
+                                                                {santri.capaian_juz_2 ?? 0}/{santri.target_juz_2 ?? 0} juz
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
 
-                                                <div className={`border-t border-stone-200 dark:border-coal-700/50 grid ${dpNaik ? 'grid-cols-2 divide-x divide-stone-200 dark:divide-coal-700/50' : 'grid-cols-1'}`}>
+                                                <div className="border-t border-stone-200 dark:border-coal-700/50 flex divide-x divide-stone-200 dark:divide-coal-700/50">
                                                     <Link href={route('guru.rapot.show', santri.id)}
-                                                        className="flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-claude-600 dark:text-claude-400 hover:bg-claude-500/10 transition">
+                                                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-claude-600 dark:text-claude-400 hover:bg-claude-500/10 transition">
                                                         <FileTextIcon className="w-3.5 h-3.5" /> Lihat Rapot
                                                     </Link>
+                                                    <button type="button"
+                                                        onClick={() => toggleRapot(santri)}
+                                                        disabled={!bolehAturRapot || rapotBusyId === santri.id}
+                                                        title={santri.rapot_dibuka ? 'Kunci kembali PDF rapot santri' : 'Buka akses PDF rapot santri'}
+                                                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed ${santri.rapot_dibuka ? 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-coal-700'}`}>
+                                                        {santri.rapot_dibuka
+                                                            ? <><UnlockIcon className="w-3.5 h-3.5" /> PDF Terbuka</>
+                                                            : <><LockIcon className="w-3.5 h-3.5" /> PDF Terkunci</>}
+                                                    </button>
                                                     {dpNaik && (
                                                         <button type="button" onClick={() => openNaikSingle(santri.id, santri.name)}
-                                                            className="flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition">
+                                                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition">
                                                             <ArrowUpIcon className="w-3.5 h-3.5" /> Naik
                                                         </button>
                                                     )}
@@ -348,10 +448,11 @@ export default function Index({
                                     <table className="min-w-full">
                                         <thead>
                                             <tr className="border-b border-stone-200 dark:border-coal-700 bg-stone-50 dark:bg-coal-900/40">
-                                                {bolehNaik && (
+                                                {bisaPilih && (
                                                     <th className="px-4 py-3 w-10">
                                                         <input type="checkbox" checked={allSelected} onChange={toggleAll}
-                                                            className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-emerald-600 cursor-pointer" />
+                                                            ref={(el) => { if (el) el.indeterminate = selected.length > 0 && !allSelected; }}
+                                                            className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 cursor-pointer" />
                                                     </th>
                                                 )}
                                                 {['No', 'Nama Santri', 'NIS', 'Gender', 'Target', 'Progress', 'Aksi'].map((h) => (
@@ -375,12 +476,12 @@ export default function Index({
                                                 const isSel = selected.includes(String(santri.id));
 
                                                 return (
-                                                    <tr key={santri.id} className={`hover:bg-stone-50 dark:hover:bg-coal-700/25 transition-colors ${isSel ? 'bg-emerald-50 dark:bg-emerald-950/20' : ''} ${visible ? '' : 'hidden'}`}>
-                                                        {bolehNaik && (
-                                                            dpNaik ? (
+                                                    <tr key={santri.id} className={`hover:bg-stone-50 dark:hover:bg-coal-700/25 transition-colors ${isSel ? 'bg-claude-50 dark:bg-claude-500/10' : ''} ${visible ? '' : 'hidden'}`}>
+                                                        {bisaPilih && (
+                                                            (bolehAturRapot || dpNaik) ? (
                                                                 <td className="px-4 py-3">
                                                                     <input type="checkbox" checked={isSel} onChange={() => toggleOne(String(santri.id))}
-                                                                        className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-emerald-600 cursor-pointer" />
+                                                                        className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 cursor-pointer" />
                                                                 </td>
                                                             ) : (
                                                                 <td className="px-4 py-3 text-center"><span className="text-emerald-500" title="Sudah naik">✓</span></td>
@@ -426,13 +527,34 @@ export default function Index({
                                                                     </p>
                                                                 </>
                                                             )}
-                                                        </td>
-                                                        <td className="px-4 py-3">
+                                                            {santri.has_quran_secondary && (
+                                                                <>
+                                                                    <div className="flex items-center gap-2 min-w-[160px] mt-2">
+                                                                        <div className="flex-1 bg-stone-200 dark:bg-coal-700 rounded-full h-1.5">
+                                                                            <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.min(santri.hafalan_persen_2 ?? 0, 100)}%` }} />
+                                                                        </div>
+                                                                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 w-10 text-right shrink-0">{santri.hafalan_persen_2 ?? 0}%</span>
+                                                                    </div>
+                                                                    <p className="text-[11px] text-stone-500 dark:text-stone-600 mt-1">
+                                                                        {santri.capaian_juz_2 ?? 0}/{santri.target_juz_2 ?? 0} Juz (Al-Qur'an)
+                                                                    </p>
+                                                                </>
+                                                            )}
+                                                        </td>                                                        <td className="px-4 py-3">
                                                             <div className="flex items-center gap-2">
                                                                 <Link href={route('guru.rapot.show', santri.id)}
                                                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-claude-500/10 hover:bg-claude-500/20 border border-claude-500/20 text-claude-600 dark:text-claude-400 text-xs font-semibold rounded-lg transition">
                                                                     <FileTextIcon className="w-3.5 h-3.5" /> Lihat Rapot
                                                                 </Link>
+                                                                <button type="button"
+                                                                    onClick={() => toggleRapot(santri)}
+                                                                    disabled={!bolehAturRapot || rapotBusyId === santri.id}
+                                                                    title={santri.rapot_dibuka ? 'Kunci kembali PDF rapot santri' : 'Buka akses PDF rapot santri'}
+                                                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 border text-xs font-semibold rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed ${santri.rapot_dibuka ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:border-emerald-500/20 dark:text-emerald-400' : 'bg-stone-100 hover:bg-stone-200 border-stone-200 text-stone-600 dark:bg-coal-700 dark:hover:bg-coal-600 dark:border-coal-600 dark:text-stone-300'}`}>
+                                                                    {santri.rapot_dibuka
+                                                                        ? <><UnlockIcon className="w-3.5 h-3.5" /> Terbuka</>
+                                                                        : <><LockIcon className="w-3.5 h-3.5" /> Terkunci</>}
+                                                                </button>
                                                                 {dpNaik ? (
                                                                     <button type="button" onClick={() => openNaikSingle(santri.id, santri.name)}
                                                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 text-emerald-700 dark:bg-emerald-600/20 dark:hover:bg-emerald-600/40 dark:border-emerald-600/30 dark:text-emerald-400 text-xs font-semibold rounded-lg transition">

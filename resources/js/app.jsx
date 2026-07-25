@@ -6,17 +6,24 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 
 /**
- * Jaring pengaman 419.
- * Kalau sesi benar-benar sudah mati, tidak ada gunanya menampilkan halaman
- * "PAGE EXPIRED" — langsung lempar ke login dengan pesan yang jelas.
+ * Jaring pengaman response non-Inertia.
+ *
+ * Kalau server membalas dengan status yang bukan response Inertia, klien akan
+ * memunculkan modal error gelap ("419 PAGE EXPIRED" / "403 FORBIDDEN") di atas
+ * halaman. Semua itu ditangani manual di sini:
+ *
+ * - 401 / 403 / 419 → sesi sudah mati (sering terjadi karena request yang masih
+ *   berjalan saat logout). Paksa full page load ke login.
+ * - 413            → payload melebihi post_max_size, sesi masih hidup.
+ *                    Cukup beri tahu, JANGAN redirect.
  */
 router.on('invalid', (event) => {
     const status = event.detail.response?.status;
 
-    if (status === 419) {
+    if ([401, 403, 419].includes(status)) {
         event.preventDefault();
-        alert('Sesi Anda telah berakhir. Anda akan diarahkan ke halaman login.');
         window.location.href = '/login';
+        return;
     }
 
     if (status === 413) {

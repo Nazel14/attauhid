@@ -29,7 +29,7 @@ const optSurat = (list) => list.map((s) => `<option value="${s}">${s}</option>`)
 const optSesi = (list) => list.map((s) => `<option value="${s}">${s}</option>`).join('');
 const optSantri = (list) =>
     list.map((s) =>
-        `<option value="${s.id}" data-target-metode="${s.target_metode || 'quran'}" data-target-jilid="${s.target_jilid ?? ''}">${s.name}</option>`
+        `<option value="${s.id}" data-target-metode="${s.target_metode || 'quran'}" data-target-metode-2="${s.target_metode_2 || ''}" data-target-jilid="${s.target_jilid ?? ''}">${s.name}</option>`
     ).join('');
 const optSantriPlain = (list) =>
     list.map((s) => `<option value="${s.id}">${s.name}</option>`).join('');
@@ -163,7 +163,7 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
 
                     <hr class="border-gray-200 dark:border-gray-800 hidden" id="hrDivider">
 
-                    <form id="formCombined" action="/guru/input/store-combined" method="POST" enctype="multipart/form-data" class="hidden space-y-3">
+                    <form id="formCombined" action="/guru/input/store-combined" method="POST" enctype="multipart/form-data" novalidate class="hidden space-y-3">
                         ${token}
                         <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
                             <h3 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -316,9 +316,9 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
                             </div>
                             <div id="sectionAudioCombined" class="px-4 pb-4 pt-3 space-y-3">
                                 <div class="flex gap-2">
-                                    <button type="button" id="startRecordingCombined" onclick="startRecording('Combined')" class="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition flex items-center justify-center gap-1"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></svg> Rekam</button>
-                                    <button type="button" id="pauseRecordingCombined" onclick="pauseRecording('Combined')" class="hidden flex-1 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-xs font-medium rounded-lg transition items-center justify-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M10 8v8M14 8v8"/></svg> Jeda</button>
-                                    <button type="button" id="stopRecordingCombined" onclick="stopRecording('Combined')" class="hidden flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition items-center justify-center gap-1"> <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/></svg> Stop</button>
+                                    <button type="button" id="startRecordingCombined" onclick="startRecording('Combined')" class="inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-xl shadow-sm transition active:scale-95"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></svg> Rekam</button>
+                                    <button type="button" id="pauseRecordingCombined" onclick="pauseRecording('Combined')" class="hidden inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-800 ring-1 ring-amber-200 text-xs font-semibold rounded-xl transition active:scale-95 dark:bg-amber-500/15 dark:hover:bg-amber-500/25 dark:text-amber-300 dark:ring-amber-500/25"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="8" y="6" width="3.2" height="12" rx="1"/><rect x="12.8" y="6" width="3.2" height="12" rx="1"/></svg> Jeda</button>
+                                    <button type="button" id="stopRecordingCombined" onclick="stopRecording('Combined')" class="hidden inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-stone-700 hover:bg-stone-600 text-white text-xs font-semibold rounded-xl shadow-sm transition active:scale-95 dark:bg-coal-600 dark:hover:bg-coal-500 dark:ring-1 dark:ring-coal-500"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></svg> Stop</button>
                                 </div>
                                 <div id="recordingTimerCombined" class="hidden text-xs font-bold text-blue-600 dark:text-blue-400 text-center py-2 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800/50">⏱️ Durasi: 0:00</div>
                                 <audio id="audioPlaybackCombined" controls class="w-full hidden rounded-lg"></audio>
@@ -389,7 +389,7 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
                         <button type="submit" class="w-full py-3 bg-gradient-to-r from-claude-500 to-claude-600 hover:from-claude-600 hover:to-claude-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-claude-500/25 transition flex items-center justify-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-8 0V4a1 1 0 011-1h6a1 1 0 011 1v3m-8 0h8M9 21v-6h6v6"/></svg> Simpan Presensi</button>
                     </form>
 
-                    <form id="formSetoranOnly" action="/guru/input/store-setoran" method="POST" enctype="multipart/form-data" class="hidden space-y-3">
+                    <form id="formSetoranOnly" action="/guru/input/store-setoran" method="POST" enctype="multipart/form-data" novalidate class="hidden space-y-3">
                         ${token}
                         <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
                             <h3 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -537,9 +537,9 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
                             </div>
                             <div id="sectionAudioSetoranOnly" class="px-4 pb-4 pt-3 space-y-3">
                                 <div class="flex gap-2">
-                                    <button type="button" id="startRecordingSetoranOnly" onclick="startRecording('SetoranOnly')" class="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition flex items-center justify-center gap-1"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></svg> Rekam</button>
-                                    <button type="button" id="pauseRecordingSetoranOnly" onclick="pauseRecording('SetoranOnly')" class="hidden flex-1 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-xs font-medium rounded-lg transition items-center justify-center gap-1">⏸️ Jeda</button>
-                                    <button type="button" id="stopRecordingSetoranOnly" onclick="stopRecording('SetoranOnly')" class="hidden flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition items-center justify-center gap-1">⏹️ Stop</button>
+                                    <button type="button" id="startRecordingSetoranOnly" onclick="startRecording('SetoranOnly')" class="inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-xl shadow-sm transition active:scale-95"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></svg> Rekam</button>
+                                    <button type="button" id="pauseRecordingSetoranOnly" onclick="pauseRecording('SetoranOnly')" class="hidden inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-800 ring-1 ring-amber-200 text-xs font-semibold rounded-xl transition active:scale-95 dark:bg-amber-500/15 dark:hover:bg-amber-500/25 dark:text-amber-300 dark:ring-amber-500/25"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="8" y="6" width="3.2" height="12" rx="1"/><rect x="12.8" y="6" width="3.2" height="12" rx="1"/></svg> Jeda</button>
+                                    <button type="button" id="stopRecordingSetoranOnly" onclick="stopRecording('SetoranOnly')" class="hidden inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-stone-700 hover:bg-stone-600 text-white text-xs font-semibold rounded-xl shadow-sm transition active:scale-95 dark:bg-coal-600 dark:hover:bg-coal-500 dark:ring-1 dark:ring-coal-500"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></svg> Stop</button>
                                 </div>
                                 <div id="recordingTimerSetoranOnly" class="hidden text-xs font-bold text-blue-600 dark:text-blue-400 text-center py-2 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800/50">⏱️ Durasi: 0:00</div>
                                 <audio id="audioPlaybackSetoranOnly" controls class="w-full hidden rounded-lg"></audio>
@@ -561,7 +561,7 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
                         </div>
 
                         <button type="submit" id="submitBtnSetoranOnly" class="setoran-after-santri hidden mobile-hide-bottom w-full py-3 bg-gradient-to-r from-claude-500 to-claude-600 hover:from-claude-600 hover:to-claude-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-claude-500/25 transition flex items-center justify-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-8 0V4a1 1 0 011-1h6a1 1 0 011 1v3m-8 0h8M9 21v-6h6v6"/></svg> Simpan Setoran Tambahan</button>                    
-                        </form>
+                    </form>
 
                 </div>
             </div>
@@ -599,12 +599,17 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
                             <div class="flex items-center gap-1 text-[10px] text-gray-500"><div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>Alpha</div>
                             <div class="flex items-center gap-1 text-[10px] text-gray-500"><span class="px-1 bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400 rounded text-[9px]">📖</span>Setoran</div>
                         </div>
-                        <div id="daftarPresensiHariIni" class="max-h-[420px] overflow-y-auto overflow-x-auto custom-scrollbar rounded-lg border border-gray-200 dark:border-gray-800">
-                            <table class="w-full text-xs min-w-max">
-                                <thead class="bg-gray-100 dark:bg-gray-800 sticky top-0">
+                        <div id="daftarPresensiHariIni" class="max-h-[420px] overflow-y-auto overflow-x-auto tabel-presensi-scroll rounded-lg border border-gray-200 dark:border-gray-800">
+                            <!-- min-w-max dihapus: kalau dipertahankan, tabel melebar mengikuti
+                                 nama terpanjang sehingga teks tidak pernah turun baris dan
+                                 malah memunculkan scroll horizontal. -->
+                            <table class="w-full text-xs">
+                                <thead class="bg-gray-100 dark:bg-gray-800 sticky top-0 z-10">
                                     <tr id="tableHeaderRow" class="border-b border-gray-200 dark:border-gray-700">
                                         <th class="px-2 py-2 text-center text-gray-600 dark:text-gray-400 font-medium w-10">No</th>
                                         <th class="px-2 py-2 text-left text-gray-600 dark:text-gray-400 font-medium">Nama Santri</th>
+                                        <th class="px-2 py-2 text-left text-gray-600 dark:text-gray-400 font-medium whitespace-nowrap">Metode</th>
+                                        <th class="px-2 py-2 text-left text-gray-600 dark:text-gray-400 font-medium whitespace-nowrap">Progress</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tableBodyPresensi" class="divide-y divide-gray-200 dark:divide-gray-800/50">
@@ -686,6 +691,81 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+
+    /* Tabel presensi: scrollbar diberi jalur sendiri (scrollbar-gutter) supaya
+       tidak menindih kolom terakhir. Track dibuat terlihat agar batas antara
+       area konten dan scrollbar jelas. */
+    .tabel-presensi-scroll { scrollbar-gutter: stable; }
+    .tabel-presensi-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+    .tabel-presensi-scroll::-webkit-scrollbar-track { background: #F5F4EF; }
+    .tabel-presensi-scroll::-webkit-scrollbar-thumb {
+        background: #D6D3D1;
+        border-radius: 9999px;
+        border: 3px solid #F5F4EF;   /* jarak visual thumb ke tepi */
+    }
+    .tabel-presensi-scroll::-webkit-scrollbar-thumb:hover { background: #B8B4B0; }
+    .tabel-presensi-scroll::-webkit-scrollbar-corner { background: #F5F4EF; }
+
+    html.dark .tabel-presensi-scroll::-webkit-scrollbar-track,
+    html.dark .tabel-presensi-scroll::-webkit-scrollbar-corner { background: #262624; }
+    html.dark .tabel-presensi-scroll::-webkit-scrollbar-thumb {
+        background: #4A4845;
+        border-color: #262624;
+    }
+    html.dark .tabel-presensi-scroll::-webkit-scrollbar-thumb:hover { background: #5C5A56; }
+
+    /* Firefox tidak mengenal ::-webkit-*, jadi diatur terpisah. */
+    .tabel-presensi-scroll { scrollbar-width: thin; scrollbar-color: #D6D3D1 #F5F4EF; }
+    html.dark .tabel-presensi-scroll { scrollbar-color: #4A4845 #262624; }
+
+    /* ===== Badge metode & bar progress di tabel presensi =====
+       Warna WAJIB lewat CSS variable, bukan hex inline dari JS.
+       Tabel ini dirender sekali oleh unified-input-page.js dan tidak
+       dirender ulang saat tema diganti — kalau warnanya ditanam inline,
+       light/dark baru ikut berubah setelah auto-refresh 30 detik. */
+    #inputPage {
+        --pm-quran-bg: #FBEDE7; --pm-quran-fg: #BE5D3D;
+        --pm-iqro-bg:  #FDF3E3; --pm-iqro-fg:  #9A6B14;
+        --pm-aisar-bg: #EAF1EC; --pm-aisar-fg: #4A6B54;
+        --pm-track:    #E7E5E4; --pm-label:    #78716C;
+        --pm-empty:    #A8A29E;
+    }
+    html.dark #inputPage {
+        --pm-quran-bg: rgba(217,119,87,.15);  --pm-quran-fg: #E8A183;
+        --pm-iqro-bg:  rgba(212,162,78,.15);  --pm-iqro-fg:  #D9B36A;
+        --pm-aisar-bg: rgba(124,152,133,.18); --pm-aisar-fg: #9DBAA6;
+        --pm-track:    #3E3D3A;               --pm-label:    #A8A29E;
+        --pm-empty:    #78716C;
+    }
+
+    .pm-badge {
+        display: inline-block; white-space: nowrap;
+        padding: 2px 7px; border-radius: 6px;
+        font-size: 10px; font-weight: 600;
+        transition: background-color .2s, color .2s;
+    }
+    .pm-badge[data-tone="quran"] { background: var(--pm-quran-bg); color: var(--pm-quran-fg); }
+    .pm-badge[data-tone="iqro"]  { background: var(--pm-iqro-bg);  color: var(--pm-iqro-fg); }
+    .pm-badge[data-tone="aisar"] { background: var(--pm-aisar-bg); color: var(--pm-aisar-fg); }
+    .pm-badge .pm-plus { opacity: .45; }
+
+    .pm-empty { color: var(--pm-empty); font-size: 10px; }
+
+    .pm-prog      { display: flex; flex-direction: column; gap: 3px; min-width: 96px; }
+    .pm-prog-row  { display: flex; align-items: center; gap: 5px; }
+    .pm-prog-track{
+        flex: 1; height: 4px; border-radius: 9999px;
+        background: var(--pm-track); overflow: hidden;
+        transition: background-color .2s;
+    }
+    .pm-prog-fill { display: block; height: 100%; border-radius: 9999px; }
+    .pm-prog-fill[data-c="1"] { background: #D97757; }
+    .pm-prog-fill[data-c="2"] { background: #10B981; }
+    .pm-prog-val  {
+        font-size: 10px; font-weight: 600; min-width: 26px;
+        text-align: right; color: var(--pm-label);
+        transition: color .2s;
+    }
     .form-input, .form-select, .form-select-sm, .form-textarea { background: #ffffff; border: 1px solid #d1d5db; color: #111827; border-radius: 0.5rem; font-size: 0.8125rem; padding: 0.5rem 0.625rem; transition: border-color 0.15s; }
     html.dark .form-input, html.dark .form-select, html.dark .form-select-sm, html.dark .form-textarea { background: #1C1C1A; border: 1px solid #3E3D3A; color: #e5e7eb; }
     .form-select-sm { padding: 0.4rem 0.5rem; font-size: 0.75rem; }
@@ -803,25 +883,66 @@ export default function InputSetoran(props) {
         window.__INPUT_PAGE_LOADED__ = true;
         window.__TANGGAL_HARI_INI__ = tanggalHariIni;
 
-        // --- Kunci Metode sesuai target santri terpilih ---
-        function lockMetode(santriSelectId, metodeSelectId) {
+        // Metode & progress per santri untuk tabel presensi di panel kanan.
+        // Endpoint /api/presensi/hari-ini tidak mengirim data ini, jadi
+        // disuntikkan dari props halaman dan dibaca unified-input-page.js.
+        window.__SANTRI_META__ = Object.fromEntries(
+            santriList.map((s) => {
+                const m = String(s.target_metode || 'quran').toLowerCase();
+                return [String(s.id), {
+                    primary: m === 'aisar' ? `Aisar ${s.target_jilid ?? '-'}`
+                           : m === 'iqro'  ? `Iqro ${s.target_jilid ?? '-'}`
+                           : 'Al-Quran',
+                    tone: m === 'aisar' ? 'aisar' : m === 'iqro' ? 'iqro' : 'quran',
+                    hasQuran2: String(s.target_metode_2 || '').toLowerCase() === 'quran',
+                    progress: Number(s.progress_persen ?? 0),
+                    progress2: Number(s.progress_juz2 ?? 0),
+                }];
+            })
+        );
+
+         function applyMetodeForSantri(santriSelectId, metodeSelectId) {
             const sSel = document.getElementById(santriSelectId);
             const mSel = document.getElementById(metodeSelectId);
             if (!sSel || !mSel) return;
 
+            const toDisplay = (m) => {
+                const t = String(m || '').toLowerCase();
+                return t === 'aisar' ? 'Aisar' : (t === 'iqro' || t === 'ummi') ? 'Iqro' : "Al-Qur'an";
+            };
+
             const apply = () => {
                 const opt = sSel.options[sSel.selectedIndex];
-                const target = opt?.getAttribute('data-target-metode');
-                if (!target || !opt?.value) {
-                    // belum pilih santri → biarkan default, tetap terkunci kosong
+                if (!opt?.value) {
                     mSel.classList.remove('is-locked');
+                    Array.from(mSel.options).forEach(o => { o.hidden = false; o.disabled = false; });
                     return;
                 }
-                // 'iqro' → Iqro ; selain itu → Al-Qur'an
-                const t = target.toLowerCase();
-                mSel.value = t === 'aisar' ? 'Aisar' : (t === 'iqro' || t === 'ummi') ? 'Iqro' : "Al-Qur'an";
-                mSel.classList.add('is-locked');
-                mSel.setAttribute('aria-readonly', 'true');
+
+                const m1 = toDisplay(opt.getAttribute('data-target-metode') || 'quran');
+                const m2raw = opt.getAttribute('data-target-metode-2') || '';
+                const m2 = m2raw ? toDisplay(m2raw) : '';
+
+                const allowed = [m1];
+                if (m2 && m2 !== m1) allowed.push(m2);
+
+                // Tampilkan hanya opsi yang diizinkan
+                Array.from(mSel.options).forEach(o => {
+                    const ok = allowed.includes(o.value);
+                    o.hidden = !ok;
+                    o.disabled = !ok;
+                });
+
+                mSel.value = m1; // default ke metode utama
+
+                if (allowed.length <= 1) {
+                    mSel.classList.add('is-locked');
+                    mSel.setAttribute('aria-readonly', 'true');
+                } else {
+                    mSel.classList.remove('is-locked');
+                    mSel.removeAttribute('aria-readonly');
+                }
+
                 mSel.dispatchEvent(new Event('change', { bubbles: true }));
             };
 
@@ -831,8 +952,8 @@ export default function InputSetoran(props) {
 
         // jalankan setelah markup siap
         setTimeout(() => {
-            lockMetode('santriSelectCombined', 'metodeCombined');
-            lockMetode('santriSelectSetoranOnly', 'metodeSetoranOnly');
+            applyMetodeForSantri('santriSelectCombined', 'metodeCombined');
+            applyMetodeForSantri('santriSelectSetoranOnly', 'metodeSetoranOnly');
         }, 0);
 
         // ============================================================
@@ -863,26 +984,46 @@ export default function InputSetoran(props) {
         setTimeout(syncJilidUI, 100);
         const jilidUiTimer = setInterval(syncJilidUI, 500);
 
-        const version = Date.now();
+        // ✅ Versi STABIL → browser boleh cache. Naikkan angka ini manual
+        // setiap kali ada perubahan di file /public/js/*.js
+        const ASSET_VERSION = '2026-07-22-1';
         const all = [...ENGINE_SCRIPTS, PAGE_SCRIPT];
         let cancelled = false;
 
-        function loadSeq(i) {
-            if (cancelled) return;
-            if (i >= all.length) {
-                // Engine yang init lewat DOMContentLoaded → picu manual.
-                document.dispatchEvent(new Event('DOMContentLoaded'));
-                return;
-            }
-            const name = all[i];
-            const el = document.createElement('script');
-            el.src = `/js/${name}?v=${version}`;
-            el.dataset.inputPage = name;
-            el.onload = () => loadSeq(i + 1);
-            el.onerror = () => { console.error('Gagal memuat', name); loadSeq(i + 1); };
-            document.body.appendChild(el);
+        // ✅ Stub sementara: kalau user keburu klik mode sebelum engine siap,
+        // pilihan disimpan lalu dieksekusi setelah semua script loaded.
+        window.__pendingInputMode = null;
+        if (typeof window.toggleMode !== 'function') {
+            window.toggleMode = function () {};
+            window.switchMode = function (v) { window.__pendingInputMode = v; };
         }
-        loadSeq(0);
+
+        // ✅ Paralel download, eksekusi tetap sesuai urutan array (async = false)
+        let remaining = all.length;
+        all.forEach((name) => {
+            const el = document.createElement('script');
+            el.src = `/js/${name}?v=${ASSET_VERSION}`;
+            el.async = false;               // ← kunci: download paralel, run berurutan
+            el.dataset.inputPage = name;
+            el.onload = el.onerror = () => {
+                if (el.onerror && !el.dataset.ok) el.dataset.ok = '1';
+                remaining--;
+                if (remaining === 0 && !cancelled) {
+                    document.dispatchEvent(new Event('DOMContentLoaded'));
+
+                    // Eksekusi klik mode yang tertunda (kalau ada)
+                    if (window.__pendingInputMode && typeof window.switchMode === 'function') {
+                        const radio = document.querySelector(
+                            `input[name="input_mode"][value="${window.__pendingInputMode}"]`
+                        );
+                        if (radio) radio.checked = true;
+                        window.switchMode(window.__pendingInputMode);
+                        window.__pendingInputMode = null;
+                    }
+                }
+            };
+            document.body.appendChild(el);
+        });
 
         return () => {
             cancelled = true;

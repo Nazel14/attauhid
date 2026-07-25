@@ -6,6 +6,8 @@ use App\Models\Santri;
 use App\Models\Setoran;
 use App\Models\Presensi;
 use App\Models\TahunAjaran;
+use App\Models\RapotAkses;
+use App\Models\SantriKelasHistory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
@@ -50,12 +52,50 @@ class SantriController extends Controller
     /**
      * Daftar tahun ajaran untuk dropdown filter (dikirim ke React).
      * Terbaru di atas.
+     *
+     * Bila $santri diisi, daftar dipersempit ke periode yang BENAR-BENAR
+     * pernah dijalani santri itu — plus tahun ajaran yang sedang aktif.
+     * Tanpa penyaringan ini, semester yang belum dimulai (mis. 2028/2029)
+     * ikut muncul dan pasti menghasilkan tabel kosong bila dipilih.
      */
-    private function tahunAjaranOptions(): array
+    private function tahunAjaranOptions(?Santri $santri = null): array
     {
-        return TahunAjaran::orderByDesc('tanggal_mulai')
+        $daftar = TahunAjaran::orderByDesc('tanggal_mulai')
             ->orderByDesc('id')
-            ->get()
+            ->get();
+
+        if ($santri) {
+            $aktifId = TahunAjaran::getAktif()?->id;
+
+            // Presensi punya FK tahun_ajaran_id → paling akurat.
+            $idPresensi = Presensi::where('santri_id', $santri->id)
+                ->whereNotNull('tahun_ajaran_id')
+                ->distinct()
+                ->pluck('tahun_ajaran_id')
+                ->all();
+
+            // Setoran tidak punya FK tahun ajaran, jadi dicocokkan lewat tanggal.
+            $tglSetoran = Setoran::where('santri_id', $santri->id)
+                ->whereNotNull('tanggal')
+                ->pluck('tanggal')
+                ->map(fn ($t) => Carbon::parse($t)->format('Y-m-d'))
+                ->unique()
+                ->all();
+
+            $daftar = $daftar->filter(function (TahunAjaran $ta) use ($idPresensi, $tglSetoran, $aktifId) {
+                if ($aktifId && $ta->id === $aktifId) return true;
+                if (in_array($ta->id, $idPresensi)) return true;
+
+                [$mulai, $akhir] = $this->getRangeTahunAjaran($ta);
+                foreach ($tglSetoran as $t) {
+                    if ($t >= $mulai && $t <= $akhir) return true;
+                }
+
+                return false;
+            });
+        }
+
+        return $daftar
             ->map(function (TahunAjaran $ta) {
                 $selesai = $this->taTanggalSelesai($ta);
                 $label   = $this->semesterLabel($ta->semester);
@@ -244,6 +284,9 @@ class SantriController extends Controller
             'iqro_persen_diketahui' => $totalHalamanJilid > 0,
             'target_jilid'          => $santri->target_jilid ?? 1,
             'metode_label'          => $this->metodeJilidLabel($santri),
+            // Target Al-Qur'an sekunder (metode 2 = quran).
+            // total_juz_hafalan sudah = porsi Al-Qur'an, karena setoran jilid total_juz-nya null.
+            'has_quran_secondary'   => $santri->hasQuranSecondary(),
         ];
 
         $presensis = Presensi::where('santri_id', $santri->id)
@@ -283,17 +326,20 @@ class SantriController extends Controller
         $kelasIdSantri    = $santri->kelas_id;
         $kategori         = $request->input('kategori');
 
-        // Tahun ajaran terpilih (kosong = pakai rentang tanggal manual)
+        // Periode SELALU mengikuti tahun ajaran. Tanpa parameter, yang dipakai
+        // adalah tahun ajaran aktif — rentang tanggal manual sudah ditiadakan
+        // supaya santri tidak bisa memilih periode yang tidak pernah dijalani.
         $tahunAjaranId = $request->input('tahun_ajaran_id', '');
-        $taPilih       = $tahunAjaranId ? TahunAjaran::find($tahunAjaranId) : null;
+        $taPilih       = $tahunAjaranId
+            ? TahunAjaran::find($tahunAjaranId)
+            : $tahunAjaranAktif;
 
-        [$defaultMulai, $defaultAkhir] = $this->getDefaultKelasRange($santri);
-        $tanggalMulai = $request->input('tanggal_mulai', $defaultMulai);
-        $tanggalAkhir = $request->input('tanggal_akhir', $defaultAkhir);
-
-        // Tahun ajaran dipilih → rentang tanggal mengikuti periode tahun ajaran itu
         if ($taPilih) {
             [$tanggalMulai, $tanggalAkhir] = $this->getRangeTahunAjaran($taPilih);
+        } else {
+            // Belum ada satu pun tahun ajaran terdaftar — jatuh ke rentang kelas
+            // agar halaman tetap tampil, bukan error.
+            [$tanggalMulai, $tanggalAkhir] = $this->getDefaultKelasRange($santri);
         }
 
         $query = Setoran::where('santri_id', $santri->id)
@@ -321,6 +367,8 @@ class SantriController extends Controller
         // ── Metode jilid (Iqro / Aisar) ──
         $isIqro           = $santri->isJilidBased();
         $totalHalamanIqro = $this->hitungHalamanJilid($santri, $setoransAll);
+        // Porsi Al-Qur'an (metode 2) — setoran jilid tidak mengisi total_juz
+        $totalJuzHafalan  = round($setoransAll->where('kategori_setoran', 'Hafalan')->sum('total_juz') ?? 0, 2);
 
         return Inertia::render('Santri/Setorans/Detail', [
             'santri'           => $santri,
@@ -332,12 +380,15 @@ class SantriController extends Controller
             'tanggalMulai'     => $tanggalMulai,
             'tanggalAkhir'     => $tanggalAkhir,
             'tahunAjaranAktif' => $tahunAjaranAktif,
-            'isIqro'           => $isIqro,
-            'totalHalamanIqro' => $totalHalamanIqro,
-            'metodeLabel'      => $this->metodeJilidLabel($santri),
+            'isIqro'             => $isIqro,
+            'totalHalamanIqro'   => $totalHalamanIqro,
+            'metodeLabel'        => $this->metodeJilidLabel($santri),
+            'hasQuranSecondary'  => $santri->hasQuranSecondary(),
+            'totalJuzHafalan'    => $totalJuzHafalan,
+            'targetJuz'          => (float) ($santri->target_juz ?? 0),
 
             // Filter tahun ajaran / semester
-            'tahunAjaranList'  => $this->tahunAjaranOptions(),
+            'tahunAjaranList'  => $this->tahunAjaranOptions($santri),
             'tahunAjaranId'    => $taPilih ? (string) $taPilih->id : '',
         ]);
     }
@@ -358,20 +409,25 @@ class SantriController extends Controller
         $bulan  = $request->input('bulan', now()->format('Y-m'));
         $status = $request->input('status');
 
+        // Periode SELALU mengikuti tahun ajaran. Tanpa parameter, yang dipakai
+        // adalah tahun ajaran aktif — filter per bulan sudah ditiadakan supaya
+        // santri tidak bisa membuka periode yang tidak pernah dijalani.
         $tahunAjaranId = $request->input('tahun_ajaran_id', '');
-        $taPilih       = $tahunAjaranId ? TahunAjaran::find($tahunAjaranId) : null;
+        $taPilih       = $tahunAjaranId
+            ? TahunAjaran::find($tahunAjaranId)
+            : $tahunAjaranAktif;
 
         if ($taPilih) {
-            // Periode = rentang tahun ajaran terpilih, sekaligus dikunci ke FK-nya
             [$m, $a] = $this->getRangeTahunAjaran($taPilih);
             $tanggalMulai  = Carbon::parse($m)->startOfDay();
             $tanggalAkhir  = Carbon::parse($a)->endOfDay();
             $filterTahunId = $taPilih->id;
         } else {
-            // Per bulan, dibatasi tahun ajaran aktif
+            // Belum ada satu pun tahun ajaran terdaftar — jatuh ke bulan berjalan
+            // agar halaman tetap tampil, bukan error.
             $tanggalMulai  = Carbon::parse($bulan . '-01')->startOfMonth();
             $tanggalAkhir  = Carbon::parse($bulan . '-01')->endOfMonth();
-            $filterTahunId = $tahunAjaranAktif?->id;
+            $filterTahunId = null;
         }
 
         $presensisAll = Presensi::where('santri_id', $santri->id)
@@ -411,7 +467,7 @@ class SantriController extends Controller
             'tahunAjaranAktif' => $tahunAjaranAktif,
 
             // Filter tahun ajaran / semester
-            'tahunAjaranList'  => $this->tahunAjaranOptions(),
+            'tahunAjaranList'  => $this->tahunAjaranOptions($santri),
             'tahunAjaranId'    => $taPilih ? (string) $taPilih->id : '',
             'periodeMulai'     => $tanggalMulai->format('Y-m-d'),
             'periodeAkhir'     => $tanggalAkhir->format('Y-m-d'),
@@ -453,6 +509,8 @@ class SantriController extends Controller
         $statistikSetoran  = $this->buildStatistikSetoran($santri, $setoransRaw);
         $statistikPresensi = $this->buildStatistikPresensi($presensis);
 
+        $akses = $this->cekAksesRapotSantri($santri, $tahunAjaranAktif);
+
         return Inertia::render('Santri/Rapot/Show', [
             'santri'            => $santri,
             'setorans'          => $setorans,
@@ -463,6 +521,8 @@ class SantriController extends Controller
             'tanggalAkhir'      => $tanggalAkhir,
             'semesterLabel'     => $semesterLabel,
             'tahunAjaranAktif'  => $tahunAjaranAktif,
+            'pdfBoleh'          => $akses['boleh'],
+            'pdfPesan'          => $akses['pesan'],
         ]);
     }
 
@@ -501,6 +561,7 @@ class SantriController extends Controller
             'target_jilid'          => $santri->target_jilid ?? 1,
             'iqro_persen_diketahui' => $totalHalamanJilid > 0,
             'metode_label'          => $this->metodeJilidLabel($santri),
+            'has_quran_secondary'   => $santri->hasQuranSecondary(),
         ];
     }
 
@@ -572,21 +633,24 @@ class SantriController extends Controller
         $tahunAjaranAktif = TahunAjaran::getAktif();
         $isPreview = $request->boolean('preview');
 
-        // Jendela hanya batasi DOWNLOAD, bukan preview
-        if (!$isPreview) {
-            $jendela = $this->cekJendelaPdf($tahunAjaranAktif);
-            if (!$jendela['boleh']) {
-                $batasTxt = $jendela['batas'] ? $jendela['batas']->translatedFormat('d F Y') : '-';
-                abort(403, 'Masa unduh PDF rapot sudah berakhir (batas: ' . $batasTxt . '). Statistik tetap dapat dilihat.');
-            }
+        // Kunci berlaku untuk preview DAN download. Kalau preview dibiarkan
+        // bebas, santri tetap bisa membaca seluruh isi rapot lewat iframe —
+        // kuncinya jadi tidak ada gunanya.
+        $akses = $this->cekAksesRapotSantri($santri, $tahunAjaranAktif);
+        if (! $akses['boleh']) {
+            abort(403, $akses['pesan']);
         }
 
         [$tanggalMulai, $tanggalAkhir, $semesterLabel] = $this->getSemesterAktifRange();
 
         // Versi data (query ringan) → cache otomatis kadaluarsa saat ada perubahan
         // Metode/jilid ikut masuk versi supaya ganti metode (iqro ⇄ aisar) tidak menyajikan PDF lama.
+        // Status kenaikan kelas — konteks = kelas santri sekarang.
+        $statusKenaikan = SantriKelasHistory::statusKenaikan($santri, $tahunAjaranAktif, $santri->kelas_id);
+
         $ver = Setoran::where('santri_id', $santri->id)->max('updated_at')
             . '|' . Presensi::where('santri_id', $santri->id)->max('updated_at')
+            . '|' . SantriKelasHistory::where('santri_id', $santri->id)->max('updated_at')
             . '|' . ($santri->target_metode?->value ?? 'quran')
             . '|' . ($santri->target_jilid ?? 0)
             . '|' . filemtime(resource_path('views/santri/rapot/pdf.blade.php'));
@@ -594,7 +658,7 @@ class SantriController extends Controller
 
         // Render berat HANYA saat cache miss
         $pdfBytes = Cache::store('file')->remember($cacheKey, now()->addHours(6), function () use (
-            $santri, $tahunAjaranAktif, $tanggalMulai, $tanggalAkhir, $semesterLabel
+            $santri, $tahunAjaranAktif, $tanggalMulai, $tanggalAkhir, $semesterLabel, $statusKenaikan
         ) {
             $tahunAjaranId = $tahunAjaranAktif?->id;
             $kelasIdSantri = $santri->kelas_id;
@@ -627,7 +691,8 @@ class SantriController extends Controller
                 'santri', 'setorans', 'presensis',
                 'statistikSetoran', 'statistikPresensi',
                 'tanggalMulai', 'tanggalAkhir', 'semesterLabel',
-                'tahunAjaranAktif', 'kelasRapot', 'guruRapot'
+                'tahunAjaranAktif', 'kelasRapot', 'guruRapot',
+                'statusKenaikan'
             ));
             $pdf->setPaper('A4', 'portrait');
 
@@ -682,6 +747,29 @@ class SantriController extends Controller
         if (!file_exists($path)) abort(404, 'File PDF tidak ditemukan');
 
         return response()->file($path);
+    }
+
+    /**
+     * Akses PDF rapot santri = kunci dibuka guru DAN masih dalam jendela waktu.
+     * Berlaku untuk preview maupun download — intinya membatasi santri membuka
+     * PDF sebelum waktunya, jadi preview tidak boleh jadi celah.
+     */
+    private function cekAksesRapotSantri(Santri $santri, ?TahunAjaran $ta): array
+    {
+        $jendela = RapotAkses::jendela($ta);
+
+        if (! $jendela['boleh']) {
+            return ['boleh' => false, 'pesan' => $jendela['pesan']];
+        }
+
+        if (! RapotAkses::terbukaUntuk($santri->id, $ta?->id)) {
+            return [
+                'boleh' => false,
+                'pesan' => 'PDF rapot belum dibuka oleh guru pembimbing Anda. Statistik di halaman ini tetap dapat dilihat.',
+            ];
+        }
+
+        return ['boleh' => true, 'pesan' => null];
     }
 
     private function cekJendelaPdf(?TahunAjaran $ta): array

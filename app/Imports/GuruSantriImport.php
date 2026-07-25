@@ -20,20 +20,28 @@ class GuruSantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
     protected $successCount = 0;
     protected $failedCount = 0;
     protected $guruId;
+    protected $kelasId;
     protected $photos = [];
 
-    public function __construct($guruId, array $photos = [])
+    public function __construct(int $guruId, ?int $kelasId, array $photos = [])
     {
-        $this->guruId = $guruId;
-        $this->photos = $photos;
+        if (! $kelasId) {
+            throw new \Exception('Kelas aktif tidak valid. Silakan pilih kelas kembali.');
+        }
+
+        $this->guruId  = $guruId;
+        $this->kelasId = $kelasId;
+        $this->photos  = $photos;
     }
 
     public function collection(Collection $rows)
     {
-        $kelas = Kelas::where('guru_id', $this->guruId)->first();
+        $kelas = Kelas::where('id', $this->kelasId)
+            ->where('guru_id', $this->guruId)
+            ->first();
 
         if (!$kelas) {
-            throw new \Exception("Guru tidak memiliki kelas yang diampu");
+            throw new \Exception("Kelas aktif tidak valid. Silakan pilih kelas kembali.");
         }
 
         foreach ($rows as $index => $row) {
@@ -60,11 +68,18 @@ class GuruSantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                         throw new \Exception("Gender harus L atau P");
                     }
 
-                    // === METODE & TARGET (quran / iqro / aisar) ===
+                   // === METODE & TARGET (quran / iqro / aisar) + metode_2 opsional ===
                     $metode = strtolower(trim($row['metode'] ?? 'quran'));
                     if (!in_array($metode, ['quran', 'iqro', 'aisar'])) {
                         throw new \Exception("Metode harus 'quran', 'iqro', atau 'aisar'");
                     }
+
+                    $metode2 = strtolower(trim((string) ($row['metode_2'] ?? '')));
+                    if ($metode2 !== '' && $metode2 !== 'quran') {
+                        throw new \Exception("Metode 2 hanya boleh kosong atau 'quran'");
+                    }
+                    if ($metode === 'quran') $metode2 = ''; // quran tidak punya metode 2
+                    $hasQuran2 = $metode2 === 'quran';
 
                     $isJilidBased = in_array($metode, ['iqro', 'aisar'], true);
                     $targetJuz    = null;
@@ -78,12 +93,21 @@ class GuruSantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                         if ($targetJilid < 1 || $targetJilid > 6) {
                             throw new \Exception("Target Jilid harus angka antara 1-6");
                         }
+                        // target juz hanya dipakai bila ada metode 2 = quran
+                        if ($hasQuran2) {
+                            $juz = str_replace(',', '.', (string) ($row['target_juz'] ?? ''));
+                            if ($juz === '' || !is_numeric($juz) || $juz < 0 || $juz > 30) {
+                                throw new \Exception("Metode 2 quran wajib mengisi Target Juz (0-30)");
+                            }
+                            $targetJuz = (float) $juz;
+                        }
                     } else { // quran
                         $targetJuz = $row['target_juz'] ?? 1.00;
                         $targetJuz = str_replace(',', '.', (string) $targetJuz);
                         if (!is_numeric($targetJuz) || $targetJuz < 0 || $targetJuz > 30) {
                             throw new \Exception("Target Juz harus angka antara 0-30");
                         }
+                        $targetJuz = (float) $targetJuz;
                     }
 
                     if (strlen($row['password']) < 4) {
@@ -118,9 +142,10 @@ class GuruSantriImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                         'nis'           => $row['nis'],
                         'name'          => $name,
                         'gender'        => $genderFull,
-                        'target_metode' => $metode,
-                        'target_juz'    => $targetJuz,
-                        'target_jilid'  => $targetJilid,
+                        'target_metode'   => $metode,
+                        'target_metode_2' => $hasQuran2 ? 'quran' : null,
+                        'target_juz'      => $targetJuz,
+                        'target_jilid'    => $targetJilid,
                     ]);
 
                     // ✅ Foto: cocokkan nama_file_foto dengan file di ZIP
