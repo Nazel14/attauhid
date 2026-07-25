@@ -31,5 +31,11 @@ class AppServiceProvider extends ServiceProvider
         
         // ✅ Set PHP timezone (backup)
         date_default_timezone_set('Asia/Jakarta');
+
+        // Migrasi modul keuangan hanya dimuat bila modulnya aktif, supaya
+        // instalasi raport-only tidak ikut membuat 25 tabel keuangan.
+        if (config('modules.keuangan')) {
+            $this->loadMigrationsFrom(database_path('migrations/keuangan'));
+        }
     }
 }
