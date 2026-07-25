@@ -60,10 +60,9 @@ if (config('modules.raport')) {
     require __DIR__.'/raport.php';
 }
 
-// Diaktifkan pada step 4, setelah modul keuangan di-port.
-// if (config('modules.keuangan')) {
-//     require __DIR__.'/keuangan.php';
-// }
+if (config('modules.keuangan')) {
+    require __DIR__.'/keuangan.php';
+}
 
 /* --------------------------------------
  * 3. SERVE STORAGE FILES (Alternative to symlink)
