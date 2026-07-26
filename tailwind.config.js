@@ -46,6 +46,28 @@ export default {
                     600: '#3E3D3A', // border
                     500: '#4D4B47', // hover / aksen halus
                 },
+
+                // Alias untuk modul keuangan. JSX bawaan edufinance memakai
+                // `primary` (biru #2563eb); dipetakan ke palet claude supaya
+                // seluruh aplikasi tetap satu nuansa terracotta tanpa perlu
+                // menulis ulang kelas CSS di puluhan halaman.
+                primary: {
+                    DEFAULT: '#D97757',
+                    light:   '#DF9678',
+                    dark:    '#C4613F',
+                    50:      '#FBF5F1',
+                },
+                secondary: {
+                    DEFAULT: '#10b981',
+                    light:   '#34d399',
+                    dark:    '#059669',
+                    50:      '#ecfdf5',
+                },
+            },
+            boxShadow: {
+                'soft':  '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                'glow':  '0 0 15px rgba(217, 119, 87, 0.4)',
+                'float': '0 10px 30px -5px rgba(0, 0, 0, 0.08)',
             },
         },
     },
