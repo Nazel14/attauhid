@@ -59,6 +59,13 @@ class HandleInertiaRequests extends Middleware
                 'keuangan' => (bool) config('modules.keuangan'),
             ],
 
+            // Modul yang boleh diakses user ini + panel yang sedang dibuka.
+            // Dipakai layout untuk menampilkan tombol pindah panel.
+            'modulUser' => [
+                'tersedia' => $user ? $user->availableModules() : [],
+                'aktif'    => $request->session()->get('modul_aktif'),
+            ],
+
             // Flash message (opsional, berguna untuk notifikasi sukses/gagal)
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

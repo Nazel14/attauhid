@@ -23,6 +23,10 @@ class GuruBulkUpdateImport implements ToCollection, WithHeadingRow, SkipsEmptyRo
     public function __construct(array $photos = [])
     {
         $this->photos = $photos;
+        // Urutan harus sama persis dengan exportForEdit, karena no_urut
+        // di Excel dipetakan berdasarkan posisi.
+        // Urutan harus sama persis dengan exportForEdit, karena no_urut
+        // di Excel dipetakan berdasarkan posisi.
         $guruList = Guru::with('user')->orderBy('name', 'asc')->get();
         $noUrut = 1;
         foreach ($guruList as $guru) {
@@ -56,6 +60,8 @@ class GuruBulkUpdateImport implements ToCollection, WithHeadingRow, SkipsEmptyRo
                         }
                         $updateData['nip'] = $newNip;
                     }
+                    // Jabatan sengaja tidak diubah lewat Excel raport —
+                    // itu wilayah panel keuangan.
                     if (!empty($updateData)) $guru->update($updateData);
 
                     if (!empty($row['username']) && $guru->user) {

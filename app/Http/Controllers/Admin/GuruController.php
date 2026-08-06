@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Guru;
 use App\Models\User;
 use App\Models\Kelas;
+use App\Models\Keuangan\MasterData\Jabatan;
 use App\Traits\LogsActivity;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -28,10 +29,37 @@ class GuruController extends Controller
      */
     public function index()
     {
-        $gurus = Guru::with('user')->orderBy('name')->get();
+        // whereNotNull('user_id'): tabel gurus juga menampung pegawai non-guru
+        // dari modul keuangan yang tidak punya akun login.
+        $gurus = Guru::with(['user', 'jabatan:id,nama_jabatan'])
+            ->whereNotNull('user_id')
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Admin/Gurus/Index', [
             'gurus' => $gurus,
         ]);
+    }
+
+    /**
+     * Semua orang yang diinput dari panel ini adalah guru, jadi jabatannya
+     * dikunci — tidak ditanyakan di form. Jabatan lain (bendahara, HRD, dsb)
+     * diatur dari panel keuangan.
+     *
+     * Nominal gaji pokoknya tetap diatur bendahara di master data jabatan;
+     * di sini hanya memastikan baris jabatan "Guru" ada agar guru baru
+     * tidak lahir tanpa jabatan dan luput dari payroll.
+     */
+    private function jabatanGuruId(): ?int
+    {
+        if (! config('modules.keuangan')) {
+            return null;
+        }
+
+        return Jabatan::firstOrCreate(
+            ['nama_jabatan' => 'Guru'],
+            ['description' => 'Guru pengajar', 'gaji_pokok_default' => 0]
+        )->id;
     }
 
     /**
@@ -49,14 +77,18 @@ class GuruController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'nip' => 'nullable|string|max:255|unique:gurus,nip',
+            // whereNull('deleted_at'): sejak Guru pakai SoftDeletes, NIP milik
+            // guru yang sudah dihapus tidak boleh ikut memblokir.
+            'nip' => ['nullable', 'string', 'max:255', Rule::unique('gurus', 'nip')->whereNull('deleted_at')],
             'username' => 'required|string|max:255|unique:users,name',
             'password' => 'required|string|min:8|confirmed',
+            'is_active' => 'boolean',
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ], [
             'username.unique' => 'Username ini sudah digunakan. Silakan pilih username lain.',
             'password.min' => 'Password minimal harus 8 karakter.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
+            'nip.unique' => 'NIP ini sudah terdaftar pada guru lain.',
         ]);
 
         try {
@@ -86,6 +118,8 @@ class GuruController extends Controller
                 'name' => $name,
                 'nip' => $validated['nip'],
                 'user_id' => $user->id,
+                'position_id' => $this->jabatanGuruId(),
+                'is_active' => $request->boolean('is_active', true),
             ]);
             
             $guru = Guru::where('user_id', $user->id)->first();
@@ -109,21 +143,29 @@ class GuruController extends Controller
      */
     public function update(Request $request, Guru $guru)
     {
-        $oldValues = $guru->only(['name', 'nip']);
+        $oldValues = $guru->only(['name', 'nip', 'is_active']);
         $oldUsername = $guru->user?->name;
         
         $validatedGuru = $request->validate([
             'name' => 'required|string|max:255',
-            'nip' => ['nullable', 'string', 'max:255', Rule::unique('gurus', 'nip')->ignore($guru->id)],
+            'nip' => ['nullable', 'string', 'max:255', Rule::unique('gurus', 'nip')->ignore($guru->id)->whereNull('deleted_at')],
+            'is_active' => 'boolean',
+        ], [
+            'nip.unique' => 'NIP ini sudah terdaftar pada guru lain.',
         ]);
 
         return DB::transaction(function () use ($request, $validatedGuru, $guru, $oldValues, $oldUsername) {
             try {
                 $name = $this->smartCapitalizeName(trim($validatedGuru['name']));
                 
+                // position_id tidak diubah dari sini. Kalau guru lama belum
+                // punya jabatan, isikan "Guru"; kalau bendahara sudah
+                // memindahkannya ke jabatan lain, biarkan.
                 $guru->update([
                     'name' => $name,
-                    'nip' => $validatedGuru['nip']
+                    'nip' => $validatedGuru['nip'],
+                    'position_id' => $guru->position_id ?: $this->jabatanGuruId(),
+                    'is_active' => $request->boolean('is_active', true),
                 ]);
 
                 if ($guru->user) {
@@ -201,6 +243,16 @@ class GuruController extends Controller
             $name = $guru->name;
             $oldValues = $guru->toArray();
             
+            // Sejak tabel gurus dipakai bersama modul keuangan, menghapus guru
+            // berarti membuang riwayat absensi & slip gajinya (FK cascade).
+            // Guru yang sudah punya riwayat cukup dinonaktifkan.
+            if ($guru->absensi()->exists()) {
+                return redirect()->back()->with(
+                    'error',
+                    "Guru {$guru->name} sudah punya riwayat absensi/penggajian. Nonaktifkan saja lewat tombol Edit agar datanya tetap utuh."
+                );
+            }
+
             DB::beginTransaction();
 
             // SET guru_id di kelas menjadi NULL (kelas tetap ada, guru dihapus)
@@ -214,8 +266,9 @@ class GuruController extends Controller
                 $guru->user->delete();
             }
 
-            // Hapus guru
-            $guru->delete();
+            // forceDelete: model Guru kini pakai SoftDeletes untuk kebutuhan
+            // modul keuangan, tapi tombol Hapus di panel raport artinya permanen.
+            $guru->forceDelete();
             
             $this->logDelete('guru', $name, $oldValues);
 
@@ -248,12 +301,25 @@ class GuruController extends Controller
             $deletedCount = count($request->guru_ids);
             $guruNames = Guru::whereIn('id', $request->guru_ids)->pluck('name')->toArray();
             
+            // Guru dengan riwayat absensi/gaji dilewati, bukan dihapus diam-diam.
+            $adaRiwayat = Guru::whereIn('id', $request->guru_ids)
+                ->whereHas('absensi')
+                ->pluck('name')
+                ->toArray();
+
+            if (! empty($adaRiwayat)) {
+                return redirect()->back()->with(
+                    'error',
+                    'Gagal! Guru berikut punya riwayat absensi/penggajian: ' . implode(', ', $adaRiwayat) . '. Nonaktifkan saja lewat Edit.'
+                );
+            }
+
             DB::transaction(function () use ($request) {
                 // SET guru_id menjadi NULL di kelas
                 Kelas::whereIn('guru_id', $request->guru_ids)->update(['guru_id' => null]);
-                
+
                 $gurus = Guru::whereIn('id', $request->guru_ids)->with('user')->get();
-                
+
                 foreach ($gurus as $guru) {
                     if ($guru->user) {
                         if ($guru->user->profile_photo && Storage::disk('public')->exists($guru->user->profile_photo)) {
@@ -261,7 +327,7 @@ class GuruController extends Controller
                         }
                         $guru->user->delete();
                     }
-                    $guru->delete();
+                    $guru->forceDelete();
                 }
             });
             
@@ -291,11 +357,12 @@ class GuruController extends Controller
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        
-        // Headers (tanpa foto_profil)
+
+        // Tanpa kolom jabatan: semua yang diimport dari sini adalah guru,
+        // jabatannya diisi otomatis oleh controller.
         $headers = ['nama_guru', 'nip', 'username', 'password', 'nama_file_foto'];
         $sheet->fromArray($headers, NULL, 'A1');
-        
+
         $sheet->getStyle('A1:E1')->applyFromArray([
             'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '1F2937']],
             'fill' => [
@@ -313,11 +380,11 @@ class GuruController extends Controller
                 ]
             ]
         ]);
-        
+
         // Set kolom B (NIP) sebagai TEXT
         $sheet->getStyle('B:B')->getNumberFormat()
             ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
-        
+
         $sheet->getStyle('A2:E3')->applyFromArray([
             'fill' => [
                 'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -331,13 +398,12 @@ class GuruController extends Controller
                 ]
             ]
         ]);
-        
-        // Data contoh
+
         $exampleData = [
             ['Ahmad Zainudin, S.Pd (Contoh)', '196501011990', 'ahmad.zainudin', 'pass12345678', 'ahmad.jpg'],
             ['Siti Nurhaliza, M.Pd (Contoh)', '197502011995', 'siti.nurhaliza', 'pass87654321', 'siti.jpg'],
         ];
-        
+
         foreach ($exampleData as $rowIndex => $row) {
             $actualRow = $rowIndex + 2;
             $sheet->setCellValue('A' . $actualRow, $row[0]);
@@ -346,29 +412,25 @@ class GuruController extends Controller
             $sheet->setCellValue('D' . $actualRow, $row[3]);
             $sheet->setCellValue('E' . $actualRow, $row[4] ?? '');
         }
-        
-        $sheet->getColumnDimension('A')->setWidth(30);
-        $sheet->getColumnDimension('B')->setWidth(18);
-        $sheet->getColumnDimension('C')->setWidth(20);
-        $sheet->getColumnDimension('D')->setWidth(18);
-        $sheet->getColumnDimension('E')->setWidth(26);
+
+        foreach (['A' => 30, 'B' => 18, 'C' => 20, 'D' => 18, 'E' => 26] as $col => $w) {
+            $sheet->getColumnDimension($col)->setWidth($w);
+        }
         $sheet->getColumnDimension('F')->setWidth(5);
         $sheet->getColumnDimension('G')->setWidth(48);
-        
-        // PETUNJUK IMPORT
+
         $sheet->setCellValue('G1', 'PETUNJUK IMPORT GURU');
         $sheet->setCellValue('G2', '1. Nama Guru: Huruf awal WAJIB kapital, sisanya bebas');
         $sheet->setCellValue('G3', '2. NIP: Nomor Induk Pegawai (opsional)');
         $sheet->setCellValue('G4', '3. Username: Untuk login ke sistem (harus unik)');
         $sheet->setCellValue('G5', '4. Password: Minimal 8 karakter (huruf/angka)');
-        $sheet->setCellValue('G6', '5. Nama File Foto: nama file foto, mis: ahmad.jpg (opsional)');
+        $sheet->setCellValue('G6', '5. Nama File Foto: mis. ahmad.jpg (opsional)');
         $sheet->setCellValue('G7', 'CATATAN:');
         $sheet->setCellValue('G8', '• Baris 2-3 adalah CONTOH, hapus sebelum import');
-        $sheet->setCellValue('G9', '• Username harus unik (tidak boleh sama)');
-        $sheet->setCellValue('G10', '• NIP boleh dikosongkan');
-        $sheet->setCellValue('G11', '• Pastikan semua data sudah benar sebelum import');
-        
-        // Style petunjuk
+        $sheet->setCellValue('G9', '• Username harus unik, NIP boleh dikosongkan');
+        $sheet->setCellValue('G10', '• Jabatan otomatis diisi "Guru"');
+        $sheet->setCellValue('G11', '• Ubah jabatan lewat panel keuangan bila perlu');
+
         $sheet->getStyle('G1')->applyFromArray([
             'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => [
@@ -377,15 +439,15 @@ class GuruController extends Controller
             ],
             'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
         ]);
-        
+
         $sheet->getStyle('G2:G11')->applyFromArray([
             'font' => ['size' => 8, 'color' => ['rgb' => '374151']],
         ]);
-        
+
         $sheet->getStyle('G7')->applyFromArray([
             'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'D97706']],
         ]);
-        
+
         $sheet->getStyle('G1:G11')->applyFromArray([
             'borders' => [
                 'outline' => [
@@ -394,13 +456,13 @@ class GuruController extends Controller
                 ]
             ]
         ]);
-        
+
         $sheet->getRowDimension(1)->setRowHeight(22);
         $sheet->freezePane('A2');
-        
+
         $writer = new Xlsx($spreadsheet);
         $fileName = 'Template_Import_Guru_' . date('Y-m-d') . '.xlsx';
-        
+
         return response()->streamDownload(function() use ($writer) {
             $writer->save('php://output');
         }, $fileName, [
@@ -411,9 +473,9 @@ class GuruController extends Controller
     /**
      * Export guru untuk di-edit (TANPA FOTO) - VERSI FINAL
      */
-   public function exportForEdit()
+  public function exportForEdit()
     {
-        $guruList = Guru::with('user')->orderBy('name', 'asc')->get();
+        $guruList = Guru::with(['user', 'jabatan'])->orderBy('name', 'asc')->get();
 
         if ($guruList->isEmpty()) {
             return redirect()->back()->with('error', 'Tidak ada data guru untuk diekspor.');
@@ -440,11 +502,9 @@ class GuruController extends Controller
         $noUrut = 1;
         foreach ($guruList as $guru) {
             // Pakai NAMA FILE ASLI yang tersimpan saat upload/import.
-            // Guru tanpa foto → dibiarkan kosong.
             $namaFileFoto = '';
             if ($guru->user && $guru->user->profile_photo) {
                 $namaFileFoto = $guru->user->profile_photo_name
-                    // fallback: data lama (sebelum kolom profile_photo_name ada)
                     ?: basename($guru->user->profile_photo);
             }
 
@@ -464,18 +524,17 @@ class GuruController extends Controller
         $sheet->getColumnDimension('F')->setWidth(5);
         $sheet->getColumnDimension('G')->setWidth(48);
 
-        // PANDUAN UPDATE
         $sheet->setCellValue('G1', 'PANDUAN UPDATE GURU');
         $sheet->setCellValue('G2', '• JANGAN ubah/hapus kolom NO URUT');
         $sheet->setCellValue('G3', '• NIP boleh DIKOSONGKAN jika tidak punya NIP');
         $sheet->setCellValue('G4', '• Username harus tetap unik');
         $sheet->setCellValue('G5', '• Password TIDAK bisa diubah via Excel');
-        $sheet->setCellValue('G6', '');
+        $sheet->setCellValue('G6', '• Jabatan diatur dari panel keuangan, bukan di sini');
         $sheet->setCellValue('G7', 'FOTO:');
         $sheet->setCellValue('G8', '• Kolom nama_file_foto = nama file foto SAAT INI');
         $sheet->setCellValue('G9', '• Biarkan apa adanya = foto tidak diubah');
-        $sheet->setCellValue('G10', '• Ganti dgn nama file lain + upload ZIP = foto diganti');
-        $sheet->setCellValue('G11', '• Tulis HAPUS = foto dihapus jadi tanpa foto');
+        $sheet->setCellValue('G10', '• Ganti nama file + upload ZIP = foto diganti');
+        $sheet->setCellValue('G11', '• Tulis HAPUS = foto dihapus');
 
         $sheet->getStyle('G1')->applyFromArray([
             'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => 'FFFFFF']],

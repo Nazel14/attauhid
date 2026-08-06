@@ -86,38 +86,64 @@ function SantriCard({ santri, index }) {
     const tone2 = progressTone(pct2);
     const label1 = santri.is_iqro ? 'Jilid' : 'Progres';
 
-    // blok progres dipakai ulang (desktop kolom & mobile full-width)
-    const ProgressBlock = () => (
-        belumDiatur ? (
-            <p className="text-[11px] text-stone-400 dark:text-stone-500 italic">Halaman Jilid {santri.target_jilid ?? '-'} belum diatur</p>
-        ) : (
-            <>
-                <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-medium text-stone-400 dark:text-stone-500">{label1}</span>
-                    <span className={`text-sm font-bold tabular-nums ${tone.text}`}>{pct}%</span>
-                </div>
-                <span className="mt-1 block h-1.5 rounded-full bg-stone-200 dark:bg-coal-700 overflow-hidden">
-                    <span className={`block h-full rounded-full transition-all duration-500 ${tone.bar}`} style={{ width: `${Math.min(pct, 100)}%` }} />
-                </span>
-                <span className="mt-1 block text-[10px] text-stone-400 dark:text-stone-500">{caption}</span>
+    // Satu batang progres (label · persen · bar · keterangan).
+    // Dipakai untuk bar Jilid maupun bar Al-Qur'an sekunder.
+    const Bar = ({ label, percent, toneObj, note }) => (
+        <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-medium text-stone-400 dark:text-stone-500 truncate">{label}</span>
+                <span className={`text-sm font-bold tabular-nums flex-shrink-0 ${toneObj.text}`}>{percent}%</span>
+            </div>
+            <span className="mt-1 block h-1.5 rounded-full bg-stone-200 dark:bg-coal-700 overflow-hidden">
+                <span className={`block h-full rounded-full transition-all duration-500 ${toneObj.bar}`} style={{ width: `${Math.min(percent, 100)}%` }} />
+            </span>
+            <span className="mt-1 block text-[10px] text-stone-400 dark:text-stone-500 truncate">{note}</span>
+        </div>
+    );
 
-                {hasQuran2 && (
+    // layout="row"   → dua bar BERDAMPINGAN (desktop, kolom lebar)
+    // layout="stack" → dua bar bertumpuk (mobile, lebar terbatas)
+    const ProgressBlock = ({ layout = 'stack' }) => {
+        if (belumDiatur) {
+            return <p className="text-[11px] text-stone-400 dark:text-stone-500 italic">Halaman Jilid {santri.target_jilid ?? '-'} belum diatur</p>;
+        }
+
+        const bar1 = <Bar label={label1} percent={pct} toneObj={tone} note={caption} />;
+        const bar2 = hasQuran2 ? (
+            <Bar
+                label="Al-Qur'an"
+                percent={pct2}
+                toneObj={tone2}
+                note={`${Number(santri.capaian_juz_2).toFixed(2)} / ${Number(santri.target_juz_2).toFixed(2)} Juz`}
+            />
+        ) : null;
+
+        if (layout === 'row') {
+            // Pemisah vertikal antar bar; tanpa hasQuran2 bar tunggal memakai lebar penuh.
+            return (
+                <div className="flex items-start gap-4">
+                    {bar1}
+                    {bar2 && (
+                        <>
+                            <span className="w-px self-stretch bg-stone-100 dark:bg-coal-700/60" />
+                            {bar2}
+                        </>
+                    )}
+                </div>
+            );
+        }
+
+        return (
+            <>
+                {bar1}
+                {bar2 && (
                     <div className="mt-2 pt-2 border-t border-stone-100 dark:border-coal-700/60">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-medium text-stone-400 dark:text-stone-500">Al-Qur'an</span>
-                            <span className={`text-sm font-bold tabular-nums ${tone2.text}`}>{pct2}%</span>
-                        </div>
-                        <span className="mt-1 block h-1.5 rounded-full bg-stone-200 dark:bg-coal-700 overflow-hidden">
-                            <span className={`block h-full rounded-full transition-all duration-500 ${tone2.bar}`} style={{ width: `${Math.min(pct2, 100)}%` }} />
-                        </span>
-                        <span className="mt-1 block text-[10px] text-stone-400 dark:text-stone-500">
-                            {Number(santri.capaian_juz_2).toFixed(2)} / {Number(santri.target_juz_2).toFixed(2)} Juz
-                        </span>
+                        {bar2}
                     </div>
                 )}
             </>
-        )
-    );
+        );
+    };
 
     return (
         <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-4 hover:ring-stone-300 dark:hover:ring-coal-600 transition-shadow">
@@ -125,8 +151,8 @@ function SantriCard({ santri, index }) {
                 <span className="hidden sm:block text-[11px] text-stone-400 dark:text-stone-600 tabular-nums w-4 text-right flex-shrink-0">{index}</span>
                 <Avatar santri={santri} />
 
-                {/* identitas */}
-                <div className="flex-1 min-w-0">
+                {/* identitas — dibatasi agar kolom progres dapat porsi lebar */}
+                <div className="flex-1 min-w-0 sm:max-w-xs">
                     <div className="flex items-center gap-2">
                         <p className="text-sm font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">{santri.name}</p>
                         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0 ${santri.gender === 'Perempuan' ? 'bg-pink-50 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400' : 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400'}`}>
@@ -141,9 +167,10 @@ function SantriCard({ santri, index }) {
                     </div>
                 </div>
 
-                {/* progres — kolom lebar tetap (desktop) */}
-                <div className="hidden sm:block w-44 flex-shrink-0">
-                    <ProgressBlock />
+                {/* Progres (desktop) — melebar mengikuti sisa ruang, bukan w-44 tetap,
+                    supaya dua bar muat berdampingan dan batangnya terlihat panjang. */}
+                <div className="hidden sm:block flex-1 min-w-0 max-w-lg">
+                    <ProgressBlock layout="row" />
                 </div>
 
                 {/* aksi (desktop) */}
@@ -160,7 +187,7 @@ function SantriCard({ santri, index }) {
 
             {/* progres + aksi (mobile) */}
             <div className="sm:hidden mt-3 pt-3 border-t border-stone-100 dark:border-coal-700/60">
-                <ProgressBlock />
+                <ProgressBlock layout="stack" />
                 <div className="flex items-center justify-between gap-2 mt-3">
                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 text-[10px] font-semibold text-stone-600 dark:text-stone-300">
                         <TargetIcon className="w-3 h-3" /> {santri.target_display}

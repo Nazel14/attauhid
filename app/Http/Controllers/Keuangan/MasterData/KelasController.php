@@ -11,47 +11,72 @@ class KelasController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Kelas::query();
+        $query = Kelas::query()->with('guru:id,name');
 
-        // 'ilike' diganti 'like'. orWhere dibungkus closure supaya tidak
-        // melompati kondisi lain bila nanti ada filter tambahan.
+        // Kolomnya `name` dan `tahun_ajaran` — tabel classes lama
+        // dengan `nama_kelas` sudah tidak dipakai.
         $query->when($request->search, function ($q, $search) {
             $q->where(function ($w) use ($search) {
-                $w->where('nama_kelas', 'like', "%{$search}%")
-                  ->orWhere('tingkat', 'like', "%{$search}%");
+                $w->where('name', 'like', "%{$search}%")
+                  ->orWhere('tingkat', 'like', "%{$search}%")
+                  ->orWhere('tahun_ajaran', 'like', "%{$search}%");
             });
         });
 
-        $sortField     = $request->input('sort_field', 'nama_kelas');
+        // Satu baris kelas = satu rombel per tahun ajaran, jadi filter
+        // tahun ajaran diperlukan agar daftarnya tidak menumpuk tiap tahun.
+        $query->when($request->tahunFilter, fn ($q, $tahun) => $q->where('tahun_ajaran', $tahun));
+
+        $sortField     = $request->input('sort_field', 'name');
         $sortDirection = $request->input('sort_direction', 'asc');
 
-        $allowedSorts = ['nama_kelas', 'tingkat', 'kapasitas', 'is_active'];
+        $allowedSorts = ['name', 'tingkat', 'kapasitas', 'is_active', 'tahun_ajaran'];
         if (in_array($sortField, $allowedSorts)) {
             $query->orderBy($sortField, $sortDirection === 'desc' ? 'desc' : 'asc');
         } else {
-            $query->orderBy('nama_kelas', 'asc');
+            $query->orderBy('name', 'asc');
         }
 
-        $query->withCount(['siswas', 'pegawais']);
+        // Cukup santris: sejak students dilebur, siswas() menghitung
+        // baris yang sama persis.
+        $query->withCount('santris');
 
         $kelas = $query->paginate(10)->withQueryString();
 
+        $listTahun = Kelas::select('tahun_ajaran')
+            ->whereNotNull('tahun_ajaran')
+            ->distinct()
+            ->orderBy('tahun_ajaran', 'desc')
+            ->pluck('tahun_ajaran');
+
         return Inertia::render('Keuangan/MasterData/DataKelas', [
-            'kelas'   => $kelas,
-            'filters' => $request->only(['search', 'sort_field', 'sort_direction']),
+            'kelas'     => $kelas,
+            'listTahun' => $listTahun,
+            'filters'   => $request->only(['search', 'tahunFilter', 'sort_field', 'sort_direction']),
         ]);
     }
 
     public function store(Request $request)
     {
+        // Unik per kombinasi nama + tahun ajaran, bukan nama saja:
+        // "Kelas 7A" boleh muncul lagi di tahun ajaran berikutnya.
         $validated = $request->validate([
-            'nama_kelas' => 'required|string|max:255|unique:classes,nama_kelas',
-            'tingkat'    => 'nullable|string|max:100',
-            'kapasitas'  => 'required|integer|min:1',
-            'is_active'  => 'boolean',
-        ], [
-            'nama_kelas.unique' => 'Nama kelas ini sudah digunakan, silakan pilih nama lain.',
+            'name'         => 'required|string|max:255',
+            'tahun_ajaran' => 'required|string|max:20',
+            'tingkat'      => 'nullable|string|max:100',
+            'kapasitas'    => 'required|integer|min:1',
+            'is_active'    => 'boolean',
         ]);
+
+        $sudahAda = Kelas::where('name', $validated['name'])
+            ->where('tahun_ajaran', $validated['tahun_ajaran'])
+            ->exists();
+
+        if ($sudahAda) {
+            return redirect()->back()->withErrors([
+                'name' => 'Kelas dengan nama ini sudah ada di tahun ajaran tersebut.',
+            ]);
+        }
 
         $validated['is_active'] = $request->boolean('is_active', true);
 
@@ -69,12 +94,26 @@ class KelasController extends Controller
         $kelas = Kelas::findOrFail($id);
 
         $validated = $request->validate([
-            'nama_kelas' => 'required|string|max:255|unique:classes,nama_kelas,' . $kelas->id,
-            'tingkat'    => 'nullable|string|max:100',
-            'kapasitas'  => 'required|integer|min:1',
-            'is_active'  => 'boolean',
+            'name'         => 'required|string|max:255',
+            'tahun_ajaran' => 'required|string|max:20',
+            'tingkat'      => 'nullable|string|max:100',
+            'kapasitas'    => 'required|integer|min:1',
+            'is_active'    => 'boolean',
         ]);
 
+        $sudahAda = Kelas::where('name', $validated['name'])
+            ->where('tahun_ajaran', $validated['tahun_ajaran'])
+            ->where('id', '!=', $kelas->id)
+            ->exists();
+
+        if ($sudahAda) {
+            return redirect()->back()->withErrors([
+                'name' => 'Kelas dengan nama ini sudah ada di tahun ajaran tersebut.',
+            ]);
+        }
+
+        // guru_id sengaja tidak divalidasi/diubah di sini — penugasan wali
+        // kelas tetap milik panel raport.
         $kelas->update($validated);
 
         return redirect()->back()->with('success', 'Data kelas berhasil diperbarui.');
@@ -84,9 +123,17 @@ class KelasController extends Controller
     {
         $kelas = Kelas::findOrFail($id);
 
-        if ($kelas->siswas()->exists() || $kelas->pegawais()->exists()) {
+        // Tabel kelas kini dipakai bersama raport: santri, riwayat kelas,
+        // presensi, dan setoran semuanya menunjuk ke sini.
+        if ($kelas->santris()->exists()) {
             return redirect()->back()->withErrors([
-                'delete_error' => 'Gagal menghapus! Kosongkan terlebih dahulu daftar Siswa dan Pegawai dari kelas ini.',
+                'delete_error' => 'Gagal menghapus! Kosongkan terlebih dahulu daftar santri/siswa dari kelas ini.',
+            ]);
+        }
+
+        if ($kelas->guru_id) {
+            return redirect()->back()->withErrors([
+                'delete_error' => 'Gagal menghapus! Kelas ini masih punya wali kelas di modul raport.',
             ]);
         }
 

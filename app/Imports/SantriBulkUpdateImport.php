@@ -73,6 +73,9 @@ class SantriBulkUpdateImport implements ToCollection, WithHeadingRow
             $targetJilid = $row['target_jilid'] ?? null;
             $noKelasBaru = $row['no_kelas_baru'] ?? null;
             $namaFoto    = trim((string) ($row['nama_file_foto'] ?? ''));
+            $namaWali    = trim((string) ($row['nama_wali'] ?? ''));
+            $kontakWali  = trim((string) ($row['kontak_wali'] ?? ''));
+            $tipe        = trim((string) ($row['tipe'] ?? ''));
 
             // ===== VALIDASI =====
             $rowErrors = [];
@@ -89,6 +92,20 @@ class SantriBulkUpdateImport implements ToCollection, WithHeadingRow
 
             if (!in_array($gender, ['L', 'P'])) {
                 $rowErrors[] = "Gender harus L atau P";
+            }
+
+            if ($namaWali === '') {
+                $rowErrors[] = "Nama Wali kosong";
+            }
+            if ($kontakWali === '') {
+                $rowErrors[] = "Kontak Wali kosong";
+            }
+
+            // Tipe kosong → pertahankan yang lama, supaya kolom yang tidak
+            // sengaja terhapus tidak mengubah tarif santri.
+            $tipeEfektif = $tipe !== '' ? $tipe : ($santri->student_type ?? 'Reguler');
+            if (!in_array($tipeEfektif, ['Reguler', 'Fullday'], true)) {
+                $rowErrors[] = "Tipe harus Reguler atau Fullday (ditemukan: {$tipeEfektif})";
             }
 
             // Metode: kosong → pertahankan metode lama
@@ -140,6 +157,12 @@ class SantriBulkUpdateImport implements ToCollection, WithHeadingRow
                     $kelasTujuan = $kelasList->get((int) $noKelasBaru - 1);
                     if (!$kelasTujuan) {
                         $rowErrors[] = "No Kelas Baru {$noKelasBaru} tidak ditemukan";
+                    } elseif ($kelasTujuan->id !== $santri->kelas_id) {
+                        // Kapasitas hanya dicek bila benar-benar pindah kelas.
+                        $terisi = $kelasTujuan->santris()->count();
+                        if ($terisi >= $kelasTujuan->kapasitas) {
+                            $rowErrors[] = "Kelas {$kelasTujuan->name} sudah penuh ({$terisi}/{$kelasTujuan->kapasitas})";
+                        }
                     }
                 }
             }
@@ -166,7 +189,7 @@ class SantriBulkUpdateImport implements ToCollection, WithHeadingRow
 
             // ===== UPDATE =====
             try {
-                DB::transaction(function () use ($santri, $nis, $nama, $gender, $metodeEfektif, $hasQuran2, $isJilidBased, $targetJuz, $targetJilid, $kelasTujuan, $namaFoto, $rowNum) {                    $name = preg_replace_callback('/\b\w+/', function ($m) {
+                DB::transaction(function () use ($santri, $nis, $nama, $gender, $metodeEfektif, $hasQuran2, $isJilidBased, $targetJuz, $targetJilid, $kelasTujuan, $namaFoto, $namaWali, $kontakWali, $tipeEfektif, $rowNum) {                    $name = preg_replace_callback('/\b\w+/', function ($m) {
                         return ucfirst(strtolower($m[0]));
                     }, $nama);
 
@@ -180,6 +203,9 @@ class SantriBulkUpdateImport implements ToCollection, WithHeadingRow
                         'target_metode_2' => $hasQuran2 ? 'quran' : null,
                         'target_juz'      => $isJilidBased ? ($hasQuran2 ? (float) $targetJuz : null) : (float) $targetJuz,
                         'target_jilid'    => $isJilidBased ? (int) $targetJilid : null,
+                        'parent_name'    => $namaWali,
+                        'parent_contact' => $kontakWali,
+                        'student_type'   => $tipeEfektif,
                     ];
 
                     if ($kelasTujuan) {

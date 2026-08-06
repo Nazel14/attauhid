@@ -160,6 +160,10 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
         tahun_ajaran: tahunAjaranAktif?.nama || '',
         guru_id: '',
         gender_restriction: '',
+        // Dipakai bersama modul keuangan (daya tampung & status kelas).
+        tingkat: '',
+        kapasitas: 20,
+        is_active: true,
     });
 
     const openCreate = () => {
@@ -170,6 +174,9 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
             tahun_ajaran: tahunAjaranAktif?.nama || '',
             guru_id: '',
             gender_restriction: '',
+            tingkat: '',
+            kapasitas: 20,
+            is_active: true,
         });
         setFormOpen(true);
     };
@@ -182,6 +189,9 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
             tahun_ajaran: k.tahun_ajaran || '',
             guru_id: k.guru_id ?? '',
             gender_restriction: k.gender_restriction || '',
+            tingkat: k.tingkat || '',
+            kapasitas: k.kapasitas ?? 20,
+            is_active: k.is_active ?? true,
         });
         setFormOpen(true);
     };
@@ -347,8 +357,13 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
                                         <p className="text-xs font-bold text-claude-600 dark:text-claude-400 truncate">{k.guru?.name || 'Tidak Ada'}</p>
                                     </div>
                                     <div className="px-3 py-2.5 text-center">
-                                        <p className="text-[10px] text-stone-400 dark:text-stone-600 mb-1">Tahun Ajaran</p>
-                                        <p className="text-xs font-bold text-stone-700 dark:text-stone-300">{k.tahun_ajaran}</p>
+                                        <p className="text-[10px] text-stone-400 dark:text-stone-600 mb-1">Terisi</p>
+                                        <p className="text-xs font-bold">
+                                            <span className={k.santris_count >= k.kapasitas ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}>
+                                                {k.santris_count ?? 0}
+                                            </span>
+                                            <span className="text-stone-400"> / {k.kapasitas}</span>
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 border-t border-stone-100 dark:border-coal-700">
@@ -374,7 +389,7 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
                                         ref={(el) => { if (el) el.indeterminate = selected.length > 0 && !allSelected; }}
                                         className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 cursor-pointer" />
                                 </th>
-                                {['No', 'Nama Kelas', 'Tahun Ajaran', 'Wali Kelas/Murobbi', 'Jenis Kelas'].map((h) => (
+                                {['No', 'Nama Kelas', 'Tahun Ajaran', 'Wali Kelas/Murobbi', 'Jenis Kelas', 'Terisi'].map((h) => (
                                     <th key={h} className="px-4 py-3 text-left text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">{h}</th>
                                 ))}
                                 <th className="px-4 py-3 text-center text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Aksi</th>
@@ -382,7 +397,7 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
                         </thead>
                         <tbody className="divide-y divide-stone-100 dark:divide-coal-700">
                             {kelas.length === 0 ? (
-                                <tr><td colSpan={7} className="py-16 text-center">
+                                <tr><td colSpan={8} className="py-16 text-center">
                                     <div className="text-4xl mb-3">🏫</div>
                                     <p className="text-sm font-semibold text-stone-600 dark:text-stone-400">Belum ada data kelas</p>
                                     <p className="text-xs text-stone-400 dark:text-stone-600 mt-1">Klik "Tambah Kelas" di atas</p>
@@ -407,6 +422,16 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
                                         </td>
                                         <td className="px-4 py-3">
                                             <GenderBadge value={k.gender_restriction} label={genderRestrictions[k.gender_restriction] || 'Tidak Diketahui'} />
+                                            {k.tingkat && <span className="ml-1.5 text-[10px] text-stone-400">Tingkat {k.tingkat}</span>}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm">
+                                            <span className={`font-bold ${k.santris_count >= k.kapasitas ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                                {k.santris_count ?? 0}
+                                            </span>
+                                            <span className="text-stone-400"> / {k.kapasitas}</span>
+                                            {k.is_active === false && (
+                                                <span className="ml-1.5 inline-flex rounded-full bg-stone-100 dark:bg-coal-700 px-2 py-0.5 text-[10px] font-bold text-stone-500 dark:text-stone-400">Non-aktif</span>
+                                            )}
                                         </td>
                                         <td className="px-4 py-3">
                                             <div className="flex gap-2 justify-center">
@@ -472,6 +497,31 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
                         </select>
                         {err(kelasForm.errors.gender_restriction)}
                     </div>
+
+                    <div className="grid grid-cols-2 gap-3 border-t border-stone-100 dark:border-coal-700 pt-4">
+                        <div>
+                            <label className={LBL}>Tingkat</label>
+                            <input name="tingkat" value={kelasForm.data.tingkat}
+                                onChange={(e) => kelasForm.setData('tingkat', e.target.value)}
+                                placeholder="Contoh: VII" className={INP} />
+                            {err(kelasForm.errors.tingkat)}
+                            <p className="text-[10px] text-stone-400 dark:text-stone-600 mt-1">Opsional</p>
+                        </div>
+                        <div>
+                            <label className={LBL}>Kapasitas <span className="text-red-500">*</span></label>
+                            <input type="number" min="1" max="100" name="kapasitas" value={kelasForm.data.kapasitas}
+                                onChange={(e) => kelasForm.setData('kapasitas', e.target.value)} required className={INP} />
+                            {err(kelasForm.errors.kapasitas)}
+                            <p className="text-[10px] text-stone-400 dark:text-stone-600 mt-1">Daya tampung santri</p>
+                        </div>
+                    </div>
+
+                    <label className="flex cursor-pointer items-center gap-2">
+                        <input type="checkbox" checked={kelasForm.data.is_active}
+                            onChange={(e) => kelasForm.setData('is_active', e.target.checked)}
+                            className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 focus:ring-claude-500" />
+                        <span className="text-sm text-stone-600 dark:text-stone-300">Kelas Aktif</span>
+                    </label>
 
                     <div className="flex gap-3 pt-1">
                         <button type="button" onClick={() => setFormOpen(false)} className={BTN_SECONDARY}>Batal</button>

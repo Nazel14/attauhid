@@ -54,11 +54,14 @@ function NavItem({ href, active, icon, children, onClick, collapsed, badge = 0 }
 }
 
 export default function AuthenticatedLayout({ children }) {
-    const { auth, unreadLaporan } = usePage().props;
+    const { auth, unreadLaporan, modulUser } = usePage().props;
     const user = auth?.user;
     const permissions = auth?.permissions || [];
     const can = (p) => permissions.includes(p);
     const isSuperAdmin = can('kelola-admin');
+
+    // Tombol pindah panel hanya untuk akun yang memang punya akses keuangan.
+    const bisaKeKeuangan = modulUser?.tersedia?.includes('keuangan');
 
     const [open, setOpen] = useState(false); // drawer mobile
 
@@ -187,6 +190,14 @@ export default function AuthenticatedLayout({ children }) {
             <div className={`space-y-3 border-t border-cream-300 py-3 dark:border-coal-600 ${isMini ? 'px-2' : 'px-3'}`}>
                 {isMini ? (
                     <div className="flex flex-col items-center gap-2">
+                        {bisaKeKeuangan && (
+                            <a href={route('pindah-modul', 'keuangan')} title="Buka Panel Keuangan"
+                                className="flex h-9 w-9 items-center justify-center rounded-xl text-stone-400 transition hover:bg-cream-200 hover:text-claude-600 dark:text-stone-500 dark:hover:bg-coal-600 dark:hover:text-claude-300">
+                                <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                </svg>
+                            </a>
+                        )}
                         {/* Toggle tema versi ikon */}
                         {/* Ikon menunjukkan tema yang SEDANG aktif, bukan aksinya —
                             supaya sama dengan baris "Dark Mode / Light Mode" di
@@ -217,6 +228,19 @@ export default function AuthenticatedLayout({ children }) {
                     </div>
                 ) : (
                     <>
+                        {/* Pindah panel tanpa logout — pilihan tersimpan di session.
+                            Pakai <a>, bukan <Link>: route ini me-redirect ke
+                            /dashboard, bukan mengembalikan respons Inertia. */}
+                        {bisaKeKeuangan && (
+                            <a href={route('pindah-modul', 'keuangan')}
+                                className="flex items-center gap-2.5 rounded-xl bg-cream-200/70 px-3 py-2.5 text-sm font-medium text-stone-600 transition hover:bg-cream-300 dark:bg-coal-600/50 dark:text-stone-300 dark:hover:bg-coal-600">
+                                <svg className="h-[18px] w-[18px] flex-shrink-0 text-claude-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                </svg>
+                                <span className="truncate">Buka Panel Keuangan</span>
+                            </a>
+                        )}
+
                         <div className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-stone-500 dark:text-stone-400">
                             <span className="flex items-center gap-2 font-medium">
                                 {dark ? (

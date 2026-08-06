@@ -18,9 +18,20 @@ Route::get('/dashboard', function () {
         return redirect()->route('login');
     }
 
-    // Dispatch ke dashboard modul raport.
-    // Nanti (step 6) blok ini diganti pemilih modul untuk user multi-modul.
-    if (config('modules.raport')) {
+    $modules = $user->availableModules();
+
+    // Panel yang dipilih di halaman login. Dihormati lebih dulu supaya
+    // super-admin yang memilih Keuangan tidak terlempar ke panel admin
+    // hanya karena kolom users.role-nya 'admin'.
+    $pilihan = session('modul_aktif');
+
+    if ($pilihan === 'keuangan' && in_array('keuangan', $modules, true)) {
+        return redirect()->route('keuangan.dashboard');
+    }
+
+    // Modul raport: tujuannya ditentukan role raport di kolom users.role.
+    // Super Admin (kolom 'admin') tetap mendarat di panel admin seperti biasa.
+    if (in_array('raport', $modules, true)) {
         $target = match ($user->role) {
             'admin'  => 'admin.dashboard',
             'guru'   => 'guru.dashboard',
@@ -33,12 +44,34 @@ Route::get('/dashboard', function () {
         }
     }
 
+    // Role keuangan tidak punya padanan di kolom users.role, jadi
+    // dialihkan langsung ke panel keuangan.
+    if (in_array('keuangan', $modules, true)) {
+        return redirect()->route('keuangan.dashboard');
+    }
+
     Auth::logout();
 
     return redirect()->route('login')->with('error', 'Role tidak valid');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    // Pindah panel tanpa logout, untuk akun yang punya akses ke keduanya.
+    Route::get('/pindah-modul/{modul}', function (string $modul) {
+        abort_unless(in_array($modul, ['raport', 'keuangan'], true), 404);
+
+        $user = Auth::user();
+
+        if (!in_array($modul, $user->availableModules(), true)) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Anda tidak punya akses ke panel tersebut.');
+        }
+
+        session(['modul_aktif' => $modul]);
+
+        return redirect()->route('dashboard');
+    })->name('pindah-modul');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

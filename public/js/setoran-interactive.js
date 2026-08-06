@@ -719,10 +719,13 @@ async function captureDesktop_v11_2(quranDisplay) {
     const effectiveWidth = quranDisplay.offsetWidth > 100 ? quranDisplay.offsetWidth : 777;
     console.log(`🖥️ captureDesktop width: offsetWidth=${quranDisplay.offsetWidth}, using=${effectiveWidth}`);
 
+    // box-sizing:border-box (dari Tailwind) membuat padding memakan lebar isi.
+    // Tanpa kompensasi, area isi clone 24px lebih sempit dari layar → baris
+    // yang pas di layar meluber & terpotong di PDF.
     clonedElement.style.cssText = [
         'position:absolute', 'left:-9999px', 'top:0',
         'overflow:visible!important', 'max-height:none!important', 'height:auto!important',
-        `width:${effectiveWidth}px`, 'background-color:#3E3D3A',
+        `width:${effectiveWidth + 24}px`, 'background-color:#3E3D3A',
         'padding:12px 12px 60px 12px',
         "font-family:'Amiri Quran',serif"
     ].join(';');
@@ -733,19 +736,35 @@ async function captureDesktop_v11_2(quranDisplay) {
     clonedElement.style.setProperty('border-radius', '0',    'important');
     clonedElement.style.setProperty('outline',       'none', 'important');
 
-    const fontShrinkStyle = document.createElement('style');
-    fontShrinkStyle.textContent = `
-        #quranDisplay-clone-desktop .arabic-text,
-        #quranDisplay-clone-desktop [data-word],
-        #quranDisplay-clone-desktop .word-item {
-            font-size: 32px !important;
-            line-height: 2.3 !important;
-        }
-    `;
-    clonedElement.insertBefore(fontShrinkStyle, clonedElement.firstChild);
+    // Halaman Iqro/Aisar sudah punya ukuran font sendiri (opsi fontSize per
+    // halaman + hasil aisarAutoFit, tersimpan sebagai inline style pada span).
+    // Memaksa 32px !important membuat baris yang sudah dipecah manual di
+    // aisar-data.js wrap ulang → layout PDF berbeda dari layar.
+    const isIqroLikeDesktop = !!clonedElement.querySelector('.iqro-page');
+    if (!isIqroLikeDesktop) {
+        const fontShrinkStyle = document.createElement('style');
+        fontShrinkStyle.textContent = `
+            #quranDisplay-clone-desktop .arabic-text,
+            #quranDisplay-clone-desktop [data-word],
+            #quranDisplay-clone-desktop .word-item {
+                font-size: 32px !important;
+                line-height: 2.3 !important;
+            }
+        `;
+        clonedElement.insertBefore(fontShrinkStyle, clonedElement.firstChild);
+    }
 
     document.body.appendChild(clonedElement);
     await new Promise(resolve => setTimeout(resolve, 2500));
+
+    // Auto-fit DIJALANKAN ULANG pada clone, memakai lebar kotak clone yang
+    // sebenarnya. Ini yang menjamin PDF tidak menyimpang dari layar: apa pun
+    // hasil pengukuran di layar, di sini diukur ulang pada kondisi final.
+    if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (e) {} }
+    if (typeof window.aisarAutoFit === 'function') {
+        window.aisarAutoFit(clonedElement);
+        await new Promise(resolve => setTimeout(resolve, 150));
+    }
 
     const canvas = await html2canvas(clonedElement, {
         scale: 2, useCORS: true, allowTaint: true,
@@ -765,7 +784,11 @@ async function captureDesktop_v11_2(quranDisplay) {
 // MOBILE screenshot
 // =====================================================
 async function captureMobile_v11_61(quranDisplay, renderWidth) {
-    const RENDER_WIDTH = 692;
+    // Kotak halaman Aisar/Iqro di layar = max-width 760px. Padding clone
+    // 24px kiri-kanan → butuh 760 + 48 = 808px agar lebar isinya IDENTIK
+    // dengan layar, sehingga titik pecah baris tidak bergeser.
+    const isIqroLikeMobile = !!quranDisplay.querySelector('.iqro-page');
+    const RENDER_WIDTH = isIqroLikeMobile ? 808 : 692;
     const SCALE        = 2;
 
     const clonedElement = quranDisplay.cloneNode(true);
@@ -779,7 +802,11 @@ async function captureMobile_v11_61(quranDisplay, renderWidth) {
         if (el.style.height    && el.style.height    !== 'auto') {
             if (parseFloat(el.style.height) > 0) el.style.height = 'auto';
         }
-        if (['div', 'section', 'article', 'main', 'aside', 'p'].includes(tag)) {
+        // Elemen di dalam .iqro-page dilewati: lebar kotak (max-width 760px)
+        // dan lebar sel (flex per kolom) sudah diatur aisar-handler. Memaksa
+        // width:100%/max-width:none merusak grid kolom & memicu wrap ulang.
+        const insideIqroPage = typeof el.closest === 'function' && el.closest('.iqro-page');
+        if (!insideIqroPage && ['div', 'section', 'article', 'main', 'aside', 'p'].includes(tag)) {
             el.style.setProperty('width', '100%', 'important');
             el.style.setProperty('max-width', 'none', 'important');
             el.style.setProperty('min-width', '0', 'important');
@@ -831,6 +858,13 @@ async function captureMobile_v11_61(quranDisplay, renderWidth) {
 
     document.body.appendChild(clonedElement);
     await new Promise(resolve => setTimeout(resolve, 2500));
+
+    // Auto-fit ulang pada clone — lihat catatan di captureDesktop_v11_2.
+    if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (e) {} }
+    if (typeof window.aisarAutoFit === 'function') {
+        window.aisarAutoFit(clonedElement);
+        await new Promise(resolve => setTimeout(resolve, 150));
+    }
 
     const actualWidth  = clonedElement.scrollWidth;
     const actualHeight = clonedElement.scrollHeight;

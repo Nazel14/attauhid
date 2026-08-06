@@ -1,0 +1,430 @@
+<?php
+
+namespace App\Http\Controllers\Keuangan\Inbound;
+
+use App\Http\Controllers\Controller;
+use App\Models\Keuangan\Inbound\InvoiceHeader;
+use App\Models\Keuangan\Inbound\Tagihan;
+use App\Models\Keuangan\MasterData\Siswa;
+use App\Models\Keuangan\MasterData\Tarif;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
+
+class TagihanController extends Controller
+{
+    public function index(Request $request)
+    {
+        /* ---------- Tabel atas: batch ---------- */
+        $headerQuery = InvoiceHeader::with('tarif:id,billing_name,nominal');
+
+        // orWhere dibungkus closure — tanpa ini filter bulan di bawahnya
+        // ikut terlompati.
+        $headerQuery->when($request->search_header, function ($q, $cari) {
+            $q->where(function ($w) use ($cari) {
+                $w->where('title', 'like', "%{$cari}%")
+                  ->orWhere('batch_number', 'like', "%{$cari}%");
+            });
+        });
+
+        $headerQuery->when($request->month_header, function ($q, $bulan) {
+            $q->whereYear('created_at', substr($bulan, 0, 4))
+              ->whereMonth('created_at', substr($bulan, 5, 2));
+        });
+
+        $headers = $headerQuery->latest('created_at')
+            ->paginate(5, ['*'], 'header_page')
+            ->withQueryString();
+
+        /* ---------- Tabel bawah: rincian siswa ---------- */
+        $details = null;
+
+        if ($request->header_id) {
+            $detailQuery = Tagihan::with([
+                'siswa:id,nis,name',
+                'items.tarif:id,billing_name',
+                'pembayarans.dibuatOleh:id,name',
+                'riwayatPenagihans.petugas:id,name',
+            ])->where('invoice_header_id', $request->header_id);
+
+            // BUG ASLI: orWhere tidak dibungkus closure, sehingga melompati
+            // where('invoice_header_id') di atas — pencarian memunculkan
+            // invoice dari batch lain.
+            $detailQuery->when($request->search_detail, function ($q, $cari) {
+                $q->where(function ($w) use ($cari) {
+                    $w->whereHas('siswa', fn ($s) => $s->where('name', 'like', "%{$cari}%"))
+                      ->orWhere('invoice_number', 'like', "%{$cari}%");
+                });
+            });
+
+            $detailQuery->when($request->status_detail, fn ($q, $s) => $q->where('status', $s));
+
+            $sortField     = $request->input('sort_field', 'created_at');
+            $sortDirection = $request->input('sort_direction', 'desc');
+
+            $allowedSorts = ['invoice_number', 'total_amount', 'remaining_balance', 'status', 'created_at'];
+            if (in_array($sortField, $allowedSorts)) {
+                $detailQuery->orderBy($sortField, $sortDirection === 'asc' ? 'asc' : 'desc');
+            }
+
+            $details = $detailQuery->paginate(10, ['*'], 'detail_page')->withQueryString();
+        }
+
+        $totalTagihan = Tagihan::sum('total_amount');
+        $totalBelum   = Tagihan::sum('remaining_balance');
+
+        return Inertia::render('Keuangan/Pemasukan/KelolaTagihan', [
+            'headers'          => $headers,
+            'details'          => $details,
+            'selectedHeaderId' => $request->header_id,
+            'summary'          => [
+                'totalTagihan' => (float) $totalTagihan,
+                'totalLunas'   => (float) $totalTagihan - (float) $totalBelum,
+                'totalBelum'   => (float) $totalBelum,
+            ],
+            // santris tidak punya is_active — statusnya enum aktif/lulus/keluar.
+            'listSiswa' => Siswa::aktif()->orderBy('name')->get(['id', 'nis', 'name', 'student_type']),
+            'listTarif' => Tarif::where('is_active', true)->orderBy('billing_name')->get(['id', 'billing_name', 'nominal', 'target_student_type', 'period']),
+            'filters'   => $request->only([
+                'search_header', 'month_header', 'search_detail', 'status_detail',
+                'sort_field', 'sort_direction', 'header_id', 'header_page', 'detail_page',
+            ]),
+        ]);
+    }
+
+    public function storeHeader(Request $request)
+    {
+        $request->validate([
+            'tariff_id' => 'required|exists:tariffs,id',
+            'title'     => 'required|string|max:255',
+            'period'    => 'required|string|max:100',
+            'due_date'  => 'required|date',
+        ], [
+            'tariff_id.required' => 'Tarif dasar wajib dipilih.',
+            'title.required'     => 'Judul penagihan wajib diisi.',
+            'period.required'    => 'Periode wajib diisi.',
+            'due_date.required'  => 'Tanggal tempo wajib diisi.',
+        ]);
+
+        InvoiceHeader::create([
+            'batch_number'          => 'BCH-' . date('Ym') . '-' . strtoupper(Str::random(4)),
+            'tariff_id'             => $request->tariff_id,
+            'title'                 => $request->title,
+            'period'                => $request->period,
+            'due_date'              => $request->due_date,
+            'total_students'        => 0,
+            'total_expected_amount' => 0,
+            'status'                => 'Draft',
+        ]);
+
+        return redirect()->back()->with('success', 'Gelombang penagihan berhasil dibuat.');
+    }
+
+    public function updateHeader(Request $request, InvoiceHeader $header)
+    {
+        if ($header->status === 'Closed') {
+            return redirect()->back()->withErrors(['status_error' => 'Gelombang yang sudah ditutup tidak dapat diubah.']);
+        }
+
+        $validated = $request->validate([
+            'title'    => 'required|string|max:255',
+            'period'   => 'required|string|max:100',
+            'due_date' => 'required|date',
+        ]);
+
+        $header->update($validated);
+
+        return redirect()->back()->with('success', 'Gelombang penagihan berhasil diperbarui.');
+    }
+
+    public function destroyHeader(InvoiceHeader $header)
+    {
+        if ($header->status !== 'Draft') {
+            return redirect()->back()->withErrors([
+                'header_error' => 'Hanya gelombang berstatus Draft yang dapat dihapus.',
+            ]);
+        }
+
+        // SoftDeletes tidak memicu ON DELETE CASCADE, jadi invoice & item
+        // di bawahnya dihapus manual agar tidak jadi yatim.
+        DB::transaction(function () use ($header) {
+            foreach ($header->invoices as $inv) {
+                $inv->items()->delete();
+                $inv->delete();
+            }
+
+            $header->delete();
+        });
+
+        return redirect()->back()->with('success', 'Gelombang penagihan beserta rinciannya berhasil dihapus.');
+    }
+
+    public function storeDetail(Request $request)
+    {
+        $request->validate([
+            'invoice_header_id' => 'required|exists:invoice_headers,id',
+            // Tabel students sudah dilebur ke santris.
+            'student_id'        => 'required|exists:santris,id',
+            'nominal'           => 'required|numeric|min:0',
+        ], [
+            'student_id.required' => 'Siswa wajib dipilih.',
+            'nominal.required'    => 'Nominal wajib diisi.',
+        ]);
+
+        $header = InvoiceHeader::findOrFail($request->invoice_header_id);
+
+        if ($header->status !== 'Draft') {
+            return redirect()->back()->withErrors(['status_error' => 'Rincian hanya bisa ditambah saat gelombang berstatus Draft.']);
+        }
+
+        $sudahAda = Tagihan::where('invoice_header_id', $header->id)
+            ->where('student_id', $request->student_id)
+            ->exists();
+
+        if ($sudahAda) {
+            return redirect()->back()->withErrors(['student_id' => 'Siswa ini sudah ada di gelombang tersebut.']);
+        }
+
+        DB::transaction(function () use ($request, $header) {
+            $tagihan = Tagihan::create([
+                'invoice_number'    => 'INV-' . date('Ym') . '-' . strtoupper(Str::random(5)),
+                'invoice_header_id' => $header->id,
+                'student_id'        => $request->student_id,
+                'total_amount'      => $request->nominal,
+                'remaining_balance' => $request->nominal,
+                'status'            => 'Unpaid',
+            ]);
+
+            $tagihan->items()->create([
+                'tariff_id' => $header->tariff_id,
+                'deskripsi' => 'Tagihan manual dari batch ' . $header->batch_number,
+                'nominal'   => $request->nominal,
+                'diskon'    => 0,
+            ]);
+
+            $header->increment('total_students');
+            $header->increment('total_expected_amount', $request->nominal);
+        });
+
+        return redirect()->back()->with('success', 'Siswa berhasil ditambahkan ke gelombang.');
+    }
+
+    public function updateDetail(Request $request, Tagihan $tagihan)
+    {
+        if ($tagihan->header && $tagihan->header->status !== 'Draft') {
+            return redirect()->back()->withErrors(['status_error' => 'Rincian hanya bisa diubah saat gelombang berstatus Draft.']);
+        }
+
+        // Versi asli me-reset remaining_balance ke nominal baru, sehingga
+        // pembayaran yang sudah masuk terhapus jejaknya.
+        if (bccomp((string) $tagihan->total_amount, (string) $tagihan->remaining_balance, 2) !== 0) {
+            return redirect()->back()->withErrors([
+                'nominal' => 'Tagihan ini sudah menerima pembayaran, nominalnya tidak dapat diubah.',
+            ]);
+        }
+
+        $request->validate([
+            'student_id' => 'required|exists:santris,id',
+            'nominal'    => 'required|numeric|min:0',
+        ]);
+
+        $lama = (float) $tagihan->total_amount;
+        $baru = (float) $request->nominal;
+
+        DB::transaction(function () use ($tagihan, $request, $lama, $baru) {
+            $tagihan->update([
+                'student_id'        => $request->student_id,
+                'total_amount'      => $baru,
+                'remaining_balance' => $baru,
+            ]);
+
+            // firstOrCreate: tagihan lama bisa saja tidak punya baris item.
+            $item = $tagihan->items()->first();
+
+            if ($item) {
+                $item->update(['nominal' => $baru]);
+            } else {
+                $tagihan->items()->create([
+                    'tariff_id' => $tagihan->header?->tariff_id,
+                    'deskripsi' => 'Penyesuaian nominal',
+                    'nominal'   => $baru,
+                    'diskon'    => 0,
+                ]);
+            }
+
+            if ($tagihan->header) {
+                $tagihan->header->increment('total_expected_amount', $baru - $lama);
+            }
+        });
+
+        return redirect()->back()->with('success', 'Rincian tagihan berhasil diperbarui.');
+    }
+
+    public function destroy(Tagihan $tagihan)
+    {
+        if (bccomp((string) $tagihan->total_amount, (string) $tagihan->remaining_balance, 2) !== 0) {
+            return redirect()->back()->withErrors([
+                'delete_error' => 'Tagihan ini sudah memiliki riwayat pembayaran.',
+            ]);
+        }
+
+        DB::transaction(function () use ($tagihan) {
+            if ($tagihan->header) {
+                $header = $tagihan->header;
+
+                if ($header->total_students > 0) {
+                    $header->decrement('total_students');
+                }
+
+                $header->decrement('total_expected_amount', (float) $tagihan->total_amount);
+            }
+
+            $tagihan->items()->delete();
+            $tagihan->delete();
+        });
+
+        return redirect()->back()->with('success', 'Tagihan berhasil dihapus.');
+    }
+
+    public function autoGenerate(InvoiceHeader $header)
+    {
+        if ($header->status !== 'Draft') {
+            return redirect()->back()->withErrors(['status_error' => 'Auto-generate hanya bisa saat gelombang berstatus Draft.']);
+        }
+
+        $tarif = $header->tarif;
+
+        if (!$tarif) {
+            return redirect()->back()->withErrors(['status_error' => 'Tarif dasar gelombang ini tidak ditemukan.']);
+        }
+
+        $siswas = Siswa::aktif()
+            ->when($tarif->target_student_type !== 'All',
+                fn ($q) => $q->where('student_type', $tarif->target_student_type))
+            ->get();
+
+        $jumlah = 0;
+        $total  = 0;
+
+        DB::transaction(function () use ($header, $tarif, $siswas, &$jumlah, &$total) {
+            foreach ($siswas as $siswa) {
+                $cek = Tagihan::where('student_id', $siswa->id)
+                    ->whereHas('items', fn ($q) => $q->where('tariff_id', $tarif->id));
+
+                // BUG ASLI: memakai $tarif->jenis_periode, kolom yang tidak
+                // ada — nilainya selalu null sehingga kedua cabang meleset dan
+                // pengecekan jadi "pernah ditagih tarif ini kapan pun".
+                // Akibatnya generate periode berikutnya melewati semua siswa.
+                if ($tarif->period !== 'Sekali Bayar') {
+                    $cek->whereHas('header', fn ($q) => $q->where('period', $header->period));
+                }
+
+                if ($cek->exists()) {
+                    continue;
+                }
+
+                $tagihan = Tagihan::create([
+                    'invoice_number'    => 'INV-' . date('Ym') . '-' . strtoupper(Str::random(5)),
+                    'invoice_header_id' => $header->id,
+                    'student_id'        => $siswa->id,
+                    'total_amount'      => $tarif->nominal,
+                    'remaining_balance' => $tarif->nominal,
+                    'status'            => 'Unpaid',
+                ]);
+
+                $tagihan->items()->create([
+                    'tariff_id' => $tarif->id,
+                    'deskripsi' => $tarif->billing_name,
+                    'nominal'   => $tarif->nominal,
+                    'diskon'    => 0,
+                ]);
+
+                $jumlah++;
+                $total += (float) $tarif->nominal;
+            }
+
+            $header->increment('total_students', $jumlah);
+            $header->increment('total_expected_amount', $total);
+        });
+
+        return $jumlah > 0
+            ? redirect()->back()->with('success', "{$jumlah} tagihan berhasil dibuat.")
+            : redirect()->back()->withErrors(['status_error' => 'Tidak ada siswa baru yang perlu ditagih untuk periode ini.']);
+    }
+
+    public function publishHeader(InvoiceHeader $header)
+    {
+        if ($header->status !== 'Draft') {
+            return redirect()->back()->withErrors(['status_error' => 'Hanya gelombang berstatus Draft yang dapat dipublish.']);
+        }
+
+        if (!$header->invoices()->exists()) {
+            return redirect()->back()->withErrors(['status_error' => 'Gelombang masih kosong. Tambahkan siswa atau jalankan auto-generate.']);
+        }
+
+        $header->update(['status' => 'Published']);
+
+        return redirect()->back()->with('success', 'Gelombang tagihan berhasil dipublish.');
+    }
+
+    public function closeHeader(InvoiceHeader $header)
+    {
+        if ($header->status !== 'Published') {
+            return redirect()->back()->withErrors(['status_error' => 'Hanya gelombang berstatus Published yang dapat ditutup.']);
+        }
+
+        $header->update(['status' => 'Closed']);
+
+        return redirect()->back()->with('success', 'Gelombang tagihan berhasil ditutup.');
+    }
+
+    public function printBulk(InvoiceHeader $header)
+    {
+        abort_unless($header->status === 'Published', 403,
+            'Cetak massal hanya untuk gelombang yang sudah dipublish.');
+
+        $tagihans = $header->invoices()
+            ->with(['siswa:id,nis,name,parent_name', 'items'])
+            ->whereIn('status', ['Unpaid', 'Installment'])
+            ->orderBy('invoice_number')
+            ->get();
+
+        if ($tagihans->isEmpty()) {
+            return redirect()->back()->withErrors(['status_error' => 'Semua tagihan pada gelombang ini sudah lunas.']);
+        }
+
+        return Pdf::loadView('pdf.bulk-tagihan', compact('header', 'tagihans'))
+            ->setPaper('A4', 'portrait')
+            ->stream('Tagihan_' . str_replace(' ', '_', $header->title) . '.pdf');
+    }
+
+    /**
+     * Cetak satu invoice. Memakai ulang view bulk-tagihan dengan koleksi
+     * berisi satu record, supaya format kertasnya persis sama dengan
+     * cetak massal — tidak perlu blade terpisah.
+     */
+    public function printSingle(Tagihan $tagihan)
+    {
+        $header = $tagihan->header;
+
+        abort_unless($header && $header->status === 'Published', 403,
+            'Tagihan hanya bisa dicetak setelah gelombangnya dipublish.');
+
+        // Sejalan dengan printBulk: yang lunas tidak dicetak ulang.
+        if (bccomp((string) $tagihan->remaining_balance, '0', 2) <= 0) {
+            return redirect()->back()->withErrors([
+                'status_error' => 'Tagihan ini sudah lunas.',
+            ]);
+        }
+
+        $tagihan->load(['siswa:id,nis,name,parent_name', 'items']);
+
+        $tagihans = collect([$tagihan]);
+
+        return Pdf::loadView('pdf.bulk-tagihan', compact('header', 'tagihans'))
+            ->setPaper('A4', 'portrait')
+            ->stream('Tagihan_' . $tagihan->invoice_number . '.pdf');
+    }
+}

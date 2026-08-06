@@ -788,6 +788,30 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
         background-position: right 0.85rem center;
         background-size: 15px;
     }
+
+    /* ===== Panah select METODE =====
+       Select metode TIDAK didaftarkan di ALL_SELECTS (unified-input-page.js),
+       jadi ia tetap <select> native — beda sendiri dari field lain yang sudah
+       jadi widget kustom (.cs-btn dengan panah ▼).
+       Saat santri 1 metode, .is-locked menyembunyikan panah native (ganti gembok).
+       Saat santri 2 metode, .is-locked TIDAK dipasang → panah bawaan browser
+       muncul. Rule di bawah menggantinya dengan segitiga yang identik dengan
+       .cs-arr (8px, #6b7280) supaya konsisten di light & dark mode. */
+    #metodeCombined:not(.is-locked),
+    #metodeSetoranOnly:not(.is-locked) {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        padding-right: 2rem;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M1 3.2 L5 7.6 L9 3.2 Z' fill='%236b7280'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.72rem center;
+        background-size: 9px;
+    }
+    /* Firefox: hilangkan garis fokus pada tombol dropdown bawaan */
+    #metodeCombined:not(.is-locked)::-ms-expand,
+    #metodeSetoranOnly:not(.is-locked)::-ms-expand { display: none; }
+
     .form-input:focus, .form-select:focus, .form-select-sm:focus, .form-textarea:focus { outline: none; border-color: #D97757; box-shadow: 0 0 0 2px rgba(217,119,87,0.18); }
     .form-textarea { resize: vertical; }
     input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; }
@@ -961,13 +985,61 @@ export default function InputSetoran(props) {
         // - Warna tombol "Tampilkan Halaman" ikut metode aktif (Iqro/Aisar)
         // - Judul blok "Pilih Halaman ..." hanya menyisakan 1 label metode
         // ============================================================
+        // Aisar hanya tersedia sampai Jilid 5; Iqro sampai 6.
+        const MAKS_JILID = { iqro: 6, aisar: 5 };
+
         function syncJilidUI() {
             ['Combined', 'SetoranOnly'].forEach((mode) => {
                 const metodeEl = document.getElementById('metode' + mode);
-                const btn = document.getElementById('btnJilid' + mode);
-                if (!metodeEl || !btn) return;
+                if (!metodeEl) return;
+
                 const m = String(metodeEl.value || '').toLowerCase().includes('aisar') ? 'aisar' : 'iqro';
-                if (btn.dataset.metode !== m) btn.dataset.metode = m;
+
+                const btn = document.getElementById('btnJilid' + mode);
+                if (btn && btn.dataset.metode !== m) btn.dataset.metode = m;
+
+                const jilidEl = document.getElementById('iqroJilid' + mode);
+                if (!jilidEl) return;
+
+                const maks = MAKS_JILID[m];
+                let perluTurun = false;
+
+                Array.from(jilidEl.options).forEach((o) => {
+                    const nomor = parseInt(o.value, 10);
+                    if (!nomor) return;
+                    const boleh = nomor <= maks;
+                    o.hidden = !boleh;
+                    o.disabled = !boleh;
+                    // Pindah ke jilid maksimum kalau yang sedang terpilih
+                    // justru yang baru saja disembunyikan.
+                    if (!boleh && jilidEl.value === o.value) perluTurun = true;
+                });
+
+                // Select ini didaftarkan di ALL_SELECTS (unified-input-page.js),
+                // jadi tampilannya adalah widget .cs-wrap. `option.hidden` tidak
+                // terbaca widget — daftar <li>-nya harus disembunyikan terpisah.
+                const wrap = jilidEl.closest('.cs-wrap')
+                          || jilidEl.parentElement?.querySelector('.cs-wrap');
+
+                if (wrap) {
+                    wrap.querySelectorAll('.cs-list li').forEach((li) => {
+                        const nomor = parseInt(
+                            String(li.dataset.value ?? li.textContent).replace(/\D+/g, ''), 10
+                        );
+                        if (!nomor) return;
+                        li.style.display = nomor <= maks ? '' : 'none';
+                    });
+                }
+
+                if (perluTurun) {
+                    jilidEl.value = String(maks);
+                    const txt = wrap?.querySelector('.cs-btn .cs-txt');
+                    if (txt) {
+                        txt.textContent = `Jilid ${maks}`;
+                        txt.classList.remove('ph');
+                    }
+                    jilidEl.dispatchEvent(new Event('change', { bubbles: true }));
+                }
             });
 
             ['iqroBlockCombined', 'iqroBlockSetoranOnly'].forEach((id) => {

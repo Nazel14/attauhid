@@ -60,6 +60,10 @@ class SantriImport implements ToCollection, WithHeadingRow
             $noKelas    = $row['no_kelas'] ?? null;
             $password   = trim((string) ($row['password'] ?? ''));
             $namaFoto   = trim((string) ($row['nama_file_foto'] ?? ''));
+            // Data wali — dipakai modul keuangan untuk penagihan.
+            $namaWali   = trim((string) ($row['nama_wali'] ?? ''));
+            $kontakWali = trim((string) ($row['kontak_wali'] ?? ''));
+            $tipe       = trim((string) ($row['tipe'] ?? 'Reguler'));
 
             // ===== VALIDASI =====
             $rowErrors = [];
@@ -131,6 +135,16 @@ class SantriImport implements ToCollection, WithHeadingRow
                 $rowErrors[] = "Password minimal 8 karakter";
             }
 
+            if ($namaWali === '') {
+                $rowErrors[] = "Nama Wali kosong";
+            }
+            if ($kontakWali === '') {
+                $rowErrors[] = "Kontak Wali kosong";
+            }
+            if (!in_array($tipe, ['Reguler', 'Fullday'], true)) {
+                $rowErrors[] = "Tipe harus Reguler atau Fullday (ditemukan: {$tipe})";
+            }
+
             // Validasi gender vs restriksi kelas
             if ($kelas && in_array($gender, ['L', 'P'])) {
                 $genderFull = $gender === 'L' ? 'Laki-laki' : 'Perempuan';
@@ -142,6 +156,15 @@ class SantriImport implements ToCollection, WithHeadingRow
                 }
             }
 
+            // Kapasitas kelas — dihitung ulang tiap baris karena import
+            // beruntun bisa mengisi kelas sampai penuh di tengah proses.
+            if ($kelas) {
+                $terisi = $kelas->santris()->count();
+                if ($terisi >= $kelas->kapasitas) {
+                    $rowErrors[] = "Kelas {$kelas->name} sudah penuh ({$terisi}/{$kelas->kapasitas})";
+                }
+            }
+
             if (!empty($rowErrors)) {
                 $this->failedCount++;
                 $this->errors[] = "Baris {$rowNum} ({$nama}): " . implode('; ', $rowErrors);
@@ -150,7 +173,7 @@ class SantriImport implements ToCollection, WithHeadingRow
 
             // ===== SIMPAN =====
             try {
-                DB::transaction(function () use ($nis, $nama, $gender, $metode, $metode2, $hasQuran2, $targetJuz, $targetJilid, $kelas, $password, $namaFoto, $rowNum) {                    $name = preg_replace_callback('/\b\w+/', function ($m) {
+                DB::transaction(function () use ($nis, $nama, $gender, $metode, $metode2, $hasQuran2, $targetJuz, $targetJilid, $kelas, $password, $namaFoto, $namaWali, $kontakWali, $tipe, $rowNum) {                    $name = preg_replace_callback('/\b\w+/', function ($m) {
                         return ucfirst(strtolower($m[0]));
                     }, $nama);
 
@@ -193,6 +216,12 @@ class SantriImport implements ToCollection, WithHeadingRow
                         // Metode jilid: juz hanya dipakai bila ada metode 2 = quran
                         'target_juz'      => $isJilidBased ? ($hasQuran2 ? (float) $targetJuz : null) : (float) $targetJuz,
                         'target_jilid'    => $isJilidBased ? (int) $targetJilid : null,
+                        // --- data untuk modul keuangan ---
+                        'parent_name'    => $namaWali,
+                        'parent_contact' => $kontakWali,
+                        'student_type'   => $tipe,
+                        // Angkatan dari tahun awal TA kelas (2026/2027 → 2026)
+                        'angkatan'       => (int) substr((string) $kelas->tahun_ajaran, 0, 4) ?: (int) date('Y'),
                     ]);
                 });
 

@@ -3,6 +3,7 @@ import { Head, useForm, router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import GuruAuthenticatedLayout from '@/Layouts/GuruAuthenticatedLayout';
 import SantriAuthenticatedLayout from '@/Layouts/SantriAuthenticatedLayout';
+import KeuanganLayout from '@/Layouts/KeuanganLayout';
 import LaporanModal from '@/Components/LaporanModal';
 
 const CARD = 'rounded-2xl bg-white dark:bg-[#262624] ring-1 ring-black/5 dark:ring-white/10 p-5 sm:p-6';
@@ -106,7 +107,7 @@ function InfoRow({ label, value, onLapor }) {
 }
 
 export default function Edit({
-    user, canUpdatePhoto, nextUpdateDate, photoCooldownDays = 0,
+    user, panel = 'raport', canUpdatePhoto, nextUpdateDate, photoCooldownDays = 0,
     fields = [], bisaLapor = false, kategoriLapor = {}, tujuanLapor = '',
     fotoLapor = null,
 }) {
@@ -117,7 +118,8 @@ export default function Edit({
 
     // Hanya guru & admin yang boleh menyentuh foto. Santri: read-only penuh.
     const canManagePhoto = role !== 'santri';
-    const isAdmin = role === 'admin';
+    const isKeuangan = panel === 'keuangan';
+    const isAdmin = role === 'admin' && !isKeuangan;
 
     const NOTIF_DURATION = 5000;
     const [notif, setNotif] = useState(null);
@@ -275,7 +277,9 @@ export default function Edit({
                 </div>
 
                 <p className="mt-3 text-xs text-gray-400">
-                    {isAdmin
+                    {isKeuangan
+                        ? 'Data pegawai & hak akses dikelola melalui menu Master Data dan Pengaturan Sistem. Hubungi Super Admin bila ada kekeliruan.'
+                        : isAdmin
                         ? 'Nama akun tidak dapat diubah dari halaman ini.'
                         : bisaLapor
                         ? `Data profil dikelola oleh ${tujuanLapor.toLowerCase()}. Klik ikon bendera di samping data yang keliru untuk melaporkannya.`
@@ -299,6 +303,9 @@ export default function Edit({
         </div>
     );
 
+    // Panel keuangan diperiksa lebih dulu: seorang guru yang juga pegawai
+    // keuangan harus tetap melihat sidebar keuangan saat berada di sana.
+    if (isKeuangan)        return <KeuanganLayout>{content}</KeuanganLayout>;
     if (role === 'guru')   return <GuruAuthenticatedLayout>{content}</GuruAuthenticatedLayout>;
     if (role === 'santri') return <SantriAuthenticatedLayout>{content}</SantriAuthenticatedLayout>;
     return <AuthenticatedLayout>{content}</AuthenticatedLayout>;

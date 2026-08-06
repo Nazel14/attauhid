@@ -4,26 +4,31 @@ namespace App\Http\Controllers\Keuangan\MasterData;
 
 use App\Http\Controllers\Controller;
 use App\Models\Keuangan\MasterData\Jabatan;
-use App\Models\Keuangan\MasterData\Kelas;
 use App\Models\Keuangan\MasterData\Pegawai;
 use App\Models\Keuangan\MasterData\Potongan;
 use App\Models\Keuangan\MasterData\Tunjangan;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Spatie\Permission\Models\Role;
 
 class PegawaiController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Pegawai::with(['jabatan', 'user', 'defaultAllowances', 'defaultDeductions', 'kelas']);
+        // `kelas` di sini adalah relasi wali-kelas raport (kelas.guru_id),
+        // bukan lagi employees.class_id yang sudah dibuang.
+        $query = Pegawai::with(['jabatan', 'user', 'defaultAllowances', 'defaultDeductions', 'kelasDiampu']);
 
         // 'ilike' diganti 'like', orWhere dibungkus closure supaya tidak
         // melompati filter status di bawahnya.
         $query->when($request->search, function ($q, $search) {
             $q->where(function ($w) use ($search) {
                 $w->where('name', 'like', "%{$search}%")
-                  ->orWhere('nip', 'like', "%{$search}%");
+                    ->orWhere('nip', 'like', "%{$search}%");
             });
         });
 
@@ -44,51 +49,196 @@ class PegawaiController extends Controller
         return Inertia::render('Keuangan/MasterData/DataPegawai', [
             'pegawai'       => $pegawai,
             'listJabatan'   => Jabatan::orderBy('nama_jabatan')->get(['id', 'nama_jabatan']),
-            'listKelas'     => Kelas::where('is_active', true)->orderBy('nama_kelas')->get(['id', 'nama_kelas', 'tingkat']),
+            // listKelas dibuang: wali kelas ditentukan dari panel raport
+            // lewat kelas.guru_id, bukan dari form pegawai.
             'listTunjangan' => Tunjangan::orderBy('nama_tunjangan')->get(),
             'listPotongan'  => Potongan::orderBy('nama_potongan')->get(),
+            // Bukan cuma role keuangan: pegawai berjabatan guru butuh role
+            // 'guru' agar bisa login ke panel raport, meski tidak diberi
+            // akses apa pun di keuangan.
+            'listRole'      => Role::whereIn('name', array_merge(
+                                        config('modules.keuangan_roles', []),
+                                        ['guru']
+                                    ))
+                                    ->orderBy('name')->get(['id', 'name']),
+            // Dikirim ke frontend agar hak akses terisi otomatis begitu
+            // jabatan dipilih — lihat config('modules.jabatan_ke_role').
+            'petaJabatanRole' => $this->petaJabatanRole(),
             'filters'       => $request->only(['search', 'statusFilter', 'sort_field', 'sort_direction']),
         ]);
     }
 
+    /**
+     * Peta position_id => nama role, untuk pengisian otomatis di form.
+     * Dihitung di backend supaya frontend tidak perlu mencocokkan nama
+     * jabatan sendiri (rawan beda ejaan/kapitalisasi).
+     */
+    private function petaJabatanRole(): array
+    {
+        $peta = config('modules.jabatan_ke_role', []);
+
+        return Jabatan::get(['id', 'nama_jabatan'])
+            ->mapWithKeys(fn ($j) => [
+                $j->id => $peta[mb_strtolower($j->nama_jabatan)] ?? null,
+            ])
+            ->filter()
+            ->toArray();
+    }
+
+    /**
+     * users.role hanya menampung satu nilai dan dibaca seluruh role-gating
+     * raport (isGuru, RoleMiddleware, displayName). Kalau pegawai berjabatan
+     * Guru diberi role keuangan di kolom itu, akses raport-nya putus.
+     *
+     * Solusinya: kolom tetap 'guru', role keuangan ditambahkan sebagai role
+     * Spatie kedua. availableModules() memeriksa hasAnyRole(), jadi kedua
+     * modul tetap terbuka dan permission keuangan tetap berlaku.
+     *
+     * @return array{0: string, 1: array<string>} [roleKolom, rolesSpatie]
+     */
+    /**
+     * Spatie mendukung banyak role per user, tapi users.role hanya satu kolom
+     * dan seluruh role-gating raport membacanya. Jadi dari daftar role yang
+     * dipilih, satu harus ditunjuk sebagai role utama untuk kolom itu.
+     *
+     * Prioritasnya 'guru': akses raport paling mudah putus kalau kolomnya
+     * terisi role lain, sementara akses keuangan tetap aman lewat Spatie.
+     *
+     * @param  array<string>  $rolesPilihan
+     * @return array{0: string, 1: array<string>} [roleKolom, rolesSpatie]
+     */
+    private function petakanRole(int $positionId, array $rolesPilihan): array
+    {
+        $jabatan = Jabatan::find($positionId);
+        $berjabatanGuru = $jabatan && mb_strtolower($jabatan->nama_jabatan) === 'guru';
+
+        $roles = array_values(array_unique(array_filter($rolesPilihan)));
+
+        // Jabatan guru selalu mendapat role 'guru', bahkan bila tidak dicentang —
+        // tanpa itu dia tidak bisa membuka panel raport sama sekali.
+        if ($berjabatanGuru && ! in_array('guru', $roles, true)) {
+            array_unshift($roles, 'guru');
+        }
+
+        $roleKolom = in_array('guru', $roles, true) ? 'guru' : ($roles[0] ?? 'guru');
+
+        return [$roleKolom, $roles];
+    }
+
     public function store(Request $request)
     {
+        $buatAkun = $request->boolean('buat_akun');
+
         $validated = $request->validate([
-            'nip'         => 'required|string|max:50|unique:employees,nip',
+            'nip'         => 'required|string|max:50|unique:gurus,nip',
             'name'        => 'required|string|max:255',
             'position_id' => 'required|exists:positions,id',
-            'class_id'    => 'nullable|exists:classes,id',
             'is_active'   => 'boolean',
+            // Akun login opsional: pegawai seperti satpam atau petugas
+            // kebersihan tidak perlu masuk ke sistem.
+            'username'    => $buatAkun ? 'required|string|max:255|unique:users,name' : 'nullable',
+            'password'    => $buatAkun ? 'required|string|min:8' : 'nullable',
+            // Array: satu pegawai boleh memegang lebih dari satu peran.
+            'roles'       => $buatAkun ? 'required|array|min:1' : 'nullable|array',
+            'roles.*'     => 'exists:roles,name',
         ], [
             'nip.required'         => 'NIY wajib diisi.',
             'nip.unique'           => 'NIY ini sudah terdaftar.',
             'position_id.required' => 'Jabatan wajib dipilih.',
-            'class_id.exists'      => 'Kelas yang dipilih tidak valid.',
+            'username.required'    => 'Username wajib diisi bila membuat akun login.',
+            'username.unique'      => 'Username ini sudah dipakai akun lain.',
+            'password.required'    => 'Password wajib diisi bila membuat akun login.',
+            'password.min'         => 'Password minimal 8 karakter.',
+            'roles.required'       => 'Minimal satu hak akses wajib dipilih.',
+            'roles.min'            => 'Minimal satu hak akses wajib dipilih.',
         ]);
 
-        Pegawai::create($validated);
+        DB::transaction(function () use ($validated, $request, $buatAkun) {
+            $userId = null;
+
+            if ($buatAkun) {
+                [$roleKolom, $rolesSpatie] = $this->petakanRole(
+                    (int) $validated['position_id'],
+                    $validated['roles'] ?? []
+                );
+
+                $user = new User();
+                $user->name = $validated['username'];
+                $user->role = $roleKolom;
+                $user->password = Hash::make($validated['password']);
+                $user->plain_password = $validated['password'];
+                $user->save();
+
+                $user->syncRoles($rolesSpatie);
+
+                $userId = $user->id;
+            }
+
+            Pegawai::create([
+                'nip'         => $validated['nip'],
+                'name'        => $validated['name'],
+                'position_id' => $validated['position_id'],
+                'is_active'   => $request->boolean('is_active', true),
+                'user_id'     => $userId,
+            ]);
+        });
 
         return redirect()
             ->route('keuangan.master-data.pegawai')
-            ->with('success', 'Data pegawai berhasil ditambahkan.');
+            ->with('success', $buatAkun
+                ? 'Data pegawai dan akun login berhasil ditambahkan.'
+                : 'Data pegawai berhasil ditambahkan (tanpa akun login).');
     }
 
     public function update(Request $request, Pegawai $pegawai)
     {
+        // Akun bisa ditambahkan belakangan untuk pegawai yang belum punya.
+        $buatAkun = $request->boolean('buat_akun') && ! $pegawai->user_id;
+
         $validated = $request->validate([
-            'nip'         => 'required|string|max:50|unique:employees,nip,' . $pegawai->id,
+            'nip'         => 'required|string|max:50|unique:gurus,nip,' . $pegawai->id,
             'name'        => 'required|string|max:255',
             'position_id' => 'required|exists:positions,id',
-            'class_id'    => 'nullable|exists:classes,id',
             'is_active'   => 'boolean',
+            'username'    => $buatAkun ? 'required|string|max:255|unique:users,name' : 'nullable',
+            'password'    => $buatAkun ? 'required|string|min:8' : 'nullable',
+            'roles'       => $buatAkun ? 'required|array|min:1' : 'nullable|array',
+            'roles.*'     => 'exists:roles,name',
         ], [
             'nip.required'         => 'NIY wajib diisi.',
             'nip.unique'           => 'NIY ini sudah terdaftar.',
             'position_id.required' => 'Jabatan wajib dipilih.',
-            'class_id.exists'      => 'Kelas yang dipilih tidak valid.',
+            'username.unique'      => 'Username ini sudah dipakai akun lain.',
+            'password.min'         => 'Password minimal 8 karakter.',
+            'roles.required'       => 'Minimal satu hak akses wajib dipilih.',
         ]);
 
-        $pegawai->update($validated);
+        DB::transaction(function () use ($validated, $request, $pegawai, $buatAkun) {
+            $pegawai->update([
+                'nip'         => $validated['nip'],
+                'name'        => $validated['name'],
+                'position_id' => $validated['position_id'],
+                'is_active'   => $request->boolean('is_active', true),
+            ]);
+
+            if ($buatAkun) {
+                [$roleKolom, $rolesSpatie] = $this->petakanRole(
+                    (int) $validated['position_id'],
+                    $validated['roles'] ?? []
+                );
+
+                $user = new User();
+                $user->name = $validated['username'];
+                $user->role = $roleKolom;
+                $user->password = Hash::make($validated['password']);
+                $user->plain_password = $validated['password'];
+                $user->save();
+
+                $user->syncRoles($rolesSpatie);
+
+                $pegawai->update(['user_id' => $user->id]);
+            }
+        });
 
         return redirect()->back()->with('success', 'Data pegawai berhasil diperbarui.');
     }
@@ -144,15 +294,33 @@ class PegawaiController extends Controller
             ]);
         }
 
-        // Versi asli memakai $pegawai->user->email — tabel users di sini
-        // tidak punya kolom email, jadi dipakai name.
-        if ($pegawai->user) {
+        // Tabel gurus kini dipakai bersama modul raport. Menghapus baris di
+        // sini berarti menghapus guru — termasuk relasi wali kelas, santri
+        // bimbingan, dan riwayat setoran yang menunjuk gurus.id.
+        if ($pegawai->kelasDiampu()->exists()) {
             return redirect()->back()->withErrors([
-                'delete_error' => 'Gagal! Pegawai ini terhubung dengan akun user "' . $pegawai->user->name . '".',
+                'delete_error' => 'Gagal! Pegawai ini masih menjadi wali kelas di modul raport.',
             ]);
         }
 
-        $pegawai->delete();
+        if ($pegawai->santriBimbingan()->exists() || $pegawai->setorans()->exists()) {
+            return redirect()->back()->withErrors([
+                'delete_error' => 'Gagal! Pegawai ini punya santri bimbingan atau riwayat setoran di modul raport.',
+            ]);
+        }
+
+        DB::transaction(function () use ($pegawai) {
+            // Akun login ikut dihapus beserta fotonya — kalau ditinggal,
+            // user tanpa profil masih bisa login tapi panelnya kosong.
+            if ($pegawai->user) {
+                if ($pegawai->user->profile_photo && Storage::disk('public')->exists($pegawai->user->profile_photo)) {
+                    Storage::disk('public')->delete($pegawai->user->profile_photo);
+                }
+                $pegawai->user->delete();
+            }
+
+            $pegawai->forceDelete();
+        });
 
         return redirect()->back()->with('success', 'Data pegawai berhasil dihapus.');
     }

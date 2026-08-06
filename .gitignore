@@ -1,6 +1,5 @@
 # Laravel default
 /node_modules
-/public/build
 public/hot
 public/storage
 /storage/*.key
@@ -20,19 +19,38 @@ yarn-error.log
 /.idea
 /.vscode
 
-# === TAMBAHAN PENTING ===
-# Skip file storage upload (audio & pdf setoran)
-/storage/app/public/audio_setorans
-/storage/app/public/pdf_setorans
+# === CATATAN DEPLOY ===
+# /public/build SENGAJA TIDAK di-ignore.
+# Hostinger tidak menjalankan `npm run build`, jadi hasil Vite
+# harus ikut ter-commit setiap kali ada perubahan JSX/JS.
+
+# Skip file storage upload (audio & pdf setoran) — isinya saja,
+# foldernya tetap dibawa lewat .gitkeep supaya ada di server.
+/storage/app/public/audio_setorans/*
+!/storage/app/public/audio_setorans/.gitkeep
+/storage/app/public/pdf_setorans/*
+!/storage/app/public/pdf_setorans/.gitkeep
+/storage/app/public/profile-photos/*
+!/storage/app/public/profile-photos/.gitkeep
 /public/storage/audio_setorans
 /public/storage/pdf_setorans
 
-# Cache & log yang tidak boleh ke-commit
+# Cache & log — isinya di-skip, .gitignore bawaan Laravel dipertahankan
+# supaya struktur foldernya tetap terbentuk di server.
 /storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+/storage/framework/cache/data/*
+!/storage/framework/cache/data/.gitignore
 /storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
 /storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/framework/testing/*
+!/storage/framework/testing/.gitignore
 /storage/logs/*
+!/storage/logs/.gitignore
 /bootstrap/cache/*
+!/bootstrap/cache/.gitignore
 
 # Skip backup files
 *.sql

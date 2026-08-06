@@ -28,12 +28,15 @@ class KelasImport implements ToCollection, SkipsEmptyRows
 
         foreach ($rows as $index => $row) {
             // BACA PER POSISI KOLOM (bukan nama heading), supaya tabel bantuan
-            // di kolom F/H/K/N tidak mengganggu pembacaan.
-            // A=0 nama_kelas, B=1 tahun_ajaran, C=2 no_guru, D=3 no_gender
+            // di kolom H/J/M/P tidak mengganggu pembacaan.
+            // A=0 nama_kelas, B=1 tahun_ajaran, C=2 no_guru, D=3 no_gender,
+            // E=4 tingkat, F=5 kapasitas
             $namaKelas  = trim((string) ($row[0] ?? ''));
             $tahunAjaran = trim((string) ($row[1] ?? ''));
             $noGuruRaw  = trim((string) ($row[2] ?? ''));
             $noGenderRaw = trim((string) ($row[3] ?? ''));
+            $tingkat     = trim((string) ($row[4] ?? ''));
+            $kapasitasRaw = trim((string) ($row[5] ?? ''));
 
             $rowNumber = $index + 1; // index 0 = baris 1 (Excel)
 
@@ -60,7 +63,7 @@ class KelasImport implements ToCollection, SkipsEmptyRows
             }
 
             try {
-                DB::transaction(function () use ($namaKelas, $tahunAjaran, $noGuruRaw, $noGenderRaw, $guruList, $noGenderToGender) {
+                DB::transaction(function () use ($namaKelas, $tahunAjaran, $noGuruRaw, $noGenderRaw, $tingkat, $kapasitasRaw, $guruList, $noGenderToGender) {
                     $noGuru = (int) $noGuruRaw;
 
                     if ($noGuru < 1 || $noGuru > $guruList->count()) {
@@ -92,11 +95,23 @@ class KelasImport implements ToCollection, SkipsEmptyRows
                         throw new \Exception("Kelas {$name} dengan tahun ajaran {$ta} sudah ada");
                     }
 
+                    // Kapasitas opsional di Excel; kosong → 20 (default kolom).
+                    $kapasitas = 20;
+                    if ($kapasitasRaw !== '') {
+                        $kapasitas = (int) $kapasitasRaw;
+                        if ($kapasitas < 1 || $kapasitas > 100) {
+                            throw new \Exception("Kapasitas {$kapasitasRaw} tidak valid. Harus antara 1-100");
+                        }
+                    }
+
                     Kelas::create([
                         'name' => $name,
                         'tahun_ajaran' => $ta,
                         'guru_id' => $guru->id,
                         'gender_restriction' => $gender,
+                        'tingkat' => $tingkat !== '' ? $tingkat : null,
+                        'kapasitas' => $kapasitas,
+                        'is_active' => true,
                     ]);
 
                     $this->successCount++;

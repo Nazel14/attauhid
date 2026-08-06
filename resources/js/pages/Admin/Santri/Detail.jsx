@@ -229,6 +229,8 @@ export default function Detail({
         kelas_id: kelas.id,
         password: '', password_confirmation: '',
         profile_photo: null, delete_photo: '0',
+        // Data wali — dipakai modul keuangan untuk penagihan.
+        parent_name: '', parent_contact: '', student_type: 'Reguler',
     });
 
     const openCreate = () => {
@@ -242,6 +244,7 @@ export default function Detail({
             kelas_id: kelas.id,
             password: '', password_confirmation: '',
             profile_photo: null, delete_photo: '0',
+            parent_name: '', parent_contact: '', student_type: 'Reguler',
         });
         setPhotoPreview(null); setCurrentPhoto(null); setFormOpen(true);
     };
@@ -261,6 +264,9 @@ export default function Detail({
             kelas_id: s.kelas_id ?? kelas.id,
             password: '', password_confirmation: '',
             profile_photo: null, delete_photo: '0',
+            parent_name: s.parent_name ?? '',
+            parent_contact: s.parent_contact ?? '',
+            student_type: s.student_type ?? 'Reguler',
         });
         setPhotoPreview(null);
         setCurrentPhoto(s.user?.profile_photo ? storageUrl(s.user.profile_photo) : null);
@@ -686,8 +692,41 @@ export default function Detail({
                             <label className={LBL}>Kelas</label>
                             <input type="text" value={kelas.name} readOnly
                                 className={`${INP} bg-stone-100 dark:bg-coal-800 text-stone-500 dark:text-stone-400 cursor-not-allowed`} />
-                            <p className="text-[10px] text-stone-400 dark:text-stone-600 mt-1">Santri ditambahkan ke kelas ini.</p>
+                            <p className="text-[10px] text-stone-400 dark:text-stone-600 mt-1">
+                                Terisi {kelas.santris_count ?? 0} dari {kelas.kapasitas ?? '-'} santri.
+                            </p>
                             {err(santriForm.errors.kelas_id)}
+                        </div>
+                    </div>
+
+                    {/* Data wali — dibutuhkan modul keuangan untuk penagihan */}
+                    <div className="rounded-2xl border border-stone-200 dark:border-coal-700 p-3.5">
+                        <h4 className="mb-3 text-xs font-bold text-stone-700 dark:text-stone-300">Data Orang Tua / Wali</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label className={LBL}>Nama Wali <span className="text-red-500">*</span></label>
+                                <input value={santriForm.data.parent_name}
+                                    onChange={(e) => santriForm.setData('parent_name', e.target.value)}
+                                    required placeholder="Bapak Ahmad" className={INP} />
+                                {err(santriForm.errors.parent_name)}
+                            </div>
+                            <div>
+                                <label className={LBL}>Kontak Wali <span className="text-red-500">*</span></label>
+                                <input value={santriForm.data.parent_contact}
+                                    onChange={(e) => santriForm.setData('parent_contact', e.target.value)}
+                                    required placeholder="0812..." className={INP} />
+                                {err(santriForm.errors.parent_contact)}
+                            </div>
+                        </div>
+                        <div className="mt-3">
+                            <label className={LBL}>Tipe Santri <span className="text-red-500">*</span></label>
+                            <select value={santriForm.data.student_type}
+                                onChange={(e) => santriForm.setData('student_type', e.target.value)} required className={INP}>
+                                <option value="Reguler">Reguler</option>
+                                <option value="Fullday">Fullday</option>
+                            </select>
+                            {err(santriForm.errors.student_type)}
+                            <p className="text-[10px] text-stone-400 dark:text-stone-600 mt-1">Menentukan tarif di modul keuangan.</p>
                         </div>
                     </div>
 

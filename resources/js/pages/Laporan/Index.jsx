@@ -255,7 +255,7 @@ export default function Index({ laporan, filter, kategori, guruList = [], santri
 
     return (
         <Layout>
-            <Head title="Laporan" />
+            <Head title="Komplain" />
             <Toast notif={notif} onClose={() => setNotif(null)} duration={NOTIF_DURATION} />
 
             <div className="mx-auto max-w-6xl px-3 sm:px-4 py-5">

@@ -2,14 +2,24 @@
 
 namespace App\Models;
 
+use App\Models\Keuangan\Inbound\Pembayaran;
+use App\Models\Keuangan\Inbound\Tagihan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Tabel `santris` adalah master siswa untuk KEDUA modul.
+ * Santri yang diinput dari panel raport langsung bisa ditagih di keuangan.
+ * Tabel `students` sudah tidak dipakai.
+ */
 class Santri extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
+
+    protected $table = 'santris';
 
     protected $fillable = [
         'user_id',
@@ -23,6 +33,12 @@ class Santri extends Model
         'target_metode_2',
         'target_jilid',
         'status',
+        // --- kolom dari modul keuangan ---
+        'parent_name',
+        'parent_contact',
+        'student_type',
+        'angkatan',
+        'is_raport_held',
     ];
 
     protected $casts = [
@@ -30,6 +46,8 @@ class Santri extends Model
     'target_jilid'    => 'integer',
     'target_metode'   => \App\Enums\MetodeTarget::class,
     'target_metode_2' => \App\Enums\MetodeTarget::class,
+    'is_raport_held'  => 'boolean',
+    'angkatan'        => 'integer',
     ];
 
     // =====================================================
@@ -78,6 +96,20 @@ class Santri extends Model
     public function setorans(): HasMany
     {
         return $this->hasMany(Setoran::class, 'santri_id');
+    }
+
+    // =====================================================
+    // RELASI KEUANGAN
+    // =====================================================
+
+    public function tagihan(): HasMany
+    {
+        return $this->hasMany(Tagihan::class, 'student_id');
+    }
+
+    public function pembayaran(): HasMany
+    {
+        return $this->hasMany(Pembayaran::class, 'student_id');
     }
 
     // =====================================================

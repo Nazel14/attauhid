@@ -31,10 +31,16 @@ class AuthenticatedSessionController extends Controller
         $request->validate([
             'name'     => ['required', 'string'],
             'password' => ['required', 'string'],
+            // Menentukan tujuan setelah login, bukan lapis keamanan —
+            // penjaga sebenarnya tetap RoleMiddleware di tiap route.
+            'modul'    => ['required', 'in:raport,keuangan'],
+        ], [
+            'modul.required' => 'Pilih dulu panel yang ingin dibuka.',
         ]);
 
         $name     = $request->input('name');
         $password = $request->input('password');
+        $modul    = $request->input('modul');
 
         $user = User::where('name', $name)->first();
 
@@ -51,9 +57,27 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
+        // Diperiksa sebelum Auth::login supaya tidak perlu login lalu logout.
+        $tersedia = $user->availableModules();
+
+        if (!in_array($modul, $tersedia, true)) {
+            $label = $modul === 'keuangan' ? 'Laporan Keuangan' : 'Tahfizh';
+
+            throw ValidationException::withMessages([
+                'modul' => empty($tersedia)
+                    ? 'Akun ini belum diberi hak akses ke panel mana pun. Hubungi admin.'
+                    : "Akun ini tidak punya akses ke panel {$label}.",
+            ]);
+        }
+
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
         $request->session()->forget('kelas_aktif_id');
+
+        // Dipakai /dashboard untuk memilih panel. Disimpan di session, bukan
+        // langsung redirect, supaya logika tujuan raport (admin/guru/santri)
+        // tetap satu tempat.
+        $request->session()->put('modul_aktif', $modul);
 
         try {
             $displayRole = $user->role;
@@ -77,7 +101,9 @@ class AuthenticatedSessionController extends Controller
             Log::error('Failed to log login activity: ' . $e->getMessage());
         }
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // intended() sengaja tidak dipakai: user sudah memilih panel secara
+        // eksplisit, jadi pilihannya yang menang atas URL yang tersimpan.
+        return redirect()->route('dashboard');
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -109,6 +135,7 @@ class AuthenticatedSessionController extends Controller
         }
 
         Auth::guard('web')->logout();
+        $request->session()->forget('modul_aktif');
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export default function Modal({
     children,
@@ -7,7 +7,10 @@ export default function Modal({
     closeable = true,
     onClose = () => {},
 }) {
-    const close = () => {
+    // Simpan di ref supaya listener Escape selalu memanggil handler terbaru
+    // tanpa perlu memasang ulang listener setiap render.
+    const closeRef = useRef();
+    closeRef.current = () => {
         if (closeable) onClose();
     };
 
@@ -15,7 +18,7 @@ export default function Modal({
         if (!show) return;
 
         const onKey = (e) => {
-            if (e.key === 'Escape') close();
+            if (e.key === 'Escape') closeRef.current();
         };
 
         document.addEventListener('keydown', onKey);
@@ -25,7 +28,7 @@ export default function Modal({
             document.removeEventListener('keydown', onKey);
             document.body.style.overflow = '';
         };
-    }, [show, closeable]);
+    }, [show]);
 
     if (!show) return null;
 
@@ -40,12 +43,19 @@ export default function Modal({
     }[maxWidth] ?? 'sm:max-w-2xl';
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
-            <div className="absolute inset-0 bg-black/40" onClick={close} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* backdrop-blur-sm: halaman di belakang diburamkan.
+                bg-black/50 di light, /70 di dark agar kontras modal tetap terjaga. */}
+            <div
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm dark:bg-black/70"
+                onClick={() => closeRef.current()}
+            />
 
+            {/* max-h di sini, bukan di children: isi modal yang panjang cukup
+                memberi overflow-y-auto pada elemen dalamnya. */}
             <div
                 className={
-                    'relative w-full overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-stone-200 ' +
+                    'relative flex max-h-[90vh] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-stone-200 ' +
                     'dark:bg-coal-800 dark:ring-coal-700 ' +
                     maxWidthClass
                 }

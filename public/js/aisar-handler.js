@@ -1,5 +1,5 @@
 /**
- * AISAR HANDLER v1.0 — renderer khusus metode Aisar.
+ * AISAR HANDLER v1.6 — renderer khusus metode Aisar.
  * ------------------------------------------------------------------
  * WAJIB dimuat SETELAH iqro-handler.js dan aisar-data.js.
  *
@@ -7,21 +7,66 @@
  *   - iqro-handler.js : dropdown jilid/halaman, toggleMetode, navigasi
  *                       (iqroNavGo), capture PDF, layout halaman IQRO.
  *   - aisar-handler.js: layout halaman AISAR (basmallah, judul, header
- *                       2 kolom, baris 2 kolom, catatan bawah).
+ *                       2 kolom, baris N kolom, catatan bawah).
  *
  * Cara kerja: wrap window.loadIqro → bila metode form = 'Aisar',
  * render pakai buildAisarPageHtml; selain itu diteruskan ke handler asli.
  * Halaman tetap ber-class .iqro-page & sel .word-item agar navigasi,
  * marking (markWord), dan PDF capture existing tetap kompatibel.
+ *
+ * ------------------------------------------------------------------
+ * STRATEGI UKURAN TEKS (v1.5)
+ *
+ *   1. Halaman ber-`wrap: true` (talqin hlm 40–48) TIDAK di-auto-fit.
+ *      Baris di aisar-data.js memang meniru pemenggalan cetakan, tapi
+ *      kesesuaian itu TIDAK wajib — yang wajib adalah seluruh teks ayat
+ *      muncul UTUH di PDF. Teks dibiarkan mengalir (white-space:normal)
+ *      sehingga turun baris sendiri saat kepanjangan.
+ *
+ *      Riwayat: pernah dicoba memaksa satu baris (white-space:nowrap +
+ *      penyusutan font). Hasilnya teks meluber ke KIRI lalu TERPOTONG di
+ *      tepi canvas html2canvas. Pengukuran juga tidak dapat diandalkan:
+ *      scrollWidth tidak menghitung luapan RTL ke kiri, dan pengukuran
+ *      sebelum font Amiri termuat memberi angka yang salah. Ukuran font
+ *      per halaman diatur manual lewat opsi `fontSize` di aisar-data.js.
+ *
+ *   2. Halaman NON-wrap tetap di-auto-fit: font disusutkan sampai batas
+ *      AISAR_MIN_FONT (22px). Kalau di 22px masih meluber, font berhenti
+ *      dikecilkan dan span dialihkan ke mode mengalir. Alasan: teks Arab
+ *      yang menyusut sampai 13px tidak terbaca.
+ *
+ *   3. Sel `narrow` (nama surat, badge) dilewati auto-fit supaya tidak
+ *      ikut menyusut.
+ *
+ * ------------------------------------------------------------------
+ * OPSI PER-HALAMAN (ditulis di aisar-data.js, level objek halaman):
+ *   fontSize : number  → ukuran font sel (halaman wrap: ini FINAL)
+ *   noDot    : true    → separator "•" dirender sebagai spasi (bukan bulatan)
+ *   wrap     : true    → baris jadi blok penuh, teks mengalir turun baris
+ *   noLine   : true    → HILANGKAN garis pemisah antar baris (border-top).
+ *                        Band divider/judul/instruksi/catatan TIDAK terpengaruh,
+ *                        jadi pemisah antar surat tetap ada (cetakan hlm 37–48).
+ *   titik    : string  → karakter deco sebelum bulat waqaf
+ *   bulatBaris / pola  → baris berbulat waqaf
+ *
+ * OPSI PER-SEL (objek di dalam array baris):
+ *   { text, hl, size, span, narrow, label, labelPos:'below', surah }
+ *
+ * OPSI BARIS KHUSUS:
+ *   { divider: "teks" }  → band pembatas ("" = garis polos)
+ *   { blockLabel: "١", rows: [[..],[..]] } → blok berlabel samping
  * ------------------------------------------------------------------
  */
 (function () {
     'use strict';
 
     // ==== UKURAN FONT LAYAR ====
-    const AISAR_SCREEN_FONT_SIZE = 34;  // sel baris
+    const AISAR_SCREEN_FONT_SIZE = 34;  // sel baris (default global)
     const AISAR_JUDUL_FONT_SIZE  = 48;  // judul besar (أَبَ)
     const AISAR_BASMALLAH_SIZE   = 26;
+    // Batas bawah auto-fit (halaman NON-wrap). Di bawah ini teks Arab sulit
+    // dibaca, jadi lebih baik dibiarkan turun baris daripada terus dikecilkan.
+    const AISAR_MIN_FONT         = 22;
 
     const LINE   = 'var(--q-line,rgba(255,255,255,0.3))';
     const FG     = 'var(--q-fg,#fff)';
@@ -30,22 +75,59 @@
     // ---- sel frasa (klik = marking, sama dengan Iqro) ----
     // hl = true → teks putih tebal (background biru ada di DIV sel, bukan di span,
     // supaya siklus marking (markWord) tidak menimpa/menghapus warna highlight)
-    function cellSpan(txt, hl, size) {
-    const fontSize = size || AISAR_SCREEN_FONT_SIZE;
-    const fgStyle = hl ? 'color:var(--q-accent-fg,#fff);font-weight:700;' : 'color:' + FG + ';';
-    // pemisah • dirender sebagai bulatan kecil ber-border (sesuai cetakan buku)
-    const disp = String(txt).replace(/\s*•\s*/g,
-        '<span class="aisar-dot" style="display:inline-block;width:20px;height:20px;' +
-        'border:2px solid currentColor;border-radius:50%;opacity:.6;' +
-        'margin:0 14px;flex:0 0 auto;align-self:center;"></span>');
-    return '<span class="word-item" data-word="' + txt + '" data-mark-state="0" ' +
-        'onclick="markWord(this)" ' +
-        'style="display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;' +
-        'cursor:pointer;padding:6px 12px;border-radius:8px;min-height:90px;height:auto;line-height:1.6;' +
-        'text-align:center;box-sizing:border-box;' +
-        "font-family:'Amiri Quran','Amiri',serif;font-size:" + fontSize + 'px;' + fgStyle +
-        'transition:all 0.25s cubic-bezier(0.4,0,0.2,1);">' + disp + '</span>';
-}
+    //
+    // AYAH_MARK_RE: HANYA tanda yang berdiri sendiri —
+    //   06D6–06DB = tanda waqaf (ۖ ۗ ۘ ۙ ۚ ۛ)
+    //   06DD      = ۝ akhir ayat
+    //   06DE      = ۞ rub' el-hizb
+    // SENGAJA TIDAK termasuk 06DC (ۜ saktah/sin kecil) dan 06DF–06E8
+    // (۟ ۠ ۡ ۢ ۣ dst) karena itu tanda COMBINING yang menempel ke huruf —
+    // kalau ikut dibungkus span, sambungan huruf Arab putus & kata terbelah.
+    const AYAH_MARK_RE = /([\u06D6-\u06DB\u06DD\u06DE][\u0660-\u0669\d]*)/g;
+
+    function cellSpan(txt, hl, size, noDot, wrap) {
+        const fontSize = size || AISAR_SCREEN_FONT_SIZE;
+        const fgStyle = hl ? 'color:var(--q-accent-fg,#fff);font-weight:700;' : 'color:' + FG + ';';
+        const hasAyahMark = AYAH_MARK_RE.test(String(txt));
+        AYAH_MARK_RE.lastIndex = 0; // reset karena regex global dipakai test()
+
+        // pemisah • → bulatan kecil ber-border (default) atau spasi bila noDot
+        let disp = noDot
+            ? String(txt).replace(/\s*•\s*/g, '&nbsp;&nbsp;')
+            : String(txt).replace(/\s*•\s*/g,
+                '<span class="aisar-dot" style="display:inline-block;width:20px;height:20px;' +
+                'border:2px solid currentColor;border-radius:50%;opacity:.6;' +
+                'margin:0 14px;flex:0 0 auto;align-self:center;"></span>');
+
+        // Bungkus tanda waqaf/akhir-ayat BESERTA angkanya (mis. ۝٦) dalam satu span
+        // supaya ligature lingkaran+angka tetap utuh & tidak terputus saat wrap.
+        // Pada halaman wrap (talqin) ukurannya disamakan dengan teks agar tidak
+        // terlihat mungil; pada halaman biasa sedikit dikecilkan.
+        const ayahMarkSize = wrap ? fontSize : Math.round(fontSize * 0.90);
+        disp = disp.replace(AYAH_MARK_RE,
+            '<span class="aisar-ayah-mark" style="display:inline-block;font-size:' + ayahMarkSize + 'px;' +
+            'line-height:1;vertical-align:middle;margin:0 4px;white-space:nowrap;">$1</span>');
+
+        const extraPad = hasAyahMark ? 'padding-top:22px;padding-bottom:14px;' : 'padding:6px 12px;';
+
+        // wrap = true → ALUR TEKS BIASA (block), lebar penuh, boleh turun baris.
+        // Flexbox + flex-wrap dihindari di sini karena tiap potongan teks jadi
+        // flex item → pemutusan baris kacau & kotak menyusut ke lebar konten.
+        const boxStyle = wrap
+            ? 'display:block;width:100%;white-space:normal;word-break:normal;text-align:center;'
+            : 'display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;text-align:center;';
+
+        const minH = wrap ? '0' : '90px';
+        const lh   = wrap ? '2.1' : '1.6';
+
+        return '<span class="word-item" data-word="' + txt + '" data-mark-state="0" ' +
+            'onclick="markWord(this)" ' +
+            'style="' + boxStyle +
+            'cursor:pointer;' + extraPad + 'border-radius:8px;min-height:' + minH + ';height:auto;line-height:' + lh + ';' +
+            'box-sizing:border-box;overflow:visible;' +
+            "font-family:'Amiri Quran','Amiri',serif;font-size:" + fontSize + 'px;' + fgStyle +
+            'transition:all 0.25s cubic-bezier(0.4,0,0.2,1);">' + disp + '</span>';
+    }
 
     // ---- bulat waqaf (replika iqro-handler) ----
     function bulatSpan() {
@@ -54,24 +136,28 @@
     }
 
     // sel "◯"/"○" = lingkaran tunggal; withBulat = titik + bulat di belakang frasa
-    function cellHtml(txt, hl, size, withBulat, titik) {
+    function cellHtml(txt, hl, size, withBulat, titik, noDot, wrap) {
         if (txt === '◯' || txt === '○') {
             return '<span class="iqro-waqaf-cell" style="display:inline-flex;align-items:center;justify-content:center;">' + bulatSpan() + '</span>';
         }
-        if (!withBulat || hl) return cellSpan(txt, hl, size);
+        if (!withBulat || hl) return cellSpan(txt, hl, size, noDot, wrap);
         const decoHtml = titik
             ? '<span class="iqro-deco" style="font-family:\'Amiri\',serif;font-size:26px;line-height:1;color:' + FG + ';opacity:.55;letter-spacing:2px;">' + titik + '</span>'
             : '';
         return '<span class="iqro-waqaf-cell" style="display:inline-flex;align-items:center;gap:10px;">' +
-            cellSpan(txt, hl, size) + decoHtml + bulatSpan() +
+            cellSpan(txt, hl, size, noDot, wrap) + decoHtml + bulatSpan() +
         '</span>';
     }
 
-    // ---- band teks (instruksi di bawah judul / pembatas tengah) ----
+    // ---- band teks (instruksi di bawah judul / pembatas tengah / catatan) ----
+    // font-family menyertakan Amiri sebagai fallback agar teks ARAB di dalam
+    // catatan/instruksi (mis. "لا", tanda waqaf) ter-shaping dengan benar —
+    // system-ui tidak punya tabel shaping Arab sehingga lam-alif putus.
+    // line-height 1.9 mencegah baris kedua saling menumpuk.
     function bandHtml(text) {
         return '<div style="border-top:1px solid ' + LINE + ';padding:7px 10px;text-align:center;' +
-            'font-family:system-ui;font-size:12px;font-weight:700;letter-spacing:.4px;color:' + FG + ';' +
-            'opacity:.9;background:var(--q-band,rgba(127,127,127,0.14));">' + text + '</div>';
+            "font-family:system-ui,'Amiri Quran','Amiri',serif;font-size:12px;font-weight:700;letter-spacing:.4px;color:" + FG + ';' +
+            'opacity:.9;line-height:1.9;background:var(--q-band,rgba(127,127,127,0.14));">' + text + '</div>';
     }
 
     // ---- baris N kolom, RTL: index 0 = paling kanan, garis pemisah antar kolom ----
@@ -79,52 +165,95 @@
         const isWaqaf   = !!(page && page.pola === 'waqaf');
         const withBulat = isWaqaf ||
             (page && Array.isArray(page.bulatBaris) && page.bulatBaris.indexOf(rowIdx) !== -1);
-        const titik = (page && page.titik !== undefined) ? page.titik : '…';
+        const titik    = (page && page.titik !== undefined) ? page.titik : '…';
+        const pageSize = (page && page.fontSize) ? page.fontSize : null;
+        const noDot    = !!(page && page.noDot);
+        const wrap     = !!(page && page.wrap);
+        const noLine   = !!(page && page.noLine);
+        // Garis pemisah antar baris. Kosong pada halaman ber-noLine (hlm 37–48)
+        // supaya tampilannya menyatu seperti cetakan; band divider tetap bergaris.
+        const rowBorder = noLine ? '' : 'border-top:1px solid ' + LINE + ';';
+
         // band pembatas di tengah halaman: { divider: "teks" }
-        if (row && !Array.isArray(row) && typeof row === 'object' && row.divider) {
-            return bandHtml(row.divider);
+        // pakai 'in' supaya { divider: "" } (garis pemisah polos) tetap terdeteksi
+        // dan tidak jatuh ke jalur lain → render "undefined"
+        if (row && !Array.isArray(row) && typeof row === 'object' && 'divider' in row) {
+            return bandHtml(row.divider || '&nbsp;');
         }
-        // blok berlabel samping: { blockLabel: "أَ", rows: [[..],[..],[..]] }
+
+        // blok berlabel samping: { blockLabel: "١", rows: [[..],[..],[..]] }
         // label vertikal di sisi KANAN membentang setinggi seluruh rows
         if (row && !Array.isArray(row) && typeof row === 'object' && row.blockLabel) {
+            const ovfRow  = wrap ? 'overflow:visible;' : 'overflow-x:auto;scrollbar-width:thin;';
+            const ovfCell = wrap ? '' : 'overflow-x:auto;';
             const inner = (row.rows || []).map(function (r, ri) {
                 const cells = Array.isArray(r) ? r : [r];
-                const top = ri > 0 ? 'border-top:1px solid ' + LINE + ';' : '';
-                return '<div class="iqro-row-scroll" style="display:flex;direction:rtl;align-items:stretch;overflow-x:auto;scrollbar-width:thin;' + top + '">' +
+                const top = (ri > 0 && !noLine) ? 'border-top:1px solid ' + LINE + ';' : '';
+                return '<div class="iqro-row-scroll" style="display:flex;direction:rtl;align-items:stretch;' + ovfRow + top + '">' +
                     cells.map(function (c, i) {
                         const sep = (i < cells.length - 1) ? 'border-left:1px solid ' + LINE + ';' : '';
-                        return '<div class="aisar-cell" style="flex:1;display:flex;justify-content:center;align-items:center;padding:2px 4px;' + sep + '">' + cellHtml(c, false, null, withBulat, titik) + '</div>';
+                        return '<div class="aisar-cell" style="flex:1;min-width:0;display:flex;justify-content:center;align-items:center;padding:2px 4px;' + ovfCell + sep + '">' +
+                            cellHtml(c, false, pageSize, withBulat, titik, noDot, wrap) +
+                        '</div>';
                     }).join('') +
                 '</div>';
             }).join('');
 
             return '' +
-                '<div style="display:flex;direction:rtl;align-items:stretch;border-top:1px solid ' + LINE + ';">' +
+                '<div style="display:flex;direction:rtl;align-items:stretch;' + rowBorder + '">' +
                     // kolom label kanan (sempit, vertikal tengah)
                     '<div style="flex:0 0 72px;max-width:72px;display:flex;justify-content:center;align-items:center;border-left:1px solid ' + LINE + ';">' +
-                        cellSpan(row.blockLabel) +
+                        cellSpan(row.blockLabel, false, pageSize, noDot, false) +
                     '</div>' +
                     // grid isi blok
-                    '<div style="flex:1;display:flex;flex-direction:column;">' + inner + '</div>' +
+                    '<div style="flex:1;min-width:0;display:flex;flex-direction:column;">' + inner + '</div>' +
                 '</div>';
         }
 
         const cells = Array.isArray(row) ? row : [row];
 
-        // 1 sel = baris rangkuman penuh
-        // justify flex-start (RTL = mulai kanan): center + overflow membuat
-        // ujung kanan terpotong dan tidak terjangkau scroll.
+        // ===== 1 sel = baris rangkuman penuh =====
+        // Dukungan { text, surah } → nama surat kecil menempel setelah nomor ayat.
         if (cells.length === 1) {
+            const c0     = cells[0];
+            const isObj0 = c0 && typeof c0 === 'object';
+            const txt0   = isObj0 ? c0.text : c0;
+            const surahHtml = (isObj0 && c0.surah)
+                ? '<span style="float:left;margin-top:4px;margin-inline-start:2px;' +
+                  'font-family:\'Amiri\',serif;font-size:12px;color:' + FG + ';opacity:.6;' +
+                  'line-height:1;white-space:nowrap;">' + c0.surah + '</span>'
+                : '';
+            const inner = cellHtml(txt0, false, (isObj0 && c0.size) ? c0.size : pageSize, withBulat, titik, noDot, wrap);
+
+            // WRAP → baris jadi BLOK penuh, bukan flex.
+            // Flex membuat anaknya menyusut (flex-shrink:1) meski width:100%,
+            // sehingga kotak terlihat sempit & teks terpotong.
+            if (wrap) {
+                return '' +
+                    '<div class="iqro-row-scroll" style="display:block;direction:rtl;' + rowBorder +
+                    'padding:6px 10px;overflow:visible;width:100%;box-sizing:border-box;">' +
+                        inner + surahHtml +
+                    '</div>';
+            }
+
+            // Non-wrap: justify flex-start (RTL = mulai kanan) + scroll horizontal.
+            // center + overflow membuat ujung kanan terpotong & tak terjangkau scroll.
             return '' +
-                '<div class="iqro-row-scroll" style="display:flex;direction:rtl;justify-content:flex-start;align-items:center;border-top:1px solid ' + LINE + ';padding:2px 4px;overflow-x:auto;scrollbar-width:thin;">' +
-                    '<div style="margin-inline:auto;display:flex;">' + cellHtml(cells[0], false, null, withBulat, titik) + '</div>' +
+                '<div class="iqro-row-scroll" style="display:flex;direction:rtl;justify-content:flex-start;align-items:center;' + rowBorder + 'padding:2px 4px;overflow-x:auto;overflow-y:visible;scrollbar-width:thin;">' +
+                    '<div style="margin-inline:auto;min-width:0;display:flex;align-items:flex-start;">' +
+                        inner + surahHtml +
+                    '</div>' +
                 '</div>';
         }
 
-        // N kolom: border-left di semua sel kecuali sel terakhir (paling kiri)
-        // sel bisa: "teks" | { hl: "teks" } | { text: "teks", span: 2 } (lebar setara N kolom)
+        // ===== N kolom =====
+        // border-left di semua sel kecuali sel terakhir (paling kiri).
+        // sel bisa: "teks" | { hl: "teks" } | { text: "teks", span: 2 }
+        // padding-top 14px memberi ruang untuk tanda mad (ٓ) di atas huruf —
+        // tanpa itu tanda terpotong karena overflow-x:auto memaksa sumbu-Y ikut auto.
+        const rowOvfN = wrap ? 'overflow:visible;' : 'overflow-x:auto;scrollbar-width:thin;';
         return '' +
-            '<div class="iqro-row-scroll" style="display:flex;direction:rtl;align-items:stretch;border-top:1px solid ' + LINE + ';overflow-x:auto;scrollbar-width:thin;">' +
+            '<div class="iqro-row-scroll" style="display:flex;direction:rtl;align-items:stretch;' + rowBorder + rowOvfN + 'padding-top:14px;padding-bottom:6px;">' +
                 (function () {
                     // total unit kolom baris ini (span dihitung)
                     const totalUnits = cells.reduce(function (t, c) {
@@ -139,24 +268,37 @@
                         const isObj = c && typeof c === 'object';
                         const isHl  = isObj && c.hl;
                         const txt   = isHl ? c.hl : (isObj ? c.text : c);
-                        const size  = (isObj && c.size) ? c.size : null;
+                        const size  = (isObj && c.size) ? c.size : pageSize;
+
+                        // label kecil: default DI ATAS, labelPos:'below' → DI BAWAH
+                        const labelBelow = isObj && c.labelPos === 'below';
                         const label = (isObj && c.label)
-                            ? '<div style="font-family:\'Amiri\',serif;font-size:13px;color:' + FG + ';opacity:.65;text-align:center;padding-top:4px;line-height:1;">' + c.label + '</div>'
+                            ? '<div style="font-family:\'Amiri\',serif;font-size:13px;color:' + FG + ';opacity:.65;text-align:center;' +
+                              (labelBelow ? 'padding-top:2px;padding-bottom:4px;' : 'padding-top:4px;') + 'line-height:1.4;">' + c.label + '</div>'
                             : '';
+
                         const span  = (isObj && c.span) ? c.span : 1;
                         const bg    = isHl ? 'background:var(--q-accent,#2E86AB);' : '';
                         const isNarrow = isObj && c.narrow;
+
                         let widthStyle;
                         if (isNarrow) {
-                            widthStyle = 'flex:0 0 auto;min-width:96px;max-width:130px;';
+                            // class aisar-narrow dipakai auto-fit untuk melewati sel ini
+                            widthStyle = 'flex:0 0 auto;min-width:60px;max-width:90px;';
                         } else if (hasNarrow) {
-                            widthStyle = 'flex:1 1 auto;';
+                            widthStyle = 'flex:1 1 auto;min-width:0;';
                         } else {
                             const pct = (span / totalUnits * 100).toFixed(4) + '%';
                             widthStyle = 'flex:0 0 auto;min-width:' + pct + ';';
                         }
-                        return '<div class="aisar-cell" style="' + widthStyle + 'box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:2px 4px;' + bg + sep + '">' +
-                            label + cellHtml(txt, isHl, size, withBulat, titik) +
+
+                        const cellInner = labelBelow
+                            ? cellHtml(txt, isHl, size, withBulat, titik, noDot, wrap) + label
+                            : label + cellHtml(txt, isHl, size, withBulat, titik, noDot, wrap);
+
+                        const narrowCls = isNarrow ? ' aisar-narrow' : '';
+                        return '<div class="aisar-cell' + narrowCls + '" style="' + widthStyle + 'box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:2px 4px;' + bg + sep + '">' +
+                            cellInner +
                         '</div>';
                     }).join('');
                 })() +
@@ -194,28 +336,116 @@
 
         const catatanHtml = data.catatan ? bandHtml(data.catatan) : '';
 
-        // Urutan header: judul Latin (judul bab) tampil DI ATAS basmallah,
-        // sesuai cetakan buku. Judul Arab (mis. أَبَ di Jilid 1) tetap di bawah basmallah.
-        const isLatinJudul = !!(data.judul && data.judul.length) &&
-            (!/[\u0600-\u06FF]/.test(data.judul.join(' ')) || /[A-Za-z]/.test(data.judul.join(' ')));
-        const headerHtml = isLatinJudul
-            ? (judulHtml + basmallahHtml + instruksiHtml)
-            : (basmallahHtml + judulHtml + instruksiHtml);
+        // Urutan header SESUAI CETAKAN: basmallah dulu, baru band judul, lalu
+        // instruksi. Halaman tanpa basmallah tidak terpengaruh (string kosong).
+        const headerHtml = basmallahHtml + judulHtml + instruksiHtml;
 
         const displayStyle = pageIdx === 0 ? '' : 'display:none;';
-        // class iqro-page DIPERTAHANKAN → navigasi & PDF capture existing tetap jalan
+        // class iqro-page DIPERTAHANKAN → navigasi & PDF capture existing tetap jalan.
+        // overflow:visible pada kotak halaman → isi yang melebihi tinggi tidak
+        // dipotong saat html2canvas merekam (penyebab baris hilang di PDF).
         return '' +
             '<div class="iqro-page aisar-page" data-idx="' + pageIdx + '" data-halaman="' + data.halaman + '" style="margin-bottom:8px;' + displayStyle + '">' +
                 '<div style="text-align:center;margin-bottom:8px;color:' + FG + ';">' +
                     '<p style="font-size:14px;opacity:.65;font-family:system-ui;">Aisar ' + data.jilid + ' &nbsp;·&nbsp; Halaman ' + data.halaman + '</p>' +
                 '</div>' +
-                '<div style="border:1.5px solid ' + BORDER + ';margin:8px auto 16px auto;max-width:760px;overflow:hidden;border-radius:6px;">' +
+                '<div style="border:1.5px solid ' + BORDER + ';margin:8px auto 16px auto;max-width:760px;overflow:visible;border-radius:6px;">' +
                     headerHtml +
                     renderKolomHeader(data.kolomHeader) +
                     rowsHtml +
                     catatanHtml +
                 '</div>' +
             '</div>';
+    }
+
+    // ==================================================================
+    // AUTO-FIT FONT
+    // ------------------------------------------------------------------
+    // Mengukur lebar nyata tiap .word-item (scrollWidth) terhadap lebar
+    // kotak barisnya, lalu mengecilkan font SAMPAI BATAS AISAR_MIN_FONT.
+    // Jika di batas itu masih meluber, font berhenti dikecilkan dan span
+    // dialihkan ke mode mengalir (turun baris) — bukan terus menyusut
+    // sampai tak terbaca.
+    //
+    // DILEWATI untuk:
+    //   - sel narrow (nama surat / badge)
+    //   - span halaman `wrap` (talqin) → lihat catatan di dalam fitOneSpan
+    //
+    // Halaman tersembunyi (display:none) punya clientWidth 0, jadi
+    // ditampilkan sementara (visibility:hidden) saat pengukuran.
+    // ==================================================================
+    function fitOneSpan(span) {
+        // sel narrow (nama surat, badge) jangan diutak-atik
+        if (span.closest('.aisar-narrow')) return;
+
+        // ── Halaman wrap (talqin hlm 40–48) ──────────────────────────────
+        // TIDAK di-auto-fit. Baris di aisar-data.js memang meniru pemenggalan
+        // cetakan, tapi kesesuaian itu tidak wajib — yang wajib adalah SELURUH
+        // teks ayat muncul utuh di PDF. Membiarkan teks mengalir (turun baris
+        // sendiri) menjamin itu; memaksa satu baris lewat white-space:nowrap
+        // justru membuat teks meluber ke kiri lalu TERPOTONG di tepi canvas.
+        // Ukuran font halaman ini diatur manual lewat opsi `fontSize`.
+        if (window.getComputedStyle(span).display === 'block') {
+            span.style.whiteSpace = 'normal';
+            span.style.width      = '100%';
+            span.style.lineHeight = '2.1';
+            span.style.minHeight  = '0';
+            return;
+        }
+
+        const row = span.closest('.iqro-row-scroll') ||
+                    span.closest('.aisar-cell') ||
+                    span.parentElement;
+        if (!row) return;
+
+        // Lebar isi kotak baris = clientWidth dikurangi padding kiri-kanan
+        // baris itu sendiri, plus sedikit toleransi anti-pembulatan.
+        const rowCS = window.getComputedStyle(row);
+        const avail = row.clientWidth
+                    - (parseFloat(rowCS.paddingLeft)  || 0)
+                    - (parseFloat(rowCS.paddingRight) || 0)
+                    - 4;
+        if (avail <= 0) return;
+
+        let size  = parseFloat(window.getComputedStyle(span).fontSize) || AISAR_SCREEN_FONT_SIZE;
+        let guard = 40; // pengaman anti infinite loop
+
+        while (span.scrollWidth > avail && size > AISAR_MIN_FONT && guard-- > 0) {
+            size -= 1;
+            span.style.fontSize = size + 'px';
+            // tanda ayat (۝٦ dsb) ikut menyesuaikan agar proporsinya tetap
+            span.querySelectorAll('.aisar-ayah-mark').forEach(function (m) {
+                m.style.fontSize = size + 'px';
+            });
+        }
+
+        // Masih meluber di ukuran minimum → berhenti mengecil, biarkan mengalir.
+        if (span.scrollWidth > avail) {
+            span.style.whiteSpace = 'normal';
+            span.style.display    = 'block';
+            span.style.width      = '100%';
+            span.style.lineHeight = '2.1';
+            span.style.minHeight  = '0';
+        }
+    }
+
+    function aisarAutoFit(root) {
+        if (!root) return;
+        root.querySelectorAll('.aisar-page').forEach(function (pageEl) {
+            const hidden = window.getComputedStyle(pageEl).display === 'none';
+            // halaman tersembunyi tidak punya dimensi → tampilkan sementara
+            if (hidden) {
+                pageEl.style.visibility = 'hidden';
+                pageEl.style.display    = 'block';
+            }
+
+            pageEl.querySelectorAll('.word-item').forEach(fitOneSpan);
+
+            if (hidden) {
+                pageEl.style.display    = 'none';
+                pageEl.style.visibility = '';
+            }
+        });
     }
 
     // ---- nav bar (markup sama dgn iqro, tombol pakai iqroNavGo global) ----
@@ -276,12 +506,34 @@
         display.style.setProperty('max-height', 'none', 'important');
         display.style.setProperty('overflow-y', 'visible', 'important');
 
-        // sinkron ke drawer mobile (sama seperti iqro-handler)
-        const drawerDisplay = document.getElementById('quranDisplayDrawer');
-        if (drawerDisplay) {
-            drawerDisplay.innerHTML = display.innerHTML;
-            drawerDisplay.style.setProperty('max-height', 'none', 'important');
-            drawerDisplay.style.setProperty('overflow-y', 'visible', 'important');
+        // AUTO-FIT dijalankan setelah browser menghitung layout.
+        // Penyalinan ke drawer DIPINDAH ke dalam callback ini supaya yang
+        // tersalin adalah HTML yang SUDAH disesuaikan — kalau di luar,
+        // drawer mendapat versi sebelum auto-fit.
+        const runFit = function () {
+            aisarAutoFit(display);
+
+            const drawerDisplay = document.getElementById('quranDisplayDrawer');
+            if (drawerDisplay) {
+                drawerDisplay.innerHTML = display.innerHTML;
+                drawerDisplay.style.setProperty('max-height', 'none', 'important');
+                drawerDisplay.style.setProperty('overflow-y', 'visible', 'important');
+            }
+        };
+
+        // Menunggu Amiri Quran benar-benar termuat sebelum mengukur.
+        // requestAnimationFrame menyala hanya beberapa ms setelah innerHTML
+        // diisi — saat itu browser masih memakai font fallback (serif) yang
+        // metrik lebarnya jauh berbeda, sehingga auto-fit halaman non-wrap
+        // bisa salah menyusutkan.
+        if (document.fonts && document.fonts.ready) {
+            Promise.resolve(document.fonts.load("34px 'Amiri Quran'"))
+                .catch(function () {})
+                .then(function () { return document.fonts.ready; })
+                .then(function () { requestAnimationFrame(runFit); })
+                .catch(function () { requestAnimationFrame(runFit); });
+        } else {
+            setTimeout(function () { requestAnimationFrame(runFit); }, 400);
         }
 
         return true;
@@ -391,7 +643,6 @@
     }
 
     // ---- sinkron label "Iqro"/"Aisar" pada tombol & judul blok ----
-    // ---- sinkron label "Iqro"/"Aisar" pada tombol & judul blok ----
     function getMetodeValue(mode) {
         // coba beberapa kemungkinan elemen metode (select / hidden / display input)
         const ids = ['metode' + mode, 'metodeHidden' + mode, 'metodeDisplay' + mode];
@@ -406,52 +657,49 @@
     }
 
     // ---- sinkron label & warna tombol "Iqro"/"Aisar" per form ----
-function syncMetodeLabels() {
-    // pasangan class warna: emerald (Iqro) ↔ blue (Aisar)
-    const IQRO_CLS  = ['bg-emerald-600', 'hover:bg-emerald-700'];
-    const AISAR_CLS = ['bg-blue-600', 'hover:bg-blue-700'];
+    function syncMetodeLabels() {
+        // pasangan class warna: emerald (Iqro) ↔ blue (Aisar)
+        const IQRO_CLS  = ['bg-emerald-600', 'hover:bg-emerald-700'];
+        const AISAR_CLS = ['bg-blue-600', 'hover:bg-blue-700'];
 
-    setInterval(() => {
-        ['Combined', 'SetoranOnly'].forEach(mode => {
-            const isAisar = getMetodeValue(mode).includes('aisar');
-            const label   = isAisar ? 'Aisar' : 'Iqro';
-            const block   = document.getElementById('iqroBlock' + mode);
-            if (!block) return;
+        setInterval(() => {
+            ['Combined', 'SetoranOnly'].forEach(mode => {
+                const isAisar = getMetodeValue(mode).includes('aisar');
+                const label   = isAisar ? 'Aisar' : 'Iqro';
+                const block   = document.getElementById('iqroBlock' + mode);
+                if (!block) return;
 
-            // teks label di dalam blok mode ini saja
-            block.querySelectorAll('.lbl-metode-jilid').forEach(el => {
-                if (el.textContent !== label) el.textContent = label;
-            });
-
-            // judul blok "Pilih Halaman Iqro/Aisar" bila ada
-            const heading = block.querySelector('p');
-            if (heading && /Pilih Halaman/i.test(heading.textContent)) {
-                const want = 'Pilih Halaman ' + label;
-                // hanya ganti node teks, biarkan ikon svg
-                heading.childNodes.forEach(n => {
-                    if (n.nodeType === 3 && n.textContent.trim()) n.textContent = ' ' + want;
+                // teks label di dalam blok mode ini saja
+                block.querySelectorAll('.lbl-metode-jilid').forEach(el => {
+                    if (el.textContent !== label) el.textContent = label;
                 });
-            }
 
-            // warna tombol "Tampilkan Halaman ..."
-            const btn = block.querySelector('button[onclick*="loadIqro"]');
-            if (btn) {
-                const addCls    = isAisar ? AISAR_CLS : IQRO_CLS;
-                const removeCls = isAisar ? IQRO_CLS  : AISAR_CLS;
-                removeCls.forEach(c => btn.classList.remove(c));
-                addCls.forEach(c => btn.classList.add(c));
-                // emoji ikon: 📗 hijau untuk Iqro, 📘 biru untuk Aisar
-                btn.innerHTML = btn.innerHTML.replace(isAisar ? '📗' : '📘', isAisar ? '📘' : '📗');
-            }
-        });
-    }, 500);
-}
+                // CATATAN: judul "Pilih Halaman <span.lbl-metode-jilid>" SUDAH
+                // ditangani oleh loop di atas. Dulu di sini ada kode yang menulis
+                // ulang node teks <p> menjadi "Pilih Halaman Aisar" — padahal
+                // span-nya masih ada di belakang, sehingga muncul "Aisar" DUA KALI.
+                // Kode itu peninggalan sebelum span .lbl-metode-jilid ada di markup.
+
+                // warna tombol "Tampilkan Halaman ..."
+                const btn = block.querySelector('button[onclick*="loadIqro"]');
+                if (btn) {
+                    const addCls    = isAisar ? AISAR_CLS : IQRO_CLS;
+                    const removeCls = isAisar ? IQRO_CLS  : AISAR_CLS;
+                    removeCls.forEach(c => btn.classList.remove(c));
+                    addCls.forEach(c => btn.classList.add(c));
+                    // emoji ikon: 📗 hijau untuk Iqro, 📘 biru untuk Aisar
+                    btn.innerHTML = btn.innerHTML.replace(isAisar ? '📗' : '📘', isAisar ? '📘' : '📗');
+                }
+            });
+        }, 500);
+    }
 
     wrapLoadIqro();
     syncMetodeLabels();
 
     window.loadAisar        = loadAisar;
     window.renderAisarRange = renderAisarRange;
+    window.aisarAutoFit     = aisarAutoFit;   // bisa dipanggil ulang manual
 
-    console.log('✅ aisar-handler.js v1.0 ready');
+    console.log('✅ aisar-handler.js v1.6 ready');
 })();

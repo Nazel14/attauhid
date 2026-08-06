@@ -68,9 +68,6 @@ function KelasSwitcher({ kelasAktif, kelasList = [], variant = 'full' }) {
                                 : 'text-stone-600 hover:bg-cream-200 dark:text-stone-300 dark:hover:bg-coal-600'
                         }`}
                     >
-                        <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-stone-100 text-[11px] font-bold text-stone-500 dark:bg-coal-600 dark:text-stone-300">
-                            {k.name?.charAt(0)?.toUpperCase()}
-                        </span>
                         <span className="flex-1 truncate">{k.name}</span>
                         {aktif && (
                             <svg className="h-3.5 w-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -132,9 +129,6 @@ function KelasSwitcher({ kelasAktif, kelasList = [], variant = 'full' }) {
                 onClick={() => multi && setOpen((o) => !o)}
                 className={`flex w-full items-center gap-2.5 rounded-xl bg-claude-500/8 px-3 py-2.5 ring-1 ring-claude-500/20 ${multi ? 'transition hover:bg-claude-500/15' : 'cursor-default'}`}
             >
-                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-claude-500/15 text-sm font-bold text-claude-600 dark:text-claude-400">
-                    {inisial}
-                </span>
                 <span className="min-w-0 flex-1 text-left">
                     <span className="block text-[9px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
                         Kelas Aktif

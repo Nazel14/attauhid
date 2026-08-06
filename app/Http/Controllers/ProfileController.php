@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 class ProfileController extends Controller
 {
@@ -21,11 +22,30 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        // Aturan:
-        // - santri : read-only penuh (tidak bisa ubah nama maupun foto)
-        // - guru   : hanya foto, dengan cooldown 3 hari
-        // - admin  : hanya foto, tanpa cooldown
-        // - nama   : tidak dapat diubah oleh siapa pun
+        /* ---------- Tentukan panel aktif ----------
+         * Isi & layout halaman profil mengikuti panel yang sedang dibuka,
+         * bukan kolom users.role. Super Admin yang sedang berada di panel
+         * keuangan harus melihat profil versi keuangan, bukan versi admin. */
+        $modules = method_exists($user, 'availableModules')
+            ? $user->availableModules()
+            : ['raport'];
+
+        $punyaKeuangan = in_array('keuangan', $modules, true);
+
+        $panel = (session('modul_aktif') === 'keuangan' && $punyaKeuangan)
+            ? 'keuangan'
+            : 'raport';
+
+        // Akun keuangan murni (users.role bukan role raport) tidak punya
+        // panel raport sama sekali, jadi selalu diperlakukan sebagai keuangan.
+        if ($punyaKeuangan && !in_array($user->role, ['admin', 'guru', 'santri'], true)) {
+            $panel = 'keuangan';
+        }
+
+        // Aturan foto:
+        // - santri : read-only penuh
+        // - guru   : cooldown 3 hari (berlaku juga saat ia di panel keuangan)
+        // - lainnya: bebas, tanpa cooldown
         $canUpdatePhoto = true;
         $nextUpdateDate = null;
 
@@ -40,27 +60,68 @@ class ProfileController extends Controller
             }
         }
 
-        // Super Admin dibedakan lewat permission 'kelola-admin' (samakan dgn AuthenticatedLayout)
-        $isSuperAdmin = $user->role === 'admin' && $user->can('kelola-admin');
+        // Nama role Spatie, dipakai sebagai label di panel keuangan karena
+        // di sana users.role tidak menggambarkan hak akses yang sebenarnya.
+        $labelRoleSpatie = $user->getRoleNames()
+            ->map(fn ($r) => Str::title(str_replace('-', ' ', $r)))
+            ->implode(', ');
 
-        $roleLabel = match (true) {
-            $isSuperAdmin           => 'Super Admin',
-            $user->role === 'admin' => 'Admin',
-            $user->role === 'guru'  => 'Guru',
-            default                 => 'Santri',
-        };
+        $isSuperAdmin = ($user->role === 'admin' && $user->can('kelola-admin'))
+            || $user->hasRole('super-admin');
 
-        // Daftar field profil per role. `kategori` = kategori laporan yang
+        if ($panel === 'keuangan') {
+            $roleLabel = $isSuperAdmin
+                ? 'Super Admin'
+                : ($labelRoleSpatie ?: 'Pengguna Keuangan');
+        } else {
+            $roleLabel = match (true) {
+                $isSuperAdmin           => 'Super Admin',
+                $user->role === 'admin' => 'Admin',
+                $user->role === 'guru'  => 'Guru',
+                default                 => 'Santri',
+            };
+        }
+
+        // Daftar field profil per panel/role. `kategori` = kategori laporan yang
         // otomatis terpilih saat bendera di baris itu diklik; null artinya
-        // baris hanya informasi dan tidak punya tombol lapor (mis. data
-        // turunan seperti jumlah santri, yang tidak diinput manual).
+        // baris hanya informasi dan tidak punya tombol lapor.
         $fields    = [];
         $bisaLapor = false;
         $kategori  = [];
         $tujuan    = '';
         $fotoLapor = null;
 
-        if ($user->role === 'santri') {
+        if ($panel === 'keuangan') {
+            // Pegawai adalah subclass Guru dengan tabel yang sama, jadi relasi
+            // user->guru tetap mengembalikan baris yang benar bila relasi
+            // khusus 'pegawai' belum didefinisikan di model User.
+            $pegawai = method_exists($user, 'pegawai') ? $user->pegawai : $user->guru;
+
+            $namaJabatan = null;
+            if ($pegawai && method_exists($pegawai, 'jabatan')) {
+                $j = $pegawai->jabatan;
+                $namaJabatan = $j?->nama_jabatan ?? $j?->nama ?? $j?->name;
+            }
+
+            // Modul keuangan belum punya alur laporan/komplain sendiri,
+            // jadi bendera dimatikan agar tidak memanggil route yang tidak ada.
+            $bisaLapor = false;
+            $tujuan    = 'Super Admin';
+
+            $fields = [
+                ['label' => 'Nama Lengkap',   'value' => $pegawai?->name ?? $user->name,  'kategori' => null],
+                ['label' => 'NIP',            'value' => $pegawai?->nip,                  'kategori' => null],
+                ['label' => 'Jabatan',        'value' => $namaJabatan,                    'kategori' => null],
+                ['label' => 'Username Login', 'value' => $user->name,                     'kategori' => null],
+                ['label' => 'Hak Akses',      'value' => $labelRoleSpatie ?: null,        'kategori' => null],
+            ];
+
+            // Akun keuangan tanpa data pegawai tidak perlu deretan tanda strip.
+            $fields = array_values(array_filter(
+                $fields,
+                fn ($f) => $f['value'] !== null && $f['value'] !== ''
+            ));
+        } elseif ($user->role === 'santri') {
             $santri = $user->santri;
             $santri?->loadMissing(['kelas', 'guru']);
 
@@ -136,9 +197,10 @@ class ProfileController extends Controller
                     ? asset('storage/' . $user->profile_photo)
                     : null,
             ],
+            'panel'             => $panel,
             'canUpdatePhoto'    => $canUpdatePhoto,
             'nextUpdateDate'    => $nextUpdateDate,
-            // 0 = tanpa cooldown (admin)
+            // 0 = tanpa cooldown
             'photoCooldownDays' => $user->role === 'guru' ? self::PHOTO_COOLDOWN_DAYS : 0,
             'fields'            => $fields,
             'bisaLapor'         => $bisaLapor,

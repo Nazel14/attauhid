@@ -49,8 +49,8 @@
     'use strict';
 
     // ==== UKURAN FONT LAYAR (ubah di sini untuk perbesar/perkecil) ====
-    const IQRO_SCREEN_FONT_SIZE = 40;   // sebelumnya 40 — font sel di layar
-    const IQRO_COMBO_FONT_SIZE  = 44;   // sebelumnya 44 — font sel combo di layar
+    const IQRO_SCREEN_FONT_SIZE = 34;   // sebelumnya 40 — font sel di layar
+    const IQRO_COMBO_FONT_SIZE  = 40;   // sebelumnya 44 — font sel combo di layar
     // ==================================================================
 
     const IQRO_PDF_FONT_SIZE    = 50;
@@ -677,10 +677,15 @@
             styleEl.textContent =
                 // Kotak teks ikut melebar penuh (buang batas 760px) saat PDF.
                 '.iqro-cap .iqro-page > div:nth-child(2) { max-width:none !important; width:100% !important; overflow:visible !important; }' +
-                '.iqro-cap .word-item { font-size:' + IQRO_PDF_FONT_SIZE + 'px !important; ' +
+                // ── ATURAN KHUSUS IQRO ────────────────────────────────────────
+                // DIBATASI ke halaman NON-Aisar. Sebelumnya berlaku global, dan
+                // font-size 50px + nowrap !important menimpa opsi `fontSize`
+                // per-halaman Aisar → baris talqin meluber ke kiri lalu TERPOTONG
+                // di tepi canvas html2canvas.
+                '.iqro-cap .iqro-page:not(.aisar-page) .word-item { font-size:' + IQRO_PDF_FONT_SIZE + 'px !important; ' +
                 'min-height:' + IQRO_PDF_CELL_HEIGHT + 'px !important; height:auto !important; line-height:' + IQRO_PDF_LINE_HEIGHT + ' !important; white-space:nowrap !important; ' +
                 'padding-bottom:' + IQRO_PDF_CELL_PADBOT + 'px !important; box-sizing:border-box !important; }' +
-                '.iqro-cap .word-item.iqro-combo-cell { font-size:' + IQRO_PDF_FONT_SIZE + 'px !important; ' +
+                '.iqro-cap .iqro-page:not(.aisar-page) .word-item.iqro-combo-cell { font-size:' + IQRO_PDF_FONT_SIZE + 'px !important; ' +
                 'height:auto !important; min-height:' + IQRO_PDF_CELL_HEIGHT + 'px !important; ' +
                 'padding-bottom:' + IQRO_PDF_CELL_PADBOT + 'px !important; }' +
                 // ── AISAR PDF FIX: judul & basmallah "tenggelam" ke bawah ──
@@ -690,15 +695,23 @@
                 // FIX: judul Iqro di PDF juga butuh ruang descender (kasus sama dgn Aisar)
                 '.iqro-cap .iqro-judul { line-height:2.2 !important; padding:16px 10px 56px 10px !important; overflow:visible !important; }' +
                 '.iqro-cap .aisar-basmallah { line-height:2.4 !important; margin:0 !important; padding:12px 0 28px 0 !important; overflow:visible !important; }' +
-                // Sel Aisar (2 huruf pendek) tidak butuh 150px seperti Iqro;
-                // line-height dinaikkan agar harakat atas & descender aman.
-                '.iqro-cap .aisar-page .word-item { min-height:120px !important; line-height:1.9 !important; padding-bottom:26px !important; white-space:nowrap !important; }' +
+                // ── AISAR: JANGAN paksa font-size & JANGAN paksa nowrap ───────
+                // Ukuran sudah ditentukan opsi `fontSize` per halaman + hasil
+                // aisarAutoFit (tersimpan sebagai inline style di tiap span).
+                // white-space dibiarkan mengikuti inline: halaman wrap = normal
+                // (boleh turun baris), halaman biasa = nowrap.
+                // min-height dilonggarkan agar baris wrap tidak jadi tinggi sekali.
+                '.iqro-cap .aisar-page .word-item { line-height:1.9 !important; padding-bottom:14px !important; max-width:100% !important; overflow:visible !important; }' +
+                // Baris Aisar TIDAK boleh di-clip — teks yang meluber harus terlihat
+                // (dan akan turun baris sendiri karena white-space:normal).
+                '.iqro-cap .aisar-page .iqro-row-scroll { overflow:visible !important; }' +
+                '.iqro-cap .aisar-page .aisar-cell { overflow:visible !important; }' +
                 // FIX (Jilid 5 hal 21 dkk): flex min-width:auto membuat .iqro-row-inner MELAR
                 // mengikuti isi nowrap → clientWidth == scrollWidth → auto-fit mengira muat.
                 // min-width:0 mengunci lebar inner ke jatah kolomnya sehingga ukuran overflow
                 // terbaca benar dan font baris panjang benar-benar dikecilkan.
                 '.iqro-cap .iqro-row-inner { min-width:0 !important; }' +
-                '.iqro-cap .iqro-row-scroll { overflow:hidden !important; }';
+                '.iqro-cap .iqro-page:not(.aisar-page) .iqro-row-scroll { overflow:hidden !important; }';
             wrapper.appendChild(styleEl);
 
             const clonePage = srcPage.cloneNode(true);
@@ -710,10 +723,22 @@
             applyIqroMarks(srcPage, clonePage);
             await new Promise(r => setTimeout(r, 500));
 
-            // PDF: shrink baris panjang; floor lebih rendah + wrap fallback supaya
-            // kalimat jilid 4–6 yang panjang tidak terpotong.
-            fitPageRows(clonePage, 0.42, true);   // ← sekarang terdefinisi (lihat fungsi baru di bawah)
-            await new Promise(r => setTimeout(r, 60));
+            // Halaman Aisar punya struktur sendiri (tidak ada .iqro-row-inner),
+            // jadi fitPageRows TIDAK berpengaruh sama sekali di sana — itulah
+            // sebabnya baris panjang tidak pernah menyusut & terpotong di PDF.
+            // Untuk Aisar: ukur ulang dgn aisarAutoFit memakai lebar kotak clone
+            // yang sebenarnya (halaman wrap dibiarkan mengalir, halaman biasa
+            // fontnya disusutkan sampai muat).
+            if (clonePage.classList.contains('aisar-page') &&
+                typeof window.aisarAutoFit === 'function') {
+                window.aisarAutoFit(wrapper);
+                await new Promise(r => setTimeout(r, 120));
+            } else {
+                // PDF: shrink baris panjang; floor lebih rendah + wrap fallback supaya
+                // kalimat jilid 4–6 yang panjang tidak terpotong.
+                fitPageRows(clonePage, 0.42, true);
+                await new Promise(r => setTimeout(r, 60));
+            }
 
             const pageCanvas = await html2canvas(wrapper, {
                 scale: SCALE, useCORS: true, allowTaint: true,

@@ -5,7 +5,14 @@ const Svg = ({ children, className = 'h-4 w-4' }) => (
     <svg className={className} fill="none" stroke="currentColor" strokeWidth="2"
         viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">{children}</svg>
 );
-const UsersIcon = (p) => <Svg {...p}><path d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-3.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></Svg>;
+// Path lengkap ikon "users" (Heroicons outline). Versi sebelumnya terpotong —
+// kepala kecil kiri & kanan dan badan orang tengah hilang, sehingga bentuknya
+// terlihat timpang/tidak simetris.
+const UsersIcon = (p) => (
+    <Svg {...p}>
+        <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </Svg>
+);
 const ArrowIcon = (p) => <Svg {...p}><path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></Svg>;
 const CheckIcon = (p) => <Svg {...p}><path d="M20 6L9 17l-5-5" /></Svg>;
 
@@ -61,14 +68,6 @@ export default function PilihKelas({ kelasList = [], kelasAktifId = null, guruNa
                                             : 'border-stone-200 bg-white hover:bg-stone-50 dark:border-coal-700 dark:bg-coal-800 dark:hover:bg-coal-700/50'
                                     }`}
                                 >
-                                    <span className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
-                                        aktif
-                                            ? 'bg-claude-500 text-white'
-                                            : 'bg-stone-100 text-stone-500 dark:bg-coal-700 dark:text-stone-400'
-                                    }`}>
-                                        {k.name?.charAt(0)?.toUpperCase()}
-                                    </span>
-
                                     <div className="min-w-0 flex-1">
                                         <p className="truncate text-sm font-bold text-stone-900 dark:text-stone-100">
                                             {k.name}

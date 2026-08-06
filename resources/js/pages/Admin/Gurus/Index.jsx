@@ -169,15 +169,16 @@ export default function Index({ gurus = [] }) {
     const [bulkOpen, setBulkOpen] = useState(false);
 
     /* ---- Form Guru ---- */
+    // Tanpa position_id: jabatan dikunci ke "Guru" oleh controller.
     const guruForm = useForm({
-        _method: 'POST', name: '', nip: '', username: '',
+        _method: 'POST', name: '', nip: '', is_active: true, username: '',
         password: '', password_confirmation: '', profile_photo: null, delete_photo: '0',
     });
 
     const openCreate = () => {
         setIsEdit(false); setEditId(null);
         guruForm.clearErrors();
-        guruForm.setData({ _method: 'POST', name: '', nip: '', username: '', password: '', password_confirmation: '', profile_photo: null, delete_photo: '0' });
+        guruForm.setData({ _method: 'POST', name: '', nip: '', is_active: true, username: '', password: '', password_confirmation: '', profile_photo: null, delete_photo: '0' });
         setPhotoPreview(null); setCurrentPhoto(null); setCurrentPhotoName(null); setFormOpen(true);
     };
 
@@ -185,7 +186,9 @@ export default function Index({ gurus = [] }) {
         setIsEdit(true); setEditId(guru.id);
         guruForm.clearErrors();
         guruForm.setData({
-            _method: 'PUT', name: guru.name || '', nip: guru.nip || '', username: guru.user?.name || '',
+            _method: 'PUT', name: guru.name || '', nip: guru.nip || '',
+            is_active: guru.is_active ?? true,
+            username: guru.user?.name || '',
             password: '', password_confirmation: '', profile_photo: null, delete_photo: '0',
         });
         setPhotoPreview(null);
@@ -363,7 +366,9 @@ export default function Index({ gurus = [] }) {
                                     )}
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate">{guru.name}</p>
-                                        <p className="text-[11px] text-stone-400 dark:text-stone-500">NIP: {guru.nip || '-'}</p>
+                                        <p className="text-[11px] text-stone-400 dark:text-stone-500">
+                                            NIP: {guru.nip || '-'} · {guru.jabatan?.nama_jabatan || <span className="text-red-400">tanpa jabatan</span>}
+                                        </p>
                                     </div>
                                     <span className="text-[11px] text-stone-300 dark:text-stone-700 flex-shrink-0">#{idx + 1}</span>
                                 </div>
@@ -402,7 +407,7 @@ export default function Index({ gurus = [] }) {
                                         ref={(el) => { if (el) el.indeterminate = selected.length > 0 && !allSelected; }}
                                         className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 cursor-pointer" />
                                 </th>
-                                {['No', 'Nama Guru', 'NIP', 'Username', 'Password'].map((h) => (
+                                {['No', 'Nama Guru', 'NIP', 'Jabatan', 'Username', 'Password'].map((h) => (
                                     <th key={h} className="px-4 py-3 text-left text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">{h}</th>
                                 ))}
                                 <th className="px-4 py-3 text-center text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Aksi</th>
@@ -410,7 +415,7 @@ export default function Index({ gurus = [] }) {
                         </thead>
                         <tbody className="divide-y divide-stone-100 dark:divide-coal-700">
                             {gurus.length === 0 ? (
-                                <tr><td colSpan={7} className="py-16 text-center">
+                                <tr><td colSpan={8} className="py-16 text-center">
                                     <p className="text-sm font-semibold text-stone-600 dark:text-stone-400">Belum ada data guru</p>
                                     <p className="text-xs text-stone-400 dark:text-stone-600 mt-1">Klik "Tambah Guru" di atas</p>
                                 </td></tr>
@@ -437,6 +442,12 @@ export default function Index({ gurus = [] }) {
                                             </div>
                                         </td>
                                         <td className="px-4 py-3 text-sm font-mono text-stone-500 dark:text-stone-400">{guru.nip || '-'}</td>
+                                        <td className="px-4 py-3 text-sm text-stone-600 dark:text-stone-400">
+                                            {guru.jabatan?.nama_jabatan || <span className="text-xs italic text-red-400">Belum ada</span>}
+                                            {guru.is_active === false && (
+                                                <span className="ml-1.5 inline-flex rounded-full bg-stone-100 dark:bg-coal-700 px-2 py-0.5 text-[10px] font-semibold text-stone-500 dark:text-stone-400">Non-aktif</span>
+                                            )}
+                                        </td>
                                         <td className="px-4 py-3">
                                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-claude-500/10 text-claude-600 dark:text-claude-400 border border-claude-500/20">
                                                 {guru.user?.name || '-'}
@@ -506,6 +517,13 @@ export default function Index({ gurus = [] }) {
                             <p className="text-[10px] text-stone-400 dark:text-stone-600 mt-1">Opsional (boleh dikosongkan)</p>
                         </div>
                     </div>
+
+                    <label className="flex cursor-pointer items-center gap-2">
+                        <input type="checkbox" checked={guruForm.data.is_active}
+                            onChange={(e) => guruForm.setData('is_active', e.target.checked)}
+                            className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 focus:ring-claude-500" />
+                        <span className="text-sm text-stone-600 dark:text-stone-300">Guru Aktif</span>
+                    </label>
 
                     <div className="bg-claude-500/8 border border-claude-500/20 rounded-2xl p-3.5">
                         <h4 className="text-xs font-bold text-claude-700 dark:text-claude-400 mb-3 flex items-center gap-1.5">

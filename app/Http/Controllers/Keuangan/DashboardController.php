@@ -28,7 +28,9 @@ class DashboardController extends Controller
             ->whereYear('tanggal_pengajuan', $tahun)
             ->sum('nominal_realisasi');
 
-        $totalSiswa = Siswa::where('is_active', true)->count();
+        // santris tidak punya is_active; statusnya enum aktif/lulus/keluar.
+        // scopeAktif() sudah didefinisikan di model Santri.
+        $totalSiswa = Siswa::aktif()->count();
 
         $siswaNunggak = Tagihan::where('status', '!=', 'Paid')
             ->distinct('student_id')

@@ -181,17 +181,25 @@ class RkasController extends Controller
             $parent = RkasDetail::where('rkas_header_id', $header->id)
                 ->findOrFail($request->parent_id);
 
+            // count() bikin kode bentrok setelah ada kegiatan yang dihapus:
+            // 1.1 dan 1.2 ada, 1.1 dihapus → count jadi 1 → kode baru 1.2 (duplikat).
+            // Ambil sufiks terbesar yang pernah dipakai.
+            $sufiksTerbesar = $parent->children()
+                ->pluck('kode_kegiatan')
+                ->map(fn ($kode) => (int) ltrim(strrchr((string) $kode, '.') ?: '.0', '.'))
+                ->max() ?? 0;
+
             RkasDetail::create([
                 'rkas_header_id' => $header->id,
                 'parent_id'      => $parent->id,
-                'kode_kegiatan'  => $parent->kode_kegiatan . '.' . ($parent->children()->count() + 1),
+                'kode_kegiatan'  => $parent->kode_kegiatan . '.' . ($sufiksTerbesar + 1),
                 'nama_kegiatan'  => $request->nama_kegiatan,
                 'volume_1'       => $request->volume_1,
                 'satuan_1'       => $request->satuan_1,
                 'volume_2'       => $request->volume_2,
                 'satuan_2'       => $request->satuan_2,
                 'harga_satuan'   => $request->harga_satuan,
-                'pagu_anggaran'  => $request->volume_1 * ($request->volume_2 ?: 1) * $request->harga_satuan,
+                'pagu_anggaran'  => $this->hitungPagu($request),
                 'is_parent'      => false,
             ]);
 
@@ -218,7 +226,7 @@ class RkasController extends Controller
                 'volume_2'      => $request->volume_2,
                 'satuan_2'      => $request->satuan_2,
                 'harga_satuan'  => $request->harga_satuan,
-                'pagu_anggaran' => $request->volume_1 * ($request->volume_2 ?: 1) * $request->harga_satuan,
+                'pagu_anggaran' => $this->hitungPagu($request),
             ]);
 
             if ($detail->parent_id) {
@@ -297,14 +305,19 @@ class RkasController extends Controller
 
     private function aturanKegiatan(bool $butuhParent): array
     {
+        // Satuan menolak input yang isinya angka saja. Tanpa ini, angka yang
+        // salah masuk ke kolom satuan hanya jadi label dan tidak ikut dikalikan —
+        // pagu terlihat "salah hitung" padahal nilainya memang tidak dipakai.
+        $satuan = ['string', 'max:50', 'not_regex:/^\s*\d+([.,]\d+)?\s*$/'];
+
         return array_filter([
-            'parent_id'     => $butuhParent ? 'required|exists:rkas_details,id' : null,
-            'nama_kegiatan' => 'required|string|max:255',
-            'volume_1'      => 'required|integer|min:1',
-            'satuan_1'      => 'required|string|max:50',
-            'volume_2'      => 'nullable|integer|min:1',
-            'satuan_2'      => 'nullable|string|max:50',
-            'harga_satuan'  => 'required|numeric|min:0',
+            'parent_id'     => $butuhParent ? ['required', 'exists:rkas_details,id'] : null,
+            'nama_kegiatan' => ['required', 'string', 'max:255'],
+            'volume_1'      => ['required', 'integer', 'min:1'],
+            'satuan_1'      => array_merge(['required'], $satuan),
+            'volume_2'      => ['nullable', 'integer', 'min:1'],
+            'satuan_2'      => array_merge(['nullable'], $satuan),
+            'harga_satuan'  => ['required', 'numeric', 'min:0'],
         ]);
     }
 
@@ -315,9 +328,19 @@ class RkasController extends Controller
             'volume_1.required'      => 'Volume 1 wajib diisi.',
             'volume_1.min'           => 'Volume 1 minimal 1.',
             'satuan_1.required'      => 'Satuan 1 wajib diisi.',
+            'satuan_1.not_regex'     => 'Satuan diisi keterangan (Keg, Orang, Bulan), bukan angka. Angka pengali masuk ke kolom Volume.',
+            'satuan_2.not_regex'     => 'Satuan diisi keterangan (Keg, Orang, Bulan), bukan angka. Angka pengali masuk ke kolom Volume.',
             'harga_satuan.required'  => 'Harga satuan wajib diisi.',
             'harga_satuan.numeric'   => 'Harga satuan harus berupa angka.',
         ];
+    }
+
+    /** Pagu = volume_1 × volume_2 (default 1) × harga_satuan. */
+    private function hitungPagu(Request $request): float
+    {
+        $vol2 = (int) $request->volume_2;
+
+        return (int) $request->volume_1 * ($vol2 > 0 ? $vol2 : 1) * (float) $request->harga_satuan;
     }
 
     /** Jumlahkan pagu anak ke induknya, naik sampai level teratas. */

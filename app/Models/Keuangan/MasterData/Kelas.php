@@ -2,28 +2,19 @@
 
 namespace App\Models\Keuangan\MasterData;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Kelas as KelasRaport;
 
-class Kelas extends Model
+/**
+ * Alias supaya controller keuangan yang sudah memakai namespace ini
+ * tidak perlu diubah. Menunjuk tabel `kelas` yang sama dengan raport.
+ *
+ * Catatan: kolom namanya `name`, BUKAN `nama_kelas` seperti di tabel
+ * `classes` yang lama. Semua referensi 'nama_kelas' di controller dan
+ * JSX keuangan harus diganti jadi 'name'.
+ */
+class Kelas extends KelasRaport
 {
-    // Tanpa SoftDeletes — tabel `classes` tidak punya kolom deleted_at.
-    protected $table = 'classes';
-
-    protected $fillable = ['nama_kelas', 'tingkat', 'kapasitas', 'is_active'];
-
-    protected $casts = [
-        'kapasitas' => 'integer',
-        'is_active' => 'boolean',
-    ];
-
-    public function siswas(): HasMany
-    {
-        return $this->hasMany(Siswa::class, 'class_id');
-    }
-
-    public function pegawais(): HasMany
-    {
-        return $this->hasMany(Pegawai::class, 'class_id');
-    }
+    // Eloquent menebak nama tabel dari nama class konkret, jadi
+    // $table harus disebut ulang di setiap subclass.
+    protected $table = 'kelas';
 }

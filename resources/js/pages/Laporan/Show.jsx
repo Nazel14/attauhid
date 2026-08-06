@@ -151,7 +151,7 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
 
     return (
         <Layout>
-            <Head title="Detail Laporan" />
+            <Head title="Detail Komplain" />
             <Toast notif={notif} onClose={() => setNotif(null)} duration={NOTIF_DURATION} />
 
             <div className="mx-auto flex h-[calc(100dvh-2.5rem)] max-w-6xl flex-col px-3 sm:px-4 py-5">

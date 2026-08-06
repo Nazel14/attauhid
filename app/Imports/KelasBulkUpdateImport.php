@@ -103,7 +103,30 @@ class KelasBulkUpdateImport implements ToCollection, WithHeadingRow, SkipsEmptyR
                 
                 $updateData['gender_restriction'] = $noGenderToGender[$noGender];
             }
-            
+
+            // isset (bukan !empty): tingkat boleh sengaja dikosongkan.
+            if (isset($row['tingkat'])) {
+                $tingkat = trim((string) $row['tingkat']);
+                $updateData['tingkat'] = $tingkat !== '' ? $tingkat : null;
+            }
+
+            if (!empty($row['kapasitas'])) {
+                $kapasitas = (int) $row['kapasitas'];
+
+                if ($kapasitas < 1 || $kapasitas > 100) {
+                    throw new \Exception("Kapasitas {$kapasitas} tidak valid. Harus antara 1-100");
+                }
+
+                // Kapasitas tidak boleh di bawah jumlah santri yang sudah masuk —
+                // angkanya jadi menyesatkan di panel keuangan.
+                $terisi = $kelas->santris()->count();
+                if ($kapasitas < $terisi) {
+                    throw new \Exception("Kelas ini sudah berisi {$terisi} santri. Kapasitas tidak boleh kurang dari itu");
+                }
+
+                $updateData['kapasitas'] = $kapasitas;
+            }
+
             if (!empty($updateData)) {
                 $kelas->update($updateData);
             }

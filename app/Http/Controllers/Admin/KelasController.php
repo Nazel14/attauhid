@@ -24,7 +24,8 @@ class KelasController extends Controller
      */
     public function index()
     {
-        $kelas = Kelas::with('guru')->latest()->get();
+        // withCount santris: dipakai menampilkan "terisi / kapasitas" di tabel.
+        $kelas = Kelas::with('guru')->withCount('santris')->latest()->get();
         $gurus = Guru::orderBy('name')->get();
         $genderRestrictions = Kelas::GENDER_RESTRICTIONS;
 
@@ -48,6 +49,13 @@ class KelasController extends Controller
         'tahun_ajaran' => 'required|string|max:10',
         'guru_id' => 'required|exists:gurus,id',
         'gender_restriction' => 'required|in:ikhwan,akhwat,campuran',
+        // Tiga kolom di bawah dipakai bersama modul keuangan.
+        'tingkat' => 'nullable|string|max:100',
+        'kapasitas' => 'required|integer|min:1|max:100',
+        'is_active' => 'boolean',
+    ], [
+        'kapasitas.required' => 'Kapasitas kelas wajib diisi.',
+        'kapasitas.min' => 'Kapasitas minimal 1 santri.',
     ]);
 
     $request->validate([
@@ -65,7 +73,8 @@ class KelasController extends Controller
     ]);
 
     $validated['name'] = $this->smartCapitalize($validated['name']);
-    
+    $validated['is_active'] = $request->boolean('is_active', true);
+
     // ✅ SIMPAN HASIL CREATE KE VARIABLE
     $kelas = Kelas::create($validated);
     
@@ -81,13 +90,19 @@ class KelasController extends Controller
      */
     public function update(Request $request, Kelas $kela)
     {
-          $oldValues = $kela->only(['name', 'tahun_ajaran', 'guru_id', 'gender_restriction']);
+          $oldValues = $kela->only(['name', 'tahun_ajaran', 'guru_id', 'gender_restriction', 'tingkat', 'kapasitas', 'is_active']);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'tahun_ajaran' => 'required|string|max:10',
             'guru_id' => 'required|exists:gurus,id',
             'gender_restriction' => 'required|in:ikhwan,akhwat,campuran',
+            'tingkat' => 'nullable|string|max:100',
+            'kapasitas' => 'required|integer|min:1|max:100',
+            'is_active' => 'boolean',
+        ], [
+            'kapasitas.required' => 'Kapasitas kelas wajib diisi.',
+            'kapasitas.min' => 'Kapasitas minimal 1 santri.',
         ]);
         
         $request->validate([
@@ -105,7 +120,17 @@ class KelasController extends Controller
         ]);
 
         $validated['name'] = $this->smartCapitalize($validated['name']);
-        
+        $validated['is_active'] = $request->boolean('is_active', true);
+
+        // Kapasitas tidak boleh diturunkan di bawah jumlah santri yang
+        // sudah masuk — angkanya jadi menyesatkan di panel keuangan.
+        $terisi = $kela->santris()->count();
+        if ($validated['kapasitas'] < $terisi) {
+            return redirect()->back()->withInput()->withErrors([
+                'kapasitas' => "Kelas ini sudah berisi {$terisi} santri. Kapasitas tidak boleh kurang dari itu.",
+            ]);
+        }
+
         $kela->update($validated);
         $this->logUpdate('kelas', $kela->name, $kela, $oldValues);
 
@@ -195,18 +220,20 @@ class KelasController extends Controller
 {
     $spreadsheet = new Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
-    
+
     $guruList = Guru::orderBy('id')->get();
 
     // Tahun ajaran aktif — kelas hanya boleh ikut TA aktif (1 opsi)
     $taAktif = \App\Models\TahunAjaran::getAktif();
     $taNama  = $taAktif->nama ?? '2024/2025';
-    
-    // Header dengan no_gender (bukan gender langsung)
-    $headers = ['nama_kelas', 'tahun_ajaran', 'no_guru', 'no_gender'];
+
+    // tingkat & kapasitas ditambahkan: tabel kelas kini dipakai bersama
+    // modul keuangan. is_active sengaja tidak diikutkan — boolean di Excel
+    // rawan salah ketik, dan penonaktifan kelas lebih aman lewat form.
+    $headers = ['nama_kelas', 'tahun_ajaran', 'no_guru', 'no_gender', 'tingkat', 'kapasitas'];
     $sheet->fromArray($headers, NULL, 'A1');
-    
-    $sheet->getStyle('A1:D1')->applyFromArray([
+
+    $sheet->getStyle('A1:F1')->applyFromArray([
         'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '1F2937']],
         'fill' => [
             'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -224,33 +251,15 @@ class KelasController extends Controller
         ]
     ]);
 
-    $sheet->getStyle('E2:E11')->applyFromArray([
-        'font' => ['size' => 8, 'color' => ['rgb' => '6B7280']],
-        'alignment' => ['vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER]
-    ]);
-
-    $sheet->getStyle('E7')->applyFromArray([
-        'font' => ['bold' => true, 'size' => 8, 'color' => ['rgb' => '374151']],
-    ]);
-
-    $sheet->getStyle('E1:E11')->applyFromArray([
-        'borders' => [
-            'outline' => [
-                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                'color' => ['rgb' => 'E5E7EB']
-            ]
-        ]
-    ]);
-    
-    // Contoh data dengan no_gender (tahun_ajaran = TA aktif)
+    // Contoh data (tahun_ajaran = TA aktif)
     $exampleData = [
-        ['Kelas 7A (Contoh)', $taNama, '1', '1'],  // campuran
-        ['Kelas 8B (Contoh)', $taNama, '1', '2'],  // ikhwan
+        ['Kelas 7A (Contoh)', $taNama, '1', '1', 'VII', '20'],  // campuran
+        ['Kelas 8B (Contoh)', $taNama, '1', '2', 'VIII', '25'], // ikhwan
     ];
     $sheet->fromArray($exampleData, NULL, 'A2');
 
     // Baris contoh dibuat lebih gelap supaya jelas "ini hanya contoh, hapus"
-    $sheet->getStyle('A2:D3')->applyFromArray([
+    $sheet->getStyle('A2:F3')->applyFromArray([
         'fill' => [
             'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
             'startColor' => ['rgb' => 'D1D5DB']   // abu-abu lebih gelap
@@ -263,72 +272,41 @@ class KelasController extends Controller
             ]
         ]
     ]);
-    
+
+    // Data bergeser 2 kolom: tabel bantuan kini mulai dari H, bukan F.
     $sheet->getColumnDimension('A')->setWidth(25);
     $sheet->getColumnDimension('B')->setWidth(15);
     $sheet->getColumnDimension('C')->setWidth(12);
     $sheet->getColumnDimension('D')->setWidth(15);
-    $sheet->getColumnDimension('E')->setWidth(2);
-    $sheet->getColumnDimension('F')->setWidth(30);
+    $sheet->getColumnDimension('E')->setWidth(12);
+    $sheet->getColumnDimension('F')->setWidth(12);
     $sheet->getColumnDimension('G')->setWidth(2);
-    $sheet->getColumnDimension('H')->setWidth(8);
-    $sheet->getColumnDimension('I')->setWidth(22);
-    $sheet->getColumnDimension('J')->setWidth(2);
-    $sheet->getColumnDimension('K')->setWidth(8);
-    $sheet->getColumnDimension('L')->setWidth(15);
-    $sheet->getColumnDimension('M')->setWidth(2);
-    $sheet->getColumnDimension('N')->setWidth(10);
-    $sheet->getColumnDimension('O')->setWidth(22);
-    
+    $sheet->getColumnDimension('H')->setWidth(32);
+    $sheet->getColumnDimension('I')->setWidth(2);
+    $sheet->getColumnDimension('J')->setWidth(8);
+    $sheet->getColumnDimension('K')->setWidth(22);
+    $sheet->getColumnDimension('L')->setWidth(2);
+    $sheet->getColumnDimension('M')->setWidth(8);
+    $sheet->getColumnDimension('N')->setWidth(15);
+    $sheet->getColumnDimension('O')->setWidth(2);
+    $sheet->getColumnDimension('P')->setWidth(10);
+    $sheet->getColumnDimension('Q')->setWidth(22);
+
     // Petunjuk
-    $sheet->setCellValue('F1', 'PETUNJUK');
-    $sheet->setCellValue('F2', 'Nama Kelas: Nama lengkap kelas');
-    $sheet->setCellValue('F3', 'Tahun Ajaran: Pakai TA AKTIF (lihat tabel kanan →)');
-    $sheet->setCellValue('F4', 'No Guru: Lihat tabel guru →');
-    $sheet->setCellValue('F5', 'No Gender: Lihat tabel gender →');
-    $sheet->setCellValue('F6', '');
-    $sheet->setCellValue('F7', 'CATATAN PENTING:');
-    $sheet->setCellValue('F8', '• Baris 2-3 hanya contoh');
-    $sheet->setCellValue('F9', '• Jangan ubah header');
-    $sheet->setCellValue('F10', '• Gunakan nomor urut guru & gender');
-    $sheet->setCellValue('F11', '• No Gender wajib diisi (1/2/3)');
-    
-    $sheet->getStyle('F1')->applyFromArray([
-        'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '374151']],
-        'fill' => [
-            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-            'startColor' => ['rgb' => 'F9FAFB']
-        ],
-        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
-        'borders' => [
-            'bottom' => [
-                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                'color' => ['rgb' => 'E5E7EB']
-            ]
-        ]
-    ]);
-    
-    $sheet->getStyle('F2:F11')->applyFromArray([
-        'font' => ['size' => 8, 'color' => ['rgb' => '6B7280']],
-        'alignment' => ['vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER]
-    ]);
-    
-    $sheet->getStyle('F7')->applyFromArray([
-        'font' => ['bold' => true, 'size' => 8, 'color' => ['rgb' => '374151']],
-    ]);
-    
-    $sheet->getStyle('F1:F11')->applyFromArray([
-        'borders' => [
-            'outline' => [
-                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                'color' => ['rgb' => 'E5E7EB']
-            ]
-        ]
-    ]);
-    
-    // Tabel Guru
-    $sheet->setCellValue('H1', 'GURU');
-    $sheet->mergeCells('H1:I1');
+    $sheet->setCellValue('H1', 'PETUNJUK');
+    $sheet->setCellValue('H2', 'Nama Kelas: Nama lengkap kelas');
+    $sheet->setCellValue('H3', 'Tahun Ajaran: Pakai TA AKTIF (lihat tabel kanan →)');
+    $sheet->setCellValue('H4', 'No Guru: Lihat tabel guru →');
+    $sheet->setCellValue('H5', 'No Gender: Lihat tabel gender →');
+    $sheet->setCellValue('H6', 'Tingkat: Opsional, contoh VII / VIII');
+    $sheet->setCellValue('H7', 'Kapasitas: Daya tampung santri (1-100)');
+    $sheet->setCellValue('H8', '');
+    $sheet->setCellValue('H9', 'CATATAN PENTING:');
+    $sheet->setCellValue('H10', '• Baris 2-3 hanya contoh');
+    $sheet->setCellValue('H11', '• Jangan ubah header');
+    $sheet->setCellValue('H12', '• No Gender wajib diisi (1/2/3)');
+    $sheet->setCellValue('H13', '• Kapasitas kosong → otomatis 20');
+
     $sheet->getStyle('H1')->applyFromArray([
         'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '374151']],
         'fill' => [
@@ -343,30 +321,17 @@ class KelasController extends Controller
             ]
         ]
     ]);
-    
-    $sheet->setCellValue('H2', 'No_Urut');
-    $sheet->setCellValue('I2', 'Nama Guru');
-    $sheet->getStyle('H2:I2')->applyFromArray([
-        'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '6B7280']],
-        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
+
+    $sheet->getStyle('H2:H13')->applyFromArray([
+        'font' => ['size' => 8, 'color' => ['rgb' => '6B7280']],
+        'alignment' => ['vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER]
     ]);
-    
-    $currentRow = 3;
-    foreach ($guruList as $index => $guru) {
-        $sheet->setCellValue('H' . $currentRow, $index + 1);
-        $sheet->setCellValue('I' . $currentRow, $guru->name);
-        $sheet->getStyle('H' . $currentRow . ':I' . $currentRow)->applyFromArray([
-            'font' => ['size' => 9, 'color' => ['rgb' => '374151']],
-            'alignment' => [
-                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
-            ]
-        ]);
-        $currentRow++;
-    }
-    
-    $lastRowGuru = $currentRow - 1;
-    $sheet->getStyle('H1:I' . $lastRowGuru)->applyFromArray([
+
+    $sheet->getStyle('H9')->applyFromArray([
+        'font' => ['bold' => true, 'size' => 8, 'color' => ['rgb' => '374151']],
+    ]);
+
+    $sheet->getStyle('H1:H13')->applyFromArray([
         'borders' => [
             'outline' => [
                 'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
@@ -374,11 +339,11 @@ class KelasController extends Controller
             ]
         ]
     ]);
-    
-    // Tabel Gender Kelas (BARU)
-    $sheet->setCellValue('K1', 'GENDER KELAS');
-    $sheet->mergeCells('K1:L1');
-    $sheet->getStyle('K1')->applyFromArray([
+
+    // Tabel Guru
+    $sheet->setCellValue('J1', 'GURU');
+    $sheet->mergeCells('J1:K1');
+    $sheet->getStyle('J1')->applyFromArray([
         'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '374151']],
         'fill' => [
             'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -392,26 +357,75 @@ class KelasController extends Controller
             ]
         ]
     ]);
-    
-    $sheet->setCellValue('K2', 'No');
-    $sheet->setCellValue('L2', 'Jenis Gender');
-    $sheet->getStyle('K2:L2')->applyFromArray([
+
+    $sheet->setCellValue('J2', 'No_Urut');
+    $sheet->setCellValue('K2', 'Nama Guru');
+    $sheet->getStyle('J2:K2')->applyFromArray([
         'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '6B7280']],
         'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
     ]);
-    
+
+    $currentRow = 3;
+    foreach ($guruList as $index => $guru) {
+        $sheet->setCellValue('J' . $currentRow, $index + 1);
+        $sheet->setCellValue('K' . $currentRow, $guru->name);
+        $sheet->getStyle('J' . $currentRow . ':K' . $currentRow)->applyFromArray([
+            'font' => ['size' => 9, 'color' => ['rgb' => '374151']],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+            ]
+        ]);
+        $currentRow++;
+    }
+
+    $lastRowGuru = $currentRow - 1;
+    $sheet->getStyle('J1:K' . $lastRowGuru)->applyFromArray([
+        'borders' => [
+            'outline' => [
+                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                'color' => ['rgb' => 'E5E7EB']
+            ]
+        ]
+    ]);
+
+    // Tabel Gender Kelas
+    $sheet->setCellValue('M1', 'GENDER KELAS');
+    $sheet->mergeCells('M1:N1');
+    $sheet->getStyle('M1')->applyFromArray([
+        'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '374151']],
+        'fill' => [
+            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+            'startColor' => ['rgb' => 'F9FAFB']
+        ],
+        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+        'borders' => [
+            'bottom' => [
+                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                'color' => ['rgb' => 'E5E7EB']
+            ]
+        ]
+    ]);
+
+    $sheet->setCellValue('M2', 'No');
+    $sheet->setCellValue('N2', 'Jenis Gender');
+    $sheet->getStyle('M2:N2')->applyFromArray([
+        'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '6B7280']],
+        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
+    ]);
+
     // Data gender dengan urutan: campuran, ikhwan, akhwat
     $genderData = [
         ['1', 'Campuran'],
         ['2', 'Ikhwan'],
         ['3', 'Akhwat']
     ];
-    
+
     $genderRow = 3;
     foreach ($genderData as $data) {
-        $sheet->setCellValue('K' . $genderRow, $data[0]);
-        $sheet->setCellValue('L' . $genderRow, $data[1]);
-        $sheet->getStyle('K' . $genderRow . ':L' . $genderRow)->applyFromArray([
+        $sheet->setCellValue('M' . $genderRow, $data[0]);
+        $sheet->setCellValue('N' . $genderRow, $data[1]);
+        $sheet->getStyle('M' . $genderRow . ':N' . $genderRow)->applyFromArray([
             'font' => ['size' => 9, 'color' => ['rgb' => '374151']],
             'alignment' => [
                 'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
@@ -420,8 +434,8 @@ class KelasController extends Controller
         ]);
         $genderRow++;
     }
-    
-    $sheet->getStyle('K1:L5')->applyFromArray([
+
+    $sheet->getStyle('M1:N5')->applyFromArray([
         'borders' => [
             'outline' => [
                 'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
@@ -431,9 +445,9 @@ class KelasController extends Controller
     ]);
 
     // ── Tabel Tahun Ajaran Aktif (hanya 1 opsi) ──
-    $sheet->setCellValue('N1', 'TAHUN AJARAN');
-    $sheet->mergeCells('N1:O1');
-    $sheet->getStyle('N1')->applyFromArray([
+    $sheet->setCellValue('P1', 'TAHUN AJARAN');
+    $sheet->mergeCells('P1:Q1');
+    $sheet->getStyle('P1')->applyFromArray([
         'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '374151']],
         'fill' => [
             'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -448,16 +462,16 @@ class KelasController extends Controller
         ]
     ]);
 
-    $sheet->setCellValue('N2', 'Status');
-    $sheet->setCellValue('O2', 'Tahun Ajaran');
-    $sheet->getStyle('N2:O2')->applyFromArray([
+    $sheet->setCellValue('P2', 'Status');
+    $sheet->setCellValue('Q2', 'Tahun Ajaran');
+    $sheet->getStyle('P2:Q2')->applyFromArray([
         'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '6B7280']],
         'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
     ]);
 
-    $sheet->setCellValue('N3', 'AKTIF');
-    $sheet->setCellValue('O3', $taNama);
-    $sheet->getStyle('N3:O3')->applyFromArray([
+    $sheet->setCellValue('P3', 'AKTIF');
+    $sheet->setCellValue('Q3', $taNama);
+    $sheet->getStyle('P3:Q3')->applyFromArray([
         'font' => ['size' => 9, 'color' => ['rgb' => '374151']],
         'alignment' => [
             'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
@@ -465,10 +479,10 @@ class KelasController extends Controller
         ]
     ]);
     // tonjolkan TA aktif (hijau bold)
-    $sheet->getStyle('N3')->getFont()->setBold(true)->getColor()->setRGB('059669');
-    $sheet->getStyle('O3')->getFont()->setBold(true)->getColor()->setRGB('059669');
+    $sheet->getStyle('P3')->getFont()->setBold(true)->getColor()->setRGB('059669');
+    $sheet->getStyle('Q3')->getFont()->setBold(true)->getColor()->setRGB('059669');
 
-    $sheet->getStyle('N1:O3')->applyFromArray([
+    $sheet->getStyle('P1:Q3')->applyFromArray([
         'borders' => [
             'outline' => [
                 'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
@@ -476,16 +490,16 @@ class KelasController extends Controller
             ]
         ]
     ]);
-    
+
     $sheet->getRowDimension(1)->setRowHeight(22);
     $sheet->getRowDimension(2)->setRowHeight(20);
     $sheet->getRowDimension(3)->setRowHeight(20);
-    
+
     $sheet->freezePane('A2');
-    
+
     $writer = new Xlsx($spreadsheet);
     $fileName = 'Template_Import_Kelas.xlsx';
-    
+
     return response()->streamDownload(function() use ($writer) {
         $writer->save('php://output');
     }, $fileName, [
@@ -518,11 +532,11 @@ class KelasController extends Controller
     $spreadsheet = new Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
     
-    // Header dengan no_gender
-    $headers = ['no_urut', 'nama_kelas', 'tahun_ajaran', 'no_guru', 'no_gender'];
+    // tingkat & kapasitas ikut diekspor agar bisa diperbarui massal.
+    $headers = ['no_urut', 'nama_kelas', 'tahun_ajaran', 'no_guru', 'no_gender', 'tingkat', 'kapasitas'];
     $sheet->fromArray($headers, NULL, 'A1');
-    
-    $sheet->getStyle('A1:E1')->applyFromArray([
+
+    $sheet->getStyle('A1:G1')->applyFromArray([
         'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '1F2937']],
         'fill' => [
             'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -566,7 +580,9 @@ class KelasController extends Controller
         $sheet->setCellValue('C' . $row, $kelas->tahun_ajaran);
         $sheet->setCellValue('D' . $row, $noGuru);
         $sheet->setCellValue('E' . $row, $noGender);
-        
+        $sheet->setCellValue('F' . $row, $kelas->tingkat);
+        $sheet->setCellValue('G' . $row, $kelas->kapasitas);
+
         $sheet->getStyle('A' . $row)->applyFromArray([
             'fill' => [
                 'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -578,69 +594,39 @@ class KelasController extends Controller
         $noUrut++;
     }
     
+    // Data bergeser 2 kolom: tabel bantuan kini mulai dari I, bukan G.
     $sheet->getColumnDimension('A')->setWidth(10);
     $sheet->getColumnDimension('B')->setWidth(30);
     $sheet->getColumnDimension('C')->setWidth(15);
     $sheet->getColumnDimension('D')->setWidth(12);
     $sheet->getColumnDimension('E')->setWidth(12);
-    $sheet->getColumnDimension('F')->setWidth(2);
-    $sheet->getColumnDimension('G')->setWidth(30);
+    $sheet->getColumnDimension('F')->setWidth(12);
+    $sheet->getColumnDimension('G')->setWidth(12);
     $sheet->getColumnDimension('H')->setWidth(2);
-    $sheet->getColumnDimension('I')->setWidth(8);
-    $sheet->getColumnDimension('J')->setWidth(22);
-    $sheet->getColumnDimension('K')->setWidth(2);
-    $sheet->getColumnDimension('L')->setWidth(8);
-    $sheet->getColumnDimension('M')->setWidth(15);
-    
-    // Petunjuk
-    $sheet->setCellValue('G1', 'PETUNJUK');
-    $sheet->setCellValue('G2', 'No Urut: JANGAN ubah');
-    $sheet->setCellValue('G3', 'Nama Kelas: Bisa diubah');
-    $sheet->setCellValue('G4', 'Tahun Ajaran: Format YYYY/YYYY');
-    $sheet->setCellValue('G5', 'No Guru: Lihat tabel guru →');
-    $sheet->setCellValue('G6', 'No Gender: Lihat tabel gender →');
-    $sheet->setCellValue('G7', '');
-    $sheet->setCellValue('G8', 'CATATAN PENTING:');
-    $sheet->setCellValue('G9', '• Kolom NO URUT harus tetap ada');
-    $sheet->setCellValue('G10', '• Jangan hapus/tambah baris');
-    $sheet->setCellValue('G11', '• No Gender wajib diisi (1/2/3)');
-    
-    $sheet->getStyle('G1')->applyFromArray([
-        'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '374151']],
-        'fill' => [
-            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-            'startColor' => ['rgb' => 'F9FAFB']
-        ],
-        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
-        'borders' => [
-            'bottom' => [
-                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                'color' => ['rgb' => 'E5E7EB']
-            ]
-        ]
-    ]);
-    
-    $sheet->getStyle('G2:G11')->applyFromArray([
-        'font' => ['size' => 8, 'color' => ['rgb' => '6B7280']],
-        'alignment' => ['vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER]
-    ]);
-    
-    $sheet->getStyle('G8')->applyFromArray([
-        'font' => ['bold' => true, 'size' => 8, 'color' => ['rgb' => '374151']],
-    ]);
+    $sheet->getColumnDimension('I')->setWidth(32);
+    $sheet->getColumnDimension('J')->setWidth(2);
+    $sheet->getColumnDimension('K')->setWidth(8);
+    $sheet->getColumnDimension('L')->setWidth(22);
+    $sheet->getColumnDimension('M')->setWidth(2);
+    $sheet->getColumnDimension('N')->setWidth(8);
+    $sheet->getColumnDimension('O')->setWidth(15);
 
-    $sheet->getStyle('G1:G11')->applyFromArray([
-        'borders' => [
-            'outline' => [
-                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                'color' => ['rgb' => 'E5E7EB']
-            ]
-        ]
-    ]);
-    
-    // Tabel Guru
-    $sheet->setCellValue('I1', 'GURU');
-    $sheet->mergeCells('I1:J1');
+    // Petunjuk
+    $sheet->setCellValue('I1', 'PETUNJUK');
+    $sheet->setCellValue('I2', 'No Urut: JANGAN ubah');
+    $sheet->setCellValue('I3', 'Nama Kelas: Bisa diubah');
+    $sheet->setCellValue('I4', 'Tahun Ajaran: Format YYYY/YYYY');
+    $sheet->setCellValue('I5', 'No Guru: Lihat tabel guru →');
+    $sheet->setCellValue('I6', 'No Gender: Lihat tabel gender →');
+    $sheet->setCellValue('I7', 'Tingkat: Opsional, contoh VII');
+    $sheet->setCellValue('I8', 'Kapasitas: Daya tampung santri (1-100)');
+    $sheet->setCellValue('I9', '');
+    $sheet->setCellValue('I10', 'CATATAN PENTING:');
+    $sheet->setCellValue('I11', '• Kolom NO URUT harus tetap ada');
+    $sheet->setCellValue('I12', '• Jangan hapus/tambah baris');
+    $sheet->setCellValue('I13', '• No Gender wajib diisi (1/2/3)');
+    $sheet->setCellValue('I14', '• Kapasitas tidak boleh < jumlah santri');
+
     $sheet->getStyle('I1')->applyFromArray([
         'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '374151']],
         'fill' => [
@@ -656,29 +642,16 @@ class KelasController extends Controller
         ]
     ]);
     
-    $sheet->setCellValue('I2', 'No');
-    $sheet->setCellValue('J2', 'Nama Guru');
-    $sheet->getStyle('I2:J2')->applyFromArray([
-        'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '6B7280']],
-        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
+    $sheet->getStyle('I2:I14')->applyFromArray([
+        'font' => ['size' => 8, 'color' => ['rgb' => '6B7280']],
+        'alignment' => ['vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER]
     ]);
-    
-    $currentRow = 3;
-    foreach ($guruList as $index => $guru) {
-        $sheet->setCellValue('I' . $currentRow, $index + 1);
-        $sheet->setCellValue('J' . $currentRow, $guru->name);
-        $sheet->getStyle('I' . $currentRow . ':J' . $currentRow)->applyFromArray([
-            'font' => ['size' => 9, 'color' => ['rgb' => '374151']],
-            'alignment' => [
-                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
-            ]
-        ]);
-        $currentRow++;
-    }
-    
-    $lastRowGuru = $currentRow - 1;
-    $sheet->getStyle('I1:J' . $lastRowGuru)->applyFromArray([
+
+    $sheet->getStyle('I10')->applyFromArray([
+        'font' => ['bold' => true, 'size' => 8, 'color' => ['rgb' => '374151']],
+    ]);
+
+    $sheet->getStyle('I1:I14')->applyFromArray([
         'borders' => [
             'outline' => [
                 'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
@@ -686,11 +659,11 @@ class KelasController extends Controller
             ]
         ]
     ]);
-    
-    // Tabel Gender Kelas (BARU)
-    $sheet->setCellValue('L1', 'GENDER KELAS');
-    $sheet->mergeCells('L1:M1');
-    $sheet->getStyle('L1')->applyFromArray([
+
+    // Tabel Guru
+    $sheet->setCellValue('K1', 'GURU');
+    $sheet->mergeCells('K1:L1');
+    $sheet->getStyle('K1')->applyFromArray([
         'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '374151']],
         'fill' => [
             'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -705,9 +678,58 @@ class KelasController extends Controller
         ]
     ]);
     
-    $sheet->setCellValue('L2', 'No');
-    $sheet->setCellValue('M2', 'Jenis Gender');
-    $sheet->getStyle('L2:M2')->applyFromArray([
+    $sheet->setCellValue('K2', 'No');
+    $sheet->setCellValue('L2', 'Nama Guru');
+    $sheet->getStyle('K2:L2')->applyFromArray([
+        'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '6B7280']],
+        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
+    ]);
+
+    $currentRow = 3;
+    foreach ($guruList as $index => $guru) {
+        $sheet->setCellValue('K' . $currentRow, $index + 1);
+        $sheet->setCellValue('L' . $currentRow, $guru->name);
+        $sheet->getStyle('K' . $currentRow . ':L' . $currentRow)->applyFromArray([
+            'font' => ['size' => 9, 'color' => ['rgb' => '374151']],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+            ]
+        ]);
+        $currentRow++;
+    }
+    
+    $lastRowGuru = $currentRow - 1;
+    $sheet->getStyle('K1:L' . $lastRowGuru)->applyFromArray([
+        'borders' => [
+            'outline' => [
+                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                'color' => ['rgb' => 'E5E7EB']
+            ]
+        ]
+    ]);
+
+    // Tabel Gender Kelas
+    $sheet->setCellValue('N1', 'GENDER KELAS');
+    $sheet->mergeCells('N1:O1');
+    $sheet->getStyle('N1')->applyFromArray([
+        'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '374151']],
+        'fill' => [
+            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+            'startColor' => ['rgb' => 'F9FAFB']
+        ],
+        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+        'borders' => [
+            'bottom' => [
+                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                'color' => ['rgb' => 'E5E7EB']
+            ]
+        ]
+    ]);
+    
+    $sheet->setCellValue('N2', 'No');
+    $sheet->setCellValue('O2', 'Jenis Gender');
+    $sheet->getStyle('N2:O2')->applyFromArray([
         'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '6B7280']],
         'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
     ]);
@@ -721,9 +743,9 @@ class KelasController extends Controller
     
     $genderRow = 3;
     foreach ($genderData as $data) {
-        $sheet->setCellValue('L' . $genderRow, $data[0]);
-        $sheet->setCellValue('M' . $genderRow, $data[1]);
-        $sheet->getStyle('L' . $genderRow . ':M' . $genderRow)->applyFromArray([
+        $sheet->setCellValue('N' . $genderRow, $data[0]);
+        $sheet->setCellValue('O' . $genderRow, $data[1]);
+        $sheet->getStyle('N' . $genderRow . ':O' . $genderRow)->applyFromArray([
             'font' => ['size' => 9, 'color' => ['rgb' => '374151']],
             'alignment' => [
                 'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
@@ -733,7 +755,7 @@ class KelasController extends Controller
         $genderRow++;
     }
     
-    $sheet->getStyle('L1:M5')->applyFromArray([
+    $sheet->getStyle('N1:O5')->applyFromArray([
         'borders' => [
             'outline' => [
                 'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
@@ -741,10 +763,10 @@ class KelasController extends Controller
             ]
         ]
     ]);
-    
+
     $sheet->getRowDimension(1)->setRowHeight(22);
     $sheet->freezePane('A2');
-    
+
     $writer = new Xlsx($spreadsheet);
     $fileName = 'Edit_Kelas_' . date('Y-m-d') . '.xlsx';
     

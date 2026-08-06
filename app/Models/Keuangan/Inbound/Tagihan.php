@@ -2,18 +2,60 @@
 
 namespace App\Models\Keuangan\Inbound;
 
+use App\Models\Keuangan\MasterData\Siswa;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-/**
- * STUB — dilengkapi pada tahap 4d.
- * Sekarang hanya dibutuhkan agar relasi Siswa::tagihan() bisa dipanggil.
- */
 class Tagihan extends Model
 {
     use SoftDeletes;
 
     protected $table = 'invoices';
 
-    protected $guarded = ['id'];
+    // 'period' dan 'due_date' dari versi asli dibuang — kolomnya tidak ada
+    // di tabel invoices, keduanya hidup di invoice_headers.
+    protected $fillable = [
+        'invoice_number', 'invoice_header_id', 'student_id',
+        'total_amount', 'remaining_balance', 'status',
+    ];
+
+    protected $casts = [
+        'total_amount'      => 'decimal:2',
+        'remaining_balance' => 'decimal:2',
+    ];
+
+    public function header(): BelongsTo
+    {
+        return $this->belongsTo(InvoiceHeader::class, 'invoice_header_id');
+    }
+
+    public function siswa(): BelongsTo
+    {
+        return $this->belongsTo(Siswa::class, 'student_id');
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(ItemTagihan::class, 'invoice_id');
+    }
+
+    // Versi asli punya pembayaran() DAN pembayarans() yang isinya identik.
+    // Disatukan jadi satu.
+    public function pembayarans(): HasMany
+    {
+        return $this->hasMany(Pembayaran::class, 'invoice_id');
+    }
+
+    public function riwayatPenagihans(): HasMany
+    {
+        return $this->hasMany(RiwayatPenagihan::class, 'invoice_id');
+    }
+
+    /** Nominal yang sudah masuk dan disetujui. */
+    public function getTerbayarAttribute(): float
+    {
+        return (float) $this->total_amount - (float) $this->remaining_balance;
+    }
 }

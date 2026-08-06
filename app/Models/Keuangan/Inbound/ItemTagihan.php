@@ -2,15 +2,28 @@
 
 namespace App\Models\Keuangan\Inbound;
 
+use App\Models\Keuangan\MasterData\Tarif;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * STUB — dilengkapi pada tahap 4d.
- * Sekarang hanya dibutuhkan agar relasi Tarif::itemTagihan() bisa dipanggil.
- */
 class ItemTagihan extends Model
 {
     protected $table = 'invoice_items';
 
-    protected $guarded = ['id'];
+    protected $fillable = ['invoice_id', 'tariff_id', 'deskripsi', 'nominal', 'diskon'];
+
+    protected $casts = [
+        'nominal' => 'decimal:2',
+        'diskon'  => 'decimal:2',
+    ];
+
+    public function tagihan(): BelongsTo
+    {
+        return $this->belongsTo(Tagihan::class, 'invoice_id');
+    }
+
+    public function tarif(): BelongsTo
+    {
+        return $this->belongsTo(Tarif::class, 'tariff_id');
+    }
 }

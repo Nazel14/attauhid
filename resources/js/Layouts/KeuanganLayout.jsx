@@ -31,6 +31,7 @@ const ROLE_LABEL = {
 };
 
 const I = {
+    // --- ikon grup ---
     dash: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
     master: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
     masuk: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
@@ -39,13 +40,47 @@ const I = {
     laporan: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
     setting: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z',
     profil: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+
+    // --- ikon sub-menu: master data ---
+    kelas: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+    siswa: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+    jabatan: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+    pegawai: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
+    rekening: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
+    tarif: 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z',
+    rkasTemplate: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+
+    // --- ikon sub-menu: pemasukan ---
+    tagihan: 'M9 12h6m-6 4h6M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16l-3.5-2-3.5 2-3.5-2L5 21z',
+    pembayaran: 'M3 10h18M3 10a2 2 0 012-2h14a2 2 0 012 2M3 10v8a2 2 0 002 2h14a2 2 0 002-2v-8m-4 4h.01',
+
+    // --- ikon sub-menu: anggaran ---
+    rkas: 'M9 7h6m-6 4h.01M12 11h.01M15 11h.01M9 15h.01M12 15h.01M15 15h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z',
+    pengajuan: 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4',
+
+    // --- ikon sub-menu: penggajian ---
+    absensi: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+    komponen: 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4',
+    slipGaji: 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z',
+
+    // --- ikon sub-menu: laporan ---
+    buku: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+    tunggakan: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+    realisasi: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+
+    // --- ikon sub-menu: pengaturan ---
+    role: 'M9 12l2 2 4-4M12 3l7 4v5c0 4.418-2.99 8.166-7 9-4.01-.834-7-4.582-7-9V7l7-4z',
+    userMgmt: 'M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z',
 };
 
 export default function KeuanganLayout({ children }) {
-    const { auth } = usePage().props;
+    const { auth, modulUser } = usePage().props;
     const user = auth?.user;
     const permissions = auth?.permissions || [];
     const can = (p) => permissions.includes(p);
+
+    // Tombol pindah panel hanya untuk akun yang memang punya akses ke raport.
+    const bisaKeRaport = modulUser?.tersedia?.includes('raport');
 
     // Kolom users.role berisi role modul raport ('admin'), bukan role
     // keuangan. Label diturunkan dari permission yang khas tiap role.
@@ -89,50 +124,50 @@ export default function KeuanganLayout({ children }) {
         {
             key: 'master', label: 'Master Data', icon: I.master, prefix: 'keuangan.master-data.',
             items: [
-                { name: 'keuangan.master-data.kelas.index', label: 'Data Kelas', perm: 'master.kelas.lihat' },
-                { name: 'keuangan.master-data.siswa', label: 'Data Siswa', perm: 'master.siswa.lihat' },
-                { name: 'keuangan.master-data.jabatan', label: 'Data Jabatan', perm: 'master.jabatan.lihat' },
-                { name: 'keuangan.master-data.pegawai', label: 'Data Pegawai', perm: 'master.pegawai.lihat' },
-                { name: 'keuangan.master-data.rekening', label: 'Data Rekening', perm: 'master.rekening.lihat' },
-                { name: 'keuangan.master-data.tarif', label: 'Data Tarif', perm: 'master.tarif.lihat' },
-                { name: 'keuangan.master-data.rkas_template.index', label: 'Jenis RKAS', perm: 'master.rkas.lihat' },
+                { name: 'keuangan.master-data.kelas.index', label: 'Data Kelas', perm: 'master.kelas.lihat', icon: I.kelas },
+                { name: 'keuangan.master-data.siswa', label: 'Data Siswa', perm: 'master.siswa.lihat', icon: I.siswa },
+                { name: 'keuangan.master-data.jabatan', label: 'Data Jabatan', perm: 'master.jabatan.lihat', icon: I.jabatan },
+                { name: 'keuangan.master-data.pegawai', label: 'Data Pegawai', perm: 'master.pegawai.lihat', icon: I.pegawai },
+                { name: 'keuangan.master-data.rekening', label: 'Data Rekening', perm: 'master.rekening.lihat', icon: I.rekening },
+                { name: 'keuangan.master-data.tarif', label: 'Data Tarif', perm: 'master.tarif.lihat', icon: I.tarif },
+                { name: 'keuangan.master-data.rkas_template.index', label: 'Jenis RKAS', perm: 'master.rkas.lihat', icon: I.rkasTemplate },
             ],
         },
         {
             key: 'pemasukan', label: 'Pemasukan', icon: I.masuk, prefix: 'keuangan.pemasukan.',
             items: [
-                { name: 'keuangan.pemasukan.tagihan.index', label: 'Kelola Tagihan', perm: 'tagihan.lihat' },
-                { name: 'keuangan.pemasukan.pembayaran.index', label: 'Pembayaran', perm: 'pembayaran.lihat' },
+                { name: 'keuangan.pemasukan.tagihan.index', label: 'Kelola Tagihan', perm: 'tagihan.lihat', icon: I.tagihan },
+                { name: 'keuangan.pemasukan.pembayaran.index', label: 'Pembayaran', perm: 'pembayaran.lihat', icon: I.pembayaran },
             ],
         },
         {
-            key: 'pengeluaran', label: 'Anggaran & Pengeluaran', icon: I.keluar, prefix: 'keuangan.pengeluaran.',
+            key: 'pengeluaran', label: 'Anggaran', icon: I.keluar, prefix: 'keuangan.pengeluaran.',
             items: [
-                { name: 'keuangan.pengeluaran.rkas', label: 'Kelola RKAS', perm: 'rkas.lihat' },
-                { name: 'keuangan.pengeluaran.pengajuan', label: 'Kelola Pengeluaran', perm: 'pengeluaran.lihat' },
+                { name: 'keuangan.pengeluaran.rkas', label: 'Kelola RKAS', perm: 'rkas.lihat', icon: I.rkas },
+                { name: 'keuangan.pengeluaran.pengajuan', label: 'Kelola Pengeluaran', perm: 'pengeluaran.lihat', icon: I.pengajuan },
             ],
         },
         {
             key: 'penggajian', label: 'Penggajian', icon: I.gaji, prefix: 'keuangan.penggajian.',
             items: [
-                { name: 'keuangan.penggajian.absensi', label: 'Data Absensi', perm: 'absensi.lihat' },
-                { name: 'keuangan.penggajian.komponen', label: 'Komponen Gaji', perm: 'tunjangan.lihat' },
-                { name: 'keuangan.penggajian.data', label: 'Kelola Gaji & Slip', perm: 'penggajian.lihat' },
+                { name: 'keuangan.penggajian.absensi', label: 'Data Absensi', perm: 'absensi.lihat', icon: I.absensi },
+                { name: 'keuangan.penggajian.komponen', label: 'Komponen Gaji', perm: 'tunjangan.lihat', icon: I.komponen },
+                { name: 'keuangan.penggajian.data', label: 'Kelola Gaji & Slip', perm: 'penggajian.lihat', icon: I.slipGaji },
             ],
         },
         {
             key: 'laporan', label: 'Laporan', icon: I.laporan, prefix: 'keuangan.laporan.',
             items: [
-                { name: 'keuangan.laporan.buku_kas_umum', label: 'Buku Kas Umum', perm: 'laporan.buku_kas' },
-                { name: 'keuangan.laporan.tunggakan', label: 'Laporan Tunggakan', perm: 'laporan.tunggakan' },
-                { name: 'keuangan.laporan.realisasi_rkas', label: 'Realisasi RKAS', perm: 'laporan.rkas' },
+                { name: 'keuangan.laporan.buku_kas_umum', label: 'Buku Kas Umum', perm: 'laporan.buku_kas', icon: I.buku },
+                { name: 'keuangan.laporan.tunggakan', label: 'Laporan Tunggakan', perm: 'laporan.tunggakan', icon: I.tunggakan },
+                { name: 'keuangan.laporan.realisasi_rkas', label: 'Realisasi RKAS', perm: 'laporan.rkas', icon: I.realisasi },
             ],
         },
         {
             key: 'pengaturan', label: 'Pengaturan Sistem', icon: I.setting, prefix: 'keuangan.pengaturan.',
             items: [
-                { name: 'keuangan.pengaturan.role.index', label: 'Manajemen Role', perm: 'sistem.kelola_role' },
-                { name: 'keuangan.pengaturan.user.index', label: 'Manajemen User', perm: 'sistem.kelola_user' },
+                { name: 'keuangan.pengaturan.role.index', label: 'Management Role', perm: 'sistem.kelola_role', icon: I.role },
+                { name: 'keuangan.pengaturan.user.index', label: 'Management User', perm: 'sistem.kelola_user', icon: I.userMgmt },
             ],
         },
     ]
@@ -235,15 +270,18 @@ export default function KeuanganLayout({ children }) {
                             </button>
 
                             <div className={`overflow-hidden transition-all duration-200 ${openGroups[g.key] ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                                <div className="mt-1 space-y-0.5 pl-9 pr-1">
+                                <div className="mt-1 space-y-0.5 pl-5 pr-1">
                                     {g.items.map((it) => (
                                         <Link key={it.name} href={route(it.name)} onClick={closeNav}
-                                            className={`block truncate rounded-lg px-3 py-2 text-sm transition ${
+                                            className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
                                                 isCurrent(it.name)
                                                     ? 'bg-claude-500/10 font-medium text-claude-600 dark:text-claude-300'
                                                     : 'text-stone-500 hover:bg-cream-200 hover:text-stone-800 dark:text-stone-400 dark:hover:bg-coal-600/60 dark:hover:text-stone-200'
                                             }`}>
-                                            {it.label}
+                                            <svg className={`h-4 w-4 flex-shrink-0 ${isCurrent(it.name) ? 'text-claude-500 dark:text-claude-300' : 'text-stone-400 dark:text-stone-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d={it.icon} />
+                                            </svg>
+                                            <span className="truncate">{it.label}</span>
                                         </Link>
                                     ))}
                                 </div>
@@ -272,6 +310,14 @@ export default function KeuanganLayout({ children }) {
             <div className={`space-y-3 border-t border-cream-300 py-3 dark:border-coal-600 ${isMini ? 'px-2' : 'px-3'}`}>
                 {isMini ? (
                     <div className="flex flex-col items-center gap-2">
+                        {bisaKeRaport && (
+                            <a href={route('pindah-modul', 'raport')} title="Buka Panel Tahfizh"
+                                className="flex h-9 w-9 items-center justify-center rounded-xl text-stone-400 transition hover:bg-cream-200 hover:text-claude-600 dark:text-stone-500 dark:hover:bg-coal-600 dark:hover:text-claude-300">
+                                <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                </svg>
+                            </a>
+                        )}
                         <button onClick={() => setDark((d) => !d)} title={dark ? 'Dark Mode' : 'Light Mode'}
                             className="flex h-9 w-9 items-center justify-center rounded-xl text-stone-400 transition hover:bg-cream-200 hover:text-stone-600 dark:text-stone-500 dark:hover:bg-coal-600 dark:hover:text-stone-300">
                             {dark ? (
@@ -294,6 +340,19 @@ export default function KeuanganLayout({ children }) {
                     </div>
                 ) : (
                     <>
+                        {/* Pindah panel tanpa logout — pilihan tersimpan di session.
+                            Pakai <a>, bukan <Link>: route ini me-redirect ke
+                            /dashboard, bukan mengembalikan respons Inertia. */}
+                        {bisaKeRaport && (
+                            <a href={route('pindah-modul', 'raport')}
+                                className="flex items-center gap-2.5 rounded-xl bg-cream-200/70 px-3 py-2.5 text-sm font-medium text-stone-600 transition hover:bg-cream-300 dark:bg-coal-600/50 dark:text-stone-300 dark:hover:bg-coal-600">
+                                <svg className="h-[18px] w-[18px] flex-shrink-0 text-claude-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                </svg>
+                                <span className="truncate">Buka Panel Tahfizh</span>
+                            </a>
+                        )}
+
                         <div className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-stone-500 dark:text-stone-400">
                             <span className="flex items-center gap-2 font-medium">
                                 {dark ? (

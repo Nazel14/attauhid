@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\Guru;
+use App\Models\Keuangan\MasterData\Jabatan;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +51,10 @@ class GuruImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                         throw new \Exception("NIP {$nip} sudah terdaftar");
                     }
 
+                    // Semua yang diimport dari panel raport adalah guru,
+                    // jadi jabatannya dikunci — tidak ada kolom jabatan di Excel.
+                    $positionId = $this->jabatanGuruId();
+
                     $user = User::create([
                         'name' => $username,
                         'role' => 'guru',
@@ -61,6 +66,8 @@ class GuruImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                         'name' => $name,
                         'nip' => $nip,
                         'user_id' => $user->id,
+                        'position_id' => $positionId,
+                        'is_active' => true,
                     ]);
 
                     // ✅ Foto: cocokkan nama_file_foto dengan file yang diupload
@@ -103,6 +110,19 @@ class GuruImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
             'ahmad zainudin, s.pd (contoh)', 'siti nurhaliza, m.pd (contoh)',
         ];
         return in_array(trim($row['nama_guru'] ?? ''), $exampleNames);
+    }
+
+    /** Jabatan "Guru" — dibuat sekali kalau belum ada, nominal gaji diisi bendahara. */
+    private function jabatanGuruId(): ?int
+    {
+        if (! config('modules.keuangan')) {
+            return null;
+        }
+
+        return Jabatan::firstOrCreate(
+            ['nama_jabatan' => 'Guru'],
+            ['description' => 'Guru pengajar', 'gaji_pokok_default' => 0]
+        )->id;
     }
 
     private function processPhoto($sourcePath): ?string
