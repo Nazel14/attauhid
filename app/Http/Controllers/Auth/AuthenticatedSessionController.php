@@ -17,25 +17,48 @@ use Inertia\Response;
 class AuthenticatedSessionController extends Controller
 {
     /**
+     * Daftar modul yang aktif, dipakai form Login (default tab & validasi
+     * server). Dikirim eksplisit di sini — tidak bergantung pada shared
+     * props HandleInertiaRequests — supaya halaman login tetap benar
+     * meski shared props belum sempat diperbarui/di-cache.
+     */
+    private function modulAktif(): array
+    {
+        return array_keys(array_filter([
+            'raport'   => config('modules.raport'),
+            'keuangan' => config('modules.keuangan'),
+        ]));
+    }
+
+    /**
      * Tampilkan halaman login (Inertia + React).
      */
     public function create(): Response
     {
         return Inertia::render('Auth/Login', [
-            'status' => session('status'),
+            'status'  => session('status'),
+            'modules' => [
+                'raport'   => config('modules.raport'),
+                'keuangan' => config('modules.keuangan'),
+            ],
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
+        $modulTersedia = $this->modulAktif();
+
         $request->validate([
             'name'     => ['required', 'string'],
             'password' => ['required', 'string'],
             // Menentukan tujuan setelah login, bukan lapis keamanan —
             // penjaga sebenarnya tetap RoleMiddleware di tiap route.
-            'modul'    => ['required', 'in:raport,keuangan'],
+            // 'in' dibuat dinamis dari config, bukan hardcode 'raport,keuangan',
+            // supaya modul yang dimatikan di .env tidak bisa dipaksa lewat request manual.
+            'modul'    => ['required', 'in:' . implode(',', $modulTersedia)],
         ], [
             'modul.required' => 'Pilih dulu panel yang ingin dibuka.',
+            'modul.in'       => 'Panel yang dipilih sedang tidak aktif di sistem ini.',
         ]);
 
         $name     = $request->input('name');

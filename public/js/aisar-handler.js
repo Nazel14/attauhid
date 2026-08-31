@@ -448,20 +448,47 @@
         });
     }
 
-    // ---- nav bar (markup sama dgn iqro, tombol pakai iqroNavGo global) ----
+        // ---- style nav bar (di-inject sekali, theme-aware) ----
+    // Warna TIDAK lagi inline/var(--q-nav-*): variabel itu didefinisikan CSS tema
+    // dengan nilai slate/biru, dan kalau di-hardcode gelap nav ikut gelap di light
+    // mode. Aturan .dark membuat warna mengikuti toggle tema secara live.
+    function ensureNavStyle() {
+        if (document.getElementById('iqro-nav-style')) return;
+        const st = document.createElement('style');
+        st.id = 'iqro-nav-style';
+        st.textContent =
+            // ── LIGHT MODE ──
+            '.iqro-nav{background:rgba(245,241,234,0.96) !important;' +
+            'box-shadow:0 2px 8px rgba(0,0,0,0.12) !important;}' +
+            '.iqro-nav .iqro-prev,.iqro-nav .iqro-next{' +
+            'background:#e7e5e4 !important;color:#292524 !important;}' +
+            '.iqro-nav .iqro-nav-label{color:#57534e !important;}' +
+            // ── DARK MODE ──
+            '.dark .iqro-nav{background:rgba(38,36,34,0.96) !important;' +
+            'box-shadow:0 2px 8px rgba(0,0,0,0.35) !important;}' +
+            '.dark .iqro-nav .iqro-prev,.dark .iqro-nav .iqro-next{' +
+            'background:#44403c !important;color:#f5f1ea !important;}' +
+            '.dark .iqro-nav .iqro-nav-label{color:#d6d3d1 !important;}';
+        document.head.appendChild(st);
+    }
+
+        // ---- nav bar (markup sama dgn iqro, tombol pakai iqroNavGo global) ----
     function buildNavBar(pageNumbers) {
         if (pageNumbers.length <= 1) return '';
-        const btnStyle = 'background:var(--q-nav-btn,#374151);color:var(--q-nav-btn-fg,#e5e7eb);border:none;border-radius:9999px;' +
+        ensureNavStyle();
+        // Inline style HANYA untuk layout. Semua WARNA diserahkan ke
+        // #iqro-nav-style supaya bisa berbeda antara light & dark mode.
+        const btnStyle = 'border:none;border-radius:9999px;' +
                          'width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;' +
                          'font-size:16px;line-height:1;cursor:pointer;font-weight:700;flex:0 0 auto;' +
                          'transition:opacity .15s ease;';
         return '' +
             '<div class="iqro-nav" data-idx="0" data-total="' + pageNumbers.length + '" data-html2canvas-ignore="true"' +
             ' style="position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:center;' +
-            'gap:16px;background:var(--q-nav-bg,rgba(17,24,39,0.96));padding:7px 12px;border-radius:9999px;' +
-            'margin:0 auto 12px auto;width:fit-content;max-width:100%;box-shadow:0 2px 8px rgba(0,0,0,0.25);">' +
+            'gap:16px;padding:7px 12px;border-radius:9999px;' +
+            'margin:0 auto 12px auto;width:fit-content;max-width:100%;">' +
                 '<button type="button" class="iqro-prev" onclick="iqroNavGo(this,-1)" style="' + btnStyle + 'opacity:0.4;cursor:not-allowed;">←</button>' +
-                '<span class="iqro-nav-label" style="font-size:13px;color:var(--q-nav-label,#cbd5e1);font-weight:700;white-space:nowrap;min-width:110px;text-align:center;">' +
+                '<span class="iqro-nav-label" style="font-size:13px;font-weight:700;white-space:nowrap;min-width:110px;text-align:center;">' +
                     'Hal ' + pageNumbers[0] + ' (1/' + pageNumbers.length + ')' +
                 '</span>' +
                 '<button type="button" class="iqro-next" onclick="iqroNavGo(this,1)" style="' + btnStyle + '">→</button>' +

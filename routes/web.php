@@ -3,13 +3,27 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 /* --------------------------------------
  * 1. Rute Default & Auth (Login/Logout)
  * -------------------------------------- */
 Route::get('/', function () {
-    return redirect()->route('login');
-});
+    // User yang sudah login langsung ke dashboard.
+    if (Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+
+    // Landing page hanya tampil di instalasi demo/marketing.
+    // Di instalasi milik klien (LANDING_PAGE=false), tamu langsung
+    // diarahkan ke login supaya wali murid dan guru tidak disambut
+    // halaman penawaran produk.
+    if (! config('modules.landing')) {
+        return redirect()->route('login');
+    }
+
+    return Inertia::render('Landing');
+})->name('home');
 
 Route::get('/dashboard', function () {
     $user = Auth::user();
@@ -30,13 +44,14 @@ Route::get('/dashboard', function () {
     }
 
     // Modul raport: tujuannya ditentukan role raport di kolom users.role.
-    // Super Admin (kolom 'admin') tetap mendarat di panel admin seperti biasa.
+    // 'super-admin' ikut diarahkan ke panel admin — ia termasuk role raport
+    // (lihat UserController::ROLE_RAPORT), hanya dengan hak akses lebih luas.
     if (in_array('raport', $modules, true)) {
         $target = match ($user->role) {
-            'admin'  => 'admin.dashboard',
-            'guru'   => 'guru.dashboard',
-            'santri' => 'santri.dashboard',
-            default  => null,
+            'admin', 'super-admin' => 'admin.dashboard',
+            'guru'                 => 'guru.dashboard',
+            'santri'               => 'santri.dashboard',
+            default                => null,
         };
 
         if ($target) {

@@ -12,10 +12,29 @@ return [
     | Diatur lewat .env agar satu codebase bisa dijual dalam beberapa paket:
     |   - Raport saja       : MODULE_KEUANGAN=false
     |   - Raport + Keuangan : MODULE_KEUANGAN=true
+    |
+    | Nilai di bawah hanya DEFAULT bila baris terkait tidak ada di .env.
+    | Catatan: setelah `php artisan config:cache`, perubahan .env tidak
+    | berpengaruh sampai `php artisan config:clear` dijalankan.
     */
 
     'raport'   => env('MODULE_RAPORT', true),
     'keuangan' => env('MODULE_KEUANGAN', false),
+
+    /*
+    |----------------------------------------------------------------------
+    | Halaman Landing
+    |----------------------------------------------------------------------
+    | Halaman penawaran produk di route '/'. Hanya untuk instalasi
+    | demo/marketing. Di instalasi milik klien harus false, supaya wali
+    | murid dan guru yang membuka domain langsung diarahkan ke login,
+    | bukan disambut halaman jualan.
+    |
+    | Default false: bila .env instalasi klien lupa diisi, yang terjadi
+    | adalah landing tidak muncul — arah kesalahan yang lebih aman.
+    */
+
+    'landing' => env('LANDING_PAGE', false),
 
     /*
     |----------------------------------------------------------------------
@@ -29,12 +48,17 @@ return [
     |
     | Guru & santri sengaja tidak ada di sini: keduanya tetap dikelola
     | dari AdminController raport, bukan dari panel keuangan.
+    |
+    | 'ketua-yayasan' WAJIB ada di sini — tanpa itu pemegang role tersebut
+    | ditolak gerbang 'role:' dan tidak bisa membuka panel keuangan sama
+    | sekali, padahal dialah pemberi persetujuan akhir pengeluaran.
     */
 
     'keuangan_roles' => [
         'super-admin',
         'bendahara',
         'kepala-sekolah',
+        'ketua-yayasan',
         'pihak-yayasan',
         'hrd',
     ],
@@ -61,6 +85,7 @@ return [
         'santri',
         'bendahara',
         'kepala-sekolah',
+        'ketua-yayasan',
         'pihak-yayasan',
         'hrd',
     ],
@@ -81,6 +106,10 @@ return [
     | hak aksesnya harus dipilih manual. Itu memang disengaja: lebih baik
     | bendahara memilih sadar daripada sistem menebak akses yang salah.
     |
+    | PENTING: setiap value di bawah harus benar-benar ada di tabel roles.
+    | Menunjuk role yang tidak ada membuat assignRole() melempar
+    | RoleDoesNotExist saat pegawai dengan jabatan itu disimpan.
+    |
     | Cocokkan dengan: SELECT nama_jabatan FROM positions ORDER BY nama_jabatan;
     */
 
@@ -88,6 +117,7 @@ return [
         'guru'           => 'guru',
         'bendahara'      => 'bendahara',
         'kepala sekolah' => 'kepala-sekolah',
+        'ketua yayasan'  => 'ketua-yayasan',
         'hrd'            => 'hrd',
         'yayasan'        => 'pihak-yayasan',
         'pihak yayasan'  => 'pihak-yayasan',

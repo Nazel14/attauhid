@@ -31,6 +31,9 @@ export default function Login({ status, flash }) {
         modul: modules.keuangan && !modules.raport ? 'keuangan' : 'raport',
     });
 
+    // Judul/sub/tombol SELALU mengikuti modul yang aktif — tidak lagi
+    // disembunyikan jadi teks generik saat hanya satu modul yang nyala.
+    // Tab pemilih (duaModul) yang tetap kondisional, bukan labelnya.
     const panel = PANEL[data.modul] ?? PANEL.raport;
 
     const [showPw, setShowPw] = useState(false);
@@ -149,16 +152,17 @@ export default function Login({ status, flash }) {
                     )}
 
                     <div className="p-8">
-                        {/* Header — judul & subjudul mengikuti panel terpilih */}
+                        {/* Header — judul & subjudul SELALU mengikuti panel aktif,
+                            baik satu modul maupun dua modul. */}
                         <div className="mb-7 flex flex-col items-center text-center">
                             <div className="mb-4 flex h-[68px] w-[68px] items-center justify-center rounded-2xl bg-white p-3 shadow-sm ring-1 ring-stone-200 dark:bg-[#3d3833] dark:ring-white/10">
                                 <img src="/favicon.ico" alt="Logo" className="h-full w-full" style={{ objectFit: 'contain' }} />
                             </div>
                             <h1 className="mb-1 text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100">
-                                {duaModul ? panel.judul : 'Selamat Datang'}
+                                {panel.judul}
                             </h1>
                             <p className="whitespace-nowrap text-xs font-medium text-stone-500 dark:text-stone-400">
-                                {duaModul ? panel.sub : 'Sistem Management Tahfizh'}
+                                {panel.sub}
                             </p>
                         </div>
 
@@ -237,7 +241,7 @@ export default function Login({ status, flash }) {
                                 disabled={processing}
                                 className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-claude-500 to-claude-600 py-3 text-[13px] font-bold text-white shadow-lg shadow-claude-500/25 transition hover:from-claude-500 hover:to-claude-700 active:scale-[0.99] disabled:opacity-60"
                             >
-                                <span>{processing ? 'Memproses…' : (duaModul ? panel.tombol : 'Masuk')}</span>
+                                <span>{processing ? 'Memproses…' : panel.tombol}</span>
                                 {!processing && <ArrowIcon className="h-4 w-4" />}
                             </button>
                         </form>

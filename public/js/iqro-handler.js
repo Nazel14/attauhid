@@ -1,6 +1,15 @@
 /**
  * IQRO HANDLER — integrasi metode Iqro (1 HALAMAN tampil + Next/Prev).
  * ------------------------------------------------------------------
+ * v4.6 NAV BAR THEME-AWARE + AISAR PDF FULL-HEIGHT:
+ *   - Warna nav bar dipindah dari inline var(--q-nav-*) ke stylesheet
+ *     #iqro-nav-style (light + .dark). Variabel --q-nav-* sudah didefinisikan
+ *     CSS tema dengan nilai slate/biru sehingga fallback inline tidak pernah
+ *     terpakai; kalau di-hardcode gelap, nav ikut gelap di light mode.
+ *   - stretchAisarPageToFill(): halaman Aisar yang PENDEK (mis. jilid 3 hlm 1)
+ *     direnggangkan sampai setinggi A4 sebelum capture, supaya tidak ada
+ *     area kosong besar setelah centering di kanvas A4.
+ *
  * v4.5 Ukuran font layar diturunkan & dijadikan konstanta:
  *   - IQRO_SCREEN_FONT_SIZE (default 34, dari 40) dan IQRO_COMBO_FONT_SIZE
  *     (default 38, dari 44) di atas file → tinggal ubah angka untuk
@@ -35,10 +44,10 @@
  * v4.1: white-space:nowrap + min-height (frasa tidak patah di tengah).
  *
  * v4.0 THEME AWARE:
- *   - Warna sel/judul/border/navbar pakai CSS var (--q-fg, --q-line,
- *     --q-box-border, --q-nav-*) DENGAN fallback putih. Di layar bisa
- *     terang/gelap; saat PDF (wrapper .iqro-cap) var dipaksa gelap → PDF
- *     tetap putih di latar #3E3D3A apa pun tema layar.
+ *   - Warna sel/judul/border pakai CSS var (--q-fg, --q-line, --q-box-border)
+ *     DENGAN fallback putih. Di layar bisa terang/gelap; saat PDF (wrapper
+ *     .iqro-cap) var dipaksa gelap → PDF tetap putih di latar #3E3D3A apa pun
+ *     tema layar.
  *   - Rename label statistik (Mushaf<->Iqro) tidak lagi bergantung pada
  *     class .bg-gray-900 (blok kini theme-aware).
  *
@@ -349,19 +358,46 @@
         });
     }
 
+    // ---- style nav bar (di-inject sekali, theme-aware) ----
+    // Warna TIDAK lagi inline/var(--q-nav-*): variabel itu didefinisikan CSS tema
+    // dengan nilai slate/biru, dan kalau di-hardcode gelap nav ikut gelap di light
+    // mode. Aturan .dark membuat warna mengikuti toggle tema secara live.
+    function ensureNavStyle() {
+        if (document.getElementById('iqro-nav-style')) return;
+        const st = document.createElement('style');
+        st.id = 'iqro-nav-style';
+        st.textContent =
+            // ── LIGHT MODE ──
+            '.iqro-nav{background:rgba(245,241,234,0.96) !important;' +
+            'box-shadow:0 2px 8px rgba(0,0,0,0.12) !important;}' +
+            '.iqro-nav .iqro-prev,.iqro-nav .iqro-next{' +
+            'background:#e7e5e4 !important;color:#292524 !important;}' +
+            '.iqro-nav .iqro-nav-label{color:#57534e !important;}' +
+            // ── DARK MODE ──
+            '.dark .iqro-nav{background:rgba(38,36,34,0.96) !important;' +
+            'box-shadow:0 2px 8px rgba(0,0,0,0.35) !important;}' +
+            '.dark .iqro-nav .iqro-prev,.dark .iqro-nav .iqro-next{' +
+            'background:#44403c !important;color:#f5f1ea !important;}' +
+            '.dark .iqro-nav .iqro-nav-label{color:#d6d3d1 !important;}';
+        document.head.appendChild(st);
+    }
+
     function buildNavBar(pageNumbers) {
         if (pageNumbers.length <= 1) return '';
-        const btnStyle = 'background:var(--q-nav-btn,#374151);color:var(--q-nav-btn-fg,#e5e7eb);border:none;border-radius:9999px;' +
+        ensureNavStyle();
+        // Inline style HANYA untuk layout. Semua WARNA diserahkan ke
+        // #iqro-nav-style supaya bisa berbeda antara light & dark mode.
+        const btnStyle = 'border:none;border-radius:9999px;' +
                          'width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;' +
                          'font-size:16px;line-height:1;cursor:pointer;font-weight:700;flex:0 0 auto;' +
                          'transition:opacity .15s ease;';
         return '' +
             '<div class="iqro-nav" data-idx="0" data-total="' + pageNumbers.length + '" data-html2canvas-ignore="true"' +
             ' style="position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:center;' +
-            'gap:16px;background:var(--q-nav-bg,rgba(17,24,39,0.96));padding:7px 12px;border-radius:9999px;' +
-            'margin:0 auto 12px auto;width:fit-content;max-width:100%;box-shadow:0 2px 8px rgba(0,0,0,0.25);">' +
+            'gap:16px;padding:7px 12px;border-radius:9999px;' +
+            'margin:0 auto 12px auto;width:fit-content;max-width:100%;">' +
                 '<button type="button" class="iqro-prev" onclick="iqroNavGo(this,-1)" style="' + btnStyle + 'opacity:0.4;cursor:not-allowed;">←</button>' +
-                '<span class="iqro-nav-label" style="font-size:13px;color:var(--q-nav-label,#cbd5e1);font-weight:700;white-space:nowrap;min-width:110px;text-align:center;">' +
+                '<span class="iqro-nav-label" style="font-size:13px;font-weight:700;white-space:nowrap;min-width:110px;text-align:center;">' +
                     'Hal ' + pageNumbers[0] + ' (1/' + pageNumbers.length + ')' +
                 '</span>' +
                 '<button type="button" class="iqro-next" onclick="iqroNavGo(this,1)" style="' + btnStyle + '">→</button>' +
@@ -408,6 +444,7 @@
             if (typeof fitPageRowsScreen === 'function') fitPageRowsScreen(container);
         }, 100);
     }
+
     // ---- Fit SEMUA baris di satu halaman (dipakai saat capture PDF).
     //      Meneruskan ke fitInnerToWidth per .iqro-row-inner: baris yang muat
     //      tetap font penuh, baris kepanjangan dikecilkan sampai minFactor,
@@ -642,6 +679,50 @@
         });
     }
 
+    // ---- Renggangkan halaman Aisar yang PENDEK agar memenuhi tinggi A4 ----
+    // Halaman seperti Aisar jilid 3 hlm 1 hanya setinggi ~70% A4. Sebelumnya
+    // gambar dibiarkan seukuran aslinya lalu di-center di kanvas A4 → ruang
+    // kosong besar di atas & bawah. Scale-up tidak bisa dipakai karena lebar
+    // kanvas sudah penuh (akan meluber ke samping), jadi yang ditambah adalah
+    // TINGGI BARIS: kotak halaman dijadikan flex-column, baris isi diberi
+    // flex:1 sehingga sisa ruang dibagi rata. Band (judul/instruksi/catatan)
+    // tetap flex:0 supaya tidak ikut melar.
+    function stretchAisarPageToFill(clonePage, wrapper, targetH) {
+        // Dibungkus try/catch: kalau pengukuran gagal, PDF tetap dibuat dengan
+        // halaman ukuran asli (ruang kosong) — jauh lebih baik daripada PDF batal.
+        try {
+            // Cari kotak bergaris lewat isinya, bukan lewat urutan anak: struktur
+            // halaman bisa berbeda antar jilid sehingga children[1] tidak selalu
+            // menunjuk kotak yang benar.
+            let box = null;
+            const firstRow = clonePage.querySelector('.iqro-row-scroll');
+            if (firstRow) box = firstRow.parentElement;
+            if (!box || box === clonePage) box = clonePage.children[1];
+            if (!box || !box.children || box.children.length === 0) return;
+
+            const curH = wrapper.scrollHeight || 0;
+            if (!curH || !targetH) return;
+
+            const deficit = targetH - curH;
+            if (deficit <= 8) return; // sudah (hampir) penuh → jangan diutak-atik
+
+            const boxH = box.offsetHeight || 0;
+            if (!boxH) return;
+
+            box.style.setProperty('display', 'flex', 'important');
+            box.style.setProperty('flex-direction', 'column', 'important');
+            box.style.setProperty('min-height', (boxH + deficit) + 'px', 'important');
+
+            Array.from(box.children).forEach(function (ch) {
+                // baris isi = yang mengandung sel teks; sisanya band pembatas
+                const isRow = !!ch.querySelector('.word-item');
+                ch.style.setProperty('flex', isRow ? '1 1 auto' : '0 0 auto', 'important');
+            });
+        } catch (e) {
+            console.warn('⚠️ stretchAisarPageToFill dilewati:', e && e.message);
+        }
+    }
+
     async function captureIqroPerPage() {
         await ensureHtml2Canvas();
         if (document.fonts && document.fonts.ready) {
@@ -733,6 +814,10 @@
                 typeof window.aisarAutoFit === 'function') {
                 window.aisarAutoFit(wrapper);
                 await new Promise(r => setTimeout(r, 120));
+                // Halaman pendek direnggangkan dulu sampai setinggi A4 supaya
+                // tidak ada area kosong besar setelah centering di kanvas A4.
+                stretchAisarPageToFill(clonePage, wrapper, Math.floor(RENDER_WIDTH * A4_RATIO));
+                await new Promise(r => setTimeout(r, 80));
             } else {
                 // PDF: shrink baris panjang; floor lebih rendah + wrap fallback supaya
                 // kalimat jilid 4–6 yang panjang tidak terpotong.
@@ -834,8 +919,9 @@
         });
         wrapCaptureForIqro();
 
-        console.log('✅ iqro-handler.js v4.5 (font layar ' + IQRO_SCREEN_FONT_SIZE + 'px, konstanta) ready');
+        console.log('✅ iqro-handler.js v4.6 (font layar ' + IQRO_SCREEN_FONT_SIZE + 'px, nav theme-aware, Aisar PDF full-height) ready');
     }
+
     // ==== SUMBER DATA PER METODE (Iqro / Aisar) ====
     const JILID_METODES = ['Iqro', 'Ummi', 'Aisar'];
 

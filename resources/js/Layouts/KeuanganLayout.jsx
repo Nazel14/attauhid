@@ -27,8 +27,20 @@ const ROLE_LABEL = {
     'bendahara': 'Bendahara',
     'kepala-sekolah': 'Kepala Sekolah',
     'pihak-yayasan': 'Pihak Yayasan',
+    'ketua-yayasan': 'Ketua Yayasan',
     'hrd': 'HRD',
 };
+
+// Urutan = prioritas label bila satu akun memegang beberapa peran sekaligus.
+// super-admin didahulukan supaya tidak pernah tertutup label peran lain.
+const ROLE_PRIORITAS = [
+    'super-admin',
+    'ketua-yayasan',
+    'pihak-yayasan',
+    'kepala-sekolah',
+    'hrd',
+    'bendahara',
+];
 
 const I = {
     // --- ikon grup ---
@@ -82,14 +94,34 @@ export default function KeuanganLayout({ children }) {
     // Tombol pindah panel hanya untuk akun yang memang punya akses ke raport.
     const bisaKeRaport = modulUser?.tersedia?.includes('raport');
 
-    // Kolom users.role berisi role modul raport ('admin'), bukan role
-    // keuangan. Label diturunkan dari permission yang khas tiap role.
+    /* ==========================================================
+     * LABEL PERAN
+     * Dibaca dari role yang benar-benar dimiliki akun, BUKAN ditebak
+     * dari permission. Tebakan lewat permission selalu salah untuk akun
+     * yang memegang beberapa peran: super-admin punya SEMUA permission,
+     * jadi ia selalu tertangkap cabang pertama yang cocok — itulah sebab
+     * super-admin sempat berlabel "Kepala Sekolah".
+     * Rangkaian permission di bawah hanya cadangan bila daftar role
+     * belum dibagikan ke frontend lewat HandleInertiaRequests.
+     * ========================================================== */
+    const daftarRole = auth?.roles
+        || user?.roles?.map((r) => (typeof r === 'string' ? r : r.name))
+        || [];
+
+    // Kolom users.role ikut diperiksa: super-admin menyimpannya di sana.
+    const punyaRole = (nama) => user?.role === nama || daftarRole.includes(nama);
+
+    const roleAktif = ROLE_PRIORITAS.find(punyaRole);
+
     const roleLabel =
-        can('sistem.kelola_role')            ? 'Super Admin'
-        : can('pengeluaran.approve_disetujui') ? 'Pihak Yayasan'
-        : can('pengeluaran.approve_diperiksa') ? 'Kepala Sekolah'
-        : can('penggajian.generate_batch')     ? 'HRD'
-        : can('tagihan.buat_batch')            ? 'Bendahara'
+        roleAktif ? ROLE_LABEL[roleAktif]
+        // Dua nama diterima di tiap baris: penamaan seeder saat ini dan
+        // penamaan lama, supaya instalasi lama tidak salah label.
+        : can('sistem.role.kelola') || can('sistem.kelola_role') ? ROLE_LABEL['super-admin']
+        : can('pengeluaran.approve_final') || can('pengeluaran.approve_disetujui') ? ROLE_LABEL['ketua-yayasan']
+        : can('pengeluaran.approve_diperiksa') ? ROLE_LABEL['kepala-sekolah']
+        : can('penggajian.generate_batch')     ? ROLE_LABEL['hrd']
+        : can('tagihan.buat_batch')            ? ROLE_LABEL['bendahara']
         : 'Keuangan';
 
     // Modul keuangan diport bertahap. Menu yang route-nya belum ada
@@ -166,12 +198,22 @@ export default function KeuanganLayout({ children }) {
         {
             key: 'pengaturan', label: 'Pengaturan Sistem', icon: I.setting, prefix: 'keuangan.pengaturan.',
             items: [
-                { name: 'keuangan.pengaturan.role.index', label: 'Management Role', perm: 'sistem.kelola_role', icon: I.role },
-                { name: 'keuangan.pengaturan.user.index', label: 'Management User', perm: 'sistem.kelola_user', icon: I.userMgmt },
+                // perm berupa array = cukup punya salah satu. Dua penamaan
+                // diterima: 'sistem.role.kelola' (seeder saat ini) dan
+                // 'sistem.kelola_role' (penamaan lama). Tanpa ini menu
+                // Pengaturan hilang di instalasi yang memakai salah satunya.
+                { name: 'keuangan.pengaturan.role.index', label: 'Management Role', perm: ['sistem.role.kelola', 'sistem.kelola_role'], icon: I.role },
+                { name: 'keuangan.pengaturan.user.index', label: 'Management User', perm: ['sistem.user.kelola', 'sistem.kelola_user'], icon: I.userMgmt },
             ],
         },
     ]
-        .map((g) => ({ ...g, items: g.items.filter((i) => can(i.perm) && has(i.name)) }))
+        .map((g) => ({
+            ...g,
+            items: g.items.filter((i) => {
+                const daftarPerm = Array.isArray(i.perm) ? i.perm : [i.perm];
+                return daftarPerm.some(can) && has(i.name);
+            }),
+        }))
         .filter((g) => g.items.length > 0);
 
     const [openGroups, setOpenGroups] = useState(() => {
