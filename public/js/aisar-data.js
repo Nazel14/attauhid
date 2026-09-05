@@ -1,8 +1,8 @@
 window.AISAR_DATA = {
     "1": {
-        "1": {
+        "6": {
             jilid: 1,
-            halaman: 1,
+            halaman: 6,
             basmallah: "بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ",
             judul: ["أَبَ"],
             instruksi: "Fathah : Bukalah mulut dan biarkan lidah tetap pada posisi asalnya",
@@ -13,9 +13,9 @@ window.AISAR_DATA = {
             catatan: "Tahanlah nafas, jangan dialirkan saat mengucapkan (ب)",
             combo: [],
         },
-        "2": {
+        "7": {
             jilid: 1,
-            halaman: 2,
+            halaman: 7,
             basmallah: "",
             judul: ["تَ"],
             instruksi: "UJUNG LIDAH (DARI ARAH PUNGGUNG) DENGAN PANGKAL GIGI SERI ATAS",
@@ -26,9 +26,9 @@ window.AISAR_DATA = {
             catatan: "Huruf (ت) yang berharakat diucapkan dengan aliran nafas (hams) yang ringan.",
             combo: [],
         },
-        "3": {
+        "8": {
             jilid: 1,
-            halaman: 3,
+            halaman: 8,
             basmallah: "",
             judul: ["ثَ"],
             instruksi: "UJUNG LIDAH (DARI ARAH PUNGGUNG) DENGAN UJUNG GIGI SERI ATAS",
@@ -39,9 +39,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "4": {
+        "9": {
             jilid: 1,
-            halaman: 4,
+            halaman: 9,
             basmallah: "",
             judul: ["جَ"],
             instruksi: "TENGAH LIDAH DENGAN LANGIT-LANGIT",
@@ -52,9 +52,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "5": {
+        "10": {
             jilid: 1,
-            halaman: 5,
+            halaman: 10,
             basmallah: "",
             judul: ["حَ"],
             instruksi: "TENGAH TENGGOROKAN",
@@ -65,9 +65,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "6": {
+        "11": {
             jilid: 1,
-            halaman: 6,
+            halaman: 11,
             basmallah: "",
             judul: ["خَ"],
             instruksi: "UJUNG TENGGOROKAN (DI SEKITAR PANGKAL LIDAH)",
@@ -78,9 +78,9 @@ window.AISAR_DATA = {
             catatan: "Huruf (خ) adalah huruf isti'la. Bacalah dengan tebal dengan menegangkan pangkal lidah dan menaikkan suara ke langit-langit.",
             combo: [],
         },
-        "7": {
+        "12": {
             jilid: 1,
-            halaman: 7,
+            halaman: 12,
             basmallah: "",
             judul: ["دَ"],
             instruksi: "UJUNG LIDAH (DARI ARAH PUNGGUNG) DENGAN PANGKAL GIGI SERI ATAS",
@@ -91,9 +91,9 @@ window.AISAR_DATA = {
             catatan: "Tahanlah nafas, jangan dialirkan saat mengucapkan huruf (د)",
             combo: [],
         },
-        "8": {
+        "13": {
             jilid: 1,
-            halaman: 8,
+            halaman: 13,
             basmallah: "",
             judul: [], // judul masuk ke kolom (sel ذَ dan رَ ada di grid)
             instruksi: "UJUNG LIDAH (DARI ARAH PUNGGUNG) DENGAN UJUNG GIGI SERI ATAS",
@@ -114,9 +114,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "9": {
+        "14": {
             jilid: 1,
-            halaman: 9,
+            halaman: 14,
             basmallah: "",
             judul: [], // judul masuk ke kolom (sel زَ dan سَ ada di grid)
             instruksi: "UJUNG LIDAH (DARI ARAH DEPAN) DENGAN PERMUKAAN DALAM GIGI SERI BAWAH MENDEKATI UJUNG-UJUNG GIGI",
@@ -134,9 +134,9 @@ window.AISAR_DATA = {
             catatan: "Huruf (س) dan (ز) memiliki sifat shafir. Yaitu suara desis yang khas yang timbul akibat sempitnya celah yang dilalui suara.",
             combo: [],
         },
-        "10": {
+        "15": {
             jilid: 1,
-            halaman: 10,
+            halaman: 15,
             basmallah: "",
             judul: [], // judul masuk ke kolom (sel كَ dan لَ ada di grid)
             instruksi: "PANGKAL LIDAH (AGAK KE TENGAH) DENGAN LANGIT-LANGIT", // catatan AWAL halaman
@@ -158,9 +158,9 @@ window.AISAR_DATA = {
             catatan: "Huruf kaf (كَ) yang berharakat diucapkan dengan aliran nafas (hams) yang ringan.",
             combo: [],
         },
-        "11": {
+        "16": {
             jilid: 1,
-            halaman: 11,
+            halaman: 16,
             basmallah: "",
             judul: ["مَ", "مَـ"],
             instruksi: "MERAPATKAN DUA BIBIR",
@@ -172,9 +172,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "12": {
+        "17": {
             jilid: 1,
-            halaman: 12,
+            halaman: 17,
             basmallah: "",
             judul: [], // judul masuk ke kolom (sel نَ dan وَ ada di grid)
             instruksi: "UJUNG LIDAH (DARI ARAH DEPAN) DENGAN GUSI ATAS",
@@ -195,9 +195,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "13": {
+        "18": {
             jilid: 1,
-            halaman: 13,
+            halaman: 18,
             basmallah: "",
             judul: [], // judul masuk ke kolom (sel هَـ هَ dan عَ ada di grid)
             instruksi: "PANGKAL TENGGOROKAN",
@@ -220,9 +220,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "14": {
+        "19": {
             jilid: 1,
-            halaman: 14,
+            halaman: 19,
             basmallah: "",
             judul: [],
             instruksi: "TENGAH LIDAH DENGAN LANGIT-LANGIT",
@@ -233,9 +233,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "15": {
+        "20": {
             jilid: 1,
-            halaman: 15,
+            halaman: 20,
             basmallah: "",
             judul: [],
             instruksi: "TENGAH LIDAH DENGAN LANGIT-LANGIT",
@@ -246,9 +246,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "16": {
+        "21": {
             jilid: 1,
-            halaman: 16,
+            halaman: 21,
             basmallah: "",
             judul: [],
             instruksi: "UJUNG LIDAH (DARI ARAH DEPAN) DENGAN PERMUKAAN DALAM GIGI SERI BAWAH",
@@ -259,9 +259,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "17": {
+        "22": {
             jilid: 1,
-            halaman: 17,
+            halaman: 22,
             basmallah: "",
             judul: [],
             instruksi: "TEPI LIDAH SAMPING KIRI/KANAN DENGAN PERMUKAAAN DALAM DARI GIGI GERAHAM TERDEKAT. TEPI DEPAN JUGA MENYENTUH RINGAN GIGI-GIGI DEPAN.",
@@ -272,9 +272,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "18": {
+        "23": {
             jilid: 1,
-            halaman: 18,
+            halaman: 23,
             basmallah: "",
             judul: [],
             instruksi: "UJUNG LIDAH (DARI ARAH PUNGGUNG) DENGAN PANGKAL GIGI SERI ATAS",
@@ -289,9 +289,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "19": {
+        "24": {
             jilid: 1,
-            halaman: 19,
+            halaman: 24,
             basmallah: "",
             judul: [], // judul masuk ke kolom (sel ظَ ada di grid)
             instruksi: "UJUNG LIDAH (DARI ARAH PUNGGUNG) DENGAN UJUNG GIGI SERI ATAS",
@@ -305,9 +305,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "20": {
+        "25": {
             jilid: 1,
-            halaman: 20,
+            halaman: 25,
             basmallah: "",
             judul: [],
             instruksi: "TENGAH TENGGOROKAN",
@@ -318,9 +318,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "21": {
+        "26": {
             jilid: 1,
-            halaman: 21,
+            halaman: 26,
             basmallah: "",
             judul: [],
             instruksi: "UJUNG TENGGOROKAN (DI SEKITAR PANGKAL LIDAH)",
@@ -334,9 +334,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "22": {
+        "27": {
             jilid: 1,
-            halaman: 22,
+            halaman: 27,
             basmallah: "",
             judul: [],
             instruksi: "BAGIAN DALAM DARI BIBIR BAWAH DENGAN UJUNG GIGI SERI ATAS",
@@ -350,9 +350,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "23": {
+        "28": {
             jilid: 1,
-            halaman: 23,
+            halaman: 28,
             basmallah: "",
             judul: [],
             instruksi: "PANGKAL LIDAH PALING BELAKANG DENGAN LANGIT-LANGIT",
@@ -366,9 +366,9 @@ window.AISAR_DATA = {
             catatan: "Huruf (ق) adalah huruf isti'la. Suara terangkat ke atas, dan muncul bunyi tafkhim (tebal) pada rongga mulut.",
             combo: [],
         },
-        "24": {
+        "29": {
             jilid: 1,
-            halaman: 24,
+            halaman: 29,
             basmallah: "",
             judul: ["Mudzakarah Huruf berharakat fathah"],
             instruksi: "",
@@ -382,9 +382,9 @@ window.AISAR_DATA = {
             catatan: "Catatan : Huruf isti'la ada 7 (hafalkan) : ص ض ط ظ خ غ ق",
             combo: [],
         },
-        "25": {
+        "30": {
             jilid: 1,
-            halaman: 25,
+            halaman: 30,
             basmallah: "بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ",
             judul: ["Kasrah : Turunkan rahang bawah, tariklah tengah lidah sedikit ke atas)"],
             instruksi: "",
@@ -395,9 +395,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "26": {
+        "31": {
             jilid: 1,
-            halaman: 26,
+            halaman: 31,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -408,9 +408,9 @@ window.AISAR_DATA = {
             catatan: "Catatan :\n- Huruf Ro dibaca tipis saat kasroh\n- Huruf isti'la dibaca tebal saat kasroh\n- Bedakan tebal tipis huruf-huruf semakhroj",
             combo: [],
         },
-        "27": {
+        "32": {
             jilid: 1,
-            halaman: 27,
+            halaman: 32,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -421,9 +421,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "28": {
+        "33": {
             jilid: 1,
-            halaman: 28,
+            halaman: 33,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -434,9 +434,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "29": {
+        "34": {
             jilid: 1,
-            halaman: 29,
+            halaman: 34,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -447,9 +447,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "30": {
+        "35": {
             jilid: 1,
-            halaman: 30,
+            halaman: 35,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -460,9 +460,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "31": {
+        "36": {
             jilid: 1,
-            halaman: 31,
+            halaman: 36,
             basmallah: "",
             judul: ["Mudzakarah Huruf Berharakat Kasrah 1"],
             instruksi: "",
@@ -474,9 +474,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "32": {
+        "37": {
             jilid: 1,
-            halaman: 32,
+            halaman: 37,
             basmallah: "",
             judul: ["Mudzakarah Huruf Berharakat Kasrah 2"],
             instruksi: "",
@@ -487,9 +487,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "33": {
+        "38": {
             jilid: 1,
-            halaman: 33,
+            halaman: 38,
             basmallah: "",
             judul: ["Mudzakarah Huruf Berharakat Kasrah 3"],
             instruksi: "",
@@ -500,9 +500,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "34": {
+        "39": {
             jilid: 1,
-            halaman: 34,
+            halaman: 39,
             basmallah: "بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ",
             judul: ["(Dhommah: Himpunlah dua bibir)"],
             instruksi: "",
@@ -513,9 +513,9 @@ window.AISAR_DATA = {
             catatan: "Catatan :\n- Huruf Ro dibaca tebal saat dhommah\n- Huruf isti'la dibaca tebal saat dhommah\n- Bedakan tebal tipis huruf-huruf semakhroj",
             combo: [],
         },
-        "35": {
+        "40": {
             jilid: 1,
-            halaman: 35,
+            halaman: 40,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -526,9 +526,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "36": {
+        "41": {
             jilid: 1,
-            halaman: 36,
+            halaman: 41,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -539,9 +539,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "37": {
+        "42": {
             jilid: 1,
-            halaman: 37,
+            halaman: 42,
             basmallah: "",
             judul: ["Macam-Macam Cara Penulisan Hamzah"],
             instruksi: "",
@@ -552,9 +552,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "38": {
+        "43": {
             jilid: 1,
-            halaman: 38,
+            halaman: 43,
             basmallah: "",
             judul: ["Mudzakarah Huruf Berharakat Dhommah 1"],
             instruksi: "",
@@ -565,9 +565,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "39": {
+        "44": {
             jilid: 1,
-            halaman: 39,
+            halaman: 44,
             basmallah: "",
             judul: ["Mudzakarah Huruf Berharakat Dhommah 2"],
             instruksi: "",
@@ -578,9 +578,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "40": {
+        "45": {
             jilid: 1,
-            halaman: 40,
+            halaman: 45,
             basmallah: "",
             judul: ["Mudzakarah Huruf Berharakat Dhommah 3"],
             instruksi: "",
@@ -591,9 +591,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "41": {
+        "46": {
             jilid: 1,
-            halaman: 41,
+            halaman: 46,
             basmallah: "",
             judul: ["Mudzakarah Huruf Berharakat Dhommah 4"],
             instruksi: "",
@@ -604,9 +604,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "42": {
+        "47": {
             jilid: 1,
-            halaman: 42,
+            halaman: 47,
             basmallah: "",
             judul: ["NAMA-NAMA HURUF ARAB"],
             instruksi: "",
@@ -628,9 +628,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "43": {
+        "48": {
             jilid: 1,
-            halaman: 43,
+            halaman: 48,
             basmallah: "",
             judul: [],
             instruksi: "AMATI LALU SEBUTLAH NAMA-NAMA HURUF YANG TELAH TERANGKAI BERIKUT!",
@@ -641,9 +641,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "44": {
+        "49": {
             jilid: 1,
-            halaman: 44,
+            halaman: 49,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -654,9 +654,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "45": {
+        "50": {
             jilid: 1,
-            halaman: 45,
+            halaman: 50,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -669,9 +669,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "46": {
+        "51": {
             jilid: 1,
-            halaman: 46,
+            halaman: 51,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -685,9 +685,9 @@ window.AISAR_DATA = {
 
     },
     "2": {
-        "1": {
+        "4": {
             jilid: 2,
-            halaman: 1,
+            halaman: 4,
             basmallah: "بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ",
             judul: ["Mengenal Alif Sukun Sebagai Huruf Mad"],
             instruksi: "Fathah dibaca panjang (2 harakat) bila diikuti alif sukun*",
@@ -698,9 +698,9 @@ window.AISAR_DATA = {
             catatan: "* Alif sukun adalah alif yang tidak berharakat (tanda sukun tidak ditulis di atas huruf mad)",
             combo: [],
         },
-        "2": {
+        "5": {
             jilid: 2,
-            halaman: 2,
+            halaman: 5,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -711,45 +711,6 @@ window.AISAR_DATA = {
             catatan: "Lebih utama dibaca dengan tempo pelan",
             combo: [],
         },
-        "3": {
-            jilid: 2,
-            halaman: 3,
-            basmallah: "",
-            judul: [],
-            instruksi: "",
-            kolomHeader: [],
-            // Tiap baris berisi 4 kolom, ditulis berurutan dari KANAN ke KIRI (RTL)
-            baris: [["دَارَا", "ذَاقَا", "رَاجَا", "زَاغَا"],["ثَابَا", "جَادَا", "حَاقَا", "خَابَا"],["ءَابَا", "بَاتَا", "تَاحَا", "تَابَا"],["قَامَا", "كَانَا", "لَاقَا", "مَاجَا"],["طَاعَا", "عَابَا", "غَالَا", "فَاحَا"],["نَابَا", "وَاهَا", "قَالَا", "لَاتَا"],["سَادَا", "شَابَا", "صَاحَا", "ضَاقَا"],["قَادَا", "نَالَا", "عَانَا", "صَامَا"]
-            ],
-            catatan: "",
-            combo: [],
-        },
-        "4": {
-            jilid: 2,
-            halaman: 4,
-            basmallah: "",
-            judul: [],
-            instruksi: "",
-            kolomHeader: [],
-            // Tiap baris berisi 4 kolom, ditulis berurutan dari KANAN ke KIRI (RTL)
-            baris: [["عَصَرَا", "بَذَرَا", "حَسَنَا", "أَبَدَا"],["رَغَدَا", "وَعَدَا", "شَغَلَا", "لَمَمَا"],["دَخَلَا", "وَقَفَا", "دَهَنَا", "عَنَدَا"],["طَرَدَا", "غَزَوَا", "صَرَخَا", "حَلَبَا"],["جَهَثَا", "حَنِثَا", "فَعَلَا", "تَبَلَا"],["حَزَكَا", "رَهَقَا", "طَلَعَا", "مَدَدَا"],["حَسَمَا", "هَبَطَا", "بَهَرَا", "مَعَنَا"],["قَنَعَا", "صَبَرَا", "زَهِدَا", "رَضِيَا"]
-            ],
-            catatan: "",
-            combo: [],
-        },
-        "5": {
-            jilid: 2,
-            halaman: 5,
-            basmallah: "بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ",
-            judul: ["Melanjutkan Pelajaran Alif Sukun Sebagai Huruf Mad"],
-            instruksi: "",
-            kolomHeader: [],
-            // Pola tiap baris: fathah — mad tengah — mad ganda — dhommah/kasrah (RTL)
-            baris: [["قَتَلَ", "قَاتَلَ", "قِتَالَا", "قُتِلَ"],["ضَعَفَ", "ضَاعَفَ", "ضِعَافَا", "ضَعُفَ"],["جَهَدَ", "جَاهَدَ", "جِهَادَا", "جُهِدَ"],["حَسِبَ", "حَاسَبَ", "حِسَابَا", "حُسِبَ"],["كَتَبَ", "كَاتِبُ", "كِتَابَا", "كُتِبَ"],["خَدَعَ", "خَادَعَ", "خِدَاعَا", "خُدِعَ"],["شَهِبَ", "شَاهِبُ", "شِهَابَا", "شُهُبَ"]
-            ],
-            catatan: "",
-            combo: [],
-        },
         "6": {
             jilid: 2,
             halaman: 6,
@@ -757,8 +718,8 @@ window.AISAR_DATA = {
             judul: [],
             instruksi: "",
             kolomHeader: [],
-            // Pola tiap baris: fathah — isim fa'il — mad panjang — dhommah/pasif (RTL)
-            baris: [["شَرِبَ", "شَارِبُ", "شَرَابَا", "شُرِبَ"],["كَذَبَ", "كَاذِبُ", "كِذَابَا", "كُذِبَ"],["جَهَرَ", "جَاهَرَ", "جِهَارَا", "جَهُرَ"],["جَدَرَ", "جَادِرُ", "جِدَارَا", "جَدُرَ"],["كَرَمَ", "كَارِمُ", "كِرَامَا", "كَرُمَ"],["عَبَدَ", "عَابِدُ", "عِبَادَا", "عُبِدَ"],["بَسَطَ", "بَاسِطُ", "بِسَاطَا", "بُسِطَ"],["عَقَبَ", "عَاقَبَ", "عِقَابَا", "عُقِبَ"],["لَزَمَ", "لَازَمَ", "لِزَامَا", "لُزِمَ"]
+            // Tiap baris berisi 4 kolom, ditulis berurutan dari KANAN ke KIRI (RTL)
+            baris: [["دَارَا", "ذَاقَا", "رَاجَا", "زَاغَا"],["ثَابَا", "جَادَا", "حَاقَا", "خَابَا"],["ءَابَا", "بَاتَا", "تَاحَا", "تَابَا"],["قَامَا", "كَانَا", "لَاقَا", "مَاجَا"],["طَاعَا", "عَابَا", "غَالَا", "فَاحَا"],["نَابَا", "وَاهَا", "قَالَا", "لَاتَا"],["سَادَا", "شَابَا", "صَاحَا", "ضَاقَا"],["قَادَا", "نَالَا", "عَانَا", "صَامَا"]
             ],
             catatan: "",
             combo: [],
@@ -771,7 +732,7 @@ window.AISAR_DATA = {
             instruksi: "",
             kolomHeader: [],
             // Tiap baris berisi 4 kolom, ditulis berurutan dari KANAN ke KIRI (RTL)
-            baris: [["ءَانَسَ", "ءَايَةَ", "ءَاثَرَكَ", "كَسَبَا"],["نَبَاتُهُ", "قُرُبَاتِ", "فَتَابَ", "خِتَامُهُ"],["لَفَسَدَتَا", "وَثَاقَهُ", "ثُلُثَا", "ثَالِثُ"],["أَثَاثَا", "جَاعِلُكَ", "تُجَادِلُكَ", "جَامِعُ"],["أُجَاجَا", "فِجَاجَا", "حَاشَ", "فَحَاقَ"],["بِصِحَافِ", "وَأَخَاهُ", "وَخَاتَمَ", "تَخَاصُمُ"],["وَبَدَا", "وَهَدَاهُ", "فَوَجَدَا", "شِدَادَا"],["مِدَادَا", "وَإِذَا", "ذَاتِ", "فَذَانِكَ"]
+            baris: [["عَصَرَا", "بَذَرَا", "حَسَنَا", "أَبَدَا"],["رَغَدَا", "وَعَدَا", "شَغَلَا", "لَمَمَا"],["دَخَلَا", "وَقَفَا", "دَهَنَا", "عَنَدَا"],["طَرَدَا", "غَزَوَا", "صَرَخَا", "حَلَبَا"],["جَهَثَا", "حَنِثَا", "فَعَلَا", "تَبَلَا"],["حَزَكَا", "رَهَقَا", "طَلَعَا", "مَدَدَا"],["حَسَمَا", "هَبَطَا", "بَهَرَا", "مَعَنَا"],["قَنَعَا", "صَبَرَا", "زَهِدَا", "رَضِيَا"]
             ],
             catatan: "",
             combo: [],
@@ -779,12 +740,12 @@ window.AISAR_DATA = {
         "8": {
             jilid: 2,
             halaman: 8,
-            basmallah: "",
-            judul: [],
+            basmallah: "بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ",
+            judul: ["Melanjutkan Pelajaran Alif Sukun Sebagai Huruf Mad"],
             instruksi: "",
             kolomHeader: [],
-            // Tiap baris berisi 4 kolom, ditulis berurutan dari KANAN ke KIRI (RTL)
-            baris: [["فَرَاغَ", "وَنَرَاهُ", "غَمَرَاتِ", "قَرَارَا"],["فِرَارَا", "ضِرَارَا", "تَزَاوَرُ", "هَمَزَاتِ"],["وَزَادَهُ", "حِسَابِكَ", "نُسَارِعُ", "رِسَالَةَ"],["فَتَشَابَهَ", "يُشَاقِقِ", "مَشَارِقَ", "وَمَشَارِبُ"],["حَصَادِهِ", "وَفِصَالُهُ", "وَصَالِحُ", "أَصَابَكَ"],["عَرَضَا", "مَرَضَا", "حَرَضَا", "رَمَضَانَ"],["شَطَطَا", "فُرُطَا", "وَسَطَا", "وَيُطَافُ"],["لِيُطَاعَ", "طَاقَةَ", "ظَالِمَةَ", "عِظَامَهُ"]
+            // Pola tiap baris: fathah — mad tengah — mad ganda — dhommah/kasrah (RTL)
+            baris: [["قَتَلَ", "قَاتَلَ", "قِتَالَا", "قُتِلَ"],["ضَعَفَ", "ضَاعَفَ", "ضِعَافَا", "ضَعُفَ"],["جَهَدَ", "جَاهَدَ", "جِهَادَا", "جُهِدَ"],["حَسِبَ", "حَاسَبَ", "حِسَابَا", "حُسِبَ"],["كَتَبَ", "كَاتِبُ", "كِتَابَا", "كُتِبَ"],["خَدَعَ", "خَادَعَ", "خِدَاعَا", "خُدِعَ"],["شَهِبَ", "شَاهِبُ", "شِهَابَا", "شُهُبَ"]
             ],
             catatan: "",
             combo: [],
@@ -796,8 +757,8 @@ window.AISAR_DATA = {
             judul: [],
             instruksi: "",
             kolomHeader: [],
-            // Tiap baris berisi 4 kolom, ditulis berurutan dari KANAN ke KIRI (RTL)
-            baris: [["ظَاهِرَ", "عَاقَبَ", "شِيَعَا", "وَطَمَعَا"],["وَطَعَامُهُ", "صَغَارُ", "مَغَانِمَ", "غَافِرَ"],["فَاطِرَ", "شَفَاعَةُ", "مَفَاتِحَهُ", "خِفَافَا"],["تَقَاوَلَ", "مَقَامِعُ", "وَطَفِقَا", "مَقَاعِدَ"],["دَرَكَا", "أَكَابِرَ", "وَبَرَكَاتُهُ", "وَلَاتَ"],["رَجُلَانِ", "ظِلَالَا", "حَلَالَا", "ضَلَالَا"],["تُمَارِ", "وَنَمَارِقُ", "تَمَامَا", "إِمَامَا"],["أَمَرَنَا", "أَنَامِلَ", "مَنَامِكَ", "نَاقَةُ"]
+            // Pola tiap baris: fathah — isim fa'il — mad panjang — dhommah/pasif (RTL)
+            baris: [["شَرِبَ", "شَارِبُ", "شَرَابَا", "شُرِبَ"],["كَذَبَ", "كَاذِبُ", "كِذَابَا", "كُذِبَ"],["جَهَرَ", "جَاهَرَ", "جِهَارَا", "جَهُرَ"],["جَدَرَ", "جَادِرُ", "جِدَارَا", "جَدُرَ"],["كَرَمَ", "كَارِمُ", "كِرَامَا", "كَرُمَ"],["عَبَدَ", "عَابِدُ", "عِبَادَا", "عُبِدَ"],["بَسَطَ", "بَاسِطُ", "بِسَاطَا", "بُسِطَ"],["عَقَبَ", "عَاقَبَ", "عِقَابَا", "عُقِبَ"],["لَزَمَ", "لَازَمَ", "لِزَامَا", "لُزِمَ"]
             ],
             catatan: "",
             combo: [],
@@ -809,8 +770,8 @@ window.AISAR_DATA = {
             judul: [],
             instruksi: "",
             kolomHeader: [],
-            // 3 baris pertama 4 kolom, sisanya 3 kolom (RTL)
-            baris: [["رَوَاكِدَ", "فَوَاكِهُ", "لَوَاقِعُ", "فَأُوَارِيَ"],["نَهَارُ", "يُهَاجِرُ", "وَعَدَسِهَا", "وَبَصَلِهَا"],["قِيَامِ", "لَيَالِيَ", "فَصِيَامُ", "خِيَانَتَكَ"],["كَانَتَا", "فَقَاتِلَا", "دَحَاهَا"],["مُغَاضِبَا", "ءَاذَانِنَا", "أَرَادَا"],["نُدَاوِلُهَا", "ءَاثَارَهِمَا", "وَمُقَامَا"],["سُبَاتَا", "تُرَابَا", "خَرَابِهَا"],["خَالَاتِكَ", "ءَاذَانَ", "قَضَاهَا"]
+            // Tiap baris berisi 4 kolom, ditulis berurutan dari KANAN ke KIRI (RTL)
+            baris: [["ءَانَسَ", "ءَايَةَ", "ءَاثَرَكَ", "كَسَبَا"],["نَبَاتُهُ", "قُرُبَاتِ", "فَتَابَ", "خِتَامُهُ"],["لَفَسَدَتَا", "وَثَاقَهُ", "ثُلُثَا", "ثَالِثُ"],["أَثَاثَا", "جَاعِلُكَ", "تُجَادِلُكَ", "جَامِعُ"],["أُجَاجَا", "فِجَاجَا", "حَاشَ", "فَحَاقَ"],["بِصِحَافِ", "وَأَخَاهُ", "وَخَاتَمَ", "تَخَاصُمُ"],["وَبَدَا", "وَهَدَاهُ", "فَوَجَدَا", "شِدَادَا"],["مِدَادَا", "وَإِذَا", "ذَاتِ", "فَذَانِكَ"]
             ],
             catatan: "",
             combo: [],
@@ -822,8 +783,8 @@ window.AISAR_DATA = {
             judul: [],
             instruksi: "",
             kolomHeader: [],
-            // Tiap baris berisi 3 kolom, ditulis berurutan dari KANAN ke KIRI (RTL)
-            baris: [["بِضَاعَتُنَا", "جَاوَزَا", "حَاجِزَا"],["كَاشِفَاتُ", "مَغَارَاتِ", "مُهَاجِرَاتِ"],["مِزَاجُهَا", "تَظَاهَرَا", "يَتَرَاجَعَا"],["رِعَايَتِهَا", "وَمَغَارِبَهَا", "كَانَتَا"],["كِلَاهُمَا", "لِبَاسُهُمَا", "وَنَادَاهُمَا"],["تَحَاوُرَكُمَا", "ءَاتَاهُمَا", "لَسَاحِرَانِ"],["فَخَانَتَاهُمَا", "شَهَادَتِهِمَا", "عَذَابَهُمَا"],["عَاقِبَتَهُمَا", "وَقَاسَمَهُمَا", "مَقَامُهُمَا"]
+            // Tiap baris berisi 4 kolom, ditulis berurutan dari KANAN ke KIRI (RTL)
+            baris: [["فَرَاغَ", "وَنَرَاهُ", "غَمَرَاتِ", "قَرَارَا"],["فِرَارَا", "ضِرَارَا", "تَزَاوَرُ", "هَمَزَاتِ"],["وَزَادَهُ", "حِسَابِكَ", "نُسَارِعُ", "رِسَالَةَ"],["فَتَشَابَهَ", "يُشَاقِقِ", "مَشَارِقَ", "وَمَشَارِبُ"],["حَصَادِهِ", "وَفِصَالُهُ", "وَصَالِحُ", "أَصَابَكَ"],["عَرَضَا", "مَرَضَا", "حَرَضَا", "رَمَضَانَ"],["شَطَطَا", "فُرُطَا", "وَسَطَا", "وَيُطَافُ"],["لِيُطَاعَ", "طَاقَةَ", "ظَالِمَةَ", "عِظَامَهُ"]
             ],
             catatan: "",
             combo: [],
@@ -831,14 +792,14 @@ window.AISAR_DATA = {
         "12": {
             jilid: 2,
             halaman: 12,
-            basmallah: "بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ",
-            judul: ["Mengenal Ya Sukun Sebagai Huruf Mad"],
-            instruksi: "Kasrah dibaca panjang (2 harakat) bila diikuti ya sukun*",
+            basmallah: "",
+            judul: [],
+            instruksi: "",
             kolomHeader: [],
-            // Jumlah kolom mengecil per kelompok: 6-6-6-5-5-4-4 (RTL)
-            baris: [["إِى", "بِى", "ذِى", "فِى", "عِى", "لِى"],["أَبِى", "بَنِى", "وَفِى", "وَلِى", "لِذِى", "أَفِى"],["أَخِى", "وَذِى", "لَفِى", "ذَوِى", "نُرِى", "كُلِى"],["ءَاوِى", "فَكُلِى", "وَأَخِى", "وَأَبِى", "لَبَنِى"],["لِأَبِى", "غَنَمِى", "وَلِذِى", "وَلِأَخِى", "وَرُسُلِى"],["تَبَعَنِى", "خَلَقَنِى", "وَنُسُكِى", "يَرِثُنِى"],["عَذَابِى", "يُنَادِى", "صَلَاتِى", "هَدَانِى"]
+            // Tiap baris berisi 4 kolom, ditulis berurutan dari KANAN ke KIRI (RTL)
+            baris: [["ظَاهِرَ", "عَاقَبَ", "شِيَعَا", "وَطَمَعَا"],["وَطَعَامُهُ", "صَغَارُ", "مَغَانِمَ", "غَافِرَ"],["فَاطِرَ", "شَفَاعَةُ", "مَفَاتِحَهُ", "خِفَافَا"],["تَقَاوَلَ", "مَقَامِعُ", "وَطَفِقَا", "مَقَاعِدَ"],["دَرَكَا", "أَكَابِرَ", "وَبَرَكَاتُهُ", "وَلَاتَ"],["رَجُلَانِ", "ظِلَالَا", "حَلَالَا", "ضَلَالَا"],["تُمَارِ", "وَنَمَارِقُ", "تَمَامَا", "إِمَامَا"],["أَمَرَنَا", "أَنَامِلَ", "مَنَامِكَ", "نَاقَةُ"]
             ],
-            catatan: "* Ya sukun adalah huruf ya yang tidak berharakat. Huruf Ya di akhir kata tidak bertitik",
+            catatan: "",
             combo: [],
         },
         "13": {
@@ -848,8 +809,8 @@ window.AISAR_DATA = {
             judul: [],
             instruksi: "",
             kolomHeader: [],
-            // Tiap baris berisi 4 kolom, ditulis berurutan dari KANAN ke KIRI (RTL)
-            baris: [["صِرَاطِى", "عِبَادِى", "شِقَاقِى", "بِكِتَابِى"],["ظَالِمِى", "وَجَعَلَنِى", "وَرَزَقَنِى", "عِبَادَتِى"],["تَخَافِى", "أَرَادَنِى", "لِحَيَاتِى", "ءَاتَانِى"],["قِيلَ", "جِيدُ", "عِينِ", "رِيشُ"],["غَاوِينَ", "سِينِينَ", "وَرَضِيتُ", "لِيُضِيعَ"],["قَانِتِينَ", "مُنِيبِينَ","ثَلَاثِينَ",  "مَدِينِينَ"],["خَاسِئِينَ", "حَاسِبِينَ", "كَاتِبِينَ", "لَابِثِينَ"],["سَيُصِيبُ", "كَهَشِيمِ", "بِأَخِيكَ", "لِأَخِيهِ"]
+            // 3 baris pertama 4 kolom, sisanya 3 kolom (RTL)
+            baris: [["رَوَاكِدَ", "فَوَاكِهُ", "لَوَاقِعُ", "فَأُوَارِيَ"],["نَهَارُ", "يُهَاجِرُ", "وَعَدَسِهَا", "وَبَصَلِهَا"],["قِيَامِ", "لَيَالِيَ", "فَصِيَامُ", "خِيَانَتَكَ"],["كَانَتَا", "فَقَاتِلَا", "دَحَاهَا"],["مُغَاضِبَا", "ءَاذَانِنَا", "أَرَادَا"],["نُدَاوِلُهَا", "ءَاثَارَهِمَا", "وَمُقَامَا"],["سُبَاتَا", "تُرَابَا", "خَرَابِهَا"],["خَالَاتِكَ", "ءَاذَانَ", "قَضَاهَا"]
             ],
             catatan: "",
             combo: [],
@@ -861,8 +822,8 @@ window.AISAR_DATA = {
             judul: [],
             instruksi: "",
             kolomHeader: [],
-            // Tiap baris berisi 4 kolom, ditulis berurutan dari KANAN ke KIRI (RTL)
-            baris: [["وَأَكِيدُ", "لِيَغِيظَ", "بِقَمِيصِى", "فَخَشِينَا"],["عِضِينَ", "تَغِيضُ", "حَافِظِينَ", "خَامِدِينَ"],["نَسِينَا", "وَكِيلَا", "مَهِيلَا", "كَفِيلَا"],["يُعِيدُنَا", "أَعِيبَهَا", "يُمِيتُنِى", "جِيدِهَا"],["شَيَاطِينَ", "أَسَاطِيرُ", "أَحَادِيثَ", "قَنَاطِيرِ"],["حَاجِزِينَ", "سَارِقِينَ", "ءَاخِذِينَ", "صَادِقِينَ"],["لَحَافِظِينَ", "بِخَارِجِينَ", "مُسَافِحِينَ", "وَءَاخَرِينَ"],["بِرَازِقِينَ", "فَمُلَاقِيهِ", "فِى زِينَتِهِ", "وَفَصِيلَتِهِ"]
+            // Tiap baris berisi 3 kolom, ditulis berurutan dari KANAN ke KIRI (RTL)
+            baris: [["بِضَاعَتُنَا", "جَاوَزَا", "حَاجِزَا"],["كَاشِفَاتُ", "مَغَارَاتِ", "مُهَاجِرَاتِ"],["مِزَاجُهَا", "تَظَاهَرَا", "يَتَرَاجَعَا"],["رِعَايَتِهَا", "وَمَغَارِبَهَا", "كَانَتَا"],["كِلَاهُمَا", "لِبَاسُهُمَا", "وَنَادَاهُمَا"],["تَحَاوُرَكُمَا", "ءَاتَاهُمَا", "لَسَاحِرَانِ"],["فَخَانَتَاهُمَا", "شَهَادَتِهِمَا", "عَذَابَهُمَا"],["عَاقِبَتَهُمَا", "وَقَاسَمَهُمَا", "مَقَامُهُمَا"]
             ],
             catatan: "",
             combo: [],
@@ -871,13 +832,13 @@ window.AISAR_DATA = {
             jilid: 2,
             halaman: 15,
             basmallah: "بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ",
-            judul: ["Mengenal Waw Sukun Sebagai Huruf Mad"],
-            instruksi: "Dhammah dibaca panjang (2 harakat) bila diikuti waw sukun*",
+            judul: ["Mengenal Ya Sukun Sebagai Huruf Mad"],
+            instruksi: "Kasrah dibaca panjang (2 harakat) bila diikuti ya sukun*",
             kolomHeader: [],
-            // Baris 1-2 berisi 3 kolom, sisanya 4 kolom (RTL)
-            baris: [["أُو", "بُو", "تُو"],["أُوتِىَ", "بُورِكَ", "تُولِجُ"],["أُوذِينَا", "وَأُوتِينَا", "أُوتِيتُهُ", "ثُبُوتِهَا"],["ءَاتُونِى", "يُحَارِبُونَ", "غَالِبُونَ", "يَبِيتُونَ"],["يَتُوبُونَ", "لَمَثُوبَةُ", "ثَلَاثُونَ", "مَاكِثُونَ"],["وُجُوهِهِمُ", "حُوتَهُمَا", "فَذَبَحُوهَا", "تُرِيحُونَ"],["وَأَخُوهُ", "رَاسِخُونَ", "بَادُونَ", "سَامِدُونَ"]
+            // Jumlah kolom mengecil per kelompok: 6-6-6-5-5-4-4 (RTL)
+            baris: [["إِى", "بِى", "ذِى", "فِى", "عِى", "لِى"],["أَبِى", "بَنِى", "وَفِى", "وَلِى", "لِذِى", "أَفِى"],["أَخِى", "وَذِى", "لَفِى", "ذَوِى", "نُرِى", "كُلِى"],["ءَاوِى", "فَكُلِى", "وَأَخِى", "وَأَبِى", "لَبَنِى"],["لِأَبِى", "غَنَمِى", "وَلِذِى", "وَلِأَخِى", "وَرُسُلِى"],["تَبَعَنِى", "خَلَقَنِى", "وَنُسُكِى", "يَرِثُنِى"],["عَذَابِى", "يُنَادِى", "صَلَاتِى", "هَدَانِى"]
             ],
-            catatan: "* Waw sukun adalah waw yang tidak berharakat. Tanda sukun tidak dituliskan pada huruf mad",
+            catatan: "* Ya sukun adalah huruf ya yang tidak berharakat. Huruf Ya di akhir kata tidak bertitik",
             combo: [],
         },
         "16": {
@@ -887,8 +848,8 @@ window.AISAR_DATA = {
             judul: [],
             instruksi: "",
             kolomHeader: [],
-            // Baris 3 berisi 3 kolom, sisanya 4 kolom (RTL)
-            baris: [["فَخُذُوهُ", "جُذُوعِ", "تَذُودَانِ", "فَنَبَذُوهُ"],["ءَاخَرُونَ", "فَذَرُوهُ", "أَرُونِيَ", "لَخَاسِرُونَ"],["يَتَغَامَزُونَ", "رَسُولُنَا", "مُتَشَاكِسُونَ"],["فَلَمَسُوهُ", "نُشُورَا", "نُشُوزَا", "خُشُوعَا"],["وَحَصُورَا", "أُصُولِهَا", "تُوصُونَ", "نَصُوحَا"],["تُفِيضُونَ", "يُوفِضُونَ", "بُطُونِ", "بُطُونِهَا"],["يُحِيطُونَ", "وَطُورِ", "وَيَطُوفُ", "قُطُوفُهَا"],["لَحَافِظُونَ", "يُوعَظُونَ", "تَعِظُونَ", "يُبَايِعُونَ"]
+            // Tiap baris berisi 4 kolom, ditulis berurutan dari KANAN ke KIRI (RTL)
+            baris: [["صِرَاطِى", "عِبَادِى", "شِقَاقِى", "بِكِتَابِى"],["ظَالِمِى", "وَجَعَلَنِى", "وَرَزَقَنِى", "عِبَادَتِى"],["تَخَافِى", "أَرَادَنِى", "لِحَيَاتِى", "ءَاتَانِى"],["قِيلَ", "جِيدُ", "عِينِ", "رِيشُ"],["غَاوِينَ", "سِينِينَ", "وَرَضِيتُ", "لِيُضِيعَ"],["قَانِتِينَ", "مُنِيبِينَ","ثَلَاثِينَ",  "مَدِينِينَ"],["خَاسِئِينَ", "حَاسِبِينَ", "كَاتِبِينَ", "لَابِثِينَ"],["سَيُصِيبُ", "كَهَشِيمِ", "بِأَخِيكَ", "لِأَخِيهِ"]
             ],
             catatan: "",
             combo: [],
@@ -901,7 +862,7 @@ window.AISAR_DATA = {
             instruksi: "",
             kolomHeader: [],
             // Tiap baris berisi 4 kolom, ditulis berurutan dari KANAN ke KIRI (RTL)
-            baris: [["يُخَادِعُونَ", "خَاشِعُونَ", "طَاغُونَ", "يَغُوصُونَ"],["يَغُوثَ", "ءَاسَفُونَا", "وَخَافُونِ", "يَطُوفُونَ"],["فَذُوقُوهُ", "سَابِقُونَ", "يُسَاقُونَ", "يُطِيقُونَهُ"],["لِذُكُورِنَا", "وَنَكُونَ", "مَلَكُوتَ", "نَاسِكُوهُ"],["فَكُلُوهُ", "لِجَالُوتَ", "يُجَادِلُونَكَ", "لَجَاعِلُونَ"],["لِثَمُودَ", "خَصِمُونَ", "تُسِيمُونَ", "يَدِينُونَ"],["وَجُنُودَهُ", "بِذُنُوبِ", "يَتِيهُونَ", "سُهُولِهَا"],["ظُهُورُهَا", "لَيُوحُونَ", "يُورِثُهَا", "يُوقِعُ"]
+            baris: [["وَأَكِيدُ", "لِيَغِيظَ", "بِقَمِيصِى", "فَخَشِينَا"],["عِضِينَ", "تَغِيضُ", "حَافِظِينَ", "خَامِدِينَ"],["نَسِينَا", "وَكِيلَا", "مَهِيلَا", "كَفِيلَا"],["يُعِيدُنَا", "أَعِيبَهَا", "يُمِيتُنِى", "جِيدِهَا"],["شَيَاطِينَ", "أَسَاطِيرُ", "أَحَادِيثَ", "قَنَاطِيرِ"],["حَاجِزِينَ", "سَارِقِينَ", "ءَاخِذِينَ", "صَادِقِينَ"],["لَحَافِظِينَ", "بِخَارِجِينَ", "مُسَافِحِينَ", "وَءَاخَرِينَ"],["بِرَازِقِينَ", "فَمُلَاقِيهِ", "فِى زِينَتِهِ", "وَفَصِيلَتِهِ"]
             ],
             catatan: "",
             combo: [],
@@ -909,6 +870,45 @@ window.AISAR_DATA = {
         "18": {
             jilid: 2,
             halaman: 18,
+            basmallah: "بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ",
+            judul: ["Mengenal Waw Sukun Sebagai Huruf Mad"],
+            instruksi: "Dhammah dibaca panjang (2 harakat) bila diikuti waw sukun*",
+            kolomHeader: [],
+            // Baris 1-2 berisi 3 kolom, sisanya 4 kolom (RTL)
+            baris: [["أُو", "بُو", "تُو"],["أُوتِىَ", "بُورِكَ", "تُولِجُ"],["أُوذِينَا", "وَأُوتِينَا", "أُوتِيتُهُ", "ثُبُوتِهَا"],["ءَاتُونِى", "يُحَارِبُونَ", "غَالِبُونَ", "يَبِيتُونَ"],["يَتُوبُونَ", "لَمَثُوبَةُ", "ثَلَاثُونَ", "مَاكِثُونَ"],["وُجُوهِهِمُ", "حُوتَهُمَا", "فَذَبَحُوهَا", "تُرِيحُونَ"],["وَأَخُوهُ", "رَاسِخُونَ", "بَادُونَ", "سَامِدُونَ"]
+            ],
+            catatan: "* Waw sukun adalah waw yang tidak berharakat. Tanda sukun tidak dituliskan pada huruf mad",
+            combo: [],
+        },
+        "19": {
+            jilid: 2,
+            halaman: 19,
+            basmallah: "",
+            judul: [],
+            instruksi: "",
+            kolomHeader: [],
+            // Baris 3 berisi 3 kolom, sisanya 4 kolom (RTL)
+            baris: [["فَخُذُوهُ", "جُذُوعِ", "تَذُودَانِ", "فَنَبَذُوهُ"],["ءَاخَرُونَ", "فَذَرُوهُ", "أَرُونِيَ", "لَخَاسِرُونَ"],["يَتَغَامَزُونَ", "رَسُولُنَا", "مُتَشَاكِسُونَ"],["فَلَمَسُوهُ", "نُشُورَا", "نُشُوزَا", "خُشُوعَا"],["وَحَصُورَا", "أُصُولِهَا", "تُوصُونَ", "نَصُوحَا"],["تُفِيضُونَ", "يُوفِضُونَ", "بُطُونِ", "بُطُونِهَا"],["يُحِيطُونَ", "وَطُورِ", "وَيَطُوفُ", "قُطُوفُهَا"],["لَحَافِظُونَ", "يُوعَظُونَ", "تَعِظُونَ", "يُبَايِعُونَ"]
+            ],
+            catatan: "",
+            combo: [],
+        },
+        "20": {
+            jilid: 2,
+            halaman: 20,
+            basmallah: "",
+            judul: [],
+            instruksi: "",
+            kolomHeader: [],
+            // Tiap baris berisi 4 kolom, ditulis berurutan dari KANAN ke KIRI (RTL)
+            baris: [["يُخَادِعُونَ", "خَاشِعُونَ", "طَاغُونَ", "يَغُوصُونَ"],["يَغُوثَ", "ءَاسَفُونَا", "وَخَافُونِ", "يَطُوفُونَ"],["فَذُوقُوهُ", "سَابِقُونَ", "يُسَاقُونَ", "يُطِيقُونَهُ"],["لِذُكُورِنَا", "وَنَكُونَ", "مَلَكُوتَ", "نَاسِكُوهُ"],["فَكُلُوهُ", "لِجَالُوتَ", "يُجَادِلُونَكَ", "لَجَاعِلُونَ"],["لِثَمُودَ", "خَصِمُونَ", "تُسِيمُونَ", "يَدِينُونَ"],["وَجُنُودَهُ", "بِذُنُوبِ", "يَتِيهُونَ", "سُهُولِهَا"],["ظُهُورُهَا", "لَيُوحُونَ", "يُورِثُهَا", "يُوقِعُ"]
+            ],
+            catatan: "",
+            combo: [],
+        },
+        "21": {
+            jilid: 2,
+            halaman: 21,
             basmallah: "بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ",
             judul: ["Mengenal Alif Lazimah/Maqshurah"],
             instruksi: "Fathah dibaca panjang (2 harakat) bila diikuti alif lazimah*",
@@ -919,9 +919,9 @@ window.AISAR_DATA = {
             catatan: "* yaitu alif yang berbentuk ya, selalu terletak di akhir kata dan didahului harakat fathah",
             combo: [],
         },
-        "19": {
+        "22": {
             jilid: 2,
-            halaman: 19,
+            halaman: 22,
             basmallah: "",
             judul: ["Mengenal tanda mad berupa alif, ya, dan wawu kecil"],
             instruksi: "",
@@ -932,9 +932,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "20": {
+        "23": {
             jilid: 2,
-            halaman: 20,
+            halaman: 23,
             basmallah: "",
             judul: [],
             instruksi: "Alif kecil banyak terdapat di atas alif lazimah, INGAT panjang fathah tetap 2 harakat. Karena berbentuk Ya, Alif lazimah bisa disambungkan dengan dhamir (kata ganti)",
@@ -945,9 +945,9 @@ window.AISAR_DATA = {
             catatan: "Tanda ya kecil dan wawu kecil banyak dijumpai di belakang kata ganti ha (ـه). Tanda ini memanjangkan harakat di atas (ـه)",
             combo: [],
         },
-        "21": {
+        "24": {
             jilid: 2,
-            halaman: 21,
+            halaman: 24,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -958,9 +958,9 @@ window.AISAR_DATA = {
             catatan: "Sebab panjangnya dhomir/kata ganti (baik yang didhommah/dikasroh) adalah letaknya yang diapit oleh dua huruf yang berharakat. Dhomir ini dinamakan ha' kinayah",
             combo: [],
         },
-        "22": {
+        "25": {
             jilid: 2,
-            halaman: 22,
+            halaman: 25,
             basmallah: "",
             judul: [],
             instruksi: "Alif banyak terdapat setelah wawu sukun. INGAT Panjang dhommah tetap 2 harakat",
@@ -971,9 +971,9 @@ window.AISAR_DATA = {
             catatan: "Tanda bulatan kecil di atas alif adalah tanda khusus yang menunjukkan bahwa huruf di bawahnya tidak dibaca. Ingat, ini bukan tanda sukun.",
             combo: [],
         },
-        "23": {
+        "26": {
             jilid: 2,
-            halaman: 23,
+            halaman: 26,
             basmallah: "",
             judul: ["Nun Sukun di Ujung Kata"],
             instruksi: "",
@@ -991,9 +991,9 @@ window.AISAR_DATA = {
             catatan: "Ingatlah, walaupun ada huruf alif pada tanda fathah tanwin, bacaan tidak boleh dipanjangkan.",
             combo: [],
         },
-        "24": {
+        "27": {
             jilid: 2,
-            halaman: 24,
+            halaman: 27,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1004,9 +1004,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "25": {
+        "28": {
             jilid: 2,
-            halaman: 25,
+            halaman: 28,
             basmallah: "",
             judul: ["SUKUN PADA HURUF LIYN / LAYYIN"],
             instruksi: "",
@@ -1018,9 +1018,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "26": {
+        "29": {
             jilid: 2,
-            halaman: 26,
+            halaman: 29,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1033,9 +1033,9 @@ window.AISAR_DATA = {
             catatan: "Bulatan kecil di atas alif, ya, atau waw menjadi tanda bahwa huruf-huruf itu dianggap tidak ada. Sehingga tidak berfungsi sebagai huruf mad.",
             combo: [],
         },
-        "27": {
+        "30": {
             jilid: 2,
-            halaman: 27,
+            halaman: 30,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1047,9 +1047,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "28": {
+        "31": {
             jilid: 2,
-            halaman: 28,
+            halaman: 31,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1060,9 +1060,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "29": {
+        "32": {
             jilid: 2,
-            halaman: 29,
+            halaman: 32,
             basmallah: "",
             judul: ["SUKUN PADA HURUF YANG DIBACA DENGAN SUARA MENGALIR (BERSIFAT ROKHOWAH)"],
             instruksi: "",
@@ -1074,9 +1074,9 @@ window.AISAR_DATA = {
             catatan: "ث, ح, ه, س, ف, ش, ذ, ز\nTermasuk huruf rokhowah sekaligus istifal (selalu dibaca dengan tipis)",
             combo: [],
         },
-        "30": {
+        "33": {
             jilid: 2,
-            halaman: 30,
+            halaman: 33,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1088,9 +1088,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "31": {
+        "34": {
             jilid: 2,
-            halaman: 31,
+            halaman: 34,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1102,9 +1102,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "32": {
+        "35": {
             jilid: 2,
-            halaman: 32,
+            halaman: 35,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1116,9 +1116,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "33": {
+        "36": {
             jilid: 2,
-            halaman: 33,
+            halaman: 36,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1130,9 +1130,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "34": {
+        "37": {
             jilid: 2,
-            halaman: 34,
+            halaman: 37,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1145,9 +1145,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "35": {
+        "38": {
             jilid: 2,
-            halaman: 35,
+            halaman: 38,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1160,9 +1160,9 @@ window.AISAR_DATA = {
             catatan: "* بإبدال همزة ساكنة ألفا على رواية ورش",
             combo: [],
         },
-        "36": {
+        "39": {
             jilid: 2,
-            halaman: 36,
+            halaman: 39,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1176,9 +1176,9 @@ window.AISAR_DATA = {
             catatan: "Semua huruf bainiyah bersifat tipis. Kecuali ro, ketika disukun dan sebelumnya fathah / dhommah, ro dibaca tebal.",
             combo: [],
         },
-        "37": {
+        "40": {
             jilid: 2,
-            halaman: 37,
+            halaman: 40,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1190,9 +1190,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "38": {
+        "41": {
             jilid: 2,
-            halaman: 38,
+            halaman: 41,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1205,9 +1205,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "39": {
+        "42": {
             jilid: 2,
-            halaman: 39,
+            halaman: 42,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1221,9 +1221,9 @@ window.AISAR_DATA = {
             catatan: "- Huruf ro' sukun dibaca tebal jika sebelumnya berharokat fathah/ dhommah.\n- Huruf isti'la yang sukun selalu dibaca tebal",
             combo: [],
         },
-        "40": {
+        "43": {
             jilid: 2,
-            halaman: 40,
+            halaman: 43,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1236,9 +1236,9 @@ window.AISAR_DATA = {
             catatan: "خ، غ، ص، ض، ظ\nTermasuk huruf rokhowah sekaligus isti'la (selalu dibaca dengan tebal)",
             combo: [],
         },
-        "41": {
+        "44": {
             jilid: 2,
-            halaman: 41,
+            halaman: 44,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1251,9 +1251,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "42": {
+        "45": {
             jilid: 2,
-            halaman: 42,
+            halaman: 45,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1266,9 +1266,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "43": {
+        "46": {
             jilid: 2,
-            halaman: 43,
+            halaman: 46,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1281,9 +1281,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "44": {
+        "47": {
             jilid: 2,
-            halaman: 44,
+            halaman: 47,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1296,9 +1296,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "45": {
+        "48": {
             jilid: 2,
-            halaman: 45,
+            halaman: 48,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1311,9 +1311,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "46": {
+        "49": {
             jilid: 2,
-            halaman: 46,
+            halaman: 49,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1326,9 +1326,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "47": {
+        "50": {
             jilid: 2,
-            halaman: 47,
+            halaman: 50,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1340,9 +1340,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "48": {
+        "51": {
             jilid: 2,
-            halaman: 48,
+            halaman: 51,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1357,9 +1357,9 @@ window.AISAR_DATA = {
 
     },
     "3": {
-        "1": {
+        "4": {
             jilid: 3,
-            halaman: 1,
+            halaman: 4,
             basmallah: "بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ",
             judul: [], // judul masuk ke grid (sel بْ)
             instruksi: "PANTULKAN SUARA SAAT MENYUKUN 5 HURUF QOLQOLAH (ب ج د ط ق)",
@@ -1383,9 +1383,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-            "2": {
+            "5": {
             jilid: 3,
-            halaman: 2,
+            halaman: 5,
             basmallah: "",
             judul: [], // judul masuk ke grid (sel عُدْ)
             instruksi: "",
@@ -1408,9 +1408,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                       "3": {
+        "6": {
             jilid: 3,
-            halaman: 3,
+            halaman: 6,
             basmallah: "",
             judul: [], // judul masuk ke grid (sel تَجْ)
             instruksi: "",
@@ -1435,9 +1435,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                "4": {
+                "7": {
             jilid: 3,
-            halaman: 4,
+            halaman: 7,
             basmallah: "",
             judul: [], // judul masuk ke grid (sel سُقْ)
             instruksi: "",
@@ -1466,9 +1466,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "5": {
+        "8": {
             jilid: 3,
-            halaman: 5,
+            halaman: 8,
             basmallah: "",
             judul: [], // judul masuk ke grid (sel قَطْ)
             instruksi: "",
@@ -1493,9 +1493,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                "6": {
+                "9": {
             jilid: 3,
-            halaman: 6,
+            halaman: 9,
             basmallah: "",
             judul: [], // judul masuk ke grid (sel أَبْ, أَتْ, أَثْ)
             instruksi: "Tasydid / Syaddah adalah sukun yang diidghomkan. Huruf yang ditasydid adalah huruf sukun yang diidghomkan pada huruf itu sendiri kemudian berharakat.",
@@ -1517,9 +1517,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "7": {
+        "10": {
             jilid: 3,
-            halaman: 7,
+            halaman: 10,
             basmallah: "",
             judul: [], // judul masuk ke grid (sel أَجّْ, أَحّْ, أَخّْ, أَدّْ)
             instruksi: "",
@@ -1542,9 +1542,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                "8": {
+                "11": {
             jilid: 3,
-            halaman: 8,
+            halaman: 11,
             basmallah: "",
             judul: [], // judul masuk ke grid (sel أَذّ dan أَرّ)
             instruksi: "",
@@ -1571,9 +1571,9 @@ window.AISAR_DATA = {
             catatan: "Hati-hati dari menggetarkan ujung lidah secara berlebihan saat membaca ro' bertasydid",
             combo: [],
         },
-        "9": {
+        "12": {
             jilid: 3,
-            halaman: 9,
+            halaman: 12,
             basmallah: "",
             judul: [], // judul masuk ke grid (sel إِزّْ dan إِسّْ)
             instruksi: "",
@@ -1596,9 +1596,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                "10": {
+                "13": {
             jilid: 3,
-            halaman: 10,
+            halaman: 13,
             basmallah: "",
             judul: [], // judul masuk ke grid (sel أُشّْ dan أُصّْ)
             instruksi: "",
@@ -1621,9 +1621,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "11": {
+        "14": {
             jilid: 3,
-            halaman: 11,
+            halaman: 14,
             basmallah: "",
             judul: [], // judul masuk ke grid (sel أَضّْ, أَطّْ, إِظّْ)
             instruksi: "",
@@ -1648,9 +1648,9 @@ window.AISAR_DATA = {
             catatan: "(١) على قراءة غير الكوفيين",
             combo: [],
         },
-                "12": {
+                "15": {
             jilid: 3,
-            halaman: 12,
+            halaman: 15,
             basmallah: "",
             judul: [], // judul masuk ke grid (sel أَعّ, أُفّ, دَقّ)
             instruksi: "",
@@ -1680,9 +1680,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "13": {
+        "16": {
             jilid: 3,
-            halaman: 13,
+            halaman: 16,
             basmallah: "",
             judul: [], // judul masuk ke grid (sel أَكّ dan إِلّ)
             instruksi: "",
@@ -1707,9 +1707,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                "14": {
+                "17": {
             jilid: 3,
-            halaman: 14,
+            halaman: 17,
             basmallah: "",
             judul: [], // judul masuk ke grid (sel أُمّ)
             instruksi: "",
@@ -1739,9 +1739,9 @@ window.AISAR_DATA = {
             catatan: "* Huruf Mim yang bertasydid ditahan lebih lama. Berilah ghunnah yang paling sempurna.",
             combo: [],
         },
-        "15": {
+        "18": {
             jilid: 3,
-            halaman: 15,
+            halaman: 18,
             basmallah: "",
             judul: [], // judul masuk ke grid (sel إِنّ)
             instruksi: "",
@@ -1763,9 +1763,9 @@ window.AISAR_DATA = {
             catatan: "* Huruf Nun yang bertasydid ditahan lebih lama. Berilah ghunnah yang paling sempurna.",
             combo: [],
         },
-                "16": {
+                "19": {
             jilid: 3,
-            halaman: 16,
+            halaman: 19,
             basmallah: "",
             judul: [], // judul masuk ke grid (sel أَوّ, بَهّ, أَىّ)
             instruksi: "",
@@ -1796,9 +1796,9 @@ window.AISAR_DATA = {
             catatan: "* berilah tekanan suara pada huruf ya' dan waw yang bertasydid. Jangan beri suara ghunnah. Jangan pula ditahan lama seperti mentasydid huruf nun.",
             combo: [],
         },
-        "17": {
+        "20": {
             jilid: 3,
-            halaman: 17,
+            halaman: 20,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1824,9 +1824,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                "18": {
+                "21": {
             jilid: 3,
-            halaman: 18,
+            halaman: 21,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1852,9 +1852,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "19": {
+        "22": {
             jilid: 3,
-            halaman: 19,
+            halaman: 22,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1875,9 +1875,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                "20": {
+                "23": {
             jilid: 3,
-            halaman: 20,
+            halaman: 23,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1896,9 +1896,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "21": {
+        "24": {
             jilid: 3,
-            halaman: 21,
+            halaman: 24,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1917,9 +1917,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                "22": {
+                "25": {
             jilid: 3,
-            halaman: 22,
+            halaman: 25,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1938,9 +1938,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "23": {
+        "26": {
             jilid: 3,
-            halaman: 23,
+            halaman: 26,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1959,9 +1959,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                "24": {
+                "27": {
             jilid: 3,
-            halaman: 24,
+            halaman: 27,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -1980,9 +1980,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "25": {
+        "28": {
             jilid: 3,
-            halaman: 25,
+            halaman: 28,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2003,9 +2003,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                "26": {
+                "29": {
             jilid: 3,
-            halaman: 26,
+            halaman: 29,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2024,9 +2024,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "27": {
+        "30": {
             jilid: 3,
-            halaman: 27,
+            halaman: 30,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2045,9 +2045,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                "28": {
+                "31": {
             jilid: 3,
-            halaman: 28,
+            halaman: 31,
             basmallah: "",
             judul: ["HUKUM IZH-HAR QOMARI", "LAM DIBACA JELAS BILA DI ATASNYA ADA TANDA SUKUN.", "Hamzah washal (ٱ) dibaca FATHAH jika di awal bacaan."],
             instruksi: "",
@@ -2067,9 +2067,9 @@ window.AISAR_DATA = {
             catatan: "Hamzah washal di tengah bacaan dilewati, tidak usah dibaca.",
             combo: [],
         },
-        "29": {
+        "32": {
             jilid: 3,
-            halaman: 29,
+            halaman: 32,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2092,9 +2092,9 @@ window.AISAR_DATA = {
             catatan: "Hamzah washal di tengah bacaan dilewati, tidak dibaca",
             combo: [],
         },
-                "30": {
+                "33": {
             jilid: 3,
-            halaman: 30,
+            halaman: 33,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2115,9 +2115,9 @@ window.AISAR_DATA = {
             catatan: "Hamzah washal di tengah bacaan dilewati, tidak dibaca",
             combo: [],
         },
-        "31": {
+        "34": {
             jilid: 3,
-            halaman: 31,
+            halaman: 34,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2138,9 +2138,9 @@ window.AISAR_DATA = {
             catatan: "Hamzah washal di tengah bacaan dilewati, tidak usah dibaca",
             combo: [],
         },
-                "32": {
+                "35": {
             jilid: 3,
-            halaman: 32,
+            halaman: 35,
             basmallah: "",
             judul: ["HUKUM IDGHAM SYAMSI", "LAM TIDAK DIBACA BILA TIDAK ADA TANDA SUKUN DI ATASNYA.", "YANG TERBACA ADALAH HURUF SETELAHNYA YANG BERTASYDID.", "HAMZAH WASHAL DIBACA FATHAH BILA DI AWAL BACAAN"],
             instruksi: "",
@@ -2166,9 +2166,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "33": {
+        "36": {
             jilid: 3,
-            halaman: 33,
+            halaman: 36,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2193,9 +2193,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                "34": {
+                "37": {
             jilid: 3,
-            halaman: 34,
+            halaman: 37,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2216,9 +2216,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "35": {
+        "38": {
             jilid: 3,
-            halaman: 35,
+            halaman: 38,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2241,9 +2241,9 @@ window.AISAR_DATA = {
             catatan: "Huruf wawu yang bertanda bulatan kecil di atasnya bukan huruf mad. Dhommah sebelumnya tidak dibaca.",
             combo: [],
         },
-                "36": {
+                "39": {
             jilid: 3,
-            halaman: 36,
+            halaman: 39,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2266,9 +2266,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "37": {
+        "40": {
             jilid: 3,
-            halaman: 37,
+            halaman: 40,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2298,9 +2298,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                "38": {
+                "41": {
             jilid: 3,
-            halaman: 38,
+            halaman: 41,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2323,9 +2323,9 @@ window.AISAR_DATA = {
             catatan: "Ingat, Nun bertasydid selalu dibaca dengan dengung (ghunnah) sempurna.",
             combo: [],
         },
-        "39": {
+        "42": {
             jilid: 3,
-            halaman: 39,
+            halaman: 42,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2346,9 +2346,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                "40": {
+                "43": {
             jilid: 3,
-            halaman: 40,
+            halaman: 43,
             basmallah: "",
             judul: ["لِ + ٱلتَّقْوَىٰ = لِلتَّقْوَىٰ"],
             instruksi: "",
@@ -2368,9 +2368,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "41": {
+        "44": {
             jilid: 3,
-            halaman: 41,
+            halaman: 44,
             basmallah: "",
             judul: ["Awas ! BANYAK HURUF ALIF, WAWU, DAN YA YANG TIDAK TERBACA.", "LIHATLAH DENGAN CERMAT, BACALAH DENGAN TEPAT"],
             instruksi: "",
@@ -2389,9 +2389,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                "42": {
+                "45": {
             jilid: 3,
-            halaman: 42,
+            halaman: 45,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2410,9 +2410,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "43": {
+        "46": {
             jilid: 3,
-            halaman: 43,
+            halaman: 46,
             basmallah: "",
             judul: ["LAM PADA LAFZHUL JALALAH DIBACA DENGAN TAFKHIM JIKA SEBELUMNYA FATHAH/ DHOMMAH"],
             instruksi: "",
@@ -2435,9 +2435,9 @@ window.AISAR_DATA = {
             catatan: "Lam pada lafaz (الله) dibaca panjang walaupun tidak ada tanda Alif.",
             combo: [],
         },
-                "44": {
+                "47": {
             jilid: 3,
-            halaman: 44,
+            halaman: 47,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2462,9 +2462,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "45": {
+        "48": {
             jilid: 3,
-            halaman: 45,
+            halaman: 48,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2491,9 +2491,9 @@ window.AISAR_DATA = {
             catatan: "Lam pada lafaz (اللهم) dibaca panjang walaupun tidak ada tanda Alif.",
             combo: [],
         },
-                "46": {
+                "49": {
             jilid: 3,
-            halaman: 46,
+            halaman: 49,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2512,9 +2512,9 @@ window.AISAR_DATA = {
             catatan: "Lam pada lafaz (اللهم) dibaca panjang walaupun tidak ada tanda Alif.",
             combo: [],
         },
-        "47": {
+        "50": {
             jilid: 3,
-            halaman: 47,
+            halaman: 50,
             basmallah: "",
             judul: ["Jika sebelum Lafzhul Jalalah adalah kasrah, maka lam dibaca TARQIQ"],
             instruksi: "",
@@ -2535,9 +2535,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-                "48": {
+                "51": {
             jilid: 3,
-            halaman: 48,
+            halaman: 51,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2562,9 +2562,9 @@ window.AISAR_DATA = {
         },
     },
     "4": {
-        "1": {
+        "4": {
             jilid: 4,
-            halaman: 1,
+            halaman: 4,
             basmallah: "بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ",
             judul: [],
             instruksi: "HUKUM IZH-HAR HALQI",
@@ -2576,9 +2576,9 @@ window.AISAR_DATA = {
             catatan: "Bacalah nun sukun/tanwin dari makhrajnya secara jelas tanpa memperpanjang ghunnah bila bertemu 6 huruf halqi : أ ح خ ع غ هـ",
             combo: [],
         },
-        "2": {
+        "5": {
             jilid: 4,
-            halaman: 2,
+            halaman: 5,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2590,9 +2590,9 @@ window.AISAR_DATA = {
             catatan: "- Hukum izhar juga berlaku pada tanwin jika bertemu huruf halqi.\n- Dan semua hukum nun sukun berlaku pula pada tanwin",
             combo: [],
         },
-        "3": {
+        "6": {
             jilid: 4,
-            halaman: 3,
+            halaman: 6,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2604,9 +2604,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "4": {
+        "7": {
             jilid: 4,
-            halaman: 4,
+            halaman: 7,
             basmallah: "",
             judul: ["BACAAN IZH-HAR MUTLAK", "Nun sukun dibaca jelas jika bertemu Ya (ي) dan Waw (و) dalam satu kata"],
             instruksi: "",
@@ -2618,9 +2618,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "5": {
+        "8": {
             jilid: 4,
-            halaman: 5,
+            halaman: 8,
             basmallah: "",
             judul: ["HUKUM IDGHAM BIGHUNNAH (نْ) KE DALAM (ي)"],
             instruksi: "",
@@ -2632,9 +2632,9 @@ window.AISAR_DATA = {
             catatan: "Nun Sukun / tanwin diidghomkan ke dalam (ي) dengan ghunnah yang sempurna.",
             combo: [],
         },
-        "6": {
+        "9": {
             jilid: 4,
-            halaman: 6,
+            halaman: 9,
             basmallah: "",
             judul: ["HUKUM IDGHAM BIGHUNNAH (نْ) KE DALAM (ن)"],
             instruksi: "",
@@ -2646,9 +2646,9 @@ window.AISAR_DATA = {
             catatan: "Nun Sukun / tanwin diidghomkan ke dalam (ن) dengan ghunnah yang sempurna.",
             combo: [],
         },
-        "7": {
+        "10": {
             jilid: 4,
-            halaman: 7,
+            halaman: 10,
             basmallah: "",
             judul: ["HUKUM IDGHAM BIGHUNNAH (نْ) KE DALAM (م)"],
             instruksi: "",
@@ -2660,9 +2660,9 @@ window.AISAR_DATA = {
             catatan: "Nun Sukun / tanwin diidghomkan ke dalam (م) dengan ghunnah yang sempurna.",
             combo: [],
         },
-        "8": {
+        "11": {
             jilid: 4,
-            halaman: 8,
+            halaman: 11,
             basmallah: "",
             judul: ["HUKUM IDGHAM BIGHUNNAH (نْ) KE DALAM (و)"],
             instruksi: "",
@@ -2674,9 +2674,9 @@ window.AISAR_DATA = {
             catatan: "Nun Sukun / tanwin diidghomkan ke dalam (و) dengan ghunnah yang sempurna.",
             combo: [],
         },
-        "9": {
+        "12": {
             jilid: 4,
-            halaman: 9,
+            halaman: 12,
             basmallah: "",
             judul: ["HUKUM IDGHAM BILA GHUNNAH (نْ) KE DALAM (ل)"],
             instruksi: "",
@@ -2688,9 +2688,9 @@ window.AISAR_DATA = {
             catatan: "Nun Sukun / tanwin diidghomkan ke dalam (ل) tanpa ghunnah.",
             combo: [],
         },
-        "10": {
+        "13": {
             jilid: 4,
-            halaman: 10,
+            halaman: 13,
             basmallah: "",
             judul: ["HUKUM IDGHAM BILA GHUNNAH (نْ) KE DALAM (ل)"],
             instruksi: "",
@@ -2702,9 +2702,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "11": {
+        "14": {
             jilid: 4,
-            halaman: 11,
+            halaman: 14,
             basmallah: "",
             judul: ["HUKUM IDGHAM BILA GHUNNAH (نْ) KE DALAM (ر)"],
             instruksi: "",
@@ -2716,9 +2716,9 @@ window.AISAR_DATA = {
             catatan: "Nun Sukun / tanwin diidghomkan ke dalam (ر) tanpa ghunnah.",
             combo: [],
         },
-        "12": {
+        "15": {
             jilid: 4,
-            halaman: 12,
+            halaman: 15,
             basmallah: "",
             judul: ["HUKUM IDGHAM BILA GHUNNAH (نْ) PADA (ر)"],
             instruksi: "",
@@ -2730,9 +2730,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "13": {
+        "16": {
             jilid: 4,
-            halaman: 13,
+            halaman: 16,
             basmallah: "",
             judul: ["HUKUM IKHFA (نْ) PADA (ت)"],
             instruksi: "",
@@ -2746,9 +2746,9 @@ window.AISAR_DATA = {
             catatan: "Panjangkanlah ghunnah (dengung) pada setiap bacaan ikhfa. Jangan tempelkan ujung lidah pada gusi. Bacalah ghunnah dengan tipis.",
             combo: [],
         },
-        "14": {
+        "17": {
             jilid: 4,
-            halaman: 14,
+            halaman: 17,
             basmallah: "",
             judul: ["HUKUM IKHFA (نْ) PADA (ج)"],
             instruksi: "",
@@ -2762,9 +2762,9 @@ window.AISAR_DATA = {
             catatan: "Bacalah ghunnah dengan tipis.",
             combo: [],
         },
-        "15": {
+        "18": {
             jilid: 4,
-            halaman: 15,
+            halaman: 18,
             basmallah: "",
             judul: ["HUKUM IKHFA (نْ) PADA (ذ)"],
             instruksi: "",
@@ -2778,9 +2778,9 @@ window.AISAR_DATA = {
             catatan: "Bacalah ghunnah dengan tipis.",
             combo: [],
         },
-        "16": {
+        "19": {
             jilid: 4,
-            halaman: 16,
+            halaman: 19,
             basmallah: "",
             judul: ["HUKUM IKHFA (نْ) PADA (س)"],
             instruksi: "",
@@ -2794,9 +2794,9 @@ window.AISAR_DATA = {
             catatan: "Bacalah ghunnah dengan tipis.",
             combo: [],
         },
-        "17": {
+        "20": {
             jilid: 4,
-            halaman: 17,
+            halaman: 20,
             basmallah: "",
             judul: ["HUKUM IKHFA (نْ) PADA (ف) *"],
             instruksi: "",
@@ -2810,9 +2810,9 @@ window.AISAR_DATA = {
             catatan: "(*) Untuk ikhfa nun pada fa, Bibir bawah mendekati 2 gigi seri atas\n(**) Ikhfa Nun pada Kaf, tempelkan lidah bagian belakang ke langit-langit.",
             combo: [],
         },
-        "18": {
+        "21": {
             jilid: 4,
-            halaman: 18,
+            halaman: 21,
             basmallah: "",
             judul: ["HUKUM IKHFA (نْ) PADA (ق) **"],
             instruksi: "",
@@ -2824,9 +2824,9 @@ window.AISAR_DATA = {
             catatan: "(**) Untuk ikhfa Nun pada Qof, lidah bagian belakang menempel ke langit-langit. Tebalkan ghunnah ikhfa pada huruf-huruf tebal.",
             combo: [],
         },
-        "19": {
+        "22": {
             jilid: 4,
-            halaman: 19,
+            halaman: 22,
             basmallah: "",
             judul: ["HUKUM IKHFA (نْ) PADA (ص) *"],
             instruksi: "",
@@ -2838,9 +2838,9 @@ window.AISAR_DATA = {
             catatan: "* Ghunnah pada hukum ikhfa selalu dibaca tebal (tafkhim) jika setelah nun/tanwin adalah huruf tebal.",
             combo: [],
         },
-        "20": {
+        "23": {
             jilid: 4,
-            halaman: 20,
+            halaman: 23,
             basmallah: "",
             judul: ["HUKUM IKHFA (نْ) PADA (ض) *"],
             instruksi: "",
@@ -2852,9 +2852,9 @@ window.AISAR_DATA = {
             catatan: "* Ghunnah pada hukum ikhfa selalu dibaca tebal (tafkhim) jika setelah nun/tanwin adalah huruf tebal.",
             combo: [],
         },
-        "21": {
+        "24": {
             jilid: 4,
-            halaman: 21,
+            halaman: 24,
             basmallah: "",
             judul: ["HUKUM IKHFA (نْ) PADA (ط) *"],
             instruksi: "",
@@ -2866,9 +2866,9 @@ window.AISAR_DATA = {
             catatan: "* Ghunnah pada hukum ikhfa selalu dibaca tebal (tafkhim) jika setelah nun/tanwin adalah huruf tebal.",
             combo: [],
         },
-        "22": {
+        "25": {
             jilid: 4,
-            halaman: 22,
+            halaman: 25,
             basmallah: "",
             judul: ["HUKUM IKHFA (نْ) PADA (ظ) *"],
             instruksi: "",
@@ -2880,9 +2880,9 @@ window.AISAR_DATA = {
             catatan: "* Ghunnah pada hukum ikhfa selalu dibaca tebal (tafkhim) jika setelah nun/tanwin adalah huruf tebal.",
             combo: [],
         },
-        "23": {
+        "26": {
             jilid: 4,
-            halaman: 23,
+            halaman: 26,
             basmallah: "",
             judul: ["HUKUM QOLB/IQLAB"],
             instruksi: "Nun sukun berubah menjadi Mim (م) disertai ghunnah sempurna jika bertemu Ba (ب)",
@@ -2894,9 +2894,9 @@ window.AISAR_DATA = {
             catatan: "Tanda bacaan Qalb adalah min dengan ekor ke bawah yang ditulis sejajar menggantikan salah satu harakat tanwin atau di atas nun menggantikan tanda sukun.",
             combo: [],
         },
-        "24": {
+        "27": {
             jilid: 4,
-            halaman: 24,
+            halaman: 27,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2908,9 +2908,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "25": {
+        "28": {
             jilid: 4,
-            halaman: 25,
+            halaman: 28,
             basmallah: "",
             judul: ["IDGHOM MIM SUKUN KE DALAM MIM"],
             instruksi: "",
@@ -2922,9 +2922,9 @@ window.AISAR_DATA = {
             catatan: "Mim yang ditasydid dibaca dengan ghunnah yang sempurna.",
             combo: [],
         },
-        "26": {
+        "29": {
             jilid: 4,
-            halaman: 26,
+            halaman: 29,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2936,9 +2936,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "27": {
+        "30": {
             jilid: 4,
-            halaman: 27,
+            halaman: 30,
             basmallah: "",
             judul: [],
             instruksi: "Mim dibaca dengan ghunnah yang sempurna jika bertemu ba (ب)",
@@ -2950,9 +2950,9 @@ window.AISAR_DATA = {
             catatan: "Bacaan ini dinamakan ikhfa syafawi. Walaupun namanya ikhfa, namun mim tetap dibaca dengan merapatkan kedua bibir.",
             combo: [],
         },
-        "28": {
+        "31": {
             jilid: 4,
-            halaman: 28,
+            halaman: 31,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2964,9 +2964,9 @@ window.AISAR_DATA = {
             catatan: "Mim sukun yang bertemu dengan selain Mim dan Ba dibaca izh-har. Ghunnah tidak dipanjangkan.",
             combo: [],
         },
-        "29": {
+        "32": {
             jilid: 4,
-            halaman: 29,
+            halaman: 32,
             basmallah: "",
             judul: ["HUKUM IZH-HAR & IDGHAM JUGA TERJADI PADA HURUF YANG LAIN. TANDA IZH-HAR ADALAH SUKUN. TANDA IDGHAM ADALAH TASYDID PADA HURUF KEDUA"],
             instruksi: "",
@@ -2978,9 +2978,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "30": {
+        "33": {
             jilid: 4,
-            halaman: 30,
+            halaman: 33,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -2992,9 +2992,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "31": {
+        "34": {
             jilid: 4,
-            halaman: 31,
+            halaman: 34,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3006,9 +3006,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "32": {
+        "35": {
             jilid: 4,
-            halaman: 32,
+            halaman: 35,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3020,9 +3020,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "33": {
+        "36": {
             jilid: 4,
-            halaman: 33,
+            halaman: 36,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3034,9 +3034,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "34": {
+        "37": {
             jilid: 4,
-            halaman: 34,
+            halaman: 37,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3048,9 +3048,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "35": {
+        "38": {
             jilid: 4,
-            halaman: 35,
+            halaman: 38,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3062,9 +3062,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "36": {
+        "39": {
             jilid: 4,
-            halaman: 36,
+            halaman: 39,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3076,9 +3076,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "37": {
+        "40": {
             jilid: 4,
-            halaman: 37,
+            halaman: 40,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3090,9 +3090,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "38": {
+        "41": {
             jilid: 4,
-            halaman: 38,
+            halaman: 41,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3104,9 +3104,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "39": {
+        "42": {
             jilid: 4,
-            halaman: 39,
+            halaman: 42,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3118,9 +3118,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "40": {
+        "43": {
             jilid: 4,
-            halaman: 40,
+            halaman: 43,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3132,9 +3132,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "41": {
+        "44": {
             jilid: 4,
-            halaman: 41,
+            halaman: 44,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3146,9 +3146,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "42": {
+        "45": {
             jilid: 4,
-            halaman: 42,
+            halaman: 45,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3160,9 +3160,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "43": {
+        "46": {
             jilid: 4,
-            halaman: 43,
+            halaman: 46,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3174,9 +3174,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "44": {
+        "47": {
             jilid: 4,
-            halaman: 44,
+            halaman: 47,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3188,9 +3188,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "45": {
+        "48": {
             jilid: 4,
-            halaman: 45,
+            halaman: 48,
             basmallah: "",
             judul: ["HUKUM RO MUFAKHOMAH (TEBAL)"],
             instruksi: "Ro dibaca tebal jika difathah, atau disukun sebelumnya fathah",
@@ -3202,9 +3202,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "46": {
+        "49": {
             jilid: 4,
-            halaman: 46,
+            halaman: 49,
             basmallah: "",
             judul: [],
             instruksi: "Ro juga dibaca tebal jika didhommah, atau disukun sebelumnya dhommah",
@@ -3216,9 +3216,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "47": {
+        "50": {
             jilid: 4,
-            halaman: 47,
+            halaman: 50,
             basmallah: "",
             judul: ["HUKUM RO' MURAQQAQAH (TIPIS)"],
             instruksi: "Ro dibaca tipis jika dikasrah, atau disukun sebelumnya kasrah",
@@ -3230,9 +3230,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "48": {
+        "51": {
             jilid: 4,
-            halaman: 48,
+            halaman: 51,
             basmallah: "",
             judul: [],
             instruksi: "Ro dibaca TEBAL jika disukun dan didahului HAMZAH WASHAL, atau disambungkan dalam satu rangkaian dengan huruf tebal, Qof, Tho, Shad",
@@ -3246,9 +3246,9 @@ window.AISAR_DATA = {
         },
     },
     "5": {
-        "1": {  
+        "4": {  
             jilid: 5,
-            halaman: 1,
+            halaman: 4,
             basmallah: "بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ",
             judul: ["MAD WAJIB – MAD JA'IZ – MAD SHILAH KUBRO"],
             wrap: true,        
@@ -3267,9 +3267,9 @@ window.AISAR_DATA = {
             catatan: "* Boleh pula dengan 5 harakat",
             combo: [],
         },
-        "2": {
+        "5": {
             jilid: 5,
-            halaman: 2,
+            halaman: 5,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3287,9 +3287,9 @@ window.AISAR_DATA = {
             catatan: "Bila Mad dan hamzah bertemu dalam satu kata maka disebut MAD WAJIB",
             combo: [],
         },
-        "3": {
+        "6": {
             jilid: 5,
-            halaman: 3,
+            halaman: 6,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3307,9 +3307,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "4": {
+        "7": {
             jilid: 5,
-            halaman: 4,
+            halaman: 7,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3327,9 +3327,9 @@ window.AISAR_DATA = {
             catatan: "Bila Mad dan hamzah bertemu, namun tidak dalam satu kata maka disebut MAD JAIZ",
             combo: [],
         },
-        "5": {
+        "8": {
             jilid: 5,
-            halaman: 5,
+            halaman: 8,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3347,9 +3347,9 @@ window.AISAR_DATA = {
             catatan: "Karena panjang mad jaiz dan mad wajib sama, maka tidak harus tahu apakah huruf mad dan hamzah dalam satu kata atau tidak.",
             combo: [],
         },
-        "6": {
+        "9": {
             jilid: 5,
-            halaman: 6,
+            halaman: 9,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3367,9 +3367,9 @@ window.AISAR_DATA = {
             catatan: "Ha' kinayah (ه/ـه) yang dibaca mad dan bertemu dengan hamzah dibaca seperti mad ja'iz (4 harakat). DISEBUT MAD SHILAH KUBRA",
             combo: [],
         },
-        "7": {
+        "10": {
             jilid: 5,
-            halaman: 7,
+            halaman: 10,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3387,9 +3387,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "8": {
+        "11": {
             jilid: 5,
-            halaman: 8,
+            halaman: 11,
             basmallah: "بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ",
             judul: ["MAD LAZIM KALIMI"],
             wrap: true,        
@@ -3410,9 +3410,9 @@ window.AISAR_DATA = {
             catatan: "Berilah nabr (hentakan suara) pada huruf yang bertasydid setelah memanjangkan mad 6 harakat!",
             combo: [],
         },
-        "9": {
+        "12": {
             jilid: 5,
-            halaman: 9,
+            halaman: 12,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3430,9 +3430,9 @@ window.AISAR_DATA = {
             catatan: "Jangan lupa memberikan ghunnah yang sempurna pada setiap nun dan mim yang bertasydid!",
             combo: [],
         },
-         "10": {
+         "13": {
             jilid: 5,
-            halaman: 10,
+            halaman: 13,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3450,9 +3450,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "11": {
+        "14": {
             jilid: 5,
-            halaman: 11,
+            halaman: 14,
             basmallah: "",
             judul: ["MAD LAZIM HARFI"],
             instruksi: "BACALAH DENGAN PANJANG 6 HARAKAT",
@@ -3483,9 +3483,9 @@ window.AISAR_DATA = {
             catatan: "• Huruf (حى طهر) dibaca 2 harakat\n• Huruf (ع) boleh dibaca dengan panjang 4 harakat",
             combo: [],
         },
-        "12": {
+        "15": {
             jilid: 5,
-            halaman: 12,
+            halaman: 15,
             basmallah: "",
             wrap: true,        
             noDot: true,
@@ -3513,9 +3513,9 @@ window.AISAR_DATA = {
             catatan: "Mad lazim harfi yang ejaan akhirnya mengalami idgham dinamakan Mad Lazim Harfi Mutsaqqol.",
             combo: [],
         },
-        "13": {
+        "16": {
             jilid: 5,
-            halaman: 13,
+            halaman: 16,
             basmallah: "",
             judul: [],
             wrap: true,        
@@ -3543,9 +3543,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-            "14": {
+            "17": {
                 jilid: 5,
-                halaman: 14,
+                halaman: 17,
                 basmallah: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
                 judul: [],
                 instruksi: "",
@@ -3566,9 +3566,9 @@ window.AISAR_DATA = {
                 catatan: "ـۘ   ـۚ   ـۖ   ـۗ   ـۙ   ـۛ  — Adalah tanda-tanda waqof. Boleh berhenti pada tanda tersebut. Lalu melanjutkan bacaan tanpa harus mengulang.",
                 combo: [],
             },
-        "15": {
+        "18": {
             jilid: 5,
-            halaman: 15,
+            halaman: 18,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3586,9 +3586,9 @@ window.AISAR_DATA = {
             catatan: "لا — Adalah tanda washal. Sebaiknya tidak berhenti di sini. Jika terpaksa, ulangi dari awal kalimat",
             combo: [],
         },
-        "16": {
+        "19": {
             jilid: 5,
-            halaman: 16,
+            halaman: 19,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3606,9 +3606,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "17": {
+        "20": {
             jilid: 5,
-            halaman: 17,
+            halaman: 20,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3627,9 +3627,9 @@ window.AISAR_DATA = {
             combo: [],
         },
         
-        "18": {
+        "21": {
             jilid: 5,
-            halaman: 18,
+            halaman: 21,
             basmallah: "",
             judul: ["WAQAF PADA HURUF HA DAN TA' MARBUTHOH"],
             instruksi: "",
@@ -3647,9 +3647,9 @@ window.AISAR_DATA = {
             catatan: "Ta marbuthoh -apapun harakatnya- dibaca sebagai huruf ha sukun saat diwaqofkan. Tanda mad setelah ha' kinayah (هٖ) dan (هٗ) tidak dibaca saat waqaf.",
             combo: [],
         },
-        "19": {
+        "22": {
             jilid: 5,
-            halaman: 19,
+            halaman: 22,
             basmallah: "",
             judul: ["WAQAF PADA HURUF YANG BERTANWIN (FATHAH)"],
             instruksi: "",
@@ -3667,9 +3667,9 @@ window.AISAR_DATA = {
             catatan: "Bacalah dengan membuang tanwin. Lalu panjangkan fathah pada huruf terakhir 2 harakat. Mad ini disebut Mad 'Iwadh.",
             combo: [],
         },
-       "20": {
+       "23": {
             jilid: 5,
-            halaman: 20,
+            halaman: 23,
             basmallah: "",
             judul: ["WAQAF PADA HURUF YANG DIDAHULUI BACAAN MAD/LIYN"],
             instruksi: "",
@@ -3687,9 +3687,9 @@ window.AISAR_DATA = {
             catatan: "Panjang mad boleh 2/4/6 harakat ketika huruf setelahnya disukun karena waqof. Kecuali jika huruf setelah mad adalah hamzah, panjang minimal 4 harakat.",
             combo: [],
         },
-        "21": {
+        "24": {
             jilid: 5,
-            halaman: 21,
+            halaman: 24,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3707,9 +3707,9 @@ window.AISAR_DATA = {
             catatan: "Saat terjadi waqaf, maka bacaan liyn tepat sebelum huruf yang diwaqafkan (apapun hurufnya) boleh dipanjangkan menjadi 2/4/6 harakat.",
             combo: [],
         },
-        "22": {
+        "25": {
             jilid: 5,
-            halaman: 22,
+            halaman: 25,
             basmallah: "",
             judul: ["WAQAF PADA HURUF BERTASYDID"],
             instruksi: "",
@@ -3727,9 +3727,9 @@ window.AISAR_DATA = {
             catatan: "Qolqolah pada huruf yang bertasydid dan waqaf tertunda sesaat. Jika huruf yang ditasydid dan diwaqofkan bukan huruf qolqolah, maka naikkan suara.",
             combo: [],
         },
-        "23": {
+        "26": {
             jilid: 5,
-            halaman: 23,
+            halaman: 26,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3747,9 +3747,9 @@ window.AISAR_DATA = {
             catatan: "Naikkan suara (beri NABR) agar tasydid benar-benar nampak jelas.",
             combo: [],
         },
-        "24": {
+        "27": {
             jilid: 5,
-            halaman: 24,
+            halaman: 27,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3767,9 +3767,9 @@ window.AISAR_DATA = {
             catatan: "Panjangkan ghunnah dengan sempurna. Tidak perlu diberi nabr.",
             combo: [],
         },
-        "25": {
+        "28": {
             jilid: 5,
-            halaman: 25,
+            halaman: 28,
             basmallah: "",
             judul: ["WAQAF YANG DIDAHULUI HURUF SUKUN BUKAN LYN/MAD"],
             instruksi: "",
@@ -3788,9 +3788,9 @@ window.AISAR_DATA = {
             combo: [],
         },
         
-       "26": {
+       "29": {
             jilid: 5,
-            halaman: 26,
+            halaman: 29,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3808,9 +3808,9 @@ window.AISAR_DATA = {
             catatan: "Jika salah satu dari dua huruf terakhir adalah huruf qolqolah maka menyuarakan kedua huruf terakhir menjadi lebih mudah.",
             combo: [],
         },
-        "27": {
+        "30": {
             jilid: 5,
-            halaman: 27,
+            halaman: 30,
             basmallah: "",
             judul: [],
             instruksi: "Saktah: berhenti sesaat tanpa mengambil nafas. Wajib (jika membaca washal) pada 4 tempat, dan tidak wajib pada 2 tempat",
@@ -3842,9 +3842,9 @@ window.AISAR_DATA = {
             catatan: "(1) Al Muthaffifin; (2) Al Qiyamah; (3) Yaasiin; (4) Al Kahfi; (5) Al Haaqqah; (6) Akhir Al Anfal dan awal At Taubah",
             combo: [],
         },
-        "28": {
+        "31": {
             jilid: 5,
-            halaman: 28,
+            halaman: 31,
             basmallah: "",
             judul: ["BACALAH HAMZAH WASHAL PADA FI'IL DENGAN HAROKAT KASROH JIKA HARAKAT PADA HURUF KE-3 ADALAH KASROH/FATHAH"],
             instruksi: "",
@@ -3862,9 +3862,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "29": {
+        "32": {
             jilid: 5,
-            halaman: 29,
+            halaman: 32,
             basmallah: "",
             judul: ["BACALAH HAMZAH WASHAL PADA FI'IL DENGAN HAROKAT DHOMMAH JIKA HURUF KE-3 DHOMMAH"],
             instruksi: "",
@@ -3882,9 +3882,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "30": {
+        "33": {
             jilid: 5,
-            halaman: 30,
+            halaman: 33,
             basmallah: "",
             judul: ["MENGENAL WAQOF DAN IBTIDA (BACALAH SEBARIS SEBARIS)"],
             instruksi: "",
@@ -3902,9 +3902,9 @@ window.AISAR_DATA = {
             catatan: "Dhommah di atas huruf ta pada kata (ائتونى) aslinya adalah kasroh. Sehingga hamzah washol dibaca kasroh. Hamzah sukun setelah hamzah washal dibaca mad jika hamzah washal menjadi awal bacaan.",
             combo: [],
         },
-        "31": {
+        "34": {
             jilid: 5,
-            halaman: 31,
+            halaman: 34,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3926,9 +3926,9 @@ window.AISAR_DATA = {
             catatan: "Tanwin yang diubah suaranya menjadi nun kasroh adalah yang setelahnya ada Hamzah Washol!",
             combo: [],
         },
-        "32": {
+        "35": {
             jilid: 5,
-            halaman: 32,
+            halaman: 35,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -3946,9 +3946,9 @@ window.AISAR_DATA = {
             catatan: "Tanwin yang diubah suaranya menjadi nun kasroh adalah yang setelahnya ada Hamzah Washol!",
             combo: [],
         },
-        "33": {
+        "36": {
             jilid: 5,
-            halaman: 33,
+            halaman: 36,
             basmallah: "",
             judul: [],
             wrap: true,        
@@ -3968,9 +3968,9 @@ window.AISAR_DATA = {
             catatan: "Contoh terakhir terdapat di tengah ayat ke-4 surat Al Insan. Jika diwashol maka alif tidak dibaca. Namun jika waqof, maka alif boleh dibaca, sehingga lam fathah dibaca mad.",
             combo: [],
         },
-        "34": {
+        "37": {
             jilid: 5,
-            halaman: 34,
+            halaman: 37,
             basmallah: "",
             judul: [],
             instruksi: "Tanda shifr mustadir (bulatan kecil) di atas alif menunjukkan alif hanya tertulis, namun tidak dibaca saat di-waqof ataupun di-washol",
@@ -3991,9 +3991,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "35": {
+        "38": {
             jilid: 5,
-            halaman: 35,
+            halaman: 38,
             basmallah: "",
             judul: [],
             instruksi: "",
@@ -4011,9 +4011,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "36": {
+        "39": {
             jilid: 5,
-            halaman: 36,
+            halaman: 39,
             basmallah: "",
             judul: [],
             instruksi: "Tanda alif kecil di atas wawu bukan harakat fathah, namun menggantikan wawu yang berada di bawahnya dan memanjangkan fathah pada huruf",
@@ -4034,9 +4034,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "37": {
+        "40": {
             jilid: 5,
-            halaman: 37,
+            halaman: 40,
             basmallah: "",
             judul: [],
             wrap: true,
@@ -4064,9 +4064,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "38": {
+        "41": {
             jilid: 5,
-            halaman: 38,
+            halaman: 41,
             basmallah: "",
             judul: ["TALQIN SURAT SURAT PILIHAN"],
             noLine: true,
@@ -4091,9 +4091,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "39": {
+        "42": {
             jilid: 5,
-            halaman: 39,
+            halaman: 42,
             basmallah: "",
             judul: [],
             noLine: true,
@@ -4118,9 +4118,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "40": {
+        "43": {
             jilid: 5,
-            halaman: 40,
+            halaman: 43,
             basmallah: "",
             judul: ["TALQIN SURAT-SURAT PILIHAN"],
             fontSize: 28,
@@ -4148,9 +4148,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "41": {
+        "44": {
             jilid: 5,
-            halaman: 41,
+            halaman: 44,
             basmallah: "",
             judul: [],
             wrap: true,
@@ -4177,9 +4177,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "42": {
+        "45": {
             jilid: 5,
-            halaman: 42,
+            halaman: 45,
             basmallah: "",
             judul: [],
             wrap: true,
@@ -4207,9 +4207,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "43": {
+        "46": {
             jilid: 5,
-            halaman: 43,
+            halaman: 46,
             basmallah: "",
             judul: [],
             wrap: true,
@@ -4239,9 +4239,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "44": {
+        "47": {
             jilid: 5,
-            halaman: 44,
+            halaman: 47,
             basmallah: "",
             judul: [],
             wrap: true,
@@ -4269,9 +4269,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "45": {
+        "48": {
             jilid: 5,
-            halaman: 45,
+            halaman: 48,
             basmallah: "",
             judul: [],
             wrap: true,
@@ -4297,9 +4297,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "46": {
+        "49": {
             jilid: 5,
-            halaman: 46,
+            halaman: 49,
             basmallah: "",
             judul: [],
             wrap: true,
@@ -4323,9 +4323,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "47": {
+        "50": {
             jilid: 5,
-            halaman: 47,
+            halaman: 50,
             basmallah: "",
             judul: [],
             wrap: true,
@@ -4351,9 +4351,9 @@ window.AISAR_DATA = {
             catatan: "",
             combo: [],
         },
-        "48": {
+        "51": {
             jilid: 5,
-            halaman: 48,
+            halaman: 51,
             basmallah: "",
             judul: [],
             wrap: true,
@@ -4386,6 +4386,36 @@ window.AISAR_DATA = {
     
 };
 
-window.AISAR_JUMLAH_HALAMAN = { "1": 46, "2": 48, "3": 48, "4": 48, "5": 48 };
+// ── RENTANG HALAMAN ────────────────────────────────────────────────
+// Diturunkan dari key AISAR_DATA, bukan ditulis manual, supaya otomatis
+// ikut kalau ada halaman ditambah/dihapus.
+//   AISAR_RANGE[jilid] = { start, end, list: [...], jumlah }
+// AISAR_JUMLAH_HALAMAN dipertahankan untuk kompatibilitas, tapi JANGAN
+// dipakai sebagai batas atas loop 1..N — halaman tidak mulai dari 1.
+window.AISAR_RANGE = (function () {
+    const r = {};
+    Object.keys(window.AISAR_DATA || {}).forEach(function (j) {
+        const list = Object.keys(window.AISAR_DATA[j])
+            .map(Number)
+            .sort(function (a, b) { return a - b; });
+        r[j] = {
+            start:  list[0],
+            end:    list[list.length - 1],
+            list:   list,
+            jumlah: list.length,
+        };
+    });
+    return r;
+})();
 
-console.log('✅ aisar-data.js loaded — Jilid 1 (1-46), Jilid 2 (1-48), Jilid 3 (1-48), Jilid 4 (1-48), Jilid 5 (1-48)');
+window.AISAR_JUMLAH_HALAMAN = Object.keys(window.AISAR_RANGE).reduce(function (o, j) {
+    o[j] = window.AISAR_RANGE[j].jumlah;
+    return o;
+}, {});
+
+console.log('✅ aisar-data.js loaded — ' +
+    Object.keys(window.AISAR_RANGE).map(function (j) {
+        const r = window.AISAR_RANGE[j];
+        return 'Jilid ' + j + ' (' + r.start + '-' + r.end + ', ' + r.jumlah + ' hal)';
+    }).join(', ')
+);

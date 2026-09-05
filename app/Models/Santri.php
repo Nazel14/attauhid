@@ -332,13 +332,14 @@ public function jilidConfigKey(): string
 
     if ($jilid < 1 || $jilid >= $maxJilid) return false;
 
-    $totalHal = config("$cfg.halaman_per_jilid.$jilid");
-        if (! $totalHal) return false; // jumlah halaman belum diketahui → jangan tebak
+    $wajib = $this->halamanWajibJilid($jilid);
+        if (empty($wajib)) return false; // jumlah halaman belum diketahui → jangan tebak
 
-        $tersetor = $this->halamanIqroTersetor($jilid);
+        // Pakai versi ber-filter kelas agar SAMA dengan progress bar di dashboard.
+        $tersetor = array_flip($this->halamanIqroTersetorKelas($jilid, $this->kelas_id));
 
-        for ($p = 1; $p <= $totalHal; $p++) {
-            if (! in_array($p, $tersetor, true)) {
+        foreach ($wajib as $p) {
+            if (! isset($tersetor[$p])) {
                 return false;
             }
         }
@@ -366,10 +367,16 @@ public function isJilidTamat(): bool
     $max   = $this->maxJilid();
     if ($max < 1 || $jilid < $max) return false;
 
-    $totalHal = (int) config($this->jilidConfigKey() . ".halaman_per_jilid.$jilid", 0);
-    if ($totalHal < 1) return false;
+    $wajib = $this->halamanWajibJilid($jilid);
+    if (empty($wajib)) return false;
 
-    return count($this->halamanIqroTersetor($jilid)) >= $totalHal;
+    $tersetor = array_flip($this->halamanIqroTersetorKelas($jilid, $this->kelas_id));
+
+    foreach ($wajib as $p) {
+        if (! isset($tersetor[$p])) return false;
+    }
+
+    return true;
 }
 
     /**
@@ -420,6 +427,23 @@ public function halamanIqroTersetorKelas(int $jilid, ?int $kelasId = null): arra
     }
 
     return array_keys($pages);
+}
+
+/**
+ * Daftar nomor halaman yang HARUS disetor untuk satu jilid.
+ * Aisar tidak mulai dari halaman 1 (Jilid 1 mulai 6, Jilid 2-5 mulai 4),
+ * jadi rentangnya dibangun dari `halaman_mulai` + `halaman_per_jilid`,
+ * bukan range(1, N).
+ */
+public function halamanWajibJilid(int $jilid): array
+{
+    $cfg    = $this->jilidConfigKey();
+    $jumlah = (int) config("$cfg.halaman_per_jilid.$jilid", 0);
+    if ($jumlah < 1) return [];
+
+    $mulai = (int) config("$cfg.halaman_mulai.$jilid", 1);
+
+    return range($mulai, $mulai + $jumlah - 1);
 }
 
 }

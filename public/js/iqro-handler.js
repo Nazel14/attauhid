@@ -76,15 +76,14 @@
         if (!jilidEl || !startEl || !endEl) return;
 
         const jilid = jilidEl.value;
-        const src   = getJilidSource(metodeForMode(mode));
-        const total = src.jumlah[jilid] || 0;
+        const list  = getHalamanList(metodeForMode(mode), jilid);
 
         const optsStart = ['<option value="">-- Mulai --</option>'];
         const optsEnd   = ['<option value="">-- Selesai --</option>'];
-        for (let i = 1; i <= total; i++) {
-            optsStart.push('<option value="' + i + '">Halaman ' + i + '</option>');
-            optsEnd.push('<option value="' + i + '">Halaman ' + i + '</option>');
-        }
+        list.forEach(function (h) {
+            optsStart.push('<option value="' + h + '">Halaman ' + h + '</option>');
+            optsEnd.push('<option value="' + h + '">Halaman ' + h + '</option>');
+        });
         startEl.innerHTML = optsStart.join('');
         endEl.innerHTML   = optsEnd.join('');
 
@@ -101,19 +100,21 @@
         if (!jilidEl || !startEl || !endEl) return;
 
         const jilid = jilidEl.value;
-        const src   = getJilidSource(metodeForMode(mode));
-        const total = src.jumlah[jilid] || 0;
+        const list  = getHalamanList(metodeForMode(mode), jilid);
         const start = parseInt(startEl.value, 10);
-        const from = isNaN(start) ? 1 : start;
+        const from  = isNaN(start) ? (list[0] || 1) : start;
+
+        // Hanya halaman >= halaman mulai yang boleh jadi halaman selesai.
+        const sisa = list.filter(function (h) { return h >= from; });
 
         const prevEnd = parseInt(endEl.value, 10);
         const opts = ['<option value="">-- Selesai --</option>'];
-        for (let i = from; i <= total; i++) {
-            opts.push('<option value="' + i + '">Halaman ' + i + '</option>');
-        }
+        sisa.forEach(function (h) {
+            opts.push('<option value="' + h + '">Halaman ' + h + '</option>');
+        });
         endEl.innerHTML = opts.join('');
 
-        if (!isNaN(prevEnd) && prevEnd >= from && prevEnd <= total) {
+        if (!isNaN(prevEnd) && sisa.indexOf(prevEnd) !== -1) {
             endEl.value = String(prevEnd);
         } else if (!isNaN(start)) {
             endEl.value = String(start);
@@ -934,14 +935,31 @@
             return {
                 data:   window.AISAR_DATA || {},
                 jumlah: window.AISAR_JUMLAH_HALAMAN || {},
+                range:  window.AISAR_RANGE || {},   // ← daftar halaman sebenarnya
                 nama:   'Aisar',
             };
         }
         return {
             data:   window.IQRO_DATA || {},
             jumlah: window.IQRO_JUMLAH_HALAMAN || {},
+            range:  null,                            // Iqro tetap 1..N
             nama:   'Iqro',
         };
+    }
+
+    // Daftar nomor halaman untuk dropdown.
+    // Aisar: diambil dari AISAR_RANGE (mulai 4 atau 6, bukan 1).
+    // Iqro : tetap 1..jumlah, supaya halaman yang datanya belum diisi tetap
+    //        muncul dan ditangani peringatan "belum tersedia" di renderer.
+    function getHalamanList(metode, jilid) {
+        const src = getJilidSource(metode);
+        const r   = src.range && src.range[String(jilid)];
+        if (r && Array.isArray(r.list) && r.list.length) return r.list.slice();
+
+        const total = (src.jumlah && src.jumlah[jilid]) || 0;
+        const list  = [];
+        for (let i = 1; i <= total; i++) list.push(i);
+        return list;
     }
 
     function metodeForMode(mode) {

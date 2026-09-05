@@ -1058,7 +1058,7 @@ export default function InputSetoran(props) {
 
         // ✅ Versi STABIL → browser boleh cache. Naikkan angka ini manual
         // setiap kali ada perubahan di file /public/js/*.js
-        const ASSET_VERSION = '2026-07-22-1';
+        const ASSET_VERSION = '2026-07-22-2';
         const all = [...ENGINE_SCRIPTS, PAGE_SCRIPT];
         let cancelled = false;
 
