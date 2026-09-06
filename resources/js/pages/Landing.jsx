@@ -4,7 +4,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 /* =====================================================================
  * KONTAK — ganti satu tempat ini saja, dipakai di dua tombol.
  * ===================================================================== */
-const KONTAK_WA = 'https://wa.me/62xxxxxxxxxxx';
+const KONTAK_WA = 'https://wa.me/6281220497013';
 const KONTAK_LABEL = 'Hubungi via WhatsApp';
 
 /* =====================================================================
@@ -210,6 +210,8 @@ const PERAN = [
     { nama: 'Bendahara', teks: 'Buat tagihan, catat pembayaran, ajukan pengeluaran.' },
     { nama: 'Kepala sekolah', teks: 'Pantau progres kelas dan periksa pengajuan dana.' },
     { nama: 'Ketua yayasan', teks: 'Beri persetujuan akhir dan baca laporan keuangan.' },
+    { nama: 'Pihak yayasan', teks: 'Memantau laporan keuangan dan realisasi anggaran yayasan.' },
+    { nama: 'HRD', teks: 'Mengelola data pegawai dan proses penggajian.' },
 ];
 
 const TANYA_JAWAB = [
@@ -449,7 +451,7 @@ export default function Landing() {
                             dari satu peran bila memang dirangkap.
                         </p>
 
-                        <div className="mt-10 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="mt-10 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
                             {PERAN.map((p, i) => (
                                 <Reveal key={p.nama} delay={i * 60} reduced={reduced}>
                                     <div className="border-t border-stone-300/70 pt-4 dark:border-[#443e37]">
