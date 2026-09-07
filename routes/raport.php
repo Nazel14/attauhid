@@ -320,7 +320,11 @@ unset($byJilid, $list);
 
 return response()->json($result);
     })->name('guru.iqro-santri');
-    
+
+    // Riwayat setoran santri (panel di form input)
+    Route::get('/riwayat-setoran-santri', [UnifiedInputController::class, 'riwayatSetoranSantri'])
+        ->name('riwayat-setoran-santri');
+
     // Unified Input
     Route::controller(UnifiedInputController::class)->prefix('input')->name('input.')->group(function () {
         Route::get('/', 'create')->name('create');

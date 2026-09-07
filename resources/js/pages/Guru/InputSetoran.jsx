@@ -289,6 +289,25 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
                             </div>
                         </div>
 
+                            <div class="combined-after-santri hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+                            <button type="button" onclick="toggleRiwayatSetoran('Combined')" class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition">
+                                <span class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+                                    Riwayat Setoran
+                                </span>
+                                <svg id="riwayatIconCombined" class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div id="riwayatBodyCombined" class="hidden px-4 pb-4 border-t border-gray-200 dark:border-gray-800 pt-3">
+                                <div class="flex flex-wrap gap-1.5 mb-2.5" id="riwayatFilterCombined">
+                                    <button type="button" class="rs-chip is-active" data-f="">Semua</button>
+                                    <button type="button" class="rs-chip" data-f="Hafalan">Hafalan</button>
+                                    <button type="button" class="rs-chip" data-f="Murajaah">Murajaah</button>
+                                    <button type="button" class="rs-chip" data-f="Tilawah">Tilawah</button>
+                                </div>
+                                <div id="riwayatListCombined" class="space-y-1.5 max-h-72 overflow-y-auto custom-scrollbar pr-1"></div>
+                            </div>
+                        </div>
+
                         <input type="hidden" name="page_start" id="pageStartCombined">
                         <input type="hidden" name="page_end" id="pageEndCombined">
                         <input type="hidden" name="page_start_portion" id="pageStartPortionCombined">
@@ -507,6 +526,25 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
                                         <span>Tampilkan Halaman <span class="lbl-metode-jilid">Iqro</span></span>
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="setoran-after-santri hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+                            <button type="button" onclick="toggleRiwayatSetoran('SetoranOnly')" class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition">
+                                <span class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+                                    Riwayat Setoran
+                                </span>
+                                <svg id="riwayatIconSetoranOnly" class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div id="riwayatBodySetoranOnly" class="hidden px-4 pb-4 border-t border-gray-200 dark:border-gray-800 pt-3">
+                                <div class="flex flex-wrap gap-1.5 mb-2.5" id="riwayatFilterSetoranOnly">
+                                    <button type="button" class="rs-chip is-active" data-f="">Semua</button>
+                                    <button type="button" class="rs-chip" data-f="Hafalan">Hafalan</button>
+                                    <button type="button" class="rs-chip" data-f="Murajaah">Murajaah</button>
+                                    <button type="button" class="rs-chip" data-f="Tilawah">Tilawah</button>
+                                </div>
+                                <div id="riwayatListSetoranOnly" class="space-y-1.5 max-h-72 overflow-y-auto custom-scrollbar pr-1"></div>
                             </div>
                         </div>
 
@@ -875,6 +913,47 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
        data-metode di-sync lewat syncJilidUI() di InputSetoran.jsx.
        Selektor [data-metode] lebih spesifik dari .btn-jilid polos,
        jadi rule warna lama (biru) otomatis kalah. */
+           /* ===== Riwayat Setoran ===== */
+    #inputPage {
+        --rs-card:  #FFFFFF;  --rs-line:  #E7E5E4;
+        --rs-fg:    #292524;  --rs-sub:   #78716C;
+        --rs-chip:  #F5F4EF;  --rs-chip-fg: #57534E;
+    }
+    html.dark #inputPage {
+        --rs-card:  #1C1C1A;  --rs-line:  #3E3D3A;
+        --rs-fg:    #E7E5E4;  --rs-sub:   #A8A29E;
+        --rs-chip:  #2A2A28;  --rs-chip-fg: #A8A29E;
+    }
+    .rs-chip {
+        padding: 3px 10px; border-radius: 9999px; font-size: 10px; font-weight: 600;
+        background: var(--rs-chip); color: var(--rs-chip-fg);
+        border: 1px solid var(--rs-line); cursor: pointer; transition: all .15s;
+    }
+    .rs-chip:hover { border-color: #D97757; }
+    .rs-chip.is-active { background: #D97757; color: #fff; border-color: #D97757; }
+
+    .rs-item {
+        background: var(--rs-card); border: 1px solid var(--rs-line);
+        border-radius: 10px; padding: 8px 10px;
+    }
+    .rs-item-top, .rs-item-bot { display: flex; align-items: center; justify-content: space-between; }
+    .rs-item-bot { margin-top: 4px; }
+    .rs-kat { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px; }
+    .rs-kat[data-k="Hafalan"]  { background: #EAF1EC; color: #4A6B54; }
+    .rs-kat[data-k="Murajaah"] { background: #FDF3E3; color: #9A6B14; }
+    .rs-kat[data-k="Tilawah"]  { background: #FBEDE7; color: #BE5D3D; }
+    html.dark .rs-kat[data-k="Hafalan"]  { background: rgba(124,152,133,.18); color: #9DBAA6; }
+    html.dark .rs-kat[data-k="Murajaah"] { background: rgba(212,162,78,.15);  color: #D9B36A; }
+    html.dark .rs-kat[data-k="Tilawah"]  { background: rgba(217,119,87,.15);  color: #E8A183; }
+
+    .rs-tgl    { font-size: 10px; color: var(--rs-sub); font-variant-numeric: tabular-nums; }
+    .rs-materi { font-size: 12px; color: var(--rs-fg); margin-top: 5px; line-height: 1.35; word-break: break-word; }
+    .rs-metode { font-size: 10px; color: var(--rs-sub); }
+    .rs-nilai  { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .rs-nilai[data-n="hi"]  { color: #10B981; }
+    .rs-nilai[data-n="mid"] { color: #D4A24E; }
+    .rs-nilai[data-n="lo"]  { color: #EF4444; }
+    .rs-empty  { font-size: 11px; color: var(--rs-sub); font-style: italic; text-align: center; padding: 14px 0; }
     .btn-jilid                            { background-image: none; background-color: #D4A24E; }
     .btn-jilid[data-metode="iqro"]        { background-image: none; background-color: #D4A24E; }
     .btn-jilid[data-metode="iqro"]:hover  { background-image: none; background-color: #BC8C3D; }
@@ -1058,7 +1137,7 @@ export default function InputSetoran(props) {
 
         // ✅ Versi STABIL → browser boleh cache. Naikkan angka ini manual
         // setiap kali ada perubahan di file /public/js/*.js
-        const ASSET_VERSION = '2026-07-22-2';
+                const ASSET_VERSION = '2026-09-07-1';
         const all = [...ENGINE_SCRIPTS, PAGE_SCRIPT];
         let cancelled = false;
 

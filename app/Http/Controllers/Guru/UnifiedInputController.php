@@ -629,6 +629,54 @@ class UnifiedInputController extends Controller
         }
     }
 
+        /**
+     * Riwayat setoran santri (Hafalan / Murajaah / Tilawah) untuk panel
+     * "Riwayat Setoran" di form input. Dibatasi santri di kelas aktif.
+     */
+    public function riwayatSetoranSantri(Request $request)
+    {
+        $santriId = (int) $request->query('santri_id');
+
+        if (! $santriId || ! $this->santriDiKelasAktif($santriId)) {
+            return response()->json(['data' => []]);
+        }
+
+        $rows = Setoran::where('santri_id', $santriId)
+            ->whereNotNull('kategori_setoran')
+            ->with('guru')
+            ->orderByDesc('tanggal')
+            ->orderByDesc('id')
+            ->limit(20)
+            ->get();
+
+        $data = $rows->map(function ($s) {
+            $metode  = $s->metode ?: "Al-Qur'an";
+            $isJilid = in_array($metode, ['Iqro', 'Ummi', 'Aisar']);
+
+            if ($isJilid) {
+                $hal = (int) $s->ayat_start;
+                $end = (int) $s->ayat_end;
+                $materi = $s->surat_start . ' — Hal. ' . $hal
+                        . ($end && $end !== $hal ? '–' . $end : '');
+            } else {
+                $materi = $s->surat_start . ' : ' . $s->ayat_start
+                        . ' – ' . $s->surat_end . ' : ' . $s->ayat_end;
+            }
+
+            return [
+                'id'       => $s->id,
+                'tanggal'  => optional($s->tanggal)->format('d/m/Y'),
+                'kategori' => $s->kategori_setoran,
+                'metode'   => $metode,
+                'materi'   => $materi,
+                'nilai'    => $s->nilai,
+                'guru'     => $s->guru->name ?? null,
+            ];
+        })->values();
+
+        return response()->json(['data' => $data]);
+    }
+
     /* ================================================================
      * HELPER PROGRESS — sengaja disalin dari Guru\DashboardController
      * agar rumusnya identik. Kalau salah satu diubah, ubah keduanya.

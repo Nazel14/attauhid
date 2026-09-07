@@ -1556,3 +1556,151 @@ function resetMarkingCounterForMode(mode) {
         ? document.addEventListener('DOMContentLoaded', () => setTimeout(init, 650))
         : setTimeout(init, 650);
 })();
+
+// ============================================================
+// RIWAYAT SETORAN SANTRI
+// Panel collapsible di form Combined & SetoranOnly.
+// Data diambil dari /guru/riwayat-setoran-santri dan di-cache
+// per santri_id supaya ganti filter tidak memicu fetch ulang.
+// ============================================================
+(function () {
+    'use strict';
+
+    const cache   = {};   // santriId -> array
+    const pending = {};   // santriId -> true saat fetch berjalan
+    const state   = {
+        Combined:    { santriId: null, filter: '' },
+        SetoranOnly: { santriId: null, filter: '' },
+    };
+
+    function esc(s) {
+        return String(s ?? '').replace(/[&<>"]/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+        });
+    }
+
+    function toneNilai(n) {
+        const v = Number(n);
+        if (!Number.isFinite(v)) return 'mid';
+        return v >= 80 ? 'hi' : v >= 60 ? 'mid' : 'lo';
+    }
+
+    function render(mode) {
+        const box = document.getElementById('riwayatList' + mode);
+        if (!box) return;
+
+        const st = state[mode];
+
+        if (!st.santriId) {
+            box.innerHTML = '<p class="rs-empty">Pilih santri terlebih dahulu.</p>';
+            return;
+        }
+        if (pending[st.santriId]) {
+            box.innerHTML = '<p class="rs-empty">Memuat riwayat…</p>';
+            return;
+        }
+
+        const rows = cache[st.santriId];
+        if (!rows) {
+            box.innerHTML = '<p class="rs-empty">Riwayat belum tersedia.</p>';
+            return;
+        }
+
+        const list = st.filter ? rows.filter(r => r.kategori === st.filter) : rows;
+        if (!list.length) {
+            box.innerHTML = '<p class="rs-empty">Belum ada setoran'
+                          + (st.filter ? ' ' + st.filter : '') + '.</p>';
+            return;
+        }
+
+        box.innerHTML = list.map(function (r) {
+            return '<div class="rs-item">'
+                 +   '<div class="rs-item-top">'
+                 +     '<span class="rs-kat" data-k="' + esc(r.kategori) + '">' + esc(r.kategori) + '</span>'
+                 +     '<span class="rs-tgl">' + esc(r.tanggal) + '</span>'
+                 +   '</div>'
+                 +   '<div class="rs-materi">' + esc(r.materi) + '</div>'
+                 +   '<div class="rs-item-bot">'
+                 +     '<span class="rs-metode">' + esc(r.metode)
+                 +       (r.guru ? ' · ' + esc(r.guru) : '') + '</span>'
+                 +     '<span class="rs-nilai" data-n="' + toneNilai(r.nilai) + '">'
+                 +       (r.nilai ?? '-') + '</span>'
+                 +   '</div>'
+                 + '</div>';
+        }).join('');
+    }
+
+    async function load(santriId) {
+        if (!santriId || cache[santriId] || pending[santriId]) return;
+        pending[santriId] = true;
+        ['Combined', 'SetoranOnly'].forEach(function (m) {
+            if (state[m].santriId === santriId) render(m);
+        });
+        try {
+            const res = await fetch(
+                '/guru/riwayat-setoran-santri?santri_id=' + encodeURIComponent(santriId),
+                { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } }
+            );
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const json = await res.json();
+            cache[santriId] = Array.isArray(json.data) ? json.data : [];
+        } catch (e) {
+            console.warn('Gagal memuat riwayat setoran:', e.message);
+            cache[santriId] = [];
+        } finally {
+            delete pending[santriId];
+            ['Combined', 'SetoranOnly'].forEach(function (m) {
+                if (state[m].santriId === santriId) render(m);
+            });
+        }
+    }
+
+    window.toggleRiwayatSetoran = function (mode) {
+        const body = document.getElementById('riwayatBody' + mode);
+        const icon = document.getElementById('riwayatIcon' + mode);
+        if (!body) return;
+        const willOpen = body.classList.contains('hidden');
+        body.classList.toggle('hidden', !willOpen);
+        if (icon) icon.style.transform = willOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+        if (willOpen) render(mode);
+    };
+
+    function init() {
+        ['Combined', 'SetoranOnly'].forEach(function (mode) {
+            const santriId = mode === 'SetoranOnly'
+                ? 'santriSelectSetoranOnly'
+                : 'santriSelectCombined';
+
+            document.getElementById(santriId)?.addEventListener('change', function () {
+                state[mode].santriId = this.value || null;
+                state[mode].filter   = '';
+
+                const filterWrap = document.getElementById('riwayatFilter' + mode);
+                filterWrap?.querySelectorAll('.rs-chip').forEach(function (c) {
+                    c.classList.toggle('is-active', c.dataset.f === '');
+                });
+
+                render(mode);
+                if (state[mode].santriId) load(state[mode].santriId);
+            });
+
+            document.getElementById('riwayatFilter' + mode)
+                ?.addEventListener('click', function (e) {
+                    const chip = e.target.closest('.rs-chip');
+                    if (!chip) return;
+                    state[mode].filter = chip.dataset.f || '';
+                    this.querySelectorAll('.rs-chip').forEach(function (c) {
+                        c.classList.toggle('is-active', c === chip);
+                    });
+                    render(mode);
+                });
+
+            render(mode);
+        });
+        console.log('Riwayat setoran santri ready');
+    }
+
+    document.readyState === 'loading'
+        ? document.addEventListener('DOMContentLoaded', () => setTimeout(init, 700))
+        : setTimeout(init, 700);
+})();
