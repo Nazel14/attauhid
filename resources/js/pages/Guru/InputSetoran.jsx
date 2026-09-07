@@ -197,6 +197,25 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
 
                         <input type="hidden" name="status" value="Hadir">
 
+                        <div class="combined-after-santri hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+                            <button type="button" onclick="toggleRiwayatSetoran('Combined')" class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition">
+                                <span class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+                                    Riwayat Setoran
+                                </span>
+                                <svg id="riwayatIconCombined" class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div id="riwayatBodyCombined" class="hidden px-4 pb-4 border-t border-gray-200 dark:border-gray-800 pt-3">
+                                <div class="flex flex-wrap gap-1.5 mb-2.5" id="riwayatFilterCombined">
+                                    <button type="button" class="rs-chip is-active" data-f="">Semua</button>
+                                    <button type="button" class="rs-chip" data-f="Hafalan">Hafalan</button>
+                                    <button type="button" class="rs-chip" data-f="Murajaah">Murajaah</button>
+                                    <button type="button" class="rs-chip" data-f="Tilawah">Tilawah</button>
+                                </div>
+                                <div id="riwayatListCombined" class="space-y-1.5 max-h-72 overflow-y-auto custom-scrollbar pr-1"></div>
+                            </div>
+                        </div>
+
                         <div class="combined-after-santri hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
                             <h3 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                                 <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13"/></svg></span>
@@ -286,25 +305,6 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
                                         <span>Tampilkan Halaman <span class="lbl-metode-jilid">Iqro</span></span>
                                     </button>
                                 </div>
-                            </div>
-                        </div>
-
-                            <div class="combined-after-santri hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
-                            <button type="button" onclick="toggleRiwayatSetoran('Combined')" class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition">
-                                <span class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                    <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
-                                    Riwayat Setoran
-                                </span>
-                                <svg id="riwayatIconCombined" class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                            <div id="riwayatBodyCombined" class="hidden px-4 pb-4 border-t border-gray-200 dark:border-gray-800 pt-3">
-                                <div class="flex flex-wrap gap-1.5 mb-2.5" id="riwayatFilterCombined">
-                                    <button type="button" class="rs-chip is-active" data-f="">Semua</button>
-                                    <button type="button" class="rs-chip" data-f="Hafalan">Hafalan</button>
-                                    <button type="button" class="rs-chip" data-f="Murajaah">Murajaah</button>
-                                    <button type="button" class="rs-chip" data-f="Tilawah">Tilawah</button>
-                                </div>
-                                <div id="riwayatListCombined" class="space-y-1.5 max-h-72 overflow-y-auto custom-scrollbar pr-1"></div>
                             </div>
                         </div>
 
@@ -443,6 +443,25 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
                             </div>
                         </div>
 
+                        <div class="setoran-after-santri hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+                            <button type="button" onclick="toggleRiwayatSetoran('SetoranOnly')" class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition">
+                                <span class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+                                    Riwayat Setoran
+                                </span>
+                                <svg id="riwayatIconSetoranOnly" class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div id="riwayatBodySetoranOnly" class="hidden px-4 pb-4 border-t border-gray-200 dark:border-gray-800 pt-3">
+                                <div class="flex flex-wrap gap-1.5 mb-2.5" id="riwayatFilterSetoranOnly">
+                                    <button type="button" class="rs-chip is-active" data-f="">Semua</button>
+                                    <button type="button" class="rs-chip" data-f="Hafalan">Hafalan</button>
+                                    <button type="button" class="rs-chip" data-f="Murajaah">Murajaah</button>
+                                    <button type="button" class="rs-chip" data-f="Tilawah">Tilawah</button>
+                                </div>
+                                <div id="riwayatListSetoranOnly" class="space-y-1.5 max-h-72 overflow-y-auto custom-scrollbar pr-1"></div>
+                            </div>
+                        </div>
+
                         <div class="setoran-after-santri hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
                             <h3 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                                 <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13"/></svg></span>
@@ -526,25 +545,6 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
                                         <span>Tampilkan Halaman <span class="lbl-metode-jilid">Iqro</span></span>
                                     </button>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div class="setoran-after-santri hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
-                            <button type="button" onclick="toggleRiwayatSetoran('SetoranOnly')" class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition">
-                                <span class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                    <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
-                                    Riwayat Setoran
-                                </span>
-                                <svg id="riwayatIconSetoranOnly" class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                            <div id="riwayatBodySetoranOnly" class="hidden px-4 pb-4 border-t border-gray-200 dark:border-gray-800 pt-3">
-                                <div class="flex flex-wrap gap-1.5 mb-2.5" id="riwayatFilterSetoranOnly">
-                                    <button type="button" class="rs-chip is-active" data-f="">Semua</button>
-                                    <button type="button" class="rs-chip" data-f="Hafalan">Hafalan</button>
-                                    <button type="button" class="rs-chip" data-f="Murajaah">Murajaah</button>
-                                    <button type="button" class="rs-chip" data-f="Tilawah">Tilawah</button>
-                                </div>
-                                <div id="riwayatListSetoranOnly" class="space-y-1.5 max-h-72 overflow-y-auto custom-scrollbar pr-1"></div>
                             </div>
                         </div>
 
