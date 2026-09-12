@@ -86,7 +86,22 @@ class TagihanController extends Controller
             ],
             // santris tidak punya is_active — statusnya enum aktif/lulus/keluar.
             'listSiswa' => Siswa::aktif()->orderBy('name')->get(['id', 'nis', 'name', 'student_type']),
-            'listTarif' => Tarif::where('is_active', true)->orderBy('billing_name')->get(['id', 'billing_name', 'nominal', 'target_student_type', 'period']),
+
+            // target_summary dihitung dari relasi targets, jadi eager-load
+            // wajib supaya tidak N+1.
+            'listTarif' => Tarif::with('targets')
+                ->where('is_active', true)
+                ->orderBy('billing_name')
+                ->get(['id', 'billing_name', 'nominal', 'period', 'is_donation'])
+                ->map(fn (Tarif $t) => [
+                    'id'             => $t->id,
+                    'billing_name'   => $t->billing_name,
+                    'nominal'        => $t->nominal,
+                    'period'         => $t->period,
+                    'is_donation'    => $t->is_donation,
+                    'target_summary' => $t->targetSummary(),
+                ]),
+
             'filters'   => $request->only([
                 'search_header', 'month_header', 'search_detail', 'status_detail',
                 'sort_field', 'sort_direction', 'header_id', 'header_page', 'detail_page',
@@ -108,11 +123,17 @@ class TagihanController extends Controller
             'due_date.required'  => 'Tanggal tempo wajib diisi.',
         ]);
 
+        $tarif = Tarif::with('targets')->findOrFail($request->tariff_id);
+
         InvoiceHeader::create([
             'batch_number'          => 'BCH-' . date('Ym') . '-' . strtoupper(Str::random(4)),
-            'tariff_id'             => $request->tariff_id,
+            'tariff_id'             => $tarif->id,
             'title'                 => $request->title,
             'period'                => $request->period,
+            // Snapshot: aturan target tarif bisa berubah kapan saja, tapi
+            // gelombang ini harus tetap bisa menjelaskan siapa yang dijaring
+            // saat ia dibuat.
+            'target_summary'        => $tarif->targetSummary(),
             'due_date'              => $request->due_date,
             'total_students'        => 0,
             'total_expected_amount' => 0,
@@ -300,10 +321,25 @@ class TagihanController extends Controller
             return redirect()->back()->withErrors(['status_error' => 'Tarif dasar gelombang ini tidak ditemukan.']);
         }
 
-        $siswas = Siswa::aktif()
-            ->when($tarif->target_student_type !== 'All',
-                fn ($q) => $q->where('student_type', $tarif->target_student_type))
-            ->get();
+        // Tarif donasi tidak menjaring santri manapun — penyumbang
+        // ditambahkan manual lewat storeDetail.
+        if ($tarif->is_donation) {
+            return redirect()->back()->withErrors([
+                'status_error' => 'Tarif donasi tidak menargetkan santri. Tambahkan penyumbang secara manual.',
+            ]);
+        }
+
+        $tarif->loadMissing('targets');
+
+        // Penjaringan sekarang berbasis aturan di tariff_targets:
+        // dalam satu dimensi = OR, antar dimensi = AND.
+        $siswas = $tarif->eligibleSantris()->get();
+
+        if ($siswas->isEmpty()) {
+            return redirect()->back()->withErrors([
+                'status_error' => 'Tidak ada santri yang cocok dengan target tarif ini (' . $tarif->targetSummary() . ').',
+            ]);
+        }
 
         $jumlah = 0;
         $total  = 0;
@@ -351,7 +387,7 @@ class TagihanController extends Controller
 
         return $jumlah > 0
             ? redirect()->back()->with('success', "{$jumlah} tagihan berhasil dibuat.")
-            : redirect()->back()->withErrors(['status_error' => 'Tidak ada siswa baru yang perlu ditagih untuk periode ini.']);
+            : redirect()->back()->withErrors(['status_error' => 'Semua santri yang cocok sudah ditagih untuk periode ini.']);
     }
 
     public function publishHeader(InvoiceHeader $header)

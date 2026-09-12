@@ -43,6 +43,10 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
     const formHeader = useForm({ title: '', tariff_id: '', period: '', due_date: '' });
     const formDetail = useForm({ invoice_header_id: selectedHeaderId || '', student_id: '', nominal: '' });
 
+    // Tarif yang sedang dipilih di modal — dipakai untuk pratinjau target
+    // sebelum gelombang dibuat.
+    const tarifTerpilih = listTarif?.find((t) => t.id == formHeader.data.tariff_id);
+
     // Anchor untuk auto-scroll saat tombol "Rincian" ditekan.
     const rincianRef = useRef(null);
     const invoiceRef = useRef(null);
@@ -196,6 +200,9 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
     const monthCls = `${fieldCls} pr-2 [color-scheme:light] dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60 hover:[&::-webkit-calendar-picker-indicator]:opacity-100`;
     const selectCls = `${fieldCls} cursor-pointer appearance-none pr-9`;
 
+    // Badge target — dipakai di panel rincian dan kartu batch.
+    const badgeTarget = 'inline-flex rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600 ring-1 ring-stone-200 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500';
+
     const ChevronBawah = () => (
         <svg className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400 dark:text-stone-500"
             fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -287,6 +294,9 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                     <div className="min-w-0">
                                         <p className="truncate text-sm font-semibold text-stone-800 dark:text-cream-100">{h.title}</p>
                                         <p className="mt-0.5 truncate text-xs text-stone-400">{h.batch_number}</p>
+                                        {h.target_summary && (
+                                            <p className="mt-1.5 truncate text-xs text-stone-500 dark:text-stone-400">{h.target_summary}</p>
+                                        )}
                                     </div>
                                     <span className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${badgeBatch(h.status)}`}>{h.status}</span>
                                 </div>
@@ -358,7 +368,14 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                             <span className="font-semibold text-stone-800 dark:text-cream-100">{h.title}</span><br />
                                             <span className="text-xs text-stone-400">{h.batch_number}</span>
                                         </td>
-                                        <td className="px-4 py-3.5 text-sm text-stone-600 dark:text-stone-300">{h.tarif?.billing_name || '-'}</td>
+                                        <td className="px-4 py-3.5 text-sm text-stone-600 dark:text-stone-300">
+                                            {h.tarif?.billing_name || '-'}
+                                            {/* Snapshot target saat gelombang dibuat — aturan tarif bisa
+                                                sudah berubah sejak itu. */}
+                                            {h.target_summary && (
+                                                <><br /><span className="text-xs text-stone-400">{h.target_summary}</span></>
+                                            )}
+                                        </td>
                                         <td className="px-4 py-3.5 text-sm text-stone-600 dark:text-stone-300">
                                             {h.period}<br /><span className="text-xs text-red-500 dark:text-red-400">Tempo {tanggal(h.due_date)}</span>
                                         </td>
@@ -423,6 +440,10 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                             <div className="mt-1.5 flex flex-wrap items-center gap-2">
                                 <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${badgeBatch(header.status)}`}>{header.status}</span>
                                 <span className="text-xs text-stone-400">Tempo {tanggal(header.due_date)}</span>
+                                {/* Target yang berlaku saat gelombang ini dibuat. */}
+                                {header.target_summary && (
+                                    <span className={badgeTarget}>{header.target_summary}</span>
+                                )}
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
@@ -729,10 +750,28 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                             <InputLabel>Tarif Dasar <span className="text-red-500">*</span></InputLabel>
                             <div className="mt-1.5">
                                 <SearchableSelect placeholder="-- Pilih Tarif Dasar --"
-                                    options={listTarif?.map((t) => ({ id: t.id, label: `${t.billing_name} · ${formatCurrency(t.nominal)}` })) || []}
+                                    options={listTarif?.map((t) => ({
+                                        id: t.id,
+                                        label: `${t.billing_name} · ${formatCurrency(t.nominal)} · ${t.target_summary}`,
+                                    })) || []}
                                     value={formHeader.data.tariff_id}
                                     onChange={(id) => formHeader.setData('tariff_id', id)} />
                             </div>
+
+                            {/* Pratinjau target sebelum gelombang dibuat — operator perlu
+                                tahu siapa yang akan terjaring auto-generate nanti. */}
+                            {tarifTerpilih && !isEditHeader && (
+                                <div className="mt-2 rounded-xl bg-claude-500/5 p-3 ring-1 ring-claude-500/20">
+                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-claude-700 dark:text-claude-300">Akan ditagihkan ke</p>
+                                    <p className="mt-1 text-sm text-stone-700 dark:text-stone-200">{tarifTerpilih.target_summary}</p>
+                                    {tarifTerpilih.is_donation && (
+                                        <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400">
+                                            Tarif donasi — auto-generate tidak tersedia, penyumbang ditambahkan manual.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
                             {isEditHeader && <p className="mt-1 text-xs text-stone-400">Tarif dasar tidak dapat diubah setelah gelombang dibuat.</p>}
                             <InputError message={formHeader.errors.tariff_id} className="mt-1.5" />
                         </div>
@@ -799,7 +838,12 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                             () => aksi(route('keuangan.pemasukan.tagihan.destroy_header', dialog.id), 'delete')],
                         'hapus-detail': ['Batalkan Tagihan', 'Yakin menghapus tagihan siswa ini?', true,
                             () => aksi(route('keuangan.pemasukan.tagihan.destroy', dialog.id), 'delete')],
-                        'generate':     ['Auto-Generate Tagihan', 'Sistem membuat tagihan untuk semua siswa yang sesuai tarif dasar.', false,
+                        // Target disebut eksplisit supaya operator tidak asal klik.
+                        'generate':     ['Auto-Generate Tagihan',
+                            header?.target_summary
+                                ? `Tagihan akan dibuat untuk — ${header.target_summary}.`
+                                : 'Sistem membuat tagihan untuk semua siswa yang sesuai tarif dasar.',
+                            false,
                             () => aksi(route('keuangan.pemasukan.tagihan.generate', selectedHeaderId))],
                         'publish':      ['Publish Gelombang', 'Setelah dipublish, tagihan resmi menjadi piutang siswa.', false,
                             () => aksi(route('keuangan.pemasukan.tagihan.publish_header', selectedHeaderId))],

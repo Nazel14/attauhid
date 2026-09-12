@@ -13,12 +13,12 @@ return new class extends Migration
      * Migrasi ini berada di folder keuangan agar instalasi raport-only
      * tidak ikut membawa nilai enum yang tidak dipakainya.
      */
-    public function up(): void
+        public function up(): void
     {
         DB::statement("
             ALTER TABLE `users`
             MODIFY COLUMN `role`
-            ENUM('admin','guru','santri','bendahara','kepala-sekolah','pihak-yayasan','hrd')
+            ENUM('super-admin','admin','guru','santri','bendahara','kepala-sekolah','ketua-yayasan','pihak-yayasan','hrd')
             NOT NULL DEFAULT 'guru'
         ");
     }

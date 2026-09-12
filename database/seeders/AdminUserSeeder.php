@@ -56,12 +56,16 @@ class AdminUserSeeder extends Seeder
 
         // Dibuat lewat Eloquent, bukan SQL langsung, supaya cast
         // plain_password tersimpan dalam bentuk terenkripsi yang benar.
-        $user = User::create([
-            'name'           => self::USERNAME,
-            'password'       => Hash::make(self::PASSWORD),
-            'plain_password' => self::PASSWORD,
-            'role'           => self::ROLE,
-        ]);
+        // firstOrCreate: seeder bisa dijalankan ulang tanpa migrate:fresh
+        // tanpa menabrak unique constraint users.name.
+        $user = User::firstOrCreate(
+            ['name' => self::USERNAME],
+            [
+                'password'       => Hash::make(self::PASSWORD),
+                'plain_password' => self::PASSWORD,
+                'role'           => self::ROLE,
+            ]
+        );
 
         $user->syncRoles([self::ROLE]);
 

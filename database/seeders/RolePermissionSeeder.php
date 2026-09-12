@@ -24,7 +24,7 @@ class RolePermissionSeeder extends Seeder
             'tambah-admin',
             'edit-admin',
             'hapus-admin',
-            
+
             // Manajemen Guru
             'kelola-guru',
             'lihat-guru',
@@ -33,14 +33,14 @@ class RolePermissionSeeder extends Seeder
             'hapus-guru',
             'import-guru',
             'export-guru',
-            
+
             // Manajemen Kelas
             'kelola-kelas',
             'lihat-kelas',
             'tambah-kelas',
             'edit-kelas',
             'hapus-kelas',
-            
+
             // Manajemen Santri
             'kelola-santri',
             'lihat-santri',
@@ -49,20 +49,20 @@ class RolePermissionSeeder extends Seeder
             'hapus-santri',
             'import-santri',
             'export-santri',
-            
+
             // Monitoring
             'lihat-monitoring',
             'kelola-setoran',
             'kelola-presensi',
-            
+
             // Presensi Sesi
             'kelola-presensi-sesi',
-            
+
             // Log Activity
             'lihat-log-activity',
             'hapus-log-activity',
             'cleanup-log-activity',
-            
+
             // Dashboard
             'lihat-dashboard-admin',
         ];
@@ -73,17 +73,20 @@ class RolePermissionSeeder extends Seeder
 
         // =====================================================
         // BUAT ROLES & ASSIGN PERMISSIONS
+        //
+        // firstOrCreate, bukan create: AdminUserSeeder sudah membuat
+        // keempat role ini lebih dulu di DatabaseSeeder.
         // =====================================================
-        
+
         // 1. SUPER ADMIN - Full Access (Raja Admin)
         $superAdmin = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
         $superAdmin->syncPermissions(Permission::all()); // Semua permission
-        
+
         // 2. ADMIN - Full access kecuali kelola admin & hapus log
-        $admin = Role::create(['name' => 'admin', 'guard_name' => 'web']);
+        $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $admin->givePermissionTo([
             'lihat-admin', // Bisa lihat daftar admin tapi tidak bisa kelola
-            
+
             // Guru - Full Access
             'kelola-guru',
             'lihat-guru',
@@ -92,14 +95,14 @@ class RolePermissionSeeder extends Seeder
             'hapus-guru',
             'import-guru',
             'export-guru',
-            
+
             // Kelas - Full Access
             'kelola-kelas',
             'lihat-kelas',
             'tambah-kelas',
             'edit-kelas',
             'hapus-kelas',
-            
+
             // Santri - Full Access
             'kelola-santri',
             'lihat-santri',
@@ -108,22 +111,22 @@ class RolePermissionSeeder extends Seeder
             'hapus-santri',
             'import-santri',
             'export-santri',
-            
+
             // Monitoring & Presensi - Full Access
             'lihat-monitoring',
             'kelola-setoran',
             'kelola-presensi',
             'kelola-presensi-sesi',
-            
+
             // Log Activity - Hanya Lihat (tidak bisa hapus/cleanup)
             'lihat-log-activity',
-            
+
             // Dashboard
             'lihat-dashboard-admin',
         ]);
 
         // 4. GURU - Role untuk guru (tetap pakai role lama)
-        $guru = Role::create(['name' => 'guru', 'guard_name' => 'web']);
+        $guru = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web']);
         $guru->givePermissionTo([
             'kelola-setoran',
             'kelola-presensi',
@@ -131,13 +134,18 @@ class RolePermissionSeeder extends Seeder
         ]);
 
         // 5. SANTRI - Role untuk santri
-        $santri = Role::create(['name' => 'santri', 'guard_name' => 'web']);
+        $santri = Role::firstOrCreate(['name' => 'santri', 'guard_name' => 'web']);
         // Santri tidak perlu permission khusus, hanya bisa lihat data sendiri
 
         // =====================================================
         // ASSIGN ROLE KE USER EXISTING
+        //
+        // Catatan: pada instalasi baru blok ini tidak menemukan siapa pun,
+        // karena satu-satunya user saat itu ber-role 'super-admin' dan
+        // sudah diberi role Spatie oleh AdminUserSeeder. Blok ini berguna
+        // untuk database lama yang usernya belum punya role Spatie.
         // =====================================================
-        
+
         // Cari user admin pertama dan jadikan Super Admin
         $firstAdmin = User::where('role', 'admin')->first();
         if ($firstAdmin) {

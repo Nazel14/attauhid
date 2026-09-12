@@ -113,7 +113,7 @@ class User extends Authenticatable
     {
         $map = [
             'raport'   => ['super-admin', 'admin', 'guru', 'santri'],
-            'keuangan' => ['super-admin', 'bendahara', 'kepala-sekolah', 'pihak-yayasan', 'hrd'],
+            'keuangan' => ['super-admin', 'bendahara', 'kepala-sekolah', 'ketua-yayasan', 'pihak-yayasan', 'hrd'],
         ];
 
         $modules = [];

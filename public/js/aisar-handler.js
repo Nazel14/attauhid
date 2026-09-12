@@ -1,5 +1,5 @@
 /**
- * AISAR HANDLER v1.6 — renderer khusus metode Aisar.
+ * AISAR HANDLER v1.7 — renderer khusus metode Aisar.
  * ------------------------------------------------------------------
  * WAJIB dimuat SETELAH iqro-handler.js dan aisar-data.js.
  *
@@ -11,11 +11,34 @@
  *
  * Cara kerja: wrap window.loadIqro → bila metode form = 'Aisar',
  * render pakai buildAisarPageHtml; selain itu diteruskan ke handler asli.
- * Halaman tetap ber-class .iqro-page & sel .word-item agar navigasi,
- * marking (markWord), dan PDF capture existing tetap kompatibel.
  *
  * ------------------------------------------------------------------
- * STRATEGI UKURAN TEKS (v1.5)
+ * GRANULARITAS MARKING (v1.7)
+ *
+ *   Sebelumnya SATU sel = SATU .word-item, sehingga baris kalimat panjang
+ *   (jilid 2–5, terutama halaman talqin) hanya bisa ditandai sekaligus —
+ *   guru tidak bisa menunjuk kata mana yang salah.
+ *
+ *   Sekarang sel dipecah per kata bila:
+ *     - baris berisi SATU kolom penuh (kalimat panjang), atau
+ *     - teks sel memakai pemisah "•"
+ *   Sel grid pendek (2–5 kolom) TIDAK dipecah: di situ satu sel memang
+ *   satu unit latihan, memecahnya justru mengaburkan maksud halaman.
+ *
+ *   Token yang isinya hanya pemisah / tanda akhir ayat (۝٦, ۞, tanda hubung)
+ *   dirender pasif — tidak bisa diklik, supaya tidak ikut terhitung sebagai
+ *   kesalahan.
+ *
+ *   PENTING soal CSS: token memakai display:inline, dan wadahnya TIDAK
+ *   boleh flex. Inline-block/flex memutus alur teks Arab — spasi antar kata
+ *   hilang dan titik pecah baris jadi kacau saat membungkus.
+ *
+ *   Efek samping: countTotalWords() menghitung jauh lebih banyak unit di
+ *   jilid 2–5, sehingga bobot tiap kesalahan pada nilai akhir mengecil di
+ *   halaman panjang. Nilai setoran lama & baru tidak sebanding.
+ *
+ * ------------------------------------------------------------------
+ * STRATEGI UKURAN TEKS
  *
  *   1. Halaman ber-`wrap: true` (talqin hlm 40–48) TIDAK di-auto-fit.
  *      Baris di aisar-data.js memang meniru pemenggalan cetakan, tapi
@@ -35,7 +58,11 @@
  *      dikecilkan dan span dialihkan ke mode mengalir. Alasan: teks Arab
  *      yang menyusut sampai 13px tidak terbaca.
  *
- *   3. Sel `narrow` (nama surat, badge) dilewati auto-fit supaya tidak
+ *   3. Auto-fit mengukur WADAH sel (.aisar-fit), bukan token per kata.
+ *      Kalau yang diukur token, tiap kata pasti "muat" sendiri-sendiri
+ *      sehingga baris panjang tidak pernah disusutkan dan meluber.
+ *
+ *   4. Sel `narrow` (nama surat, badge) dilewati auto-fit supaya tidak
  *      ikut menyusut.
  *
  * ------------------------------------------------------------------
@@ -85,48 +112,107 @@
     // kalau ikut dibungkus span, sambungan huruf Arab putus & kata terbelah.
     const AYAH_MARK_RE = /([\u06D6-\u06DB\u06DD\u06DE][\u0660-\u0669\d]*)/g;
 
-    function cellSpan(txt, hl, size, noDot, wrap) {
-        const fontSize = size || AISAR_SCREEN_FONT_SIZE;
-        const fgStyle = hl ? 'color:var(--q-accent-fg,#fff);font-weight:700;' : 'color:' + FG + ';';
-        const hasAyahMark = AYAH_MARK_RE.test(String(txt));
-        AYAH_MARK_RE.lastIndex = 0; // reset karena regex global dipakai test()
+    // Token yang isinya cuma pemisah / tanda ayat / angka — dirender pasif
+    // supaya tidak bisa diklik dan tidak terhitung sebagai unit kesalahan.
+    const SEP_ONLY_RE = /^[\s\-–—.\u06DD\u06DE\u0660-\u0669\d]+$/;
 
-        // pemisah • → bulatan kecil ber-border (default) atau spasi bila noDot
-        let disp = noDot
-            ? String(txt).replace(/\s*•\s*/g, '&nbsp;&nbsp;')
-            : String(txt).replace(/\s*•\s*/g,
-                '<span class="aisar-dot" style="display:inline-block;width:20px;height:20px;' +
-                'border:2px solid currentColor;border-radius:50%;opacity:.6;' +
-                'margin:0 14px;flex:0 0 auto;align-self:center;"></span>');
-
-        // Bungkus tanda waqaf/akhir-ayat BESERTA angkanya (mis. ۝٦) dalam satu span
-        // supaya ligature lingkaran+angka tetap utuh & tidak terputus saat wrap.
-        // Pada halaman wrap (talqin) ukurannya disamakan dengan teks agar tidak
-        // terlihat mungil; pada halaman biasa sedikit dikecilkan.
+    /** Satu potongan teks → span markable, atau span pasif bila hanya pemisah. */
+    function tokenSpan(raw, wrap, fontSize) {
         const ayahMarkSize = wrap ? fontSize : Math.round(fontSize * 0.90);
-        disp = disp.replace(AYAH_MARK_RE,
+        const inner = String(raw).replace(AYAH_MARK_RE,
             '<span class="aisar-ayah-mark" style="display:inline-block;font-size:' + ayahMarkSize + 'px;' +
             'line-height:1;vertical-align:middle;margin:0 4px;white-space:nowrap;">$1</span>');
 
+        if (SEP_ONLY_RE.test(raw)) {
+            return '<span class="aisar-sep">' + inner + '</span>';
+        }
+
+        // display:inline WAJIB — inline-block/flex memutus alur teks Arab
+        // dan menghilangkan spasi antar kata saat baris membungkus.
+        return '<span class="word-item" data-word="' + raw + '" data-mark-state="0" ' +
+            'onclick="markWord(this)" ' +
+            'style="display:inline;cursor:pointer;border-radius:6px;padding:2px 4px;' +
+            'transition:background-color .25s ease;">' + inner + '</span>';
+    }
+
+    function dotSpan() {
+        return '<span class="aisar-dot" style="display:inline-block;width:20px;height:20px;' +
+            'border:2px solid currentColor;border-radius:50%;opacity:.6;margin:0 14px;' +
+            'vertical-align:middle;"></span>';
+    }
+
+    /**
+     * splittable = true → sel dipecah per kata, tiap kata jadi unit marking
+     * sendiri. Lihat catatan GRANULARITAS MARKING di header file.
+     */
+    function cellSpan(txt, hl, size, noDot, wrap, splittable) {
+        const fontSize = size || AISAR_SCREEN_FONT_SIZE;
+        const fgStyle  = hl ? 'color:var(--q-accent-fg,#fff);font-weight:700;' : 'color:' + FG + ';';
+
+        const hasAyahMark = AYAH_MARK_RE.test(String(txt));
+        AYAH_MARK_RE.lastIndex = 0; // reset karena regex global dipakai test()
         const extraPad = hasAyahMark ? 'padding-top:22px;padding-bottom:14px;' : 'padding:6px 12px;';
-
-        // wrap = true → ALUR TEKS BIASA (block), lebar penuh, boleh turun baris.
-        // Flexbox + flex-wrap dihindari di sini karena tiap potongan teks jadi
-        // flex item → pemutusan baris kacau & kotak menyusut ke lebar konten.
-        const boxStyle = wrap
-            ? 'display:block;width:100%;white-space:normal;word-break:normal;text-align:center;'
-            : 'display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;text-align:center;';
-
         const minH = wrap ? '0' : '90px';
         const lh   = wrap ? '2.1' : '1.6';
 
-        return '<span class="word-item" data-word="' + txt + '" data-mark-state="0" ' +
-            'onclick="markWord(this)" ' +
-            'style="' + boxStyle +
-            'cursor:pointer;' + extraPad + 'border-radius:8px;min-height:' + minH + ';height:auto;line-height:' + lh + ';' +
+        // ── Sel utuh: satu sel = satu unit marking ────────────────────
+        if (!splittable) {
+            // pemisah • → bulatan kecil ber-border (default) atau spasi bila noDot
+            let disp = noDot
+                ? String(txt).replace(/\s*•\s*/g, '&nbsp;&nbsp;')
+                : String(txt).replace(/\s*•\s*/g,
+                    '<span class="aisar-dot" style="display:inline-block;width:20px;height:20px;' +
+                    'border:2px solid currentColor;border-radius:50%;opacity:.6;' +
+                    'margin:0 14px;flex:0 0 auto;align-self:center;"></span>');
+
+            // Bungkus tanda waqaf/akhir-ayat BESERTA angkanya (mis. ۝٦) dalam satu
+            // span supaya ligature lingkaran+angka tetap utuh & tidak terputus saat wrap.
+            const ayahMarkSize = wrap ? fontSize : Math.round(fontSize * 0.90);
+            disp = disp.replace(AYAH_MARK_RE,
+                '<span class="aisar-ayah-mark" style="display:inline-block;font-size:' + ayahMarkSize + 'px;' +
+                'line-height:1;vertical-align:middle;margin:0 4px;white-space:nowrap;">$1</span>');
+
+            // wrap = true → ALUR TEKS BIASA (block), lebar penuh, boleh turun baris.
+            // Flexbox + flex-wrap dihindari di sini karena tiap potongan teks jadi
+            // flex item → pemutusan baris kacau & kotak menyusut ke lebar konten.
+            const boxStyle = wrap
+                ? 'display:block;width:100%;white-space:normal;word-break:normal;text-align:center;'
+                : 'display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;text-align:center;';
+
+            return '<span class="word-item aisar-fit" data-word="' + txt + '" data-mark-state="0" ' +
+                'onclick="markWord(this)" ' +
+                'style="' + boxStyle +
+                'cursor:pointer;' + extraPad + 'border-radius:8px;min-height:' + minH + ';height:auto;line-height:' + lh + ';' +
+                'box-sizing:border-box;overflow:visible;' +
+                "font-family:'Amiri Quran','Amiri',serif;font-size:" + fontSize + 'px;' + fgStyle +
+                'transition:all 0.25s cubic-bezier(0.4,0,0.2,1);">' + disp + '</span>';
+        }
+
+        // ── Sel dipecah per kata ──────────────────────────────────────
+        // Wadah TIDAK boleh flex: anak inline akan berubah jadi flex item
+        // dan alur teks Arab-nya hancur.
+        const potongan = [];
+        String(txt).split(/(\s*•\s*)/).forEach(function (bagian) {
+            if (!bagian) return;
+            if (/•/.test(bagian)) {
+                potongan.push(noDot ? '&nbsp;&nbsp;' : dotSpan());
+                return;
+            }
+            bagian.trim().split(/\s+/).forEach(function (kata) {
+                if (kata) potongan.push(tokenSpan(kata, wrap, fontSize));
+            });
+        });
+
+        const boxStyle = wrap
+            ? 'display:block;width:100%;white-space:normal;word-break:normal;text-align:center;'
+            : 'display:inline-block;white-space:nowrap;text-align:center;';
+
+        return '<span class="aisar-fit" ' +
+            'style="' + boxStyle + extraPad +
+            'min-height:' + minH + ';height:auto;line-height:' + lh + ';' +
             'box-sizing:border-box;overflow:visible;' +
             "font-family:'Amiri Quran','Amiri',serif;font-size:" + fontSize + 'px;' + fgStyle +
-            'transition:all 0.25s cubic-bezier(0.4,0,0.2,1);">' + disp + '</span>';
+            '">' + potongan.join(' ') + '</span>';
     }
 
     // ---- bulat waqaf (replika iqro-handler) ----
@@ -136,16 +222,16 @@
     }
 
     // sel "◯"/"○" = lingkaran tunggal; withBulat = titik + bulat di belakang frasa
-    function cellHtml(txt, hl, size, withBulat, titik, noDot, wrap) {
+    function cellHtml(txt, hl, size, withBulat, titik, noDot, wrap, splittable) {
         if (txt === '◯' || txt === '○') {
             return '<span class="iqro-waqaf-cell" style="display:inline-flex;align-items:center;justify-content:center;">' + bulatSpan() + '</span>';
         }
-        if (!withBulat || hl) return cellSpan(txt, hl, size, noDot, wrap);
+        if (!withBulat || hl) return cellSpan(txt, hl, size, noDot, wrap, splittable);
         const decoHtml = titik
             ? '<span class="iqro-deco" style="font-family:\'Amiri\',serif;font-size:26px;line-height:1;color:' + FG + ';opacity:.55;letter-spacing:2px;">' + titik + '</span>'
             : '';
         return '<span class="iqro-waqaf-cell" style="display:inline-flex;align-items:center;gap:10px;">' +
-            cellSpan(txt, hl, size, noDot, wrap) + decoHtml + bulatSpan() +
+            cellSpan(txt, hl, size, noDot, wrap, splittable) + decoHtml + bulatSpan() +
         '</span>';
     }
 
@@ -174,6 +260,15 @@
         // supaya tampilannya menyatu seperti cetakan; band divider tetap bergaris.
         const rowBorder = noLine ? '' : 'border-top:1px solid ' + LINE + ';';
 
+        // Dipecah bila: baris 1-kolom penuh, ATAU sel memakai pemisah "•".
+        // Sel grid pendek dibiarkan utuh — satu sel = satu unit latihan.
+        const bolehPecah = function (t, barisPenuh) {
+            const s = String(t);
+            if (s === '◯' || s === '○') return false;
+            if (/•/.test(s)) return true;
+            return barisPenuh && /\s/.test(s.trim());
+        };
+
         // band pembatas di tengah halaman: { divider: "teks" }
         // pakai 'in' supaya { divider: "" } (garis pemisah polos) tetap terdeteksi
         // dan tidak jatuh ke jalur lain → render "undefined"
@@ -189,11 +284,15 @@
             const inner = (row.rows || []).map(function (r, ri) {
                 const cells = Array.isArray(r) ? r : [r];
                 const top = (ri > 0 && !noLine) ? 'border-top:1px solid ' + LINE + ';' : '';
+                // Blok berlabel sering berisi kalimat panjang (mis. daftar saktah
+                // jilid 5 hlm 30) → sel satu-satunya di barisnya diperlakukan
+                // sebagai baris penuh supaya ikut dipecah per kata.
+                const barisPenuh = cells.length === 1;
                 return '<div class="iqro-row-scroll" style="display:flex;direction:rtl;align-items:stretch;' + ovfRow + top + '">' +
                     cells.map(function (c, i) {
                         const sep = (i < cells.length - 1) ? 'border-left:1px solid ' + LINE + ';' : '';
                         return '<div class="aisar-cell" style="flex:1;min-width:0;display:flex;justify-content:center;align-items:center;padding:2px 4px;' + ovfCell + sep + '">' +
-                            cellHtml(c, false, pageSize, withBulat, titik, noDot, wrap) +
+                            cellHtml(c, false, pageSize, withBulat, titik, noDot, wrap, bolehPecah(c, barisPenuh)) +
                         '</div>';
                     }).join('') +
                 '</div>';
@@ -203,7 +302,7 @@
                 '<div style="display:flex;direction:rtl;align-items:stretch;' + rowBorder + '">' +
                     // kolom label kanan (sempit, vertikal tengah)
                     '<div style="flex:0 0 72px;max-width:72px;display:flex;justify-content:center;align-items:center;border-left:1px solid ' + LINE + ';">' +
-                        cellSpan(row.blockLabel, false, pageSize, noDot, false) +
+                        cellSpan(row.blockLabel, false, pageSize, noDot, false, false) +
                     '</div>' +
                     // grid isi blok
                     '<div style="flex:1;min-width:0;display:flex;flex-direction:column;">' + inner + '</div>' +
@@ -223,7 +322,12 @@
                   'font-family:\'Amiri\',serif;font-size:12px;color:' + FG + ';opacity:.6;' +
                   'line-height:1;white-space:nowrap;">' + c0.surah + '</span>'
                 : '';
-            const inner = cellHtml(txt0, false, (isObj0 && c0.size) ? c0.size : pageSize, withBulat, titik, noDot, wrap);
+            const inner = cellHtml(
+                txt0, false,
+                (isObj0 && c0.size) ? c0.size : pageSize,
+                withBulat, titik, noDot, wrap,
+                bolehPecah(txt0, true)
+            );
 
             // WRAP → baris jadi BLOK penuh, bukan flex.
             // Flex membuat anaknya menyusut (flex-shrink:1) meski width:100%,
@@ -281,6 +385,10 @@
                         const bg    = isHl ? 'background:var(--q-accent,#2E86AB);' : '';
                         const isNarrow = isObj && c.narrow;
 
+                        // Sel badge (hl) & narrow tidak pernah dipecah — keduanya
+                        // penanda, bukan bacaan yang dinilai.
+                        const pecah = !isHl && !isNarrow && bolehPecah(txt, false);
+
                         let widthStyle;
                         if (isNarrow) {
                             // class aisar-narrow dipakai auto-fit untuk melewati sel ini
@@ -293,8 +401,8 @@
                         }
 
                         const cellInner = labelBelow
-                            ? cellHtml(txt, isHl, size, withBulat, titik, noDot, wrap) + label
-                            : label + cellHtml(txt, isHl, size, withBulat, titik, noDot, wrap);
+                            ? cellHtml(txt, isHl, size, withBulat, titik, noDot, wrap, pecah) + label
+                            : label + cellHtml(txt, isHl, size, withBulat, titik, noDot, wrap, pecah);
 
                         const narrowCls = isNarrow ? ' aisar-narrow' : '';
                         return '<div class="aisar-cell' + narrowCls + '" style="' + widthStyle + 'box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:2px 4px;' + bg + sep + '">' +
@@ -361,15 +469,18 @@
     // ==================================================================
     // AUTO-FIT FONT
     // ------------------------------------------------------------------
-    // Mengukur lebar nyata tiap .word-item (scrollWidth) terhadap lebar
-    // kotak barisnya, lalu mengecilkan font SAMPAI BATAS AISAR_MIN_FONT.
-    // Jika di batas itu masih meluber, font berhenti dikecilkan dan span
-    // dialihkan ke mode mengalir (turun baris) — bukan terus menyusut
-    // sampai tak terbaca.
+    // Mengukur lebar nyata tiap WADAH sel (.aisar-fit) terhadap lebar kotak
+    // barisnya, lalu mengecilkan font SAMPAI BATAS AISAR_MIN_FONT. Jika di
+    // batas itu masih meluber, font berhenti dikecilkan dan wadah dialihkan
+    // ke mode mengalir (turun baris) — bukan terus menyusut sampai tak terbaca.
+    //
+    // Yang diukur WADAH, bukan token per kata: tiap kata pasti "muat"
+    // sendiri-sendiri, sehingga baris panjang tidak akan pernah disusutkan
+    // kalau pengukurannya per token.
     //
     // DILEWATI untuk:
     //   - sel narrow (nama surat / badge)
-    //   - span halaman `wrap` (talqin) → lihat catatan di dalam fitOneSpan
+    //   - wadah halaman `wrap` (talqin) → lihat catatan di dalam fitOneSpan
     //
     // Halaman tersembunyi (display:none) punya clientWidth 0, jadi
     // ditampilkan sementara (visibility:hidden) saat pengukuran.
@@ -377,6 +488,14 @@
     function fitOneSpan(span) {
         // sel narrow (nama surat, badge) jangan diutak-atik
         if (span.closest('.aisar-narrow')) return;
+
+        // Font token mengikuti wadah (inherit), jadi cukup ubah wadahnya.
+        // Fungsi ini menyesuaikan .aisar-ayah-mark di dalamnya agar proporsional.
+        const syncMarks = function (size) {
+            span.querySelectorAll('.aisar-ayah-mark').forEach(function (m) {
+                m.style.fontSize = size + 'px';
+            });
+        };
 
         // ── Halaman wrap (talqin hlm 40–48) ──────────────────────────────
         // TIDAK di-auto-fit. Baris di aisar-data.js memang meniru pemenggalan
@@ -413,10 +532,7 @@
         while (span.scrollWidth > avail && size > AISAR_MIN_FONT && guard-- > 0) {
             size -= 1;
             span.style.fontSize = size + 'px';
-            // tanda ayat (۝٦ dsb) ikut menyesuaikan agar proporsinya tetap
-            span.querySelectorAll('.aisar-ayah-mark').forEach(function (m) {
-                m.style.fontSize = size + 'px';
-            });
+            syncMarks(size);
         }
 
         // Masih meluber di ukuran minimum → berhenti mengecil, biarkan mengalir.
@@ -439,7 +555,9 @@
                 pageEl.style.display    = 'block';
             }
 
-            pageEl.querySelectorAll('.word-item').forEach(fitOneSpan);
+            // .aisar-fit = WADAH sel (baik yang utuh maupun yang dipecah).
+            // Jangan pakai .word-item: setelah pemecahan per kata, itu token.
+            pageEl.querySelectorAll('.aisar-fit').forEach(fitOneSpan);
 
             if (hidden) {
                 pageEl.style.display    = 'none';
@@ -728,5 +846,5 @@
     window.renderAisarRange = renderAisarRange;
     window.aisarAutoFit     = aisarAutoFit;   // bisa dipanggil ulang manual
 
-    console.log('✅ aisar-handler.js v1.6 ready');
+    console.log('✅ aisar-handler.js v1.7 ready (marking per kata di baris panjang)');
 })();

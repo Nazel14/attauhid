@@ -9,13 +9,14 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import InputError from '@/Components/InputError';
 import { formatCurrency } from '@/Utils/formatCurrency';
 
-export default function DataTarif({ tarif, filters }) {
+export default function DataTarif({ tarif, dimensions, filters }) {
     const { auth } = usePage().props;
     const can = (p) => (auth.permissions || []).includes(p);
 
     const [search, setSearch] = useState(filters?.search || '');
     const [periodFilter, setPeriodFilter] = useState(filters?.periodFilter || '');
     const [statusFilter, setStatusFilter] = useState(filters?.statusFilter || '');
+    const [kelasFilter, setKelasFilter] = useState(filters?.kelasFilter || '');
     const [sortField, setSortField] = useState(filters?.sort_field || 'created_at');
     const [sortDirection, setSortDirection] = useState(filters?.sort_direction || 'desc');
 
@@ -29,9 +30,11 @@ export default function DataTarif({ tarif, filters }) {
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         billing_name: '',
         nominal: '',
-        target_student_type: 'All',
         period: 'Bulanan',
         is_active: true,
+        is_donation: false,
+        // [{ type: 'kelas', values: ['1','2'] }, ...]
+        targets: [],
     });
 
     const pertamaKali = useRef(true);
@@ -40,12 +43,12 @@ export default function DataTarif({ tarif, filters }) {
 
         const t = setTimeout(() => {
             router.get(route('keuangan.master-data.tarif'),
-                { search, periodFilter, statusFilter, sort_field: sortField, sort_direction: sortDirection },
+                { search, periodFilter, statusFilter, kelasFilter, sort_field: sortField, sort_direction: sortDirection },
                 { preserveState: true, preserveScroll: true, replace: true });
         }, 300);
 
         return () => clearTimeout(t);
-    }, [search, periodFilter, statusFilter, sortField, sortDirection]);
+    }, [search, periodFilter, statusFilter, kelasFilter, sortField, sortDirection]);
 
     const handleSort = (field) => {
         if (sortField === field) setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -61,16 +64,74 @@ export default function DataTarif({ tarif, filters }) {
             : <svg className="ml-1 h-3.5 w-3.5 text-claude-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>;
     };
 
-    const openAddModal = () => { setIsEditing(false); setEditId(null); reset(); clearErrors(); setIsModalOpen(true); };
+    /* ---------- builder kriteria ---------- */
+
+    const dimensionKeys = Object.keys(dimensions || {});
+
+    // Dimensi yang belum dipakai — satu dimensi cukup sekali, nilainya
+    // digabung di dalamnya (semantik OR).
+    const dimensiTersisa = dimensionKeys.filter(
+        (k) => !data.targets.some((t) => t.type === k)
+    );
+
+    const tambahKriteria = (type) => {
+        if (!type) return;
+        setData('targets', [...data.targets, { type, values: [] }]);
+    };
+
+    const hapusKriteria = (idx) => {
+        setData('targets', data.targets.filter((_, i) => i !== idx));
+    };
+
+    const toggleNilai = (idx, value) => {
+        setData('targets', data.targets.map((t, i) => {
+            if (i !== idx) return t;
+            const ada = t.values.includes(value);
+            return { ...t, values: ada ? t.values.filter((v) => v !== value) : [...t.values, value] };
+        }));
+    };
+
+    const labelNilai = (type, value) =>
+        dimensions?.[type]?.options?.find((o) => o.value === value)?.label ?? value;
+
+    // Ringkasan realtime. Semantik AND/OR mudah disalahpahami dan ini
+    // dipakai untuk menagih orang, jadi selalu ditampilkan.
+    const ringkasanTarget = () => {
+        if (data.is_donation) return 'Donasi (tanpa target santri)';
+
+        const terisi = data.targets.filter((t) => t.values.length > 0);
+        if (terisi.length === 0) return 'Semua santri aktif';
+
+        return terisi
+            .map((t) => `${dimensions[t.type]?.label ?? t.type}: ${t.values.map((v) => labelNilai(t.type, v)).join(', ')}`)
+            .join('  —  dan  —  ');
+    };
+
+    /* ---------- modal ---------- */
+
+    const openAddModal = () => {
+        setIsEditing(false); setEditId(null); reset(); clearErrors(); setIsModalOpen(true);
+    };
 
     const openEditModal = (item) => {
         setIsEditing(true); setEditId(item.id); clearErrors();
+
+        // Backend mengirim daftar datar [{type, value}], UI butuh
+        // dikelompokkan per dimensi.
+        const grouped = [];
+        (item.targets || []).forEach((r) => {
+            const found = grouped.find((g) => g.type === r.type);
+            if (found) found.values.push(String(r.value));
+            else grouped.push({ type: r.type, values: [String(r.value)] });
+        });
+
         setData({
             billing_name: item.billing_name,
             nominal: Math.floor(item.nominal).toString(),
-            target_student_type: item.target_student_type,
             period: item.period,
             is_active: Boolean(item.is_active),
+            is_donation: Boolean(item.is_donation),
+            targets: grouped,
         });
         setIsModalOpen(true);
     };
@@ -92,6 +153,8 @@ export default function DataTarif({ tarif, filters }) {
         else post(route('keuangan.master-data.tarif.store'), opts);
     };
 
+    /* ---------- style ---------- */
+
     const periodBadge = (p) => ({
         'Bulanan':      'bg-claude-500/10 text-claude-700 ring-claude-500/20 dark:text-claude-300',
         'Semester':     'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20',
@@ -102,6 +165,7 @@ export default function DataTarif({ tarif, filters }) {
     const adaAksi = can('master.tarif.edit') || can('master.tarif.hapus');
 
     const thCls = 'cursor-pointer px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-stone-500 transition hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200';
+    const thPlain = 'px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400';
 
     // Tinggi & radius seragam untuk semua kontrol filter.
     const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-600';
@@ -124,6 +188,16 @@ export default function DataTarif({ tarif, filters }) {
         ) : (
             <span className="inline-flex shrink-0 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 ring-1 ring-red-200 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/20">Non-Aktif</span>
         )
+    );
+
+    const BadgeTarget = ({ item }) => (
+        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${
+            item.is_donation
+                ? 'bg-teal-50 text-teal-700 ring-teal-200 dark:bg-teal-500/10 dark:text-teal-300 dark:ring-teal-500/20'
+                : 'bg-stone-100 text-stone-600 ring-stone-200 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500'
+        }`}>
+            {item.target_summary}
+        </span>
     );
 
     const kosong = (
@@ -168,7 +242,7 @@ export default function DataTarif({ tarif, filters }) {
 
                         {/* Dua select berdampingan di mobile — bertumpuk vertikal terlalu boros. */}
                         <div className="flex gap-2">
-                            <div className="relative flex-1 sm:w-44 sm:flex-none">
+                            <div className="relative flex-1 sm:w-40 sm:flex-none">
                                 <select value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value)} className={selectCls}>
                                     <option value="">Semua Periode</option>
                                     <option value="Bulanan">Bulanan</option>
@@ -179,7 +253,7 @@ export default function DataTarif({ tarif, filters }) {
                                 <ChevronBawah />
                             </div>
 
-                            <div className="relative flex-1 sm:w-40 sm:flex-none">
+                            <div className="relative flex-1 sm:w-36 sm:flex-none">
                                 <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectCls}>
                                     <option value="">Semua Status</option>
                                     <option value="Aktif">Aktif</option>
@@ -187,6 +261,16 @@ export default function DataTarif({ tarif, filters }) {
                                 </select>
                                 <ChevronBawah />
                             </div>
+                        </div>
+
+                        <div className="relative sm:w-44">
+                            <select value={kelasFilter} onChange={(e) => setKelasFilter(e.target.value)} className={selectCls}>
+                                <option value="">Semua Kelas</option>
+                                {(dimensions?.kelas?.options || []).map((o) => (
+                                    <option key={o.value} value={o.value}>{o.label}</option>
+                                ))}
+                            </select>
+                            <ChevronBawah />
                         </div>
                     </div>
 
@@ -207,9 +291,7 @@ export default function DataTarif({ tarif, filters }) {
                                 <p className="mt-2 text-lg font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(item.nominal)}</p>
                                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                                     <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${periodBadge(item.period)}`}>{item.period}</span>
-                                    <span className="inline-flex rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600 ring-1 ring-stone-200 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500">
-                                        {item.target_student_type === 'All' ? 'Semua tipe' : item.target_student_type}
-                                    </span>
+                                    <BadgeTarget item={item} />
                                 </div>
                             </div>
 
@@ -249,7 +331,8 @@ export default function DataTarif({ tarif, filters }) {
                                 <th onClick={() => handleSort('billing_name')} className={thCls}><div className="flex items-center">Nama Tarif <SortIcon field="billing_name" /></div></th>
                                 <th onClick={() => handleSort('period')} className={thCls}><div className="flex items-center">Periode <SortIcon field="period" /></div></th>
                                 <th onClick={() => handleSort('nominal')} className={thCls}><div className="flex items-center">Nominal <SortIcon field="nominal" /></div></th>
-                                <th onClick={() => handleSort('target_student_type')} className={thCls}><div className="flex items-center">Target Siswa <SortIcon field="target_student_type" /></div></th>
+                                {/* Target ada di tabel terpisah — tidak bisa di-sort lewat kolom. */}
+                                <th className={thPlain}>Target</th>
                                 <th onClick={() => handleSort('is_active')} className={thCls}><div className="flex items-center">Status <SortIcon field="is_active" /></div></th>
                                 {adaAksi && <th className="px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Aksi</th>}
                             </tr>
@@ -262,7 +345,7 @@ export default function DataTarif({ tarif, filters }) {
                                         <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${periodBadge(item.period)}`}>{item.period}</span>
                                     </td>
                                     <td className="px-5 py-4 text-sm font-medium text-emerald-600 dark:text-emerald-400">{formatCurrency(item.nominal)}</td>
-                                    <td className="px-5 py-4 text-sm text-stone-600 dark:text-stone-300">{item.target_student_type}</td>
+                                    <td className="max-w-xs px-5 py-4"><BadgeTarget item={item} /></td>
                                     <td className="px-5 py-4"><BadgeAktif aktif={item.is_active} /></td>
                                     {adaAksi && (
                                         <td className="whitespace-nowrap px-5 py-4 text-right text-xs">
@@ -308,7 +391,7 @@ export default function DataTarif({ tarif, filters }) {
             </div>
 
             <Modal show={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="lg">
-                <form onSubmit={submit} className="overflow-y-auto p-6">
+                <form onSubmit={submit} className="max-h-[85vh] overflow-y-auto p-6">
                     <h2 className="text-base font-semibold text-stone-800 dark:text-cream-50">{isEditing ? 'Edit Tarif' : 'Tambah Tarif Baru'}</h2>
                     <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Tanda <span className="text-red-500">*</span> berarti wajib diisi.</p>
 
@@ -316,7 +399,7 @@ export default function DataTarif({ tarif, filters }) {
                         <div>
                             <InputLabel htmlFor="billing_name">Nama Tarif Tagihan <span className="text-red-500">*</span></InputLabel>
                             <TextInput id="billing_name" value={data.billing_name} onChange={(e) => setData('billing_name', e.target.value)}
-                                className="mt-1.5 block w-full" placeholder="Contoh: SPP Bulanan" />
+                                className="mt-1.5 block w-full" placeholder="Contoh: SPP Bulanan Kelas 1" />
                             <InputError message={errors.billing_name} className="mt-1.5" />
                         </div>
 
@@ -344,19 +427,95 @@ export default function DataTarif({ tarif, filters }) {
                             </div>
                         </div>
 
-                        <div>
-                            <InputLabel htmlFor="target_student_type">Target Tipe Siswa <span className="text-red-500">*</span></InputLabel>
-                            <div className="relative">
-                                <select id="target_student_type" value={data.target_student_type} onChange={(e) => setData('target_student_type', e.target.value)} className={selectModal}>
-                                    <option value="All">Semua Tipe Siswa</option>
-                                    <option value="Reguler">Hanya Reguler</option>
-                                    <option value="Fullday">Hanya Fullday</option>
-                                </select>
-                                <ChevronBawah modal />
-                            </div>
-                            <p className="mt-1 text-xs text-stone-400">Menentukan siapa yang ikut terjaring saat auto-generate tagihan.</p>
-                            <InputError message={errors.target_student_type} className="mt-1.5" />
+                        {/* ===== TARIF DONASI ===== */}
+                        <div className="rounded-xl bg-stone-50 p-3.5 ring-1 ring-stone-200 dark:bg-coal-800 dark:ring-coal-600">
+                            <label className="flex cursor-pointer items-start gap-2.5">
+                                <input type="checkbox" checked={data.is_donation}
+                                    onChange={(e) => setData('is_donation', e.target.checked)}
+                                    className="mt-0.5 h-4 w-4 rounded border-stone-300 text-claude-500 focus:ring-claude-500 dark:border-coal-600 dark:bg-coal-900" />
+                                <span>
+                                    <span className="text-sm font-medium text-stone-700 dark:text-stone-200">Tarif donasi / infaq</span>
+                                    <span className="mt-0.5 block text-xs text-stone-400">
+                                        Tidak menargetkan santri manapun. Penyumbang ditambahkan manual, auto-generate dinonaktifkan.
+                                    </span>
+                                </span>
+                            </label>
                         </div>
+
+                        {/* ===== BUILDER KRITERIA TARGET ===== */}
+                        {!data.is_donation && (
+                            <div>
+                                <InputLabel>Target Penerima Tagihan</InputLabel>
+                                <p className="mt-1 text-xs text-stone-400">
+                                    Menentukan siapa yang terjaring saat auto-generate. Dalam satu kriteria berlaku <b>salah satu</b>, antar kriteria berlaku <b>semuanya</b>.
+                                </p>
+
+                                <div className="mt-2.5 space-y-2.5">
+                                    {data.targets.map((t, idx) => (
+                                        <div key={t.type} className="rounded-xl bg-white p-3.5 ring-1 ring-stone-200 dark:bg-coal-900 dark:ring-coal-700">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                                                    {dimensions[t.type]?.label ?? t.type}
+                                                </span>
+                                                <button type="button" onClick={() => hapusKriteria(idx)}
+                                                    className="rounded-lg p-1 text-stone-400 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10">
+                                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+
+                                            <div className="mt-2.5 flex flex-wrap gap-1.5">
+                                                {(dimensions[t.type]?.options || []).length === 0 && (
+                                                    <p className="text-xs italic text-stone-400">Belum ada data untuk kriteria ini.</p>
+                                                )}
+                                                {(dimensions[t.type]?.options || []).map((o) => {
+                                                    const aktif = t.values.includes(o.value);
+                                                    return (
+                                                        <button key={o.value} type="button" onClick={() => toggleNilai(idx, o.value)}
+                                                            className={`rounded-lg px-2.5 py-1.5 text-xs font-medium ring-1 transition ${
+                                                                aktif
+                                                                    ? 'bg-claude-500 text-white ring-claude-500'
+                                                                    : 'bg-white text-stone-600 ring-stone-200 hover:bg-cream-100 dark:bg-coal-800 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-700'
+                                                            }`}>
+                                                            {o.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {t.values.length === 0 && (
+                                                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                                                    Pilih minimal satu nilai, atau hapus kriteria ini.
+                                                </p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {dimensiTersisa.length > 0 && (
+                                    <div className="relative mt-2.5">
+                                        <select value="" onChange={(e) => tambahKriteria(e.target.value)} className={selectModal}>
+                                            <option value="">+ Tambah Kriteria…</option>
+                                            {dimensiTersisa.map((k) => (
+                                                <option key={k} value={k}>{dimensions[k].label}</option>
+                                            ))}
+                                        </select>
+                                        <ChevronBawah modal />
+                                    </div>
+                                )}
+
+                                {/* Ringkasan realtime — semantik AND/OR mudah salah dibaca. */}
+                                <div className="mt-3 rounded-xl bg-claude-500/5 p-3 ring-1 ring-claude-500/20">
+                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-claude-700 dark:text-claude-300">Akan ditagihkan ke</p>
+                                    <p className="mt-1 text-sm text-stone-700 dark:text-stone-200">{ringkasanTarget()}</p>
+                                </div>
+
+                                {Object.keys(errors).filter((k) => k.startsWith('targets')).map((k) => (
+                                    <InputError key={k} message={errors[k]} className="mt-1.5" />
+                                ))}
+                            </div>
+                        )}
 
                         <div className="border-t border-stone-100 pt-4 dark:border-coal-600">
                             <label className="flex cursor-pointer items-center gap-2">

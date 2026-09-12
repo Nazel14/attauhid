@@ -1,6 +1,30 @@
 /**
  * IQRO HANDLER — integrasi metode Iqro (1 HALAMAN tampil + Next/Prev).
  * ------------------------------------------------------------------
+ * v4.8 MARKING PER KATA (ambang diturunkan ke 2):
+ *   - v4.7 memakai ambang 4 kata dan ternyata tidak berdampak apa-apa di
+ *     jilid 5–6: kalimat seperti "وَقَوْمُهُمَا لَنَا عَٰبِدُونَ" hanya 3 kata,
+ *     jadi tetap satu blok yang tidak bisa ditandai per kata.
+ *   - Sekarang SEMUA sel bersepasi dipecah. Aman untuk jilid rendah karena
+ *     sel di sana memang tidak bersepasi ("بَ", "تَتَ", "صَعَبَ" — satu sel
+ *     satu token). Yang bersepasi di jilid 3–4 umumnya pasangan kontras
+ *     ("أَنْ أَنَّ", "مَنْ ءَامَنَ") — justru lebih baik bisa ditandai terpisah,
+ *     karena biasanya hanya salah satu yang salah dibaca.
+ *   - Token pemisah/label dirender PASIF (tidak bisa diklik): tanda waqaf,
+ *     ۝٦, ۞, angka, "-", "___", "⟩", "←", "○". Tanpa ini, baris berlabel
+ *     seperti ["١ ___ ت ⟩", ...] di jilid 6 menghasilkan unit marking palsu
+ *     yang ikut terhitung sebagai kesalahan.
+ *   - Wadah sel tetap inline-flex (agar tetap terpusat vertikal di baris
+ *     setinggi 100px), tapi token dibungkus SATU span block di dalamnya.
+ *     Kalau token jadi anak langsung flex container, tiap kata berubah jadi
+ *     flex item → alur teks Arab putus dan spasi antar kata hilang.
+ *   - AUTO-FIT mengukur WADAH (.iqro-fit), bukan token: kalau per token,
+ *     tiap kata pasti "muat" sendiri-sendiri dan baris panjang tidak pernah
+ *     disusutkan sehingga meluber di PDF.
+ *   - Efek samping: countTotalWords() naik tajam di jilid 5–6, sehingga
+ *     bobot tiap kesalahan pada nilai akhir mengecil di halaman panjang.
+ *     Nilai setoran lama & baru tidak sebanding.
+ *
  * v4.6 NAV BAR THEME-AWARE + AISAR PDF FULL-HEIGHT:
  *   - Warna nav bar dipindah dari inline var(--q-nav-*) ke stylesheet
  *     #iqro-nav-style (light + .dark). Variabel --q-nav-* sudah didefinisikan
@@ -18,38 +42,28 @@
  * v4.4 FIX "font kekecilan di layar":
  *   - Auto-fit DIBUANG dari layar. Penyebab font mengecil adalah salah ukur
  *     lebar saat panel transisi / drawer tersembunyi / font belum termuat.
- *   - Layar: font SELALU penuh (40px), satu baris lurus. Bila layar sempit &
+ *   - Layar: font SELALU penuh, satu baris lurus. Bila layar sempit &
  *     pasangan terlalu lebar → kotak bisa digeser ke samping (overflow-x:auto),
  *     BUKAN mengecil, BUKAN menumpuk.
- *   - Auto-fit HANYA dipakai untuk PDF (lebar tetap 760px → ukur pasti benar),
- *     sehingga PDF tetap rapi satu baris.
+ *   - Auto-fit HANYA dipakai untuk PDF (lebar tetap → ukur pasti benar).
  *
  * v4.3 FIX auto-fit terlalu kecil:
  *   - Fit pakai rasio sekali (min 50%), BUKAN loop ×0.95 yang bisa lari ke
  *     ~9px saat lebar sempat terukur kecil (panel transisi).
  *   - Lewati fit bila lebar < 200px (belum ter-layout / masih transisi).
- *   - ResizeObserver pada area tampilan → font dihitung ulang dgn lebar
- *     yang benar begitu panel/drawer selesai membuka.
  *
  * v4.2 LAYOUT FIX (1 BARIS LURUS / auto-fit):
  *   - Baris TIDAK lagi menumpuk: flex-wrap dibuang, tiap baris = satu garis
  *     lurus (nowrap). Frasa kanan & kiri tetap sebaris.
- *   - AUTO-FIT per baris: baris yang muat tetap font penuh (layar 40px /
- *     PDF 50px); HANYA baris yang kepanjangan yang fontnya dikecilkan
- *     otomatis secukupnya supaya pas satu baris (menggantikan tumpukan).
- *   - Fit dipanggil saat tampil halaman, navigasi, setelah font Amiri load,
- *     saat resize, dan saat capture PDF (clone).
- *   - Sel pakai min-height + height:auto + white-space:nowrap.
+ *   - AUTO-FIT per baris: baris yang muat tetap font penuh; HANYA baris yang
+ *     kepanjangan yang fontnya dikecilkan otomatis.
  *
  * v4.1: white-space:nowrap + min-height (frasa tidak patah di tengah).
  *
  * v4.0 THEME AWARE:
  *   - Warna sel/judul/border pakai CSS var (--q-fg, --q-line, --q-box-border)
- *     DENGAN fallback putih. Di layar bisa terang/gelap; saat PDF (wrapper
- *     .iqro-cap) var dipaksa gelap → PDF tetap putih di latar #3E3D3A apa pun
- *     tema layar.
- *   - Rename label statistik (Mushaf<->Iqro) tidak lagi bergantung pada
- *     class .bg-gray-900 (blok kini theme-aware).
+ *     DENGAN fallback putih. Saat PDF (wrapper .iqro-cap) var dipaksa gelap →
+ *     PDF tetap putih di latar #3E3D3A apa pun tema layar.
  *
  * Butuh: iqro-data.js dimuat lebih dulu (window.IQRO_DATA).
  * ------------------------------------------------------------------
@@ -58,9 +72,22 @@
     'use strict';
 
     // ==== UKURAN FONT LAYAR (ubah di sini untuk perbesar/perkecil) ====
-    const IQRO_SCREEN_FONT_SIZE = 34;   // sebelumnya 40 — font sel di layar
-    const IQRO_COMBO_FONT_SIZE  = 40;   // sebelumnya 44 — font sel combo di layar
+    const IQRO_SCREEN_FONT_SIZE = 34;   // font sel di layar
+    const IQRO_COMBO_FONT_SIZE  = 40;   // font sel combo di layar
     // ==================================================================
+
+    // Sel dengan jumlah token >= ambang ini dipecah jadi unit marking per kata.
+    // 2 = semua sel bersepasi dipecah. Naikkan bila ternyata ada halaman yang
+    // selnya harus tetap utuh meski bersepasi.
+    const IQRO_SPLIT_MIN_WORDS = 2;
+
+    // Token yang isinya HANYA pemisah / label / angka → dirender pasif
+    // (tidak bisa diklik, tidak terhitung sebagai unit kesalahan).
+    // Rentang 06D6–06DB (tanda waqaf), 06DD (۝), 06DE (۞) SENGAJA dibatasi:
+    // 06DC dan 06DF–06E8 adalah tanda COMBINING yang menempel ke huruf; kalau
+    // ikut diperlakukan sebagai token terpisah, sambungan huruf Arab putus.
+    const IQRO_SEP_ONLY_RE =
+        /^[\s\-–—._=←→⟨⟩○◯•\u06D6-\u06DB\u06DD\u06DE\u0660-\u0669\d]+$/;
 
     const IQRO_PDF_FONT_SIZE    = 50;
     const IQRO_PDF_CELL_HEIGHT  = 150;
@@ -163,13 +190,50 @@
         const isWaqaf = data.pola === 'waqaf';
         const titik   = (data.titik !== undefined) ? data.titik : '…';
 
-        const wordSpan = (txt) =>
-            '<span class="word-item" data-word="' + txt + '" data-mark-state="0" ' +
-            'onclick="markWord(this)" ' +
-            'style="display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;' +
-            'cursor:pointer;padding:6px 12px;border-radius:8px;min-height:100px;height:auto;line-height:1.5;text-align:center;box-sizing:border-box;' +
-            "font-family:'Amiri Quran','Amiri',serif;font-size:" + IQRO_SCREEN_FONT_SIZE + "px;color:var(--q-fg,#fff);" +
-            'transition:all 0.25s cubic-bezier(0.4,0,0.2,1);">' + txt + '</span>';
+        /** Satu potongan teks → token markable, atau span pasif bila pemisah. */
+        const tokenSpan = (raw) => {
+            if (IQRO_SEP_ONLY_RE.test(raw)) {
+                return '<span class="iqro-sep" style="opacity:.6;">' + raw + '</span>';
+            }
+            // display:inline WAJIB — inline-block/flex memutus alur teks Arab
+            // dan menghilangkan spasi antar kata saat baris membungkus.
+            return '<span class="word-item" data-word="' + raw + '" data-mark-state="0" ' +
+                'onclick="markWord(this)" ' +
+                'style="display:inline;cursor:pointer;border-radius:6px;padding:2px 4px;' +
+                'transition:background-color .25s ease;">' + raw + '</span>';
+        };
+
+        /**
+         * Wadah sel. Class .iqro-fit adalah PATOKAN AUTO-FIT — selalu ada,
+         * baik sel utuh maupun sel yang dipecah per kata.
+         */
+        const wordSpan = (txt) => {
+            const kata = String(txt).trim().split(/\s+/).filter(Boolean);
+
+            // ── Sel satu token: tetap satu unit marking (perilaku lama) ──
+            if (kata.length < IQRO_SPLIT_MIN_WORDS) {
+                return '<span class="word-item iqro-fit" data-word="' + txt + '" data-mark-state="0" ' +
+                    'onclick="markWord(this)" ' +
+                    'style="display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;' +
+                    'cursor:pointer;padding:6px 12px;border-radius:8px;min-height:100px;height:auto;line-height:1.5;text-align:center;box-sizing:border-box;' +
+                    "font-family:'Amiri Quran','Amiri',serif;font-size:" + IQRO_SCREEN_FONT_SIZE + "px;color:var(--q-fg,#fff);" +
+                    'transition:all 0.25s cubic-bezier(0.4,0,0.2,1);">' + txt + '</span>';
+            }
+
+            // ── Sel bersepasi: dipecah per kata ───────────────────────────
+            // Wadah tetap inline-flex supaya posisi vertikalnya sama dengan
+            // sel utuh, TAPI token dibungkus satu span block: kalau token jadi
+            // anak langsung flex container, tiap kata berubah jadi flex item
+            // dan alur teks Arab-nya hancur.
+            return '<span class="iqro-fit" ' +
+                'style="display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;' +
+                'padding:6px 12px;min-height:100px;height:auto;line-height:1.5;text-align:center;box-sizing:border-box;' +
+                "font-family:'Amiri Quran','Amiri',serif;font-size:" + IQRO_SCREEN_FONT_SIZE + "px;color:var(--q-fg,#fff);\">" +
+                    '<span class="iqro-tokens" style="display:block;text-align:center;">' +
+                        kata.map(tokenSpan).join(' ') +
+                    '</span>' +
+                '</span>';
+        };
 
         const bulatSpan = () =>
             '<span class="iqro-bulat" aria-label="isi waqaf" style="display:inline-block;width:34px;height:34px;' +
@@ -252,7 +316,7 @@
         const rowsHtml = data.baris.map(renderRow).join('');
 
         const comboCell = (txt) =>
-            '<span class="word-item iqro-combo-cell" data-word="' + txt + '" data-mark-state="0" ' +
+            '<span class="word-item iqro-fit iqro-combo-cell" data-word="' + txt + '" data-mark-state="0" ' +
             'onclick="markWord(this)" ' +
             'style="display:inline-flex;align-items:center;justify-content:center;' +
             'cursor:pointer;padding:0 12px;border-radius:8px;height:auto;min-height:100px;line-height:1.5;' +
@@ -287,9 +351,13 @@
 
     // ---- AUTO-FIT: kecilkan font baris yang kepanjangan; bila masih tak muat
     //      pada minFactor, izinkan teks membungkus (wrap) supaya TIDAK terpotong.
+    //
+    //      Yang diukur & diubah adalah WADAH sel (.iqro-fit), bukan token per
+    //      kata. Kalau per token, tiap kata pasti "muat" sendiri-sendiri dan
+    //      baris panjang tidak akan pernah disusutkan.
     function fitInnerToWidth(inner, minFactor, allowWrap) {
         minFactor = (typeof minFactor === 'number') ? minFactor : 0.5;
-        const cells = Array.from(inner.querySelectorAll('.word-item'));
+        const cells = Array.from(inner.querySelectorAll('.iqro-fit'));
         if (!cells.length) return;
         // reset dulu → baris yang muat kembali ke font penuh & nowrap
         cells.forEach(c => {
@@ -350,11 +418,13 @@
 
     function fitPageRowsScreen(container) {
         if (!container) return;
-        // Auto-fit layar DIMATIKAN. Sebelumnya font-size DI-REMOVE, padahal 44px
-        // dipasang sebagai INLINE STYLE di tiap .word-item → removeProperty membuat
+        // Auto-fit layar DIMATIKAN. Sebelumnya font-size DI-REMOVE, padahal
+        // dipasang sebagai INLINE STYLE di tiap sel → removeProperty membuat
         // font jatuh ke nilai warisan (~16px) = huruf mengecil.
         // FIX: set ulang ke ukuran penuh, jangan dihapus.
-        container.querySelectorAll('.iqro-row-inner .word-item').forEach(c => {
+        // Target .iqro-fit (wadah), bukan .word-item — setelah pemecahan per
+        // kata, .word-item adalah token yang fontnya diwarisi dari wadah.
+        container.querySelectorAll('.iqro-row-inner .iqro-fit').forEach(c => {
             c.style.setProperty('font-size', IQRO_SCREEN_FONT_SIZE + 'px', 'important');
         });
     }
@@ -764,10 +834,15 @@
                 // font-size 50px + nowrap !important menimpa opsi `fontSize`
                 // per-halaman Aisar → baris talqin meluber ke kiri lalu TERPOTONG
                 // di tepi canvas html2canvas.
-                '.iqro-cap .iqro-page:not(.aisar-page) .word-item { font-size:' + IQRO_PDF_FONT_SIZE + 'px !important; ' +
+                //
+                // Target .iqro-fit (WADAH sel), bukan .word-item: sel bersepasi kini
+                // dipecah jadi token per kata, dan token mewarisi font dari wadah.
+                // Kalau aturan ini mengenai token, padding & min-height berlaku
+                // per kata → tinggi baris di PDF jadi kacau.
+                '.iqro-cap .iqro-page:not(.aisar-page) .iqro-fit { font-size:' + IQRO_PDF_FONT_SIZE + 'px !important; ' +
                 'min-height:' + IQRO_PDF_CELL_HEIGHT + 'px !important; height:auto !important; line-height:' + IQRO_PDF_LINE_HEIGHT + ' !important; white-space:nowrap !important; ' +
                 'padding-bottom:' + IQRO_PDF_CELL_PADBOT + 'px !important; box-sizing:border-box !important; }' +
-                '.iqro-cap .iqro-page:not(.aisar-page) .word-item.iqro-combo-cell { font-size:' + IQRO_PDF_FONT_SIZE + 'px !important; ' +
+                '.iqro-cap .iqro-page:not(.aisar-page) .iqro-fit.iqro-combo-cell { font-size:' + IQRO_PDF_FONT_SIZE + 'px !important; ' +
                 'height:auto !important; min-height:' + IQRO_PDF_CELL_HEIGHT + 'px !important; ' +
                 'padding-bottom:' + IQRO_PDF_CELL_PADBOT + 'px !important; }' +
                 // ── AISAR PDF FIX: judul & basmallah "tenggelam" ke bawah ──
@@ -780,18 +855,13 @@
                 // ── AISAR: JANGAN paksa font-size & JANGAN paksa nowrap ───────
                 // Ukuran sudah ditentukan opsi `fontSize` per halaman + hasil
                 // aisarAutoFit (tersimpan sebagai inline style di tiap span).
-                // white-space dibiarkan mengikuti inline: halaman wrap = normal
-                // (boleh turun baris), halaman biasa = nowrap.
-                // min-height dilonggarkan agar baris wrap tidak jadi tinggi sekali.
-                '.iqro-cap .aisar-page .word-item { line-height:1.9 !important; padding-bottom:14px !important; max-width:100% !important; overflow:visible !important; }' +
+                '.iqro-cap .aisar-page .aisar-fit { line-height:1.9 !important; padding-bottom:14px !important; max-width:100% !important; overflow:visible !important; }' +
                 // Baris Aisar TIDAK boleh di-clip — teks yang meluber harus terlihat
                 // (dan akan turun baris sendiri karena white-space:normal).
                 '.iqro-cap .aisar-page .iqro-row-scroll { overflow:visible !important; }' +
                 '.iqro-cap .aisar-page .aisar-cell { overflow:visible !important; }' +
                 // FIX (Jilid 5 hal 21 dkk): flex min-width:auto membuat .iqro-row-inner MELAR
                 // mengikuti isi nowrap → clientWidth == scrollWidth → auto-fit mengira muat.
-                // min-width:0 mengunci lebar inner ke jatah kolomnya sehingga ukuran overflow
-                // terbaca benar dan font baris panjang benar-benar dikecilkan.
                 '.iqro-cap .iqro-row-inner { min-width:0 !important; }' +
                 '.iqro-cap .iqro-page:not(.aisar-page) .iqro-row-scroll { overflow:hidden !important; }';
             wrapper.appendChild(styleEl);
@@ -806,17 +876,11 @@
             await new Promise(r => setTimeout(r, 500));
 
             // Halaman Aisar punya struktur sendiri (tidak ada .iqro-row-inner),
-            // jadi fitPageRows TIDAK berpengaruh sama sekali di sana — itulah
-            // sebabnya baris panjang tidak pernah menyusut & terpotong di PDF.
-            // Untuk Aisar: ukur ulang dgn aisarAutoFit memakai lebar kotak clone
-            // yang sebenarnya (halaman wrap dibiarkan mengalir, halaman biasa
-            // fontnya disusutkan sampai muat).
+            // jadi fitPageRows TIDAK berpengaruh sama sekali di sana.
             if (clonePage.classList.contains('aisar-page') &&
                 typeof window.aisarAutoFit === 'function') {
                 window.aisarAutoFit(wrapper);
                 await new Promise(r => setTimeout(r, 120));
-                // Halaman pendek direnggangkan dulu sampai setinggi A4 supaya
-                // tidak ada area kosong besar setelah centering di kanvas A4.
                 stretchAisarPageToFill(clonePage, wrapper, Math.floor(RENDER_WIDTH * A4_RATIO));
                 await new Promise(r => setTimeout(r, 80));
             } else {
@@ -920,7 +984,7 @@
         });
         wrapCaptureForIqro();
 
-        console.log('✅ iqro-handler.js v4.6 (font layar ' + IQRO_SCREEN_FONT_SIZE + 'px, nav theme-aware, Aisar PDF full-height) ready');
+        console.log('✅ iqro-handler.js v4.8 (marking per kata, ambang ' + IQRO_SPLIT_MIN_WORDS + ' kata) ready');
     }
 
     // ==== SUMBER DATA PER METODE (Iqro / Aisar) ====

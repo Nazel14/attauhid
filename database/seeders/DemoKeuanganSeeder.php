@@ -114,23 +114,47 @@ class DemoKeuanganSeeder extends Seeder
     private function tarif(): array
     {
         $daftar = [
-            'spp_reguler' => ['billing_name' => 'SPP Bulanan Reguler',      'nominal' => 350000,  'target_student_type' => 'Reguler', 'period' => 'Bulanan'],
-            'spp_fullday' => ['billing_name' => 'SPP Bulanan Fullday',      'nominal' => 500000,  'target_student_type' => 'Fullday', 'period' => 'Bulanan'],
-            'pangkal'     => ['billing_name' => 'Uang Pangkal Santri Baru', 'nominal' => 2500000, 'target_student_type' => 'All',     'period' => 'Sekali Bayar'],
-            'infaq'       => ['billing_name' => 'Infaq Pembangunan Asrama', 'nominal' => 1000000, 'target_student_type' => 'Donasi',  'period' => 'Sekali Bayar'],
+            'spp_reguler' => [
+                'kolom'  => ['billing_name' => 'SPP Bulanan Reguler', 'nominal' => 350000, 'period' => 'Bulanan'],
+                'target' => [['student_type', 'Reguler']],
+            ],
+            'spp_fullday' => [
+                'kolom'  => ['billing_name' => 'SPP Bulanan Fullday', 'nominal' => 500000, 'period' => 'Bulanan'],
+                'target' => [['student_type', 'Fullday']],
+            ],
+            'pangkal' => [
+                // Tanpa aturan target — menjaring seluruh santri aktif.
+                'kolom'  => ['billing_name' => 'Uang Pangkal Santri Baru', 'nominal' => 2500000, 'period' => 'Sekali Bayar'],
+                'target' => [],
+            ],
+            'infaq' => [
+                'kolom'  => ['billing_name' => 'Infaq Pembangunan Asrama', 'nominal' => 1000000, 'period' => 'Sekali Bayar', 'is_donation' => 1],
+                'target' => [],
+            ],
         ];
 
         $ids = [];
 
         foreach ($daftar as $kunci => $d) {
-            $id = DB::table('tariffs')->where('billing_name', $d['billing_name'])->value('id');
+            $id = DB::table('tariffs')->where('billing_name', $d['kolom']['billing_name'])->value('id');
 
             if (! $id) {
-                $id = DB::table('tariffs')->insertGetId($d + [
-                    'is_active'  => 1,
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                $id = DB::table('tariffs')->insertGetId($d['kolom'] + [
+                    'is_active'   => 1,
+                    'is_donation' => 0,
+                    'created_at'  => now(),
+                    'updated_at'  => now(),
                 ]);
+
+                foreach ($d['target'] as [$tipe, $nilai]) {
+                    DB::table('tariff_targets')->insert([
+                        'tariff_id'    => $id,
+                        'target_type'  => $tipe,
+                        'target_value' => $nilai,
+                        'created_at'   => now(),
+                        'updated_at'   => now(),
+                    ]);
+                }
             }
 
             $ids[$kunci] = $id;
