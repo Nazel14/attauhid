@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import {
     RadialBarChart, RadialBar, PolarAngleAxis,
     PieChart, Pie, Cell,
@@ -22,6 +22,8 @@ const LayersIcon= (p) => <I {...p} d={<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10
 const InfoIcon  = (p) => <I {...p} d={<path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />} />;
 const TrendIcon = (p) => <I {...p} d={<path d="M3 17l6-6 4 4 8-8m0 0h-5m5 0v5" />} />;
 const ChartIcon = (p) => <I {...p} d={<path d="M3 3v18h18M9 17V9m4 8V5m4 12v-6" />} />;
+const WalletIcon= (p) => <I {...p} d={<path d="M3 10h18M7 15h.01M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />} />;
+const ArrowIcon = (p) => <I {...p} d={<path d="M13 7l5 5m0 0l-5 5m5-5H6" />} />;
 
 /* ============================================================
  * KONSTANTA
@@ -153,10 +155,56 @@ function CardHead({ icon, title, hint }) {
     );
 }
 
+/* Kartu tunggakan — hanya muncul bila modul keuangan aktif DAN masih ada
+   tagihan. Wali yang sudah lunas tidak perlu diingatkan soal uang setiap
+   kali membuka dashboard. */
+function KartuTagihan({ data }) {
+    if (!data || (data.jumlah ?? 0) === 0) return null;
+
+    const rp = (v) => 'Rp ' + Number(v ?? 0).toLocaleString('id-ID');
+    const fmt = (d) => { try { return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }); } catch { return d; } };
+    const lewat = data.terdekat?.lewat ?? false;
+    const href = (() => { try { return route('santri.keuangan.index'); } catch { return null; } })();
+
+    return (
+        <div className={`mb-5 rounded-2xl p-4 sm:p-5 ring-1 ${lewat ? 'bg-red-50/70 dark:bg-red-500/5 ring-red-100 dark:ring-red-500/20' : 'bg-claude-50/70 dark:bg-claude-500/5 ring-claude-200 dark:ring-claude-500/20'}`}>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                    <span className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${lewat ? 'bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400' : 'bg-claude-100 dark:bg-claude-500/15 text-claude-600 dark:text-claude-400'}`}>
+                        <WalletIcon className="w-5 h-5" />
+                    </span>
+                    <div className="min-w-0">
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">
+                            Tunggakan · {data.jumlah} tagihan
+                        </p>
+                        <p className={`text-xl sm:text-2xl font-bold tracking-tight leading-tight tabular-nums ${lewat ? 'text-red-600 dark:text-red-400' : 'text-claude-600 dark:text-claude-400'}`}>
+                            {rp(data.total)}
+                        </p>
+                        {data.terdekat && (
+                            <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5 truncate">
+                                {lewat ? 'Lewat tempo' : 'Jatuh tempo'} {fmt(data.terdekat.jatuh_tempo)} — {data.terdekat.judul}
+                            </p>
+                        )}
+                    </div>
+                </div>
+
+                {href && (
+                    <Link
+                        href={href}
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 text-xs font-semibold text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-coal-700 transition active:scale-95"
+                    >
+                        Lihat Detail <ArrowIcon className="w-3.5 h-3.5" />
+                    </Link>
+                )}
+            </div>
+        </div>
+    );
+}
+
 /* ============================================================
  * HALAMAN
  * ============================================================ */
-export default function Dashboard({ santris = [], tahunAjaranAktif = null, message }) {
+export default function Dashboard({ santris = [], tahunAjaranAktif = null, tagihan = null, message }) {
     const list = Array.isArray(santris) ? santris : [];
     const santriName = list[0]?.name ?? 'Santri';
 
@@ -184,6 +232,8 @@ export default function Dashboard({ santris = [], tahunAjaranAktif = null, messa
                         </span>
                     )}
                 </div>
+
+                <KartuTagihan data={tagihan} />
 
                 {list.length === 0 ? (
                     <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl py-16 text-center">

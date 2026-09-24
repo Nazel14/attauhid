@@ -32,6 +32,13 @@ Route::get('/dashboard', function () {
         return redirect()->route('login');
     }
 
+    // Pengguna eksternal tidak mengenal konsep panel. Dicek paling awal
+    // supaya session modul_aktif dari login tidak pernah membelokkan
+    // mereka ke panel internal.
+    if ($user->isEksternal()) {
+        return redirect()->route('santri.dashboard');
+    }
+
     $modules = $user->availableModules();
 
     // Panel yang dipilih di halaman login. Dihormati lebih dulu supaya
@@ -50,7 +57,6 @@ Route::get('/dashboard', function () {
         $target = match ($user->role) {
             'admin', 'super-admin' => 'admin.dashboard',
             'guru'                 => 'guru.dashboard',
-            'santri'               => 'santri.dashboard',
             default                => null,
         };
 
@@ -111,6 +117,10 @@ if (config('modules.raport')) {
 if (config('modules.keuangan')) {
     require __DIR__.'/keuangan.php';
 }
+
+// Portal eksternal (wali/santri) — di luar gerbang modul, karena
+// wali tetap perlu akses meski salah satu modul dimatikan.
+require __DIR__.'/portal.php';
 
 /* --------------------------------------
  * 3. SERVE STORAGE FILES (Alternative to symlink)

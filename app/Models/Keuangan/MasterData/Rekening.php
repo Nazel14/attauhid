@@ -16,11 +16,25 @@ class Rekening extends Model
     // Laravel 12+, tidak ada di Laravel 11.
     protected $table = 'accounts';
 
-    protected $fillable = ['account_name', 'type', 'balance'];
+    protected $fillable = [
+        'account_name', 'type', 'balance',
+        'account_number', 'account_holder', 'qris_path', 'is_public', 'catatan_bayar',
+    ];
 
     protected $casts = [
-        'balance' => 'decimal:2',
+        'balance'   => 'decimal:2',
+        'is_public' => 'boolean',
     ];
+
+    /**
+     * Rekening yang boleh ditampilkan di portal wali.
+     * Default kolomnya false, jadi rekening operasional internal tidak
+     * ikut terbuka hanya karena fiturnya ditambahkan.
+     */
+    public function scopePublik($query)
+    {
+        return $query->where('is_public', true);
+    }
 
     public function pemasukan(): HasMany
     {

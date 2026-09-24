@@ -4,9 +4,6 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
-// --- Imports Controller Root ---
-use App\Http\Controllers\SantriController;
-
 // --- Imports Controller Admin ---
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\GuruController as AdminGuruController;
@@ -383,29 +380,9 @@ return response()->json($result);
 });
 
 /* --------------------------------------
- * 3. Rute SANTRI
+ * 3. Rute SANTRI → dipindah ke routes/portal.php
+ *    Portal eksternal berdiri di luar gerbang modul.
  * -------------------------------------- */
-Route::middleware(['auth', 'role:santri'])->prefix('santri')->name('santri.')->group(function () {
-    Route::get('/dashboard', [SantriController::class, 'dashboard'])->name('dashboard');
-    Route::get('/rapot', [SantriController::class, 'rapotShow'])->name('rapot.show');
-    Route::get('/rapot/pdf', [SantriController::class, 'downloadRapotPdf'])->name('rapot.pdf');
-    Route::get('/setorans', [SantriController::class, 'setorans'])->name('setorans.detail');
-    Route::get('/presensis', [SantriController::class, 'presensis'])->name('presensis.detail');
-    Route::get('/setorans/{setoran}/audio', [SantriController::class, 'getSetoranAudio'])->name('setorans.audio');
-    Route::get('/setorans/{setoran}/pdf', [SantriController::class, 'getSetoranPdf'])->name('setorans.pdf');
-
-    // Komplain / Laporan Data
-    Route::prefix('laporan')->name('laporan.')->controller(\App\Http\Controllers\LaporanController::class)->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::post('/', 'store')->name('store');
-        Route::get('/{laporan}', 'show')->whereNumber('laporan')->name('show');
-        Route::post('/{laporan}/balas', 'reply')->whereNumber('laporan')->name('reply');
-        Route::post('/{laporan}/selesai', 'selesai')->whereNumber('laporan')->name('selesai');
-        Route::delete('/{laporan}', 'destroy')->whereNumber('laporan')->name('destroy');
-        Route::put('/{laporan}/pesan/{pesan}', 'updatePesan')->whereNumber('laporan')->whereNumber('pesan')->name('pesan.update');
-        Route::delete('/{laporan}/pesan/{pesan}', 'destroyPesan')->whereNumber('laporan')->whereNumber('pesan')->name('pesan.destroy');
-    });
-});
 
 /* --------------------------------------
  * 4. API Routes (Internal AJAX/Fetch)

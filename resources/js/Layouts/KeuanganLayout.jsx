@@ -113,6 +113,12 @@ export default function KeuanganLayout({ children }) {
 
     const roleAktif = ROLE_PRIORITAS.find(punyaRole);
 
+    // Rute Pengaturan Sistem digembok 'role:super-admin', bukan permission —
+    // dan tabel permissions memang tidak punya baris 'sistem.*'. Kalau menunya
+    // ikut disaring permission, ia hilang selamanya padahal halamannya sendiri
+    // terbuka. Syarat menu harus sama dengan syarat rutenya.
+    const isSuperAdmin = punyaRole('super-admin');
+
     const roleLabel =
         roleAktif ? ROLE_LABEL[roleAktif]
         // Dua nama diterima di tiap baris: penamaan seeder saat ini dan
@@ -210,8 +216,14 @@ export default function KeuanganLayout({ children }) {
         .map((g) => ({
             ...g,
             items: g.items.filter((i) => {
+                if (! has(i.name)) return false;
+
+                // Grup pengaturan: super-admin selalu boleh, apa pun isi
+                // tabel permissions. Lihat catatan di atas.
+                if (g.key === 'pengaturan') return isSuperAdmin;
+
                 const daftarPerm = Array.isArray(i.perm) ? i.perm : [i.perm];
-                return daftarPerm.some(can) && has(i.name);
+                return daftarPerm.some(can);
             }),
         }))
         .filter((g) => g.items.length > 0);

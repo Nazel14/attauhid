@@ -48,17 +48,15 @@ class AuthenticatedSessionController extends Controller
     {
         $modulTersedia = $this->modulAktif();
 
+        // 'modul' dibuat nullable di sini karena wajib-tidaknya baru bisa
+        // diputuskan setelah tahu siapa usernya: role eksternal (wali/santri)
+        // tidak mengenal panel. Pengecekan wajibnya ada di bawah.
         $request->validate([
             'name'     => ['required', 'string'],
             'password' => ['required', 'string'],
-            // Menentukan tujuan setelah login, bukan lapis keamanan —
-            // penjaga sebenarnya tetap RoleMiddleware di tiap route.
-            // 'in' dibuat dinamis dari config, bukan hardcode 'raport,keuangan',
-            // supaya modul yang dimatikan di .env tidak bisa dipaksa lewat request manual.
-            'modul'    => ['required', 'in:' . implode(',', $modulTersedia)],
+            'modul'    => ['nullable', 'in:' . implode(',', $modulTersedia)],
         ], [
-            'modul.required' => 'Pilih dulu panel yang ingin dibuka.',
-            'modul.in'       => 'Panel yang dipilih sedang tidak aktif di sistem ini.',
+            'modul.in' => 'Panel yang dipilih sedang tidak aktif di sistem ini.',
         ]);
 
         $name     = $request->input('name');
@@ -80,10 +78,20 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
+        // Wali/santri: apa pun tab yang tersentuh di form, diabaikan.
+        // Mereka punya satu tujuan, yaitu portal.
+        if ($user->isEksternal()) {
+            $modul = null;
+        } elseif (!$modul) {
+            throw ValidationException::withMessages([
+                'modul' => 'Pilih dulu panel yang ingin dibuka.',
+            ]);
+        }
+
         // Diperiksa sebelum Auth::login supaya tidak perlu login lalu logout.
         $tersedia = $user->availableModules();
 
-        if (!in_array($modul, $tersedia, true)) {
+        if (!$user->isEksternal() && !in_array($modul, $tersedia, true)) {
             $label = $modul === 'keuangan' ? 'Laporan Keuangan' : 'Tahfizh';
 
             throw ValidationException::withMessages([
@@ -100,7 +108,9 @@ class AuthenticatedSessionController extends Controller
         // Dipakai /dashboard untuk memilih panel. Disimpan di session, bukan
         // langsung redirect, supaya logika tujuan raport (admin/guru/santri)
         // tetap satu tempat.
-        $request->session()->put('modul_aktif', $modul);
+        // Untuk user eksternal, nilainya 'portal' — bukan nama modul,
+        // supaya /dashboard maupun /pindah-modul tidak salah baca.
+        $request->session()->put('modul_aktif', $modul ?? 'portal');    
 
         try {
             $displayRole = $user->role;

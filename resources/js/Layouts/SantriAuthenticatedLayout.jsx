@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/react';
 import LogoutButton from '@/Components/LogoutButton';
 import AppLogo from '@/Components/AppLogo';
 import LaporanNotifier from '@/Components/LaporanNotifier';
+import TombolInstall from '@/Components/TombolInstall';
 
 
 
@@ -84,6 +85,7 @@ export default function SantriAuthenticatedLayout({ header, children }) {
         presensi: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
         profil: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
         komplain: 'M3 3v18M3 4.5h12.75l-2.25 3 2.25 3H3',
+        keuangan: 'M3 10h18M7 15h.01M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z',
     };
 
     // route() aman — kalau nama route belum ada, item disembunyikan (hindari blank page)
@@ -98,6 +100,13 @@ export default function SantriAuthenticatedLayout({ header, children }) {
         { href: r('santri.setorans.detail'), label: 'Detail Setoran',  icon: I.setoran,  active: cur('santri.setorans.*') },
         { href: r('santri.presensis.detail'),label: 'Detail Presensi', icon: I.presensi, active: cur('santri.presensis.*') },
         { href: r('santri.laporan.index'),   label: 'Komplain Data',   icon: I.komplain, active: cur('santri.laporan.*'), badge: unreadLaporan },
+    ].filter((m) => m.href);
+
+    // Route keuangan hanya terdaftar bila MODULE_KEUANGAN aktif, sehingga
+    // r() mengembalikan null dan menunya hilang sendiri di instalasi yang
+    // hanya memakai modul raport — tanpa perlu prop modul tambahan.
+    const keuangan = [
+        { href: r('santri.keuangan.index'), label: 'Tagihan & Pembayaran', icon: I.keuangan, active: cur('santri.keuangan.*') },
     ].filter((m) => m.href);
 
     const akun = [
@@ -153,6 +162,17 @@ export default function SantriAuthenticatedLayout({ header, children }) {
                     <NavItem key={m.label} href={m.href} active={m.active} icon={m.icon} onClick={closeNav} collapsed={isMini} badge={m.badge || 0}>{m.label}</NavItem>
                 ))}
 
+                {keuangan.length > 0 && (
+                    <>
+                        {isMini ? <div className="mx-2 my-2 h-px bg-cream-300 dark:bg-coal-600" /> : (
+                            <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-600">Keuangan</p>
+                        )}
+                        {keuangan.map((m) => (
+                            <NavItem key={m.label} href={m.href} active={m.active} icon={m.icon} onClick={closeNav} collapsed={isMini}>{m.label}</NavItem>
+                        ))}
+                    </>
+                )}
+
                 {akun.length > 0 && (
                     <>
                         {isMini ? <div className="mx-2 my-2 h-px bg-cream-300 dark:bg-coal-600" /> : (
@@ -169,6 +189,7 @@ export default function SantriAuthenticatedLayout({ header, children }) {
             <div className={`space-y-3 border-t border-cream-300 py-3 dark:border-coal-600 ${isMini ? 'px-2' : 'px-3'}`}>
                 {isMini ? (
                     <div className="flex flex-col items-center gap-2">
+                        <TombolInstall mini />
                         {/* Ikon menunjukkan tema yang SEDANG aktif, bukan aksinya —
                             supaya sama dengan baris "Dark Mode / Light Mode" di
                             sidebar lebar. Sebelumnya terbalik: mode gelap justru
@@ -198,6 +219,8 @@ export default function SantriAuthenticatedLayout({ header, children }) {
                     </div>
                 ) : (
                     <>
+                        <TombolInstall />
+
                         <div className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-stone-500 dark:text-stone-400">
                             <span className="flex items-center gap-2 font-medium">
                                 {dark ? (

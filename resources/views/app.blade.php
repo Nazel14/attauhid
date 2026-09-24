@@ -28,6 +28,14 @@
         {{-- Ziggy --}}
         @routes
 
+                {{-- PWA --}}
+        <link rel="manifest" href="/manifest.json">
+        <meta name="theme-color" content="#d97757">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="default">
+        <meta name="apple-mobile-web-app-title" content="Tahfizh">
+        <link rel="apple-touch-icon" href="/icons/icon-192.png">
+
         {{-- React + Inertia entry --}}
         @viteReactRefresh
         @vite(['resources/js/app.jsx', "resources/js/Pages/{$page['component']}.jsx"])
@@ -35,5 +43,17 @@
     </head>
     <body class="font-sans antialiased bg-cream-50 dark:bg-coal-800">
         @inertia
+                <script>
+            // Service worker hanya jalan di HTTPS (localhost dikecualikan).
+            // Di http:// biasa, navigator.serviceWorker tidak ada sama sekali,
+            // jadi pengecekan ini juga mencegah error di konsol.
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function () {
+                    navigator.serviceWorker.register('/sw.js').catch(function () {
+                        // Gagal daftar bukan masalah — situs tetap jalan normal.
+                    });
+                });
+            }
+        </script>
     </body>
 </html>

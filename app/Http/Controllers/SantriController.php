@@ -234,6 +234,58 @@ class SantriController extends Controller
     }
 
     /**
+     * Ringkasan tagihan untuk kartu di dashboard.
+     *
+     * Modul keuangan bisa dimatikan, jadi kelasnya dirujuk lewat string dan
+     * dicek dulu — tanpa itu, instalasi yang hanya memakai raport akan fatal
+     * error karena model keuangannya tidak pernah ter-autoload.
+     *
+     * Aturan mainnya sama dengan Portal\KeuanganController: hanya tagihan
+     * yang header-nya sudah Published/Closed yang boleh terlihat wali.
+     */
+    private function ringkasanTagihan(Santri $santri): ?array
+    {
+        if (! config('modules.keuangan')) {
+            return null;
+        }
+
+        $kelas = \App\Models\Keuangan\Inbound\Tagihan::class;
+
+        if (! class_exists($kelas)) {
+            return null;
+        }
+
+        $belum = $kelas::where('student_id', $santri->id)
+            ->where('status', '!=', 'Paid')
+            ->where(function ($q) {
+                $q->whereDoesntHave('header')
+                  ->orWhereHas('header', fn ($h) => $h->whereIn('status', ['Published', 'Closed']));
+            })
+            ->with('header:id,title,due_date')
+            ->get();
+
+        if ($belum->isEmpty()) {
+            return ['total' => 0, 'jumlah' => 0, 'terdekat' => null];
+        }
+
+        $terdekat = $belum
+            ->filter(fn ($t) => $t->header?->due_date)
+            ->sortBy(fn ($t) => $t->header->due_date)
+            ->first();
+
+        return [
+            'total'    => (float) $belum->sum('remaining_balance'),
+            'jumlah'   => $belum->count(),
+            'terdekat' => $terdekat ? [
+                'judul'       => $terdekat->header?->title ?? 'Tagihan',
+                'sisa'        => (float) $terdekat->remaining_balance,
+                'jatuh_tempo' => $terdekat->header->due_date->format('Y-m-d'),
+                'lewat'       => $terdekat->header->due_date->isPast(),
+            ] : null,
+        ];
+    }
+
+    /**
      * Dashboard Santri
      */
     public function dashboard()
@@ -308,6 +360,7 @@ class SantriController extends Controller
         return Inertia::render('Santri/Dashboard', [
             'santris'          => [$santri],
             'tahunAjaranAktif' => $tahunAjaranAktif,
+            'tagihan'          => $this->ringkasanTagihan($santri),
         ]);
     }
 

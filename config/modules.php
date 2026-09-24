@@ -38,6 +38,42 @@ return [
 
     /*
     |----------------------------------------------------------------------
+    | Role Eksternal (Portal Wali/Santri)
+    |----------------------------------------------------------------------
+    | Pengguna di luar pesantren. Berbeda dari role internal dalam dua hal:
+    |
+    |   1. Tidak memilih panel saat login. Bagi wali, hafalan dan tagihan
+    |      anaknya adalah satu urusan yang sama — pemisahan raport/keuangan
+    |      itu cara sistem membagi pekerjaan staf, bukan cara orang tua
+    |      memandang anaknya.
+    |   2. Portalnya berdiri di luar gerbang modul (routes/portal.php),
+    |      supaya wali tetap bisa masuk meski salah satu modul dimatikan.
+    |      Yang menyesuaikan adalah isi menunya, bukan seluruh portalnya.
+    |
+    | Setiap role di sini harus juga ada di 'roles_terkunci' di bawah,
+    | karena namanya dipakai sebagai string literal oleh gerbang 'role:'
+    | di routes/portal.php.
+    */
+
+    'role_eksternal' => [
+        'santri',
+    ],
+
+    /*
+    |----------------------------------------------------------------------
+    | Nomor WhatsApp Admin Keuangan
+    |----------------------------------------------------------------------
+    | Tujuan tombol "Konfirmasi Pembayaran" di portal wali. Format 62,
+    | tanpa tanda plus dan tanpa spasi — itu yang diterima wa.me.
+    |
+    | Dikosongkan bila pesantren tidak melayani konfirmasi lewat WhatsApp;
+    | tombolnya otomatis tidak dirender, bukan mengarah ke nomor kosong.
+    */
+
+    'wa_admin' => env('WA_ADMIN', null),
+
+    /*
+    |----------------------------------------------------------------------
     | Role Modul Keuangan
     |----------------------------------------------------------------------
     | Himpunan role yang boleh masuk dan boleh dikelola dari panel keuangan.

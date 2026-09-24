@@ -132,6 +132,15 @@ class User extends Authenticatable
         return $modules;
     }
 
+    /**
+     * Pengguna luar pesantren (wali/santri). Tidak memilih panel saat
+     * login dan tidak boleh menyentuh rute internal.
+     */
+    public function isEksternal(): bool
+    {
+        return in_array($this->role, config('modules.role_eksternal', []), true);
+    }
+
     public function isSuperAdmin(): bool
     {
         return $this->hasRole('super-admin');

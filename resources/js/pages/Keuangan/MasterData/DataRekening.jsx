@@ -25,11 +25,20 @@ export default function DataRekening({ rekening, filters }) {
     const [deleteId, setDeleteId] = useState(null);
     const [deleteError, setDeleteError] = useState('');
 
-    const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
+    const { data, setData, processing, errors, reset, clearErrors } = useForm({
         account_name: '',
         type: 'Bank',
         balance: '',
+        account_number: '',
+        account_holder: '',
+        catatan_bayar: '',
+        is_public: false,
+        qris: null,        // File baru yang diunggah
+        hapus_qris: false, // Menandai QRIS lama dihapus tanpa diganti
     });
+
+    // Path QRIS yang tersimpan, untuk pratinjau saat edit.
+    const [qrisLama, setQrisLama] = useState(null);
 
     // Lewati render pertama — versi asli mengirim request duplikat
     // setiap kali halaman dibuka.
@@ -60,11 +69,22 @@ export default function DataRekening({ rekening, filters }) {
             : <svg className="ml-1 h-3.5 w-3.5 text-claude-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>;
     };
 
-    const openAddModal = () => { setIsEditing(false); setEditId(null); reset(); clearErrors(); setIsModalOpen(true); };
+    const openAddModal = () => { setIsEditing(false); setEditId(null); reset(); clearErrors(); setQrisLama(null); setIsModalOpen(true); };
 
     const openEditModal = (item) => {
         setIsEditing(true); setEditId(item.id); clearErrors();
-        setData({ account_name: item.account_name, type: item.type, balance: Math.floor(item.balance).toString() });
+        setData({
+            account_name:   item.account_name,
+            type:           item.type,
+            balance:        Math.floor(item.balance).toString(),
+            account_number: item.account_number || '',
+            account_holder: item.account_holder || '',
+            catatan_bayar:  item.catatan_bayar || '',
+            is_public:      Boolean(item.is_public),
+            qris:           null,
+            hapus_qris:     false,
+        });
+        setQrisLama(item.qris_path || null);
         setIsModalOpen(true);
     };
 
@@ -80,9 +100,25 @@ export default function DataRekening({ rekening, filters }) {
 
     const submit = (e) => {
         e.preventDefault();
-        const opts = { onSuccess: () => { setIsModalOpen(false); reset(); }, preserveScroll: true };
-        if (isEditing) put(route('keuangan.master-data.rekening.update', editId), opts);
-        else post(route('keuangan.master-data.rekening.store'), opts);
+
+        // router.post + forceFormData, bukan put(): PHP tidak membaca berkas
+        // dari request PUT, jadi method-nya di-spoof lewat field _method.
+        const payload = {
+            ...data,
+            is_public:  data.is_public ? 1 : 0,
+            hapus_qris: data.hapus_qris ? 1 : 0,
+            ...(isEditing ? { _method: 'put' } : {}),
+        };
+
+        const url = isEditing
+            ? route('keuangan.master-data.rekening.update', editId)
+            : route('keuangan.master-data.rekening.store');
+
+        router.post(url, payload, {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => { setIsModalOpen(false); reset(); setQrisLama(null); },
+        });
     };
 
     const typeStyles = (type) => ({
@@ -307,6 +343,84 @@ export default function DataRekening({ rekening, filters }) {
                                 <InputError message={errors.balance} className="mt-1.5" />
                             </div>
                         </div>
+
+                        {/* ===== INFO PEMBAYARAN UNTUK WALI ===== */}
+                        {data.type !== 'Tunai' && (
+                            <div className="rounded-xl bg-cream-50 p-4 ring-1 ring-stone-200 dark:bg-coal-800 dark:ring-coal-600">
+                                <p className="text-sm font-semibold text-stone-700 dark:text-cream-100">Info Pembayaran</p>
+                                <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
+                                    Ditampilkan di portal wali santri bila diaktifkan di bawah.
+                                </p>
+
+                                <div className="mt-4 space-y-4">
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                        <div>
+                                            <InputLabel htmlFor="account_number">Nomor Rekening / Akun</InputLabel>
+                                            <TextInput id="account_number" value={data.account_number}
+                                                onChange={(e) => setData('account_number', e.target.value)}
+                                                className="mt-1.5 block w-full" placeholder="7123456789" />
+                                            <InputError message={errors.account_number} className="mt-1.5" />
+                                        </div>
+                                        <div>
+                                            <InputLabel htmlFor="account_holder">Atas Nama</InputLabel>
+                                            <TextInput id="account_holder" value={data.account_holder}
+                                                onChange={(e) => setData('account_holder', e.target.value)}
+                                                className="mt-1.5 block w-full" placeholder="Yayasan Attauhid" />
+                                            <InputError message={errors.account_holder} className="mt-1.5" />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <InputLabel htmlFor="qris">Gambar QRIS</InputLabel>
+
+                                        {(qrisLama && !data.hapus_qris && !data.qris) && (
+                                            <div className="mt-2 flex items-center gap-3">
+                                                <img src={`/storage/${qrisLama}`} alt="QRIS tersimpan"
+                                                    className="h-20 w-20 rounded-lg bg-white object-contain ring-1 ring-stone-200 dark:ring-coal-600" />
+                                                <button type="button" onClick={() => setData('hapus_qris', true)}
+                                                    className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-600 ring-1 ring-red-200 transition hover:bg-red-50 dark:text-red-400 dark:ring-red-500/20 dark:hover:bg-red-500/10">
+                                                    Hapus QRIS
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {data.hapus_qris && (
+                                            <p className="mt-2 text-xs text-red-500">
+                                                QRIS akan dihapus saat disimpan.{' '}
+                                                <button type="button" onClick={() => setData('hapus_qris', false)} className="underline">Batalkan</button>
+                                            </p>
+                                        )}
+
+                                        <input id="qris" type="file" accept="image/*"
+                                            onChange={(e) => { setData('qris', e.target.files[0] || null); setData('hapus_qris', false); }}
+                                            className="mt-2 block w-full text-xs text-stone-600 file:mr-3 file:rounded-lg file:border-0 file:bg-claude-500 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-claude-600 dark:text-stone-300" />
+                                        <p className="mt-1 text-xs text-stone-400">JPG/PNG/WebP, maksimal 2 MB.</p>
+                                        <InputError message={errors.qris} className="mt-1.5" />
+                                    </div>
+
+                                    <div>
+                                        <InputLabel htmlFor="catatan_bayar">Catatan untuk Wali</InputLabel>
+                                        <TextInput id="catatan_bayar" value={data.catatan_bayar}
+                                            onChange={(e) => setData('catatan_bayar', e.target.value)}
+                                            className="mt-1.5 block w-full" placeholder="Mohon transfer sesuai nominal tertera." />
+                                        <InputError message={errors.catatan_bayar} className="mt-1.5" />
+                                    </div>
+
+                                    <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-white p-3 ring-1 ring-stone-200 dark:bg-coal-900 dark:ring-coal-600">
+                                        <input type="checkbox" checked={data.is_public}
+                                            onChange={(e) => setData('is_public', e.target.checked)}
+                                            className="mt-0.5 h-4 w-4 rounded border-stone-300 text-claude-500 focus:ring-claude-500" />
+                                        <span className="min-w-0">
+                                            <span className="block text-sm font-medium text-stone-700 dark:text-cream-100">Tampilkan di portal wali</span>
+                                            <span className="block text-xs text-stone-500 dark:text-stone-400">
+                                                Nomor rekening dan QRIS di atas akan terlihat oleh seluruh wali santri
+                                                yang masih punya tagihan. Saldo rekening tidak ikut ditampilkan.
+                                            </span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="mt-6 flex justify-end gap-2">
