@@ -37,7 +37,16 @@ export default function TombolInstall({ mini = false }) {
         window.addEventListener('beforeinstallprompt', onPrompt);
         window.addEventListener('appinstalled', () => setTampil(false));
 
-        return () => window.removeEventListener('beforeinstallprompt', onPrompt);
+        // Chrome menahan `beforeinstallprompt` sampai ia menganggap pengguna
+        // cukup berinteraksi — kadang baru di kunjungan kedua. Tanpa cadangan
+        // ini, tombolnya seolah tidak pernah ada. Setelah 3 detik tombol tetap
+        // ditampilkan, hanya saja isinya petunjuk manual.
+        const timer = setTimeout(() => setTampil(true), 3000);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', onPrompt);
+            clearTimeout(timer);
+        };
     }, []);
 
     if (!tampil) return null;
@@ -53,7 +62,14 @@ export default function TombolInstall({ mini = false }) {
             return;
         }
 
-        if (!prompt) return;
+        if (!prompt) {
+            alert(
+                'Untuk memasang aplikasi:\n\n' +
+                '1. Ketuk menu tiga titik di pojok browser\n' +
+                '2. Pilih "Tambahkan ke Layar Utama" atau "Install app"'
+            );
+            return;
+        }
 
         prompt.prompt();
         const { outcome } = await prompt.userChoice;
