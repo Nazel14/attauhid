@@ -143,7 +143,7 @@ class KeuanganController extends Controller
                 'id'      => $r->id,
                 'nama'    => $r->account_name,
                 'tipe'    => $r->type,
-                'nomor'   => $r->account_number,
+                'nomor'   => filled(trim((string) $r->account_number, " -–—")) ? $r->account_number : null,
                 'pemilik' => $r->account_holder,
                 'qris'    => $r->qris_path ? '/storage/' . $r->qris_path : null,
                 'catatan' => $r->catatan_bayar,

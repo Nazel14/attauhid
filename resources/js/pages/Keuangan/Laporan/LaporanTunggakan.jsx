@@ -15,7 +15,7 @@ const METODE = ['WhatsApp', 'Telepon', 'Surat Peringatan', 'Lainnya'];
 
 const tanggal = (s) => (s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-');
 
-export default function LaporanTunggakan({ tunggakan, listSiswa, ringkas, filters }) {
+export default function LaporanTunggakan({ tunggakan, listSiswa, ringkas, filters, rekeningBayar = [] }) {
     const { auth } = usePage().props;
     const can = (p) => (auth.permissions || []).includes(p);
 
@@ -82,19 +82,75 @@ export default function LaporanTunggakan({ tunggakan, listSiswa, ringkas, filter
         setIsTagih(true);
     };
 
-    const kirimWa = (item) => {
-        const nomor = (item.siswa?.parent_contact || '').replace(/\D/g, '').replace(/^0/, '62');
+    /** Normalisasi ke format internasional: 0812… → 62812…, +62 → 62. */
+    const nomorWa = (raw) => {
+        const angka = (raw || '').replace(/\D/g, '');
+        if (!angka) return '';
+        if (angka.startsWith('62')) return angka;
+        if (angka.startsWith('0')) return '62' + angka.slice(1);
+        return '62' + angka;
+    };
 
+    /** Sudah ditagih hari ini? Dipakai untuk rem, bukan larangan. */
+    const ditagihHariIni = (item) => {
+        const log = item.riwayat_penagihans?.[item.riwayat_penagihans.length - 1];
+        if (!log) return false;
+        return new Date(log.tanggal_penagihan).toDateString() === new Date().toDateString();
+    };
+
+    const susunPesan = (item) => {
+        const baris = [
+            `Assalamu'alaikum Bapak/Ibu ${item.siswa?.parent_name || ''},`,
+            '',
+            `Kami informasikan tagihan ananda *${item.siswa?.name}*:`,
+            '',
+            `${item.header?.title || 'Tagihan'}`,
+            `Jumlah  : *${formatCurrency(item.remaining_balance)}*`,
+        ];
+
+        if (item.header?.due_date) {
+            baris.push(`Tempo   : ${tanggal(item.header.due_date)}`);
+        }
+
+        baris.push(`No. Inv : ${item.invoice_number}`);
+
+        if (rekeningBayar.length) {
+            baris.push('', 'Pembayaran dapat dilakukan melalui:');
+            rekeningBayar.forEach((r) => {
+                baris.push(`${r.nama}: ${r.nomor}${r.pemilik ? ` a.n. ${r.pemilik}` : ''}`);
+            });
+            baris.push('', 'Mohon kirim bukti transfer setelah pembayaran.');
+        } else {
+            baris.push('', 'Mohon dapat diselesaikan.');
+        }
+
+        baris.push('', 'Jazaakumullahu khairan.');
+
+        return baris.join('\n');
+    };
+
+    const kirimWa = (item) => {
+        const nomor = nomorWa(item.siswa?.parent_contact);
         if (!nomor) return;
 
-        const pesan = encodeURIComponent(
-            `Assalamu'alaikum Bapak/Ibu ${item.siswa?.parent_name || ''},\n\n` +
-            `Kami informasikan bahwa ananda ${item.siswa?.name} memiliki tagihan ` +
-            `${item.header?.title || ''} sebesar ${formatCurrency(item.remaining_balance)} ` +
-            `yang belum terselesaikan.\n\nMohon dapat diselesaikan. Terima kasih.`
-        );
+        if (ditagihHariIni(item) &&
+            !confirm(`${item.siswa?.name} sudah ditagih hari ini. Kirim lagi?`)) {
+            return;
+        }
 
-        window.open(`https://wa.me/${nomor}?text=${pesan}`, '_blank');
+        // window.open dipanggil lebih dulu dan langsung di dalam handler klik —
+        // browser memblokir popup yang dibuka setelah operasi asinkron.
+        window.open(`https://wa.me/${nomor}?text=${encodeURIComponent(susunPesan(item))}`, '_blank');
+
+        // Pencatatan menyusul otomatis. Sebelumnya bendahara harus menekan
+        // "Catat" terpisah, dan dalam praktiknya langkah itu sering terlewat
+        // sehingga riwayat penagihan tidak pernah mencerminkan kenyataan.
+        router.post(route('keuangan.penagihan.catat'), {
+            student_id: item.student_id,
+            invoice_id: item.id,
+            metode: 'WhatsApp',
+            keterangan: `Pesan WhatsApp dikirim ke ${item.siswa?.parent_contact} · sisa ${formatCurrency(item.remaining_balance)}`,
+        }, { preserveScroll: true, preserveState: true });
     };
 
     const submitTagih = (e) => {
@@ -245,13 +301,15 @@ export default function LaporanTunggakan({ tunggakan, listSiswa, ringkas, filter
                                         </button>
                                     )}
 
-                                    {t.siswa?.parent_contact && (
-                                        <button type="button" onClick={() => kirimWa(t)}
-                                            className={`${btnGhost} flex-1 justify-center text-emerald-600 ring-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:ring-emerald-500/20`}>
-                                            <IkonWa />
-                                            WhatsApp
-                                        </button>
-                                    )}
+                                    <button type="button"
+                                        onClick={() => kirimWa(t)}
+                                        disabled={!t.siswa?.parent_contact}
+                                        className={`${btnGhost} flex-1 justify-center ${t.siswa?.parent_contact
+                                            ? 'text-emerald-600 ring-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:ring-emerald-500/20'
+                                            : 'cursor-not-allowed text-stone-300 ring-stone-200 dark:text-stone-600 dark:ring-coal-600'}`}>
+                                        <IkonWa />
+                                        WhatsApp
+                                    </button>
 
                                     {bisaCatat && (
                                         <button type="button" onClick={() => bukaTagih(t)}
@@ -329,14 +387,21 @@ export default function LaporanTunggakan({ tunggakan, listSiswa, ringkas, filter
                                                     </button>
                                                 )}
 
-                                                {t.siswa?.parent_contact && (
-                                                    <button type="button" onClick={() => kirimWa(t)}
-                                                        title={`Kirim WhatsApp ke ${t.siswa?.parent_name || 'wali'}`}
-                                                        className={`${btnGhost} text-emerald-600 ring-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:ring-emerald-500/20 dark:hover:bg-emerald-500/10`}>
-                                                        <IkonWa />
-                                                        WhatsApp
-                                                    </button>
-                                                )}
+                                                {/* Tetap dirender saat nomor kosong, hanya dinonaktifkan:
+                                                    tombol yang hilang tanpa penjelasan membuat bendahara
+                                                    tidak pernah tahu datanya perlu dilengkapi. */}
+                                                <button type="button"
+                                                    onClick={() => kirimWa(t)}
+                                                    disabled={!t.siswa?.parent_contact}
+                                                    title={t.siswa?.parent_contact
+                                                        ? `Kirim WhatsApp ke ${t.siswa?.parent_name || 'wali'}`
+                                                        : 'Nomor wali belum diisi di Master Data Siswa'}
+                                                    className={`${btnGhost} ${t.siswa?.parent_contact
+                                                        ? 'text-emerald-600 ring-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:ring-emerald-500/20 dark:hover:bg-emerald-500/10'
+                                                        : 'cursor-not-allowed text-stone-300 ring-stone-200 dark:text-stone-600 dark:ring-coal-600'}`}>
+                                                    <IkonWa />
+                                                    WhatsApp
+                                                </button>
 
                                                 {bisaCatat && (
                                                     <button type="button" onClick={() => bukaTagih(t)}

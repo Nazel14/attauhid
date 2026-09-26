@@ -123,9 +123,24 @@ class LaporanController extends Controller
         $dasar = Tagihan::whereHas('header', fn ($q) => $q->where('status', 'Published'))
             ->whereIn('status', ['Unpaid', 'Installment']);
 
+        // Rekening publik ikut dikirim supaya pesan WhatsApp bisa langsung
+        // memuat cara bayar. Tanpa ini wali harus bertanya balik ke admin,
+        // dan penagihan jadi dua kali kerja.
+        $rekeningBayar = Rekening::where('is_public', true)
+            ->orderByRaw("FIELD(type, 'Bank', 'E-Wallet', 'Tunai')")
+            ->get(['account_name', 'account_number', 'account_holder'])
+            ->map(fn ($r) => [
+                'nama'    => $r->account_name,
+                'nomor'   => $r->account_number,
+                'pemilik' => $r->account_holder,
+            ])
+            ->filter(fn ($r) => $r['nomor'])
+            ->values();
+
         return Inertia::render('Keuangan/Laporan/LaporanTunggakan', [
             'tunggakan' => $query->paginate(15)->withQueryString(),
             'listSiswa' => Siswa::aktif()->orderBy('name')->get(['id', 'nis', 'name']),
+            'rekeningBayar' => $rekeningBayar,
             'ringkas'   => [
                 'totalPiutang' => (float) (clone $dasar)->sum('remaining_balance'),
                 'jumlahSiswa'  => (clone $dasar)->distinct('student_id')->count('student_id'),
