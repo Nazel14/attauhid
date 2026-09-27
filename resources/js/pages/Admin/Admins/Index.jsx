@@ -149,6 +149,12 @@ const removePhoto = () => {
         }
     };
 
+    const resetPassword = (admin) => {
+        if (confirm(`Reset password ${admin.name}?\n\nPassword lama langsung tidak berlaku. Password baru muncul di notifikasi — catat sebelum hilang.`)) {
+            router.put(route('admin.admins.reset-password', admin.id), {}, { preserveScroll: true });
+        }
+    };
+
     const destroy = (admin) => {
         if (confirm(`Hapus admin ${admin.name}?`)) {
             router.delete(route('admin.admins.destroy', admin.id), { preserveScroll: true });
@@ -271,7 +277,7 @@ const removePhoto = () => {
                                 <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Nama Admin</th>
                                 <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Password</th>
                                 <th className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Level</th>
-                                <th className="w-28 px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Aksi</th>
+                                <th className="w-44 px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-cream-200 dark:divide-coal-600">
@@ -325,6 +331,7 @@ const removePhoto = () => {
                                         <td className="px-4 py-3">
                                             <div className="flex items-center justify-center gap-2">
                                                 <button onClick={() => openEdit(admin)} className="rounded-lg bg-claude-100 px-2.5 py-1 text-[10px] font-semibold text-claude-700 ring-1 ring-inset ring-claude-300 transition hover:bg-claude-200 dark:bg-claude-500/15 dark:text-claude-300 dark:ring-claude-500/30 dark:hover:bg-claude-500/25">Edit</button>
+                                                <button onClick={() => resetPassword(admin)} title="Buat password baru untuk admin ini" className="rounded-lg bg-amber-100 px-2.5 py-1 text-[10px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-300 transition hover:bg-amber-200 dark:bg-amber-400/15 dark:text-amber-300 dark:ring-amber-400/30 dark:hover:bg-amber-400/25">Reset</button>
                                                 {!admin.is_super_admin && !admin.is_self ? (
                                                     <button onClick={() => destroy(admin)} className="rounded-lg bg-red-100 px-2.5 py-1 text-[10px] font-semibold text-red-700 ring-1 ring-inset ring-red-300 transition hover:bg-red-200 dark:bg-red-400/15 dark:text-red-300 dark:ring-red-400/30 dark:hover:bg-red-400/25">Hapus</button>
                                                 ) : admin.is_super_admin ? (
@@ -387,6 +394,7 @@ const removePhoto = () => {
                                 </div>
                                 <div className="flex flex-shrink-0 items-center gap-1.5">
                                     <button onClick={() => openEdit(admin)} className="rounded-lg bg-claude-100 px-2.5 py-1.5 text-[10px] font-bold text-claude-700 ring-1 ring-inset ring-claude-300 transition active:scale-95 dark:bg-claude-500/15 dark:text-claude-300 dark:ring-claude-500/30">Edit</button>
+                                    <button onClick={() => resetPassword(admin)} className="rounded-lg bg-amber-100 px-2.5 py-1.5 text-[10px] font-bold text-amber-700 ring-1 ring-inset ring-amber-300 transition active:scale-95 dark:bg-amber-400/15 dark:text-amber-300 dark:ring-amber-400/30">Reset</button>
                                     {!admin.is_super_admin && !admin.is_self && (
                                         <button onClick={() => destroy(admin)} className="rounded-lg bg-red-100 px-2.5 py-1.5 text-[10px] font-bold text-red-700 ring-1 ring-inset ring-red-300 transition active:scale-95 dark:bg-red-400/15 dark:text-red-300 dark:ring-red-400/30">Hapus</button>
                                     )}

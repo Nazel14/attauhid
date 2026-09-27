@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\LogActivity;
@@ -281,6 +282,56 @@ class AdminController extends Controller
             return back()
                 ->withInput()
                 ->with('error', 'Gagal memperbarui data admin: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Reset password admin menjadi password acak baru.
+     *
+     * Sebelum ini tidak ada cara mengganti password admin sama sekali:
+     * update() sengaja tidak menyentuh kolom password, sehingga satu-satunya
+     * jalan saat admin lupa password adalah mengintip plain_password.
+     */
+    public function resetPassword($id)
+    {
+        $admin = User::findOrFail($id);
+
+        // Guard yang sama dengan update() dan destroy(): akun pemilik sistem
+        // (kolom role = 'super-admin') tidak dikelola dari halaman ini.
+        if ($admin->role !== 'admin') {
+            abort(404, 'User bukan admin');
+        }
+
+        // Tanpa simbol: nilainya disalin manual, dan karakter seperti '#'
+        // sudah pernah bikin masalah saat disalin ke tempat lain.
+        $passwordBaru = Str::password(12, symbols: false);
+
+        DB::beginTransaction();
+        try {
+            $admin->password       = Hash::make($passwordBaru);
+            $admin->plain_password = $passwordBaru;
+            $admin->save();
+
+            // Password TIDAK ikut dicatat di log — log dibaca banyak orang.
+            LogActivity::create([
+                'user_id'       => auth()->id(),
+                'role'          => 'admin',
+                'activity_type' => 'update',
+                'module'        => 'admin',
+                'description'   => 'Mereset password admin: ' . $admin->name,
+                'model_type'    => User::class,
+                'model_id'      => $admin->id,
+                'ip_address'    => request()->ip(),
+                'user_agent'    => (string) request()->userAgent(),
+            ]);
+
+            DB::commit();
+
+            return back()->with('success', "Password {$admin->name} sekarang: {$passwordBaru}");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal mereset password: ' . $e->getMessage());
         }
     }
 
