@@ -276,9 +276,9 @@ const removePhoto = () => {
                         <tbody className="divide-y divide-cream-200 dark:divide-coal-600">
                             {/* Baris pemilik sistem. Tanpa nomor urut karena berada di luar
                                 paginasi, dan tanpa tombol aksi karena controller menolaknya. */}
-                            {pemilik.map((p) => (
+                            {pemilik.map((p, i) => (
                                 <tr key={`pemilik-${p.id}`} className="bg-amber-50/40 dark:bg-amber-400/5">
-                                    <td className="px-4 py-3 text-xs text-stone-400 dark:text-stone-500">—</td>
+                                    <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{i + 1}</td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2.5">
                                             <Avatar url={p.profile_photo_url} name={p.name} />
@@ -308,7 +308,7 @@ const removePhoto = () => {
                             ) : (
                                 rows.map((admin, i) => (
                                     <tr key={admin.id} className="transition hover:bg-cream-100/70 dark:hover:bg-coal-600/40">
-                                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{admins.from + i}</td>
+                                        <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{pemilik.length + admins.from + i}</td>
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-2.5">
                                                 <Avatar url={admin.profile_photo_url} name={admin.name} />
