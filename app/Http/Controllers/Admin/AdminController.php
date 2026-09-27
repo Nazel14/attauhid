@@ -37,11 +37,16 @@ class AdminController extends Controller
                 'is_self'            => $admin->id === auth()->id(),
             ]);
 
-        $superAdminCount = User::where('role', 'admin')
+        // Hitung apa adanya: semua akun pengelola di tabel users, tanpa
+        // memandang isi kolom role. Pemilik sistem menyimpan 'super-admin'
+        // di kolom itu, sehingga filter lama membuatnya tidak pernah terhitung.
+        $akunAdmin = fn () => User::whereIn('role', ['admin', 'super-admin']);
+
+        $superAdminCount = $akunAdmin()
             ->whereHas('roles', fn ($q) => $q->where('name', 'super-admin'))
             ->count();
 
-        $regularAdminCount = User::where('role', 'admin')
+        $regularAdminCount = $akunAdmin()
             ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'super-admin'))
             ->count();
 

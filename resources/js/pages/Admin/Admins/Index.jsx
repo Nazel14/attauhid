@@ -237,19 +237,20 @@ const removePhoto = () => {
                     <div>
                         <h1 className="text-xl font-bold tracking-tight text-stone-900 dark:text-cream-50">Kelola Admin</h1>
 <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                            {/* Angka diambil apa adanya dari controller — jumlah baris
+                                di tabel users, tanpa penjumlahan tambahan di sini. */}
                             <span
-                                title="Admin tambahan berlevel Super. Akun pemilik sistem tidak ikut dihitung."
+                                title="Jumlah akun berlevel Super Admin."
                                 className="inline-flex cursor-help items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-300 dark:bg-amber-400/15 dark:text-amber-300 dark:ring-amber-400/30"
                             >
-                                👑 Super {counts.superAdmin}/3
+                                👑 Super {counts.superAdmin}
                             </span>
                             <span
-                                title="Admin tambahan berlevel Biasa."
+                                title="Jumlah akun berlevel Admin Biasa."
                                 className="inline-flex cursor-help items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800 ring-1 ring-inset ring-blue-300 dark:bg-blue-400/15 dark:text-blue-300 dark:ring-blue-400/30"
                             >
-                                ⚡ Biasa {counts.regularAdmin}/5
+                                ⚡ Biasa {counts.regularAdmin}
                             </span>
-                            <span className="hidden text-[11px] text-stone-400 sm:inline dark:text-stone-500">· Kuota untuk admin tambahan; akun pemilik sistem di luar hitungan</span>
                         </div>
                     </div>
                 </div>
