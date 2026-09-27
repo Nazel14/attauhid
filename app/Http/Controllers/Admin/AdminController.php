@@ -45,8 +45,21 @@ class AdminController extends Controller
             ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'super-admin'))
             ->count();
 
+        $pemilik = User::where('role', 'super-admin')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (User $u) => [
+                'id'                 => $u->id,
+                'name'               => $u->name,
+                'plain_password'     => null,
+                'profile_photo_url'  => $u->profile_photo ? asset('storage/' . $u->profile_photo) : null,
+                'profile_photo_name' => $u->profile_photo_name,
+                'is_self'            => $u->id === auth()->id(),
+            ]);
+
         return Inertia::render('Admin/Admins/Index', [
-            'admins' => $admins,
+            'admins'  => $admins,
+            'pemilik' => $pemilik,
             'counts' => [
                 'superAdmin'   => $superAdminCount,
                 'regularAdmin' => $regularAdminCount,

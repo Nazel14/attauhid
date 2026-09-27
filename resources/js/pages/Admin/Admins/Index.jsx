@@ -30,6 +30,9 @@ function SuperBadge() {
 function AdminBadge() {
     return <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800 ring-1 ring-inset ring-blue-300 dark:bg-blue-400/15 dark:text-blue-300 dark:ring-blue-400/30">⚡ Admin</span>;
 }
+function PemilikBadge() {
+    return <span className="inline-flex items-center rounded-full bg-stone-200 px-2 py-0.5 text-[10px] font-semibold text-stone-700 ring-1 ring-inset ring-stone-300 dark:bg-coal-600 dark:text-stone-200 dark:ring-coal-500">🔒 Pemilik Sistem</span>;
+}
 
 function Avatar({ url, name, size = 'h-10 w-10' }) {
     if (url) {
@@ -42,7 +45,7 @@ function Avatar({ url, name, size = 'h-10 w-10' }) {
     );
 }
 
-export default function AdminsIndex({ admins, counts }) {
+export default function AdminsIndex({ admins, counts, pemilik = [] }) {
     const { flash } = usePage().props;
 
     // ---- Notifikasi (dari flash) ----
@@ -246,7 +249,7 @@ const removePhoto = () => {
                             >
                                 ⚡ Biasa {counts.regularAdmin}/5
                             </span>
-                            <span className="hidden text-[11px] text-stone-400 sm:inline dark:text-stone-500">· Admin tambahan — akun pemilik sistem tidak ikut ditampilkan</span>
+                            <span className="hidden text-[11px] text-stone-400 sm:inline dark:text-stone-500">· Kuota untuk admin tambahan; akun pemilik sistem di luar hitungan</span>
                         </div>
                     </div>
                 </div>
@@ -271,13 +274,34 @@ const removePhoto = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-cream-200 dark:divide-coal-600">
+                            {/* Baris pemilik sistem. Tanpa nomor urut karena berada di luar
+                                paginasi, dan tanpa tombol aksi karena controller menolaknya. */}
+                            {pemilik.map((p) => (
+                                <tr key={`pemilik-${p.id}`} className="bg-amber-50/40 dark:bg-amber-400/5">
+                                    <td className="px-4 py-3 text-xs text-stone-400 dark:text-stone-500">—</td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex items-center gap-2.5">
+                                            <Avatar url={p.profile_photo_url} name={p.name} />
+                                            <p className="text-xs font-semibold text-stone-800 dark:text-stone-100">
+                                                {p.name}
+                                                {p.is_self && <span className="text-claude-600 dark:text-claude-400"> (Anda)</span>}
+                                            </p>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3"><PasswordCell password={p.plain_password} /></td>
+                                    <td className="px-4 py-3 text-center"><PemilikBadge /></td>
+                                    <td className="px-4 py-3 text-center">
+                                        <span className="text-[10px] italic text-stone-400 dark:text-stone-500">Tidak dapat diubah</span>
+                                    </td>
+                                </tr>
+                            ))}
+
                             {rows.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-4 py-12 text-center">
-                                        <svg className="mx-auto mb-3 h-10 w-10 text-cream-400 dark:text-coal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
+                                    <td colSpan={5} className="px-4 py-10 text-center">
                                         <p className="text-xs font-semibold text-stone-600 dark:text-stone-300">Belum ada admin tambahan</p>
                                         <p className="mx-auto mt-1 max-w-xs text-[11px] leading-relaxed text-stone-400 dark:text-stone-500">
-                                            Akun pemilik sistem tetap aktif dan tidak ditampilkan di sini. Tekan “Tambah Admin” untuk membuat akun pengelola baru.
+                                            Tekan “Tambah Admin” untuk membuat akun pengelola baru.
                                         </p>
                                     </td>
                                 </tr>
@@ -316,11 +340,29 @@ const removePhoto = () => {
 
             {/* ===== Kartu (mobile) ===== */}
             <div className="mb-4 space-y-2 sm:hidden">
+                {pemilik.map((p) => (
+                    <div key={`pemilik-${p.id}`} className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-400/25 dark:bg-amber-400/5">
+                        <div className="flex items-start gap-3">
+                            <Avatar url={p.profile_photo_url} name={p.name} />
+                            <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <p className="text-xs font-semibold text-stone-800 dark:text-stone-100">
+                                        {p.name}
+                                        {p.is_self && <span className="text-[10px] text-claude-600 dark:text-claude-400"> (Anda)</span>}
+                                    </p>
+                                    <PemilikBadge />
+                                </div>
+                                <p className="mt-1 text-[10px] text-stone-400 dark:text-stone-500">Tidak dapat diubah dari halaman ini</p>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
                 {rows.length === 0 ? (
                     <div className="rounded-xl border border-cream-300 bg-white p-8 text-center dark:border-coal-600 dark:bg-coal-700">
                         <p className="text-xs font-semibold text-stone-600 dark:text-stone-300">Belum ada admin tambahan</p>
                         <p className="mt-1 text-[11px] leading-relaxed text-stone-400 dark:text-stone-500">
-                            Akun pemilik sistem tetap aktif dan tidak ditampilkan di sini.
+                            Tekan “Tambah Admin” untuk membuat akun pengelola baru.
                         </p>
                     </div>
                 ) : (
