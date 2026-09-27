@@ -274,8 +274,9 @@ const removePhoto = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-cream-200 dark:divide-coal-600">
-                            {/* Baris pemilik sistem. Tanpa nomor urut karena berada di luar
-                                paginasi, dan tanpa tombol aksi karena controller menolaknya. */}
+                            {/* Baris pemilik sistem. Dinomori sendiri dari 1 karena berada
+                                di luar paginasi, dan tanpa tombol aksi karena controller
+                                menolak akun yang kolom role-nya bukan 'admin' dengan 404. */}
                             {pemilik.map((p, i) => (
                                 <tr key={`pemilik-${p.id}`} className="bg-amber-50/40 dark:bg-amber-400/5">
                                     <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400">{i + 1}</td>
