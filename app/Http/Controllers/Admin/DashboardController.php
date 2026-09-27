@@ -34,17 +34,16 @@ class DashboardController extends Controller
             'admin.dashboard.ringkasan',
             now()->addMinutes(10),
             function () {
-                // ✅ PERMISSION-BASED DETECTION (sama seperti versi lama)
-                $totalAdmins = User::where('role', 'admin')->count();
+                $akunAdmin = fn () => User::whereIn('role', ['admin', 'super-admin']);
 
-                $totalSuperAdmins = User::where('role', 'admin')
-                    ->permission('kelola-admin')
+                $totalAdmins = $akunAdmin()->count();
+
+                $totalSuperAdmins = $akunAdmin()
+                    ->whereHas('roles', fn ($q) => $q->where('name', 'super-admin'))
                     ->count();
 
-                $totalRegularAdmins = User::where('role', 'admin')
-                    ->whereDoesntHave('permissions', function ($query) {
-                        $query->where('name', 'kelola-admin');
-                    })
+                $totalRegularAdmins = $akunAdmin()
+                    ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'super-admin'))
                     ->count();
 
                 return [

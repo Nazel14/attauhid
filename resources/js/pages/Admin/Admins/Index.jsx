@@ -233,14 +233,20 @@ const removePhoto = () => {
                     </div>
                     <div>
                         <h1 className="text-xl font-bold tracking-tight text-stone-900 dark:text-cream-50">Kelola Admin</h1>
-                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-300 dark:bg-amber-400/15 dark:text-amber-300 dark:ring-amber-400/30">
+<div className="mt-1 flex flex-wrap items-center gap-1.5">
+                            <span
+                                title="Admin tambahan berlevel Super. Akun pemilik sistem tidak ikut dihitung."
+                                className="inline-flex cursor-help items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-300 dark:bg-amber-400/15 dark:text-amber-300 dark:ring-amber-400/30"
+                            >
                                 👑 Super {counts.superAdmin}/3
                             </span>
-                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800 ring-1 ring-inset ring-blue-300 dark:bg-blue-400/15 dark:text-blue-300 dark:ring-blue-400/30">
+                            <span
+                                title="Admin tambahan berlevel Biasa."
+                                className="inline-flex cursor-help items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800 ring-1 ring-inset ring-blue-300 dark:bg-blue-400/15 dark:text-blue-300 dark:ring-blue-400/30"
+                            >
                                 ⚡ Biasa {counts.regularAdmin}/5
                             </span>
-                            <span className="hidden text-[11px] text-stone-400 sm:inline dark:text-stone-500">· Kelola akun administrator sistem</span>
+                            <span className="hidden text-[11px] text-stone-400 sm:inline dark:text-stone-500">· Admin tambahan — akun pemilik sistem tidak ikut ditampilkan</span>
                         </div>
                     </div>
                 </div>
@@ -269,7 +275,10 @@ const removePhoto = () => {
                                 <tr>
                                     <td colSpan={5} className="px-4 py-12 text-center">
                                         <svg className="mx-auto mb-3 h-10 w-10 text-cream-400 dark:text-coal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
-                                        <p className="text-xs text-stone-500 dark:text-stone-400">Tidak ada data admin</p>
+                                        <p className="text-xs font-semibold text-stone-600 dark:text-stone-300">Belum ada admin tambahan</p>
+                                        <p className="mx-auto mt-1 max-w-xs text-[11px] leading-relaxed text-stone-400 dark:text-stone-500">
+                                            Akun pemilik sistem tetap aktif dan tidak ditampilkan di sini. Tekan “Tambah Admin” untuk membuat akun pengelola baru.
+                                        </p>
                                     </td>
                                 </tr>
                             ) : (
@@ -309,7 +318,10 @@ const removePhoto = () => {
             <div className="mb-4 space-y-2 sm:hidden">
                 {rows.length === 0 ? (
                     <div className="rounded-xl border border-cream-300 bg-white p-8 text-center dark:border-coal-600 dark:bg-coal-700">
-                        <p className="text-xs text-stone-500 dark:text-stone-400">Tidak ada data admin</p>
+                        <p className="text-xs font-semibold text-stone-600 dark:text-stone-300">Belum ada admin tambahan</p>
+                        <p className="mt-1 text-[11px] leading-relaxed text-stone-400 dark:text-stone-500">
+                            Akun pemilik sistem tetap aktif dan tidak ditampilkan di sini.
+                        </p>
                     </div>
                 ) : (
                     rows.map((admin) => (
