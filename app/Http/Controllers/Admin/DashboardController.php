@@ -11,6 +11,7 @@ use App\Models\TahunAjaran;
 use App\Models\LogActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -22,46 +23,60 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        // ✅ PERMISSION-BASED DETECTION (sama seperti versi lama)
-        $totalAdmins = User::where('role', 'admin')->count();
+        // Statistik master data + tren login. Keduanya berubah pelan
+        // (tambah guru, tambah santri) dan hanya dibaca, tidak ditindaklanjuti —
+        // jadi aman disimpan 10 menit.
+        //
+        // Tren login paling mahal di sini: 7 query terpisah ke log_activities,
+        // tabel yang terus bertambah seumur hidup sistem. Justru itu yang
+        // paling terasa nanti.
+        $ringkasan = Cache::remember(
+            'admin.dashboard.ringkasan',
+            now()->addMinutes(10),
+            function () {
+                // ✅ PERMISSION-BASED DETECTION (sama seperti versi lama)
+                $totalAdmins = User::where('role', 'admin')->count();
 
-        $totalSuperAdmins = User::where('role', 'admin')
-            ->permission('kelola-admin')
-            ->count();
+                $totalSuperAdmins = User::where('role', 'admin')
+                    ->permission('kelola-admin')
+                    ->count();
 
-        $totalRegularAdmins = User::where('role', 'admin')
-            ->whereDoesntHave('permissions', function ($query) {
-                $query->where('name', 'kelola-admin');
-            })
-            ->count();
+                $totalRegularAdmins = User::where('role', 'admin')
+                    ->whereDoesntHave('permissions', function ($query) {
+                        $query->where('name', 'kelola-admin');
+                    })
+                    ->count();
 
-        // Statistik master data
-        $stats = [
-            'totalAdmins'        => $totalAdmins,
-            'totalSuperAdmins'   => $totalSuperAdmins,
-            'totalRegularAdmins' => $totalRegularAdmins,
-            'totalGurus'         => Guru::count(),
-            'totalKelas'         => Kelas::count(),
-            'totalSantris'       => Santri::count(),
-        ];
+                return [
+                    'stats' => [
+                        'totalAdmins'        => $totalAdmins,
+                        'totalSuperAdmins'   => $totalSuperAdmins,
+                        'totalRegularAdmins' => $totalRegularAdmins,
+                        'totalGurus'         => Guru::count(),
+                        'totalKelas'         => Kelas::count(),
+                        'totalSantris'       => Santri::count(),
+                    ],
+                    // Untuk tiap hari (6 hari lalu s.d. hari ini) hitung jumlah aktivitas login.
+                    'loginTrend' => collect(range(6, 0))->map(function ($daysAgo) {
+                        $date = Carbon::today()->subDays($daysAgo);
 
-        // Tahun ajaran aktif
+                        return [
+                            'date'  => $date->toDateString(),
+                            'count' => LogActivity::where('activity_type', 'login')
+                                ->whereDate('created_at', $date)
+                                ->count(),
+                        ];
+                    })->values(),
+                ];
+            }
+        );
+
+        $stats      = $ringkasan['stats'];
+        $loginTrend = $ringkasan['loginTrend'];
+
+        // Tahun ajaran aktif — di luar cache, karena pergantian semester
+        // harus langsung terlihat begitu super-admin menekan "Set Aktif".
         $tahunAjaranAktif = TahunAjaran::getAktif();
-
-        // =========================================
-        // GRAFIK: Tren login 7 hari terakhir
-        // =========================================
-        // Untuk tiap hari (6 hari lalu s.d. hari ini) hitung jumlah aktivitas login.
-        $loginTrend = collect(range(6, 0))->map(function ($daysAgo) {
-            $date = Carbon::today()->subDays($daysAgo);
-
-            return [
-                'date'  => $date->toDateString(),
-                'count' => LogActivity::where('activity_type', 'login')
-                    ->whereDate('created_at', $date)
-                    ->count(),
-            ];
-        })->values();
 
         // =========================================
         // KOMPONEN PENDUKUNG: Aktivitas terkini

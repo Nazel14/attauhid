@@ -36,6 +36,25 @@
         <meta name="apple-mobile-web-app-title" content="Tahfizh">
         <link rel="apple-touch-icon" href="/icons/icon-192.png">
 
+        {{-- Pratinjau saat link dibagikan (WhatsApp, Telegram, Facebook, LinkedIn).
+             Dipakai juga oleh Google sebagai deskripsi di hasil pencarian.
+
+             URL gambar WAJIB absolut — WhatsApp mengambilnya dari servernya
+             sendiri, jadi path relatif seperti /og-image.png tidak akan ketemu. --}}
+        <meta name="description" content="Pantau hafalan, presensi, dan keuangan santri dalam satu aplikasi. Untuk pesantren tahfizh.">
+
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="Laporan Tahfizh">
+        <meta property="og:title" content="Sistem Manajemen Tahfizh Pesantren">
+        <meta property="og:description" content="Pantau hafalan, presensi, dan keuangan santri dalam satu aplikasi.">
+        <meta property="og:url" content="{{ url()->current() }}">
+        <meta property="og:image" content="{{ asset('og-image.png') }}">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:locale" content="id_ID">
+
+        <meta name="twitter:card" content="summary_large_image">
+
         {{-- React + Inertia entry --}}
         @viteReactRefresh
         @vite(['resources/js/app.jsx', "resources/js/Pages/{$page['component']}.jsx"])

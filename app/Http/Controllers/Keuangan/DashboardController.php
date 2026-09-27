@@ -10,49 +10,74 @@ use App\Models\Keuangan\Outbound\Pengeluaran;
 use App\Models\Keuangan\Outbound\RkasHeader;
 use App\Models\Keuangan\Payroll\PayrollHeader;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
+    /** Masa simpan angka ringkasan & grafik. */
+    private const CACHE_MENIT = 10;
+
     public function index()
     {
         $user  = Auth::user();
         $tahun = now()->year;
 
-        $totalIncome = Pembayaran::where('status_approval', 'disetujui')
-            ->whereYear('payment_date', $tahun)
-            ->sum('nominal');
+        // Yang di-cache HANYA angka informatif: ringkasan tahun berjalan,
+        // grafik 6 bulan, dan tren tunggakan. Ketiganya sama untuk semua
+        // pemegang akses keuangan dan telat 10 menit tidak mengubah keputusan
+        // siapa pun.
+        //
+        // Notifikasi dan daftar transaksi terbaru sengaja TIDAK ikut: itu
+        // justru angka yang dipakai bendahara untuk bertindak. Kalau
+        // di-cache, badge "8 pembayaran perlu disetujui" tidak berubah
+        // sesudah disetujui — terasa seperti sistem rusak, bukan cepat.
+        $ringkasan = Cache::remember(
+            "keuangan.dashboard.ringkasan.$tahun",
+            now()->addMinutes(self::CACHE_MENIT),
+            function () use ($tahun) {
+                $totalIncome = Pembayaran::where('status_approval', 'disetujui')
+                    ->whereYear('payment_date', $tahun)
+                    ->sum('nominal');
 
-        $totalExpenses = Pengeluaran::where('status_approval', 'selesai')
-            ->whereYear('tanggal_pengajuan', $tahun)
-            ->sum('nominal_realisasi');
+                $totalExpenses = Pengeluaran::where('status_approval', 'selesai')
+                    ->whereYear('tanggal_pengajuan', $tahun)
+                    ->sum('nominal_realisasi');
 
-        // santris tidak punya is_active; statusnya enum aktif/lulus/keluar.
-        // scopeAktif() sudah didefinisikan di model Santri.
-        $totalSiswa = Siswa::aktif()->count();
+                // santris tidak punya is_active; statusnya enum aktif/lulus/keluar.
+                // scopeAktif() sudah didefinisikan di model Santri.
+                $totalSiswa = Siswa::aktif()->count();
 
-        $siswaNunggak = Tagihan::where('status', '!=', 'Paid')
-            ->distinct('student_id')
-            ->count('student_id');
+                $siswaNunggak = Tagihan::where('status', '!=', 'Paid')
+                    ->distinct('student_id')
+                    ->count('student_id');
+
+                return [
+                    'stats' => [
+                        'totalIncome'       => (float) $totalIncome,
+                        'totalExpenses'     => (float) $totalExpenses,
+                        'savings'           => (float) $totalIncome - (float) $totalExpenses,
+                        'arrearsPercentage' => $totalSiswa > 0 ? round($siswaNunggak / $totalSiswa * 100, 1) : 0,
+                        'incomeGrowth'      => $this->pertumbuhan(
+                            $totalIncome,
+                            Pembayaran::where('status_approval', 'disetujui')->whereYear('payment_date', $tahun - 1)->sum('nominal')
+                        ),
+                        'expensesGrowth'    => $this->pertumbuhan(
+                            $totalExpenses,
+                            Pengeluaran::where('status_approval', 'selesai')->whereYear('tanggal_pengajuan', $tahun - 1)->sum('nominal_realisasi')
+                        ),
+                    ],
+                    'monthlyData'  => $this->dataBulanan(),
+                    'arrearsTrend' => $this->trenTunggakan($totalSiswa),
+                ];
+            }
+        );
 
         return Inertia::render('Keuangan/Dashboard', [
-            'stats' => [
-                'totalIncome'       => (float) $totalIncome,
-                'totalExpenses'     => (float) $totalExpenses,
-                'savings'           => (float) $totalIncome - (float) $totalExpenses,
-                'arrearsPercentage' => $totalSiswa > 0 ? round($siswaNunggak / $totalSiswa * 100, 1) : 0,
-                'incomeGrowth'      => $this->pertumbuhan(
-                    $totalIncome,
-                    Pembayaran::where('status_approval', 'disetujui')->whereYear('payment_date', $tahun - 1)->sum('nominal')
-                ),
-                'expensesGrowth'    => $this->pertumbuhan(
-                    $totalExpenses,
-                    Pengeluaran::where('status_approval', 'selesai')->whereYear('tanggal_pengajuan', $tahun - 1)->sum('nominal_realisasi')
-                ),
-            ],
-            'monthlyData'    => $this->dataBulanan(),
-            'arrearsTrend'   => $this->trenTunggakan($totalSiswa),
+            'stats'          => $ringkasan['stats'],
+            'monthlyData'    => $ringkasan['monthlyData'],
+            'arrearsTrend'   => $ringkasan['arrearsTrend'],
             'recentIncome'   => $this->pemasukanTerbaru(),
             'recentExpenses' => $this->pengeluaranTerbaru(),
             'notifications'  => $notifikasi = $this->buildNotifications($user),

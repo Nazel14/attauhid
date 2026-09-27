@@ -140,7 +140,10 @@ export default function LaporanTunggakan({ tunggakan, listSiswa, ringkas, filter
 
         // window.open dipanggil lebih dulu dan langsung di dalam handler klik —
         // browser memblokir popup yang dibuka setelah operasi asinkron.
-        window.open(`https://wa.me/${nomor}?text=${encodeURIComponent(susunPesan(item))}`, '_blank');
+window.open(
+            `https://api.whatsapp.com/send?phone=${nomor}&text=${encodeURIComponent(susunPesan(item))}`,
+            '_blank'
+        );
 
         // Pencatatan menyusul otomatis. Sebelumnya bendahara harus menekan
         // "Catat" terpisah, dan dalam praktiknya langkah itu sering terlewat
