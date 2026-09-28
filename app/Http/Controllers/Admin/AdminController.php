@@ -180,6 +180,9 @@ class AdminController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:users,name,' . $admin->id],
+            // nullable: kosong berarti "biarkan password lama". Tanpa ini,
+            // setiap penyuntingan nama akan memaksa mengetik ulang password.
+            'password' => ['nullable', 'confirmed', 'min:8'],
             'is_super_admin' => ['required', 'boolean'],
             'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
             'delete_photo' => ['nullable', 'boolean'],
@@ -224,6 +227,14 @@ class AdminController extends Controller
                 'name' => $validated['name'],
             ]);
 
+            // Hanya hash yang disimpan, dan hanya bila kolomnya diisi.
+            $passwordDiubah = ! empty($validated['password']);
+
+            if ($passwordDiubah) {
+                $admin->password = Hash::make($validated['password']);
+                $admin->save();
+            }
+
             if ($validated['is_super_admin']) {
                 $admin->assignRole('super-admin');
             } else {
@@ -258,13 +269,16 @@ class AdminController extends Controller
                 'role'          => 'admin',
                 'activity_type' => 'update',
                 'module'        => 'admin',
-                'description'   => 'Mengubah data admin: ' . $admin->name,
+                'description'   => 'Mengubah data admin: ' . $admin->name
+                                   . ($passwordDiubah ? ' (password diganti)' : ''),
                 'model_type'    => User::class,
                 'model_id'      => $admin->id,
                 'old_values'    => $oldData,
                 'new_values'    => [
                     'name'           => $validated['name'],
                     'is_super_admin' => $validated['is_super_admin'],
+                    // Nilai passwordnya TIDAK ikut dicatat, hanya faktanya.
+                    'password_diubah' => $passwordDiubah,
                 ],
                 'ip_address'    => request()->ip(),
                 'user_agent'    => (string) request()->userAgent(),
@@ -274,7 +288,9 @@ class AdminController extends Controller
 
             return redirect()
                 ->route('admin.admins.index')
-                ->with('success', 'Data admin berhasil diperbarui!');
+                ->with('success', $passwordDiubah
+                    ? "Data {$admin->name} diperbarui dan passwordnya diganti."
+                    : 'Data admin berhasil diperbarui!');
 
         } catch (\Exception $e) {
             DB::rollBack();

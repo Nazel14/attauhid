@@ -46,6 +46,8 @@ Route::middleware(['auth', 'role:super-admin,admin'])->prefix('admin')->name('ad
 
     Route::middleware('permission:kelola-admin')->group(function() {
         Route::resource('admins', AdminController::class)->except(['show']);
+        Route::put('admins/{admin}/reset-password', [AdminController::class, 'resetPassword'])
+            ->name('admins.reset-password');
 
         // Tahun Ajaran (hanya Super Admin)
         Route::prefix('tahun-ajaran')->name('tahun-ajaran.')->group(function () {
