@@ -36,6 +36,12 @@ const CHIP = "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font
 const DEFAULT_CHIP = "bg-stone-100 text-stone-600 border-stone-300 dark:bg-coal-700 dark:text-stone-500 dark:border-coal-600";
 
 const ROLE_COLORS = {
+    'super-admin': 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800/30',
+    bendahara: 'bg-teal-100 text-teal-700 border-teal-300 dark:bg-teal-950/50 dark:text-teal-400 dark:border-teal-800/30',
+    'kepala-sekolah': 'bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-800/30',
+    'ketua-yayasan': 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-300 dark:bg-fuchsia-950/50 dark:text-fuchsia-400 dark:border-fuchsia-800/30',
+    'pihak-yayasan': 'bg-violet-100 text-violet-700 border-violet-300 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-800/30',
+    hrd: 'bg-sky-100 text-sky-700 border-sky-300 dark:bg-sky-950/50 dark:text-sky-400 dark:border-sky-800/30',
     admin: 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-950/50 dark:text-purple-400 dark:border-purple-800/30',
     guru: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800/30',
     santri: 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/30',
@@ -61,7 +67,8 @@ const ACTIVITY_DOT = {
 };
 
 const nf = (n) => Number(n ?? 0).toLocaleString('id-ID');
-const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+// Menangani role bertanda hubung: 'kepala-sekolah' -> 'Kepala Sekolah'.
+const capitalize = (s) => (s ? String(s).split('-').map((k) => k.charAt(0).toUpperCase() + k.slice(1)).join(' ') : s);
 
 /* ============================================================
  * SUB-COMPONENTS

@@ -72,7 +72,12 @@ class LogActivityController extends Controller
         });
 
         $users         = User::orderBy('name')->get(['id', 'name', 'role']);
-        $roles         = ['admin', 'guru', 'santri'];
+        // Dibaca dari tabel users, bukan ditulis tetap — database sudah punya
+        // sembilan role, dan daftar tetap akan ketinggalan lagi begitu
+        // bertambah satu.
+        $roles         = User::query()
+            ->select('role')->distinct()->orderBy('role')
+            ->pluck('role')->filter()->values();
         $modules       = $this->getModules();
         $activityTypes = $this->getActivityTypes();
         $stats         = $this->getStatistics($request);
@@ -218,7 +223,8 @@ class LogActivityController extends Controller
 
     private function getModules()
     {
-        return [
+        // Label yang sudah dirapikan manual, dipakai lebih dulu.
+        $label = [
             'auth'          => 'Autentikasi',
             'santri'        => 'Santri',
             'guru'          => 'Guru',
@@ -229,7 +235,19 @@ class LogActivityController extends Controller
             'sesi-presensi' => 'Sesi Presensi',
             'monitoring'    => 'Monitoring',
             'log-activity'  => 'Log Activity',
+            'pembayaran'    => 'Pembayaran',
+            'pengeluaran'   => 'Pengeluaran',
+            'tagihan'       => 'Tagihan',
         ];
+
+        // Modul yang benar-benar ada di tabel tapi belum punya label ikut
+        // ditambahkan sendiri, supaya daftar ini tidak pernah lagi tertinggal
+        // dari kenyataan seperti yang terjadi pada modul keuangan.
+        foreach (LogActivity::query()->select('module')->distinct()->pluck('module')->filter() as $modul) {
+            $label[$modul] ??= ucfirst($modul);
+        }
+
+        return $label;
     }
 
     private function getActivityTypes()

@@ -2,28 +2,6 @@ import { useState, useEffect } from 'react';
 import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
-// ---- Sel password dengan toggle show/hide (per baris) ----
-function PasswordCell({ password, small = false }) {
-    const [show, setShow] = useState(false);
-    const sz = small ? 'text-[10px]' : 'text-xs';
-    return (
-        <div className="flex items-center gap-2">
-            <span className={`font-mono ${sz} text-stone-500 dark:text-stone-400`}>
-                {show ? (password ?? '-') : '••••••••'}
-            </span>
-            {password && (
-                <button type="button" onClick={() => setShow(!show)} className="text-stone-400 transition hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300">
-                    {show ? (
-                        <svg className={small ? 'h-3 w-3' : 'h-3.5 w-3.5'} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
-                    ) : (
-                        <svg className={small ? 'h-3 w-3' : 'h-3.5 w-3.5'} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                    )}
-                </button>
-            )}
-        </div>
-    );
-}
-
 function SuperBadge() {
     return <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-300 dark:bg-amber-400/15 dark:text-amber-300 dark:ring-amber-400/30">👑 Super Admin</span>;
 }
@@ -275,7 +253,6 @@ const removePhoto = () => {
                             <tr className="border-b border-cream-300 dark:border-coal-600">
                                 <th className="w-10 px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">No</th>
                                 <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Nama Admin</th>
-                                <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Password</th>
                                 <th className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Level</th>
                                 <th className="w-44 px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Aksi</th>
                             </tr>
@@ -296,7 +273,6 @@ const removePhoto = () => {
                                             </p>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3"><PasswordCell password={p.plain_password} /></td>
                                     <td className="px-4 py-3 text-center"><PemilikBadge /></td>
                                     <td className="px-4 py-3 text-center">
                                         <span className="text-[10px] italic text-stone-400 dark:text-stone-500">Tidak dapat diubah</span>
@@ -306,7 +282,7 @@ const removePhoto = () => {
 
                             {rows.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-4 py-10 text-center">
+                                    <td colSpan={4} className="px-4 py-10 text-center">
                                         <p className="text-xs font-semibold text-stone-600 dark:text-stone-300">Belum ada admin tambahan</p>
                                         <p className="mx-auto mt-1 max-w-xs text-[11px] leading-relaxed text-stone-400 dark:text-stone-500">
                                             Tekan “Tambah Admin” untuk membuat akun pengelola baru.
@@ -326,7 +302,6 @@ const removePhoto = () => {
                                                 </p>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3"><PasswordCell password={admin.plain_password} /></td>
                                         <td className="px-4 py-3 text-center">{admin.is_super_admin ? <SuperBadge /> : <AdminBadge />}</td>
                                         <td className="px-4 py-3">
                                             <div className="flex items-center justify-center gap-2">
@@ -386,10 +361,6 @@ const removePhoto = () => {
                                             {admin.is_self && <span className="text-[10px] text-claude-600 dark:text-claude-400"> (Anda)</span>}
                                         </p>
                                         {admin.is_super_admin ? <SuperBadge /> : <AdminBadge />}
-                                    </div>
-                                    <div className="mt-1 flex items-center gap-1.5">
-                                        <span className="text-[10px] text-stone-500 dark:text-stone-400">Password:</span>
-                                        <PasswordCell password={admin.plain_password} small />
                                     </div>
                                 </div>
                                 <div className="flex flex-shrink-0 items-center gap-1.5">
@@ -561,13 +532,13 @@ const removePhoto = () => {
 
                                 <div className="flex items-start gap-2 rounded-xl border border-claude-200 bg-claude-50 p-3 dark:border-claude-500/30 dark:bg-claude-500/10">
                                     <svg className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-claude-500 dark:text-claude-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                    <p className="text-[10px] leading-relaxed text-claude-700 dark:text-claude-300">Super Admin (maks 3) tidak dapat dihapus. Admin Biasa (maks 5) dapat dikelola sepenuhnya.</p>
+                                    <p className="text-[10px] leading-relaxed text-claude-700 dark:text-claude-300">Super Admin (maks 3) tidak dapat dihapus. Admin Biasa (maks 5) dapat dikelola sepenuhnya. Password hanya ditampilkan sekali saat dibuat — catat sebelum menutup notifikasi.</p>
                                 </div>
 
                                 {isEdit && (
                                     <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-400/30 dark:bg-amber-400/10">
                                         <svg className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-500 dark:text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                        <p className="text-[10px] leading-relaxed text-amber-700 dark:text-amber-300">Password tidak dapat diubah melalui form ini demi keamanan sistem.</p>
+                                        <p className="text-[10px] leading-relaxed text-amber-700 dark:text-amber-300">Password tidak diubah dari form ini. Gunakan tombol <strong>Reset</strong> di daftar untuk membuat password baru.</p>
                                     </div>
                                 )}
 

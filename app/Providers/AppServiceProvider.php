@@ -22,6 +22,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Jejak audit data keuangan. Ditambahkan di sini, bukan di tiap
+        // controller, supaya perubahan lewat jalur mana pun tetap tercatat.
+        foreach ([
+            \App\Models\Pembayaran::class,
+            \App\Models\Pengeluaran::class,
+            \App\Models\Tagihan::class,
+        ] as $model) {
+            $model::observe(\App\Observers\AuditObserver::class);
+        }
         // ✅ Set default string length untuk MySQL
         Schema::defaultStringLength(191);
 

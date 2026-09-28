@@ -31,7 +31,6 @@ class AdminController extends Controller
             ->through(fn ($admin) => [
                 'id'                 => $admin->id,
                 'name'               => $admin->name,
-                'plain_password'     => $admin->plain_password,
                 'profile_photo_url'  => $admin->profile_photo ? asset('storage/' . $admin->profile_photo) : null,
                 'profile_photo_name' => $admin->profile_photo_name,
                 'is_super_admin'     => $admin->hasRole('super-admin'),
@@ -57,7 +56,6 @@ class AdminController extends Controller
             ->map(fn (User $u) => [
                 'id'                 => $u->id,
                 'name'               => $u->name,
-                'plain_password'     => null,
                 'profile_photo_url'  => $u->profile_photo ? asset('storage/' . $u->profile_photo) : null,
                 'profile_photo_name' => $u->profile_photo_name,
                 'is_self'            => $u->id === auth()->id(),
@@ -118,7 +116,6 @@ class AdminController extends Controller
             $user = User::create([
                 'name' => $validated['name'],
                 'password' => Hash::make($validated['password']),
-                'plain_password' => $validated['password'],
                 'role' => 'admin',
             ]);
 
@@ -156,9 +153,11 @@ class AdminController extends Controller
 
             DB::commit();
 
+            // Password tidak lagi tersimpan dalam bentuk terbaca, jadi inilah
+            // satu-satunya kesempatan melihatnya. Kalau terlewat, gunakan Reset.
             return redirect()
                 ->route('admin.admins.index')
-                ->with('success', 'Admin berhasil ditambahkan!');
+                ->with('success', "Admin {$user->name} dibuat. Password: {$validated['password']} — catat sekarang, tidak bisa dilihat lagi.");
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -288,9 +287,9 @@ class AdminController extends Controller
     /**
      * Reset password admin menjadi password acak baru.
      *
-     * Sebelum ini tidak ada cara mengganti password admin sama sekali:
-     * update() sengaja tidak menyentuh kolom password, sehingga satu-satunya
-     * jalan saat admin lupa password adalah mengintip plain_password.
+     * Ini satu-satunya cara mengganti password admin: update() sengaja
+     * tidak menyentuh kolom password, dan sejak password mentah berhenti
+     * disimpan, tidak ada lagi tempat untuk mengintip password lama.
      */
     public function resetPassword($id)
     {
@@ -308,8 +307,9 @@ class AdminController extends Controller
 
         DB::beginTransaction();
         try {
-            $admin->password       = Hash::make($passwordBaru);
-            $admin->plain_password = $passwordBaru;
+            // Hanya hash yang disimpan. Nilai aslinya ditampilkan sekali
+            // lewat flash di bawah, lalu hilang dari sistem selamanya.
+            $admin->password = Hash::make($passwordBaru);
             $admin->save();
 
             // Password TIDAK ikut dicatat di log — log dibaca banyak orang.
