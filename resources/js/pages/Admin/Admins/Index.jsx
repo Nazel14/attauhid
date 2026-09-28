@@ -463,17 +463,21 @@ const removePhoto = () => {
                                     {!form.errors.name && <p className="mt-1 text-[10px] text-stone-500 dark:text-stone-400">Nama yang akan ditampilkan di sistem</p>}
                                 </div>
 
-                                {/* Password (hanya saat create) */}
-                                {!isEdit && (
-                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                        <div>
-                                            <label className="mb-1.5 block text-xs font-semibold text-stone-600 dark:text-stone-300">Password <span className="text-red-500">*</span></label>
+                                {/* Password. Saat menambah wajib diisi; saat mengedit
+                                    opsional — dibiarkan kosong berarti password lama
+                                    tetap berlaku. */}
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                    <div>
+                                        <label className="mb-1.5 block text-xs font-semibold text-stone-600 dark:text-stone-300">
+                                                {isEdit ? 'Password Baru' : 'Password'}
+                                                {!isEdit && <span className="text-red-500"> *</span>}
+                                            </label>
                                             <div className="relative">
                                                 <input
                                                     type={showPass ? 'text' : 'password'}
                                                     value={form.data.password}
                                                     onChange={(e) => form.setData('password', e.target.value)}
-                                                    placeholder="Min. 8 karakter"
+                                                    placeholder={isEdit ? 'Kosongkan bila tidak diubah' : 'Min. 8 karakter'}
                                                     className={`${inputCls} pr-9`}
                                                 />
                                                 <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300">
@@ -487,13 +491,16 @@ const removePhoto = () => {
                                             {form.errors.password && <p className="mt-1 text-[10px] text-red-600 dark:text-red-400">{form.errors.password}</p>}
                                         </div>
                                         <div>
-                                            <label className="mb-1.5 block text-xs font-semibold text-stone-600 dark:text-stone-300">Konfirmasi <span className="text-red-500">*</span></label>
+                                            <label className="mb-1.5 block text-xs font-semibold text-stone-600 dark:text-stone-300">
+                                                Konfirmasi
+                                                {!isEdit && <span className="text-red-500"> *</span>}
+                                            </label>
                                             <div className="relative">
                                                 <input
                                                     type={showConfirm ? 'text' : 'password'}
                                                     value={form.data.password_confirmation}
                                                     onChange={(e) => form.setData('password_confirmation', e.target.value)}
-                                                    placeholder="Ulangi password"
+                                                    placeholder={isEdit ? 'Ulangi bila diisi' : 'Ulangi password'}
                                                     className={`${inputCls} pr-9`}
                                                 />
                                                 <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300">
@@ -506,7 +513,6 @@ const removePhoto = () => {
                                             </div>
                                         </div>
                                     </div>
-                                )}
 
                                 {/* Level */}
                                 <div>
@@ -538,7 +544,7 @@ const removePhoto = () => {
                                 {isEdit && (
                                     <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-400/30 dark:bg-amber-400/10">
                                         <svg className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-500 dark:text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                        <p className="text-[10px] leading-relaxed text-amber-700 dark:text-amber-300">Password tidak diubah dari form ini. Gunakan tombol <strong>Reset</strong> di daftar untuk membuat password baru.</p>
+                                        <p className="text-[10px] leading-relaxed text-amber-700 dark:text-amber-300">Isi kolom password hanya bila ingin menggantinya. Dibiarkan kosong, password lama tetap berlaku. Untuk password acak, pakai tombol <strong>Reset</strong> di daftar.</p>
                                     </div>
                                 )}
 
