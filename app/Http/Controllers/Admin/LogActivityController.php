@@ -235,9 +235,23 @@ class LogActivityController extends Controller
             'sesi-presensi' => 'Sesi Presensi',
             'monitoring'    => 'Monitoring',
             'log-activity'  => 'Log Activity',
-            'pembayaran'    => 'Pembayaran',
-            'pengeluaran'   => 'Pengeluaran',
-            'tagihan'       => 'Tagihan',
+
+            // Modul keuangan. Kuncinya harus sama persis dengan hasil
+            // Str::kebab(class_basename($model)) di AuditObserver.
+            'pembayaran'     => 'Pembayaran',
+            'tagihan'        => 'Tagihan',
+            'invoice-header' => 'Tagihan (Induk)',
+            'item-tagihan'   => 'Item Tagihan',
+            'pengeluaran'    => 'Pengeluaran',
+            'payroll-header' => 'Penggajian',
+            'mutasi-kas'     => 'Mutasi Kas',
+            'rekening'       => 'Rekening',
+            'rkas-header'    => 'RKAS',
+            'rkas-detail'    => 'Rincian RKAS',
+            'jabatan'        => 'Jabatan',
+            'tunjangan'      => 'Tunjangan',
+            'potongan'       => 'Potongan',
+            'tarif'          => 'Tarif',
         ];
 
         // Modul yang benar-benar ada di tabel tapi belum punya label ikut

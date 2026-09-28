@@ -10,6 +10,46 @@ use Illuminate\Support\Facades\Gate;
 class AppServiceProvider extends ServiceProvider
 {
     /**
+     * Model keuangan yang perubahannya wajib meninggalkan jejak.
+     *
+     * Dipisah jadi konstanta agar penambahan model cukup satu baris, dan
+     * agar alasan pemilihannya terdokumentasi di satu tempat.
+     *
+     * Sengaja TIDAK dimasukkan:
+     * - PayrollDetail, PayrollTunjangan, PayrollPotongan — nilainya dihitung
+     *   ulang otomatis setiap kali pegawai ditambah atau subsidi kelas
+     *   dihitung, sehingga satu klik bisa melahirkan belasan baris log yang
+     *   bukan keputusan manusia. PayrollHeader sudah mencatat grand_total
+     *   dan status_approval, yang justru dibaca saat ada sengketa gaji.
+     * - Absensi — volumenya harian dan bukan uang secara langsung.
+     * - Santri, Guru, Kelas — controller-nya sudah memanggil
+     *   LogActivity::create() sendiri, jadi akan tercatat dua kali.
+     */
+    private const MODEL_DIAUDIT = [
+        // Transaksi: uang benar-benar bergerak.
+        \App\Models\Keuangan\Inbound\Pembayaran::class,
+        \App\Models\Keuangan\Inbound\Tagihan::class,
+        \App\Models\Keuangan\Inbound\InvoiceHeader::class,
+        \App\Models\Keuangan\Inbound\ItemTagihan::class,
+        \App\Models\Keuangan\Outbound\Pengeluaran::class,
+        \App\Models\Keuangan\Payroll\PayrollHeader::class,
+        \App\Models\Keuangan\Finance\MutasiKas::class,
+
+        // Saldo dan anggaran.
+        \App\Models\Keuangan\MasterData\Rekening::class,
+        \App\Models\Keuangan\Outbound\RkasHeader::class,
+        \App\Models\Keuangan\Outbound\RkasDetail::class,
+
+        // Master data penentu nominal. Jarang diubah, tapi sekali diubah
+        // ikut menggeser gaji atau tagihan semua orang — justru karena
+        // jarang, jejaknya murah dan sangat berharga.
+        \App\Models\Keuangan\MasterData\Jabatan::class,
+        \App\Models\Keuangan\MasterData\Tunjangan::class,
+        \App\Models\Keuangan\MasterData\Potongan::class,
+        \App\Models\Keuangan\MasterData\Tarif::class,
+    ];
+
+    /**
      * Register any application services.
      */
     public function register(): void
@@ -22,15 +62,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Jejak audit data keuangan. Ditambahkan di sini, bukan di tiap
-        // controller, supaya perubahan lewat jalur mana pun tetap tercatat.
-        foreach ([
-            \App\Models\Pembayaran::class,
-            \App\Models\Pengeluaran::class,
-            \App\Models\Tagihan::class,
-        ] as $model) {
-            $model::observe(\App\Observers\AuditObserver::class);
-        }
         // ✅ Set default string length untuk MySQL
         Schema::defaultStringLength(191);
 
@@ -46,6 +77,14 @@ class AppServiceProvider extends ServiceProvider
         // instalasi raport-only tidak ikut membuat 25 tabel keuangan.
         if (config('modules.keuangan')) {
             $this->loadMigrationsFrom(database_path('migrations/keuangan'));
+
+            // Jejak audit dipasang di sini, bukan di tiap controller, supaya
+            // perubahan lewat jalur mana pun tetap tercatat — dan hanya bila
+            // modul keuangannya memang aktif, karena kelas-kelas ini ikut
+            // di-autoload begitu observe() dipanggil.
+            foreach (self::MODEL_DIAUDIT as $model) {
+                $model::observe(\App\Observers\AuditObserver::class);
+            }
         }
 
         // Jaring pengaman super-admin.

@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\LogActivity;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 /**
  * Mencatat setiap perubahan data ke tabel log_activities secara otomatis.
@@ -90,10 +91,16 @@ class AuditObserver
         return array_diff_key($nilai, array_flip(self::ABAIKAN));
     }
 
-    /** Nama modul diambil dari nama kelas: Pembayaran -> pembayaran. */
+    /**
+     * Nama modul diambil dari nama kelas: Pembayaran -> pembayaran,
+     * InvoiceHeader -> invoice-header.
+     *
+     * Kebab-case, bukan strtolower polos, supaya nama gabungan tetap
+     * terbaca di halaman Log Activity — 'payrollheader' sulit dibaca.
+     */
     private function modul(Model $model): string
     {
-        return strtolower(class_basename($model));
+        return Str::kebab(class_basename($model));
     }
 
     private function keterangan(Model $model, string $jenis): string

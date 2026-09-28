@@ -303,7 +303,7 @@ class PayrollController extends Controller
                     'dibayar_at'      => $now,
                 ]);
 
-                $header->details()->update(['is_paid' => true]);
+                $header->details()->get()->each->update(['is_paid' => true]);
 
                 MutasiKas::create([
                     'account_id'              => $rekening->id,
