@@ -66,6 +66,13 @@ const ACTIVITY_DOT = {
     import: 'bg-cyan-400', submit: 'bg-violet-400', approve: 'bg-emerald-400', reject: 'bg-red-400',
 };
 
+// Warna untuk tiga kartu role teratas, dipakai berurutan.
+const KARTU_ROLE = [
+    { nilai: 'text-purple-600 dark:text-purple-400',  latar: 'bg-purple-100 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20',    warna: 'text-purple-600 dark:text-purple-400',  ikon: <ShieldIcon /> },
+    { nilai: 'text-orange-600 dark:text-orange-400',  latar: 'bg-orange-100 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20',    warna: 'text-orange-600 dark:text-orange-400',  ikon: <TeacherIcon /> },
+    { nilai: 'text-emerald-600 dark:text-emerald-400', latar: 'bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20', warna: 'text-emerald-600 dark:text-emerald-400', ikon: <StudentIcon /> },
+];
+
 const nf = (n) => Number(n ?? 0).toLocaleString('id-ID');
 // Menangani role bertanda hubung: 'kepala-sekolah' -> 'Kepala Sekolah'.
 const capitalize = (s) => (s ? String(s).split('-').map((k) => k.charAt(0).toUpperCase() + k.slice(1)).join(' ') : s);
@@ -280,12 +287,22 @@ export default function Index({ logs, users = [], roles = [], modules = {}, acti
                         icon={<ClipboardIcon />} iconBg="bg-blue-100 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20" iconColor="text-blue-600 dark:text-blue-400" />
                     <StatCard label="Hari Ini" value={nf(stats.today)} valueClass="text-emerald-600 dark:text-emerald-400"
                         icon={<CalendarIcon />} iconBg="bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20" iconColor="text-emerald-600 dark:text-emerald-400" />
-                    <StatCard label="Admin" value={nf(stats.by_role?.admin)} valueClass="text-purple-600 dark:text-purple-400"
-                        icon={<ShieldIcon />} iconBg="bg-purple-100 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20" iconColor="text-purple-600 dark:text-purple-400" />
-                    <StatCard label="Guru" value={nf(stats.by_role?.guru)} valueClass="text-orange-600 dark:text-orange-400"
-                        icon={<TeacherIcon />} iconBg="bg-orange-100 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20" iconColor="text-orange-600 dark:text-orange-400" />
-                    <StatCard label="Santri" value={nf(stats.by_role?.santri)} valueClass="text-emerald-600 dark:text-emerald-400" wide
-                        icon={<StudentIcon />} iconBg="bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20" iconColor="text-emerald-600 dark:text-emerald-400" />
+                    {/* Tiga role teraktif, dibaca dari data. Sebelumnya Admin,
+                        Guru, dan Santri ditulis tetap — sehingga aktivitas
+                        bendahara, super-admin, dan role yayasan tidak pernah
+                        terlihat meski jumlahnya besar. */}
+                    {Object.entries(stats.by_role ?? {}).slice(0, 3).map(([role, jumlah], i) => (
+                        <StatCard
+                            key={role}
+                            label={capitalize(role)}
+                            value={nf(jumlah)}
+                            wide={i === 2}
+                            valueClass={KARTU_ROLE[i].nilai}
+                            icon={KARTU_ROLE[i].ikon}
+                            iconBg={KARTU_ROLE[i].latar}
+                            iconColor={KARTU_ROLE[i].warna}
+                        />
+                    ))}
                 </div>
 
                 {/* ===== FILTER SECTION ===== */}

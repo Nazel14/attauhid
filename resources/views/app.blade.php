@@ -48,7 +48,8 @@
         <meta property="og:title" content="Sistem Manajemen Tahfizh Pesantren">
         <meta property="og:description" content="Pantau hafalan, presensi, dan keuangan santri dalam satu aplikasi.">
         <meta property="og:url" content="{{ url()->current() }}">
-        <meta property="og:image" content="{{ asset('og-image.png') }}">
+        <meta property="og:image" content="{{ asset('og-image.jpg') }}?v=2">
+        <meta property="og:image:type" content="image/jpeg">
         <meta property="og:image:width" content="1200">
         <meta property="og:image:height" content="630">
         <meta property="og:locale" content="id_ID">

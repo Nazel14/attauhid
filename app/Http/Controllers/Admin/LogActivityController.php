@@ -174,50 +174,48 @@ class LogActivityController extends Controller
 
     private function getStatistics($request)
     {
-        $query = LogActivity::query();
-
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        } else {
-            $query->recent(30);
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        }
-
-        // by_role pakai query tanpa batasan recent(30) agar
-        // angka card konsisten dengan jumlah nyata per role
-        $byRoleQuery = LogActivity::query();
-        if ($request->filled('date_from')) {
-            $byRoleQuery->whereDate('created_at', '>=', $request->date_from);
-        }
-        if ($request->filled('date_to')) {
-            $byRoleQuery->whereDate('created_at', '<=', $request->date_to);
-        }
+        // Satu sumber untuk semua angka.
+        //
+        // Versi lama membatasi $total dengan recent(30) tapi tidak
+        // membatasi by_role, sehingga jumlah per role bisa jauh melebihi
+        // "Total Logs" — dua satuan berbeda dipajang berdampingan dan
+        // angkanya tampak mustahil.
+        $dasar = fn () => LogActivity::query()
+            ->when($request->filled('date_from'),
+                fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
+            ->when($request->filled('date_to'),
+                fn ($q) => $q->whereDate('created_at', '<=', $request->date_to));
 
         return [
-            'total'       => $query->count(),
-            'today'       => LogActivity::today()->count(),
-            'by_role'     => $byRoleQuery
-                                ->select('role', DB::raw('count(*) as total'))
-                                ->groupBy('role')
-                                ->pluck('total', 'role')
-                                ->toArray(),
-            'by_activity' => $query->clone()
-                                ->select('activity_type', DB::raw('count(*) as total'))
-                                ->groupBy('activity_type')
-                                ->orderByDesc('total')
-                                ->limit(5)
-                                ->pluck('total', 'activity_type')
-                                ->toArray(),
-            'by_module'   => $query->clone()
-                                ->select('module', DB::raw('count(*) as total'))
-                                ->groupBy('module')
-                                ->orderByDesc('total')
-                                ->limit(5)
-                                ->pluck('total', 'module')
-                                ->toArray(),
+            'total' => $dasar()->count(),
+            'today' => LogActivity::today()->count(),
+
+            // Diurutkan dari yang terbanyak. Halaman mengambil tiga teratas,
+            // jadi role mana pun bisa muncul tanpa ditulis tetap di kode —
+            // termasuk bendahara dan role yayasan yang sebelumnya tidak
+            // punya kartu sama sekali.
+            'by_role' => $dasar()
+                ->select('role', DB::raw('count(*) as total'))
+                ->groupBy('role')
+                ->orderByDesc('total')
+                ->pluck('total', 'role')
+                ->toArray(),
+
+            'by_activity' => $dasar()
+                ->select('activity_type', DB::raw('count(*) as total'))
+                ->groupBy('activity_type')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->pluck('total', 'activity_type')
+                ->toArray(),
+
+            'by_module' => $dasar()
+                ->select('module', DB::raw('count(*) as total'))
+                ->groupBy('module')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->pluck('total', 'module')
+                ->toArray(),
         ];
     }
 
