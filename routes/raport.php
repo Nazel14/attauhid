@@ -46,8 +46,6 @@ Route::middleware(['auth', 'role:super-admin,admin'])->prefix('admin')->name('ad
 
     Route::middleware('permission:kelola-admin')->group(function() {
         Route::resource('admins', AdminController::class)->except(['show']);
-        Route::put('admins/{admin}/reset-password', [AdminController::class, 'resetPassword'])
-            ->name('admins.reset-password');
 
         // Tahun Ajaran (hanya Super Admin)
         Route::prefix('tahun-ajaran')->name('tahun-ajaran.')->group(function () {
@@ -488,7 +486,11 @@ Route::middleware(['auth'])->prefix('api')->name('api.')->group(function () {
                 if (isset($presensiGrouped[$santri->id])) {
                     foreach ($presensiGrouped[$santri->id] as $presensi) {
                         $waktuPresensi = \Carbon\Carbon::parse($presensi->created_at)->format('H:i');
-                        $jumlahSetoran = $presensi->setorans()
+                        // Pakai relasi yang sudah dimuat lewat with('setorans') di
+                        // atas. Versi lama memanggil setorans() — dengan tanda
+                        // kurung — yang membuat query baru untuk SETIAP presensi,
+                        // sehingga eager loading-nya sia-sia.
+                        $jumlahSetoran = $presensi->setorans
                             ->whereNotNull('kategori_setoran')
                             ->count();
                         $sesiData[$presensi->sesi] = [

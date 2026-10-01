@@ -14,8 +14,12 @@ class InvoiceHeader extends Model
 
     protected $table = 'invoice_headers';
 
-    protected $fillable = [
+        protected $fillable = [
         'batch_number', 'tariff_id', 'title', 'period', 'due_date',
+        // Hilang di versi sebelumnya. storeHeader() menulis nilainya, tapi
+        // Laravel membuang kunci yang tidak fillable tanpa pesan apa pun —
+        // sehingga snapshot targetnya tidak pernah tersimpan sekali pun.
+        'target_summary',
         'total_students', 'total_expected_amount', 'status',
     ];
 

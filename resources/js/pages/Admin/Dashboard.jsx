@@ -33,6 +33,21 @@ export default function Dashboard({ stats = {}, tahunAjaranAktif = null, loginTr
           icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
     ].filter(Boolean);
 
+    // Jumlah kolom mengikuti jumlah kartu, bukan dipatok empat. Admin biasa
+    // tidak mendapat kartu 'Total Admin', sehingga tiga kartu di grid empat
+    // kolom menyisakan satu sel kosong di kanan — terbaca sebagai kartu yang
+    // gagal dimuat, bukan sebagai kartu yang memang tidak ada.
+    //
+    // Ditulis sebagai string utuh, bukan dirangkai (`lg:grid-cols-${n}`),
+    // karena Tailwind memindai teks sumber dan tidak bisa melihat kelas
+    // yang baru terbentuk saat dijalankan.
+    const kolomStat = {
+        1: 'grid-cols-1',
+        2: 'grid-cols-2',
+        3: 'grid-cols-1 sm:grid-cols-3',
+        4: 'grid-cols-2 lg:grid-cols-4',
+    }[statCards.length] ?? 'grid-cols-2 lg:grid-cols-4';
+
     const iconTint = {
         claude: 'bg-claude-100 text-claude-600 dark:bg-claude-500/20 dark:text-claude-300',
         blue: 'bg-blue-100 text-blue-600 dark:bg-blue-400/15 dark:text-blue-300',
@@ -51,11 +66,14 @@ export default function Dashboard({ stats = {}, tahunAjaranAktif = null, loginTr
         label: new Date(d.date).toLocaleDateString('id-ID', { weekday: 'short' }),
     }));
 
+    // Kategori Admin hanya ikut bila penggunanya memang berhak melihat
+    // angkanya. Tanpa ini admin biasa melihat batang 'Admin' setinggi nol —
+    // yang terbaca sebagai data hilang, padahal datanya memang tidak dikirim.
     const komposisiData = [
-        { label: 'Admin', value: stats.totalAdmins ?? 0, fill: '#D97757' },
+        isSuperAdmin && { label: 'Admin', value: stats.totalAdmins ?? 0, fill: '#D97757' },
         { label: 'Guru', value: stats.totalGurus ?? 0, fill: '#6A9BCC' },
         { label: 'Santri', value: stats.totalSantris ?? 0, fill: '#C2A6E1' },
-    ];
+    ].filter(Boolean);
 
     // ===== Aktivitas: gaya per tipe =====
     const actStyle = {
@@ -109,7 +127,7 @@ export default function Dashboard({ stats = {}, tahunAjaranAktif = null, loginTr
                 </div>
 
                 {/* ===== Stat cards ===== */}
-                <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <div className={`grid gap-4 ${kolomStat}`}>
                     {statCards.map((s, i) => (
                         <div key={i} className={`${card} p-5 transition hover:shadow-md hover:shadow-cream-300/50 dark:hover:border-coal-500 dark:hover:shadow-none`}>
                             <div className="mb-3 flex items-center justify-between">
@@ -158,7 +176,7 @@ export default function Dashboard({ stats = {}, tahunAjaranAktif = null, loginTr
                     <div className={`${card} p-5`}>
                         <div className="mb-4">
                             <h2 className="text-sm font-bold text-stone-800 dark:text-cream-50">Komposisi Pengguna</h2>
-                            <p className="text-xs text-stone-400 dark:text-stone-500">Admin · Guru · Santri</p>
+                            <p className="text-xs text-stone-400 dark:text-stone-500">{komposisiData.map((d) => d.label).join(' · ')}</p>
                         </div>
                         <div style={{ width: '100%', height: 240 }}>
                             <ResponsiveContainer>

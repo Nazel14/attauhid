@@ -9,8 +9,10 @@ use App\Models\Keuangan\MasterData\Siswa;
 use App\Models\Keuangan\MasterData\Tarif;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class TagihanController extends Controller
@@ -47,6 +49,7 @@ class TagihanController extends Controller
                 'items.tarif:id,billing_name',
                 'pembayarans.dibuatOleh:id,name',
                 'riwayatPenagihans.petugas:id,name',
+                'pembatal:id,name',
             ])->where('invoice_header_id', $request->header_id);
 
             // BUG ASLI: orWhere tidak dibungkus closure, sehingga melompati
@@ -72,8 +75,14 @@ class TagihanController extends Controller
             $details = $detailQuery->paginate(10, ['*'], 'detail_page')->withQueryString();
         }
 
-        $totalTagihan = Tagihan::sum('total_amount');
-        $totalBelum   = Tagihan::sum('remaining_balance');
+        // Tagihan yang dibatalkan tidak lagi dihitung. remaining_balance-nya
+        // memang sudah dinolkan saat dibatalkan, tapi total_amount-nya masih
+        // utuh — tanpa saringan ini "Total Potensi" ikut menggelembung oleh
+        // uang yang justru diputuskan tidak jadi ditagih.
+        $dasarRingkas = Tagihan::where('status', '!=', 'Cancelled');
+
+        $totalTagihan = (clone $dasarRingkas)->sum('total_amount');
+        $totalBelum   = (clone $dasarRingkas)->sum('remaining_balance');
 
         return Inertia::render('Keuangan/Pemasukan/KelolaTagihan', [
             'headers'          => $headers,
@@ -285,6 +294,15 @@ class TagihanController extends Controller
 
     public function destroy(Tagihan $tagihan)
     {
+        // Gerbang ini sebelumnya hanya ada di tampilan — tombolnya
+        // disembunyikan saat gelombang sudah dipublish, tapi controllernya
+        // tetap menerima permintaannya.
+        if ($tagihan->header && $tagihan->header->status !== 'Draft') {
+            return redirect()->back()->withErrors([
+                'delete_error' => 'Tagihan pada gelombang yang sudah dipublish tidak bisa dihapus. Gunakan Batalkan agar jejaknya tetap ada.',
+            ]);
+        }
+
         if (bccomp((string) $tagihan->total_amount, (string) $tagihan->remaining_balance, 2) !== 0) {
             return redirect()->back()->withErrors([
                 'delete_error' => 'Tagihan ini sudah memiliki riwayat pembayaran.',
@@ -307,6 +325,64 @@ class TagihanController extends Controller
         });
 
         return redirect()->back()->with('success', 'Tagihan berhasil dihapus.');
+    }
+
+    /**
+     * Membatalkan satu tagihan yang sudah dipublish.
+     *
+     * Beda dengan destroy(): barisnya tetap ada, lengkap dengan alasan dan
+     * siapa yang membatalkan. Enam bulan lagi, saat ada yang bertanya kenapa
+     * tagihan seorang santri hilang, jawabannya ada di sistem.
+     *
+     * Alasannya berkategori, bukan tulisan bebas, supaya nominal yang
+     * dibebaskan selama setahun bisa dijumlahkan — itu pengeluaran sosial
+     * terbesar pesantren, hanya bentuknya uang yang tidak jadi masuk.
+     */
+    public function batalkan(Request $request, Tagihan $tagihan)
+    {
+        if ($tagihan->status === 'Cancelled') {
+            return redirect()->back()->withErrors(['batal_error' => 'Tagihan ini sudah dibatalkan.']);
+        }
+
+        // Yang sudah menerima uang tidak boleh dibatalkan. Pembayarannya
+        // sudah masuk buku kas dan menambah saldo rekening; membatalkan
+        // tagihannya membuat saldo itu kehilangan penjelasan.
+        if (bccomp((string) $tagihan->total_amount, (string) $tagihan->remaining_balance, 2) !== 0) {
+            return redirect()->back()->withErrors([
+                'batal_error' => 'Tagihan ini sudah menerima pembayaran, jadi tidak bisa dibatalkan. Yang bisa dibatalkan hanya tagihan yang belum dibayar sama sekali.',
+            ]);
+        }
+
+        $data = $request->validate([
+            'cancel_reason' => ['required', Rule::in(array_keys(Tagihan::ALASAN_BATAL))],
+            'cancel_note'   => 'nullable|string|max:255',
+        ], [
+            'cancel_reason.required' => 'Alasan pembatalan wajib dipilih.',
+            'cancel_reason.in'       => 'Alasan pembatalan tidak dikenali.',
+        ]);
+
+        DB::transaction(function () use ($tagihan, $data) {
+            $tagihan->update([
+                'status' => 'Cancelled',
+                // Dinolkan supaya penjumlahan piutang di mana pun — termasuk
+                // yang belum menyaring status — tidak lagi menghitungnya.
+                // Nominal aslinya tetap tersimpan di total_amount.
+                'remaining_balance' => 0,
+                'cancel_reason'     => $data['cancel_reason'],
+                'cancel_note'       => $data['cancel_note'] ?? null,
+                'cancelled_by'      => Auth::id(),
+                'cancelled_at'      => now(),
+            ]);
+
+            // total_students sengaja TIDAK dikurangi: barisnya masih ada di
+            // daftar rincian, jadi angka "25 siswa" yang berubah jadi 24
+            // sementara tabelnya tetap 25 baris justru membingungkan.
+            if ($header = $tagihan->header) {
+                $header->decrement('total_expected_amount', (float) $tagihan->total_amount);
+            }
+        });
+
+        return redirect()->back()->with('success', 'Tagihan dibatalkan.');
     }
 
     public function autoGenerate(InvoiceHeader $header)
@@ -447,6 +523,14 @@ class TagihanController extends Controller
 
         abort_unless($header && $header->status === 'Published', 403,
             'Tagihan hanya bisa dicetak setelah gelombangnya dipublish.');
+
+        // Diperiksa sebelum pemeriksaan lunas: tagihan batal juga bersisa
+        // nol, dan menyebutnya "sudah lunas" adalah keterangan yang salah.
+        if ($tagihan->status === 'Cancelled') {
+            return redirect()->back()->withErrors([
+                'status_error' => 'Tagihan ini sudah dibatalkan dan tidak dapat dicetak.',
+            ]);
+        }
 
         // Sejalan dengan printBulk: yang lunas tidak dicetak ulang.
         if (bccomp((string) $tagihan->remaining_balance, '0', 2) <= 0) {

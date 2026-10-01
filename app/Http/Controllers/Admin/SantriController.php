@@ -24,6 +24,7 @@ use Inertia\Inertia;
 class SantriController extends Controller
 {
     use LogsActivity;
+    use \App\Traits\PenghapusanSantri;
 
     /**
      * Label metode untuk tampilan (ucfirst quran → Al-Qur'an dsb bisa disesuaikan).
@@ -362,14 +363,28 @@ class SantriController extends Controller
         ]);
 
         try {
-            $kelasId = $request->kelas_id;
-            $deletedCount = count($request->santri_ids);
-            $santriNames = Santri::whereIn('id', $request->santri_ids)->pluck('name')->toArray();
+            $kelasId      = $request->kelas_id;
+            $deletedCount = 0;
+            $santriNames  = [];
+            $dilewati     = [];
 
-            DB::transaction(function () use ($request) {
+            $terkunci = $this->tagihanPerSantri($request->santri_ids);
+
+            DB::transaction(function () use ($request, $terkunci, &$deletedCount, &$santriNames, &$dilewati) {
                 $santris = Santri::with('user')->whereIn('id', $request->santri_ids)->get();
 
                 foreach ($santris as $santri) {
+                    // Dilewati, bukan menggagalkan seluruh transaksi. Satu
+                    // santri bertagihan tidak boleh membatalkan penghapusan
+                    // sembilan lainnya yang sebenarnya tidak bermasalah.
+                    if (isset($terkunci[$santri->id])) {
+                        $dilewati[] = $santri->name;
+                        continue;
+                    }
+
+                    $santriNames[] = $santri->name;
+                    $deletedCount++;
+
                     if ($santri->user) {
                         if ($santri->user->profile_photo && Storage::disk('public')->exists($santri->user->profile_photo)) {
                             Storage::disk('public')->delete($santri->user->profile_photo);
@@ -379,27 +394,38 @@ class SantriController extends Controller
                     $santri->delete();
                 }
             });
+            if ($deletedCount === 0) {
+                return redirect()->back()->with(
+                    'error',
+                    $dilewati
+                        ? 'Tidak ada santri yang dihapus. ' . $this->pesanSantriDilewati($dilewati)
+                        : 'Tidak ada santri yang berhasil dihapus.'
+                );
+            }
+
             $this->logActivity(
                 'delete',
                 'santri',
                 "Bulk delete {$deletedCount} santri: " . implode(', ', array_slice($santriNames, 0, 3)) . ($deletedCount > 3 ? '...' : ''),
                 null,
-                ['ids' => $request->santri_ids, 'total' => $deletedCount],
+                ['nama' => $santriNames, 'total' => $deletedCount, 'dilewati' => $dilewati],
                 null
             );
 
-            if ($kelasId) {
-                return redirect()->route('admin.santris.detail', $kelasId)
-                    ->with('success', "Berhasil menghapus {$deletedCount} santri dan akun login terkait!");
+            $pesan = "Berhasil menghapus {$deletedCount} santri dan akun login terkait!";
+
+            if ($dilewati) {
+                $pesan .= '<br><br>' . $this->pesanSantriDilewati($dilewati);
             }
 
-            return redirect()->route('admin.santris.index')
-                ->with('success', "Berhasil menghapus {$deletedCount} santri dan akun login terkait!");
+            return $kelasId
+                ? redirect()->route('admin.santris.detail', $kelasId)->with('success', $pesan)
+                : redirect()->route('admin.santris.index')->with('success', $pesan);
 
         } catch (\Exception $e) {
             \Log::error("Error bulk deleting Santri: " . $e->getMessage());
             return redirect()->back()
-                ->with('error', 'Gagal menghapus data: ' . $e->getMessage());
+                ->with('error', $this->pesanGagalHapusSantri($e, 'santri terpilih'));
         }
     }
 
@@ -897,6 +923,18 @@ class SantriController extends Controller
      */
     public function destroy(Santri $santri)
     {
+        // Diperiksa SEBELUM mencoba menghapus. Menangkap error foreign key
+        // setelahnya tetap mungkin, tapi pesannya tidak pernah bisa menyebut
+        // berapa tagihan yang menahan — dan transaksinya sudah terlanjur gagal.
+        $terkunci = $this->tagihanPerSantri([$santri->id]);
+
+        if (! empty($terkunci)) {
+            return redirect()->back()->with(
+                'error',
+                $this->pesanSantriTerkunci($santri->name, (int) reset($terkunci))
+            );
+        }
+
         try {
             $name = $santri->name;
             $kelasId = $santri->kelas_id;
@@ -924,8 +962,12 @@ class SantriController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error("Error deleting Santri: " . $e->getMessage());
+
+            // Pesan aslinya hanya ke log: isinya nama tabel dan constraint,
+            // yang tidak berarti apa-apa bagi orang yang menekan tombolnya.
             return redirect()->back()
-                ->with('error', 'Gagal menghapus Santri. ' . $e->getMessage());
+                ->with('error', $this->pesanGagalHapusSantri($e, $santri->name));
         }
     }
 

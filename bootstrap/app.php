@@ -72,7 +72,21 @@ return Application::configure(basePath: dirname(__DIR__))
                 return back()->with('error', $pesan);
             }
 
-            // --- Sebab 2: sesi kedaluwarsa ---
+            if ($request->user()) {
+                $pesan = 'Halaman sudah kedaluwarsa. Silakan kirim ulang.';
+
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => $pesan], 419);
+                }
+
+                $request->session()->flash('error', $pesan);
+
+                return $request->header('X-Inertia')
+                    ? Inertia::location(url()->previous())
+                    : back();
+            }
+
+            // --- Sebab 2b: sesi benar-benar kedaluwarsa ---
             $pesan = 'Sesi Anda telah berakhir. Silakan login kembali.';
 
             if ($request->expectsJson()) {

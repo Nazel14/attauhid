@@ -81,6 +81,7 @@ return [
     |   1. routes/keuangan.php  -> gerbang 'role:' di level grup
     |   2. UserController@index -> filter daftar user
     |   3. UserController store/update/destroy -> Rule::in()
+        4. User::availableModules()  -> menentukan panel yang boleh dibuka
     |
     | Guru & santri sengaja tidak ada di sini: keduanya tetap dikelola
     | dari AdminController raport, bukan dari panel keuangan.
@@ -92,11 +93,31 @@ return [
 
     'keuangan_roles' => [
         'super-admin',
+        'admin',
         'bendahara',
         'kepala-sekolah',
         'ketua-yayasan',
         'pihak-yayasan',
         'hrd',
+    ],
+
+        /*
+    |----------------------------------------------------------------------
+    | Role Modul Raport
+    |----------------------------------------------------------------------
+    | Pasangan dari 'keuangan_roles' di bawah. Keduanya dibaca oleh
+    | User::availableModules() untuk menentukan panel mana yang boleh
+    | dibuka seseorang.
+    |
+    | Santri ada di sini meski portalnya berdiri di luar gerbang modul —
+    | tanpa ini ia tidak punya modul sama sekali setelah login.
+    */
+
+    'raport_roles' => [
+        'super-admin',
+        'admin',
+        'guru',
+        'santri',
     ],
 
     /*
@@ -157,5 +178,36 @@ return [
         'hrd'            => 'hrd',
         'yayasan'        => 'pihak-yayasan',
         'pihak yayasan'  => 'pihak-yayasan',
+    ],
+    
+
+        /*
+    |----------------------------------------------------------------------
+    | Mode Demo
+    |----------------------------------------------------------------------
+    | Menyalakan tombol "Masuk sebagai…" di halaman login, supaya calon
+    | pembeli bisa mencoba tiap sudut pandang tanpa dikirimi akun.
+    |
+    | WAJIB false di instalasi klien. Bila true, siapa pun bisa masuk
+    | sebagai akun demo tanpa password — aman HANYA karena akun-akun ini
+    | berisi data contoh, bukan data pesantren sungguhan.
+    */
+
+    'demo' => env('DEMO_MODE', false),
+
+    'demo_akun' => [
+        // Urutan di sini menentukan urutan tombol di halaman login.
+        // Modulnya sengaja TIDAK ditulis di sini — dibaca dari
+        // availableModules() tiap akun, supaya tidak ada dua sumber
+        // kebenaran yang suatu hari berselisih.
+        ['peran' => 'admin',          'label' => 'Admin',          'username' => 'demo.admin'],
+        ['peran' => 'kepala-sekolah', 'label' => 'Kepala Sekolah', 'username' => 'demo.kepsek'],
+        ['peran' => 'guru',           'label' => 'Guru',           'username' => 'demo.guru1'],
+        ['peran' => 'santri',         'label' => 'Santri',         'username' => 'demo.santri1'],
+        ['peran' => 'bendahara',      'label' => 'Bendahara',      'username' => 'demo.bendahara'],
+        
+        ['peran' => 'hrd',            'label' => 'HRD',            'username' => 'demo.hrd'],
+        ['peran' => 'ketua-yayasan',  'label' => 'Ketua Yayasan',  'username' => 'demo.ketuayayasan'],
+        ['peran' => 'pihak-yayasan',  'label' => 'Pihak Yayasan',  'username' => 'demo.yayasan'],
     ],
 ];

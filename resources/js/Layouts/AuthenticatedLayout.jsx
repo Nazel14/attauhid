@@ -284,13 +284,6 @@ export default function AuthenticatedLayout({ children }) {
 
     const closeNav = () => setOpen(false);
 
-    // Dikumpulkan sekali supaya kedua pemanggilan SidebarBody tidak
-    // perlu menyebut sepuluh prop yang sama dua kali.
-    const sidebarProps = {
-        user, isSuperAdmin, bisaKeKeuangan, management, laporan,
-        dark, setDark, setCollapsed, closeNav,
-    };
-
     const management = [
         can('kelola-admin') && { href: route('admin.admins.index'), label: 'Kelola Admin', icon: I.admin, active: route().current('admin.admins.*') },
         can('kelola-admin') && { href: route('admin.tahun-ajaran.index'), label: 'Tahun Ajaran', icon: I.tahun, active: route().current('admin.tahun-ajaran.*') },
@@ -305,6 +298,14 @@ export default function AuthenticatedLayout({ children }) {
         can('lihat-log-activity') && { href: route('admin.logs.index'), label: 'Log Activity', icon: I.log, active: route().current('admin.logs.*') },
         { href: route('admin.laporan.index'), label: 'Komplain Data', icon: I.komplain, active: route().current('admin.laporan.*'), badge: unreadLaporan },
     ].filter(Boolean);
+
+    // WAJIB dideklarasikan SETELAH management dan laporan. Keduanya
+    // memakai const, jadi membacanya lebih awal melempar ReferenceError
+    // dan membuat seluruh halaman kosong tanpa pesan apa pun di layar.
+    const sidebarProps = {
+        user, isSuperAdmin, bisaKeKeuangan, management, laporan,
+        dark, setDark, setCollapsed, closeNav,
+    };
 
     return (
         <div className="min-h-screen bg-cream-50 text-stone-900 dark:bg-coal-800 dark:text-cream-50">

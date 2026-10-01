@@ -10,6 +10,15 @@ import InputError from '@/Components/InputError';
 import SearchableSelect from '@/Components/SearchableSelect';
 import { formatCurrency } from '@/Utils/formatCurrency';
 
+// Cermin dari Tagihan::ALASAN_BATAL di sisi PHP. Kunci harus sama persis;
+// validasi server menolak nilai di luar daftar itu.
+const ALASAN_BATAL = [
+    ['salah_input',   'Salah input'],
+    ['santri_keluar', 'Santri keluar atau pindah'],
+    ['keringanan',    'Keringanan / dibebaskan'],
+    ['lainnya',       'Lainnya'],
+];
+
 const tanggal = (s) => (s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-');
 
 export default function KelolaTagihan({ headers, details, selectedHeaderId, summary, listSiswa, listTarif, filters }) {
@@ -39,6 +48,11 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
     const [dialog, setDialog] = useState(null);
     const [pesanError, setPesanError] = useState('');
     const [proses, setProses] = useState(false);
+
+    const [isBatal, setIsBatal] = useState(false);
+    const [batalTarget, setBatalTarget] = useState(null);
+
+    const formBatal = useForm({ cancel_reason: '', cancel_note: '' });
 
     const formHeader = useForm({ title: '', tariff_id: '', period: '', due_date: '' });
     const formDetail = useForm({ invoice_header_id: selectedHeaderId || '', student_id: '', nominal: '' });
@@ -156,13 +170,28 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
         }
     };
 
+    const bukaBatal = (d) => {
+        setBatalTarget(d);
+        formBatal.clearErrors();
+        formBatal.setData({ cancel_reason: '', cancel_note: '' });
+        setIsBatal(true);
+    };
+
+    const submitBatal = (e) => {
+        e.preventDefault();
+        formBatal.post(route('keuangan.pemasukan.tagihan.batalkan', batalTarget.id), {
+            onSuccess: () => setIsBatal(false),
+            preserveScroll: true,
+        });
+    };
+
     const aksi = (url, method = 'post') => {
         setProses(true);
         router[method](url, method === 'post' ? {} : undefined, {
             preserveScroll: true,
             onFinish: () => setProses(false),
             onSuccess: () => { setDialog(null); setPesanError(''); },
-            onError: (err) => setPesanError(err.status_error || err.header_error || err.delete_error || 'Gagal memproses.'),
+            onError: (err) => setPesanError(err.status_error || err.header_error || err.delete_error || err.batal_error || 'Gagal memproses.'),
         });
     };
 
@@ -170,9 +199,11 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
         'Paid':        'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20',
         'Installment': 'bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-500/20',
         'Unpaid':      'bg-red-50 text-red-700 ring-red-200 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/20',
+        // Netral, bukan merah: dibatalkan itu keputusan, bukan kesalahan.
+        'Cancelled':   'bg-stone-100 text-stone-500 ring-stone-300 dark:bg-coal-600 dark:text-stone-400 dark:ring-coal-500',
     }[s] || 'bg-stone-100 text-stone-600 ring-stone-200');
 
-    const labelInvoice = (s) => ({ Paid: 'Lunas', Installment: 'Dicicil', Unpaid: 'Belum Bayar' }[s] || s);
+    const labelInvoice = (s) => ({ Paid: 'Lunas', Installment: 'Dicicil', Unpaid: 'Belum Bayar', Cancelled: 'Dibatalkan' }[s] || s);
 
     const badgeBatch = (s) => ({
         'Draft':     'bg-stone-100 text-stone-600 ring-stone-200 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500',
@@ -185,6 +216,16 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
 
     // Cetak satuan: permission sama dengan cetak massal, route sudah ada,
     // dan batch sudah dipublish.
+    // Pembatalan hanya untuk gelombang yang sudah dipublish — selama masih
+    // Draft, tombol Hapus sudah tersedia dan lebih tepat. Tagihan yang sudah
+    // menerima pembayaran tidak ditawari sama sekali; servernya juga menolak,
+    // tapi tombol yang tidak pernah bisa ditekan hanya memancing percobaan.
+    const bisaBatal = (d) =>
+        header?.status === 'Published' &&
+        can('tagihan.batalkan') &&
+        d.status !== 'Cancelled' &&
+        Math.abs(Number(d.total_amount) - Number(d.remaining_balance)) < 0.01;
+
     const bisaCetakSatuan =
         can('tagihan.cetak_massal') &&
         has('keuangan.pemasukan.tagihan.print') &&
@@ -495,6 +536,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                 <option value="Paid">Lunas</option>
                                 <option value="Installment">Dicicil</option>
                                 <option value="Unpaid">Belum Bayar</option>
+                                <option value="Cancelled">Dibatalkan</option>
                             </select>
                             <ChevronBawah />
                         </div>
@@ -555,6 +597,13 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                             <button type="button" onClick={() => { setPesanError(''); setDialog({ jenis: 'hapus-detail', id: d.id }); }}
                                                 className="flex flex-1 items-center justify-center border-l border-stone-100 py-2.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-coal-600 dark:text-red-400 dark:hover:bg-red-500/10">
                                                 Hapus
+                                            </button>
+                                        )}
+
+                                        {bisaBatal(d) && (
+                                            <button type="button" onClick={() => bukaBatal(d)}
+                                                className="flex flex-1 items-center justify-center border-l border-stone-100 py-2.5 text-xs font-medium text-amber-700 transition hover:bg-amber-50 dark:border-coal-600 dark:text-amber-400 dark:hover:bg-amber-500/10">
+                                                Batalkan
                                             </button>
                                         )}
                                     </div>
@@ -633,6 +682,14 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                                             )}
                                                         </>
                                                     )}
+
+                                                    {bisaBatal(d) && (
+                                                        <button type="button" onClick={() => bukaBatal(d)}
+                                                            title={`Batalkan tagihan ${d.siswa?.name || ''}`}
+                                                            className={`${btnGhost} text-amber-700 ring-amber-200 hover:bg-amber-50 dark:text-amber-400 dark:ring-amber-500/25 dark:hover:bg-amber-500/10`}>
+                                                            Batalkan
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -688,6 +745,25 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                 <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${badgeInvoice(invoice.status)}`}>{labelInvoice(invoice.status)}</span>
                             </div>
                         </div>
+
+                        {/* Alasan pembatalan ditampilkan apa adanya. Inilah
+                            satu-satunya pembeda membatalkan dengan menghapus —
+                            kalau keterangannya tidak terlihat di sini, tidak ada
+                            gunanya menyimpannya. */}
+                        {invoice.status === 'Cancelled' && (
+                            <div className="mt-4 rounded-xl bg-stone-50 p-3 ring-1 ring-stone-200 dark:bg-coal-900/50 dark:ring-coal-600">
+                                <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-400">Dibatalkan</p>
+                                <p className="mt-1 text-sm font-medium text-stone-800 dark:text-cream-100">
+                                    {ALASAN_BATAL.find(([k]) => k === invoice.cancel_reason)?.[1] || invoice.cancel_reason || '—'}
+                                </p>
+                                {invoice.cancel_note && (
+                                    <p className="mt-1 break-words text-xs text-stone-600 dark:text-stone-300">{invoice.cancel_note}</p>
+                                )}
+                                <p className="mt-2 text-[11px] text-stone-400">
+                                    {invoice.pembatal?.name || 'Tidak tercatat'} · {tanggal(invoice.cancelled_at)}
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
@@ -831,12 +907,69 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                 </form>
             </Modal>
 
+            <Modal show={isBatal} onClose={() => setIsBatal(false)} maxWidth="md">
+                <form onSubmit={submitBatal} className="max-h-[85vh] overflow-y-auto p-5 sm:p-6">
+                    <h2 className="text-base font-semibold text-stone-800 dark:text-cream-50">Batalkan Tagihan</h2>
+                    <p className="mt-1 break-words text-sm text-stone-500 dark:text-stone-400">
+                        {batalTarget?.siswa?.name} · {batalTarget?.invoice_number} · {formatCurrency(batalTarget?.total_amount || 0)}
+                    </p>
+
+                    <div className="mt-4 rounded-xl bg-amber-50 p-3 text-xs leading-relaxed text-amber-800 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/25">
+                        Santri ini tidak perlu membayar tagihan tersebut, dan nominalnya keluar dari total piutang.
+                        Barisnya tetap tersimpan beserta alasan dan nama Anda.
+                    </div>
+
+                    <div className="mt-5 space-y-4">
+                        <div>
+                            <InputLabel>Alasan <span className="text-red-500">*</span></InputLabel>
+                            <div className="mt-1.5 space-y-2">
+                                {ALASAN_BATAL.map(([nilai, label]) => (
+                                    <label key={nilai}
+                                        className={`flex cursor-pointer items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm ring-1 transition ${
+                                            formBatal.data.cancel_reason === nilai
+                                                ? 'bg-claude-500/10 text-stone-800 ring-claude-500/40 dark:text-cream-100'
+                                                : 'text-stone-600 ring-stone-200 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600/40'
+                                        }`}>
+                                        <input type="radio" name="cancel_reason" value={nilai}
+                                            checked={formBatal.data.cancel_reason === nilai}
+                                            onChange={(e) => formBatal.setData('cancel_reason', e.target.value)}
+                                            className="h-4 w-4 border-stone-300 text-claude-500 focus:ring-claude-500" />
+                                        {label}
+                                    </label>
+                                ))}
+                            </div>
+                            <InputError message={formBatal.errors.cancel_reason} className="mt-1.5" />
+                        </div>
+
+                        <div>
+                            <InputLabel value="Keterangan (opsional)" />
+                            <TextInput value={formBatal.data.cancel_note}
+                                onChange={(e) => formBatal.setData('cancel_note', e.target.value)}
+                                className="mt-1.5 block w-full"
+                                placeholder="Contoh: surat keterangan tidak mampu" />
+                            <InputError message={formBatal.errors.cancel_note} className="mt-1.5" />
+                        </div>
+                    </div>
+
+                    <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <SecondaryButton type="button" onClick={() => setIsBatal(false)} className="justify-center">Batal</SecondaryButton>
+                        <button type="submit" disabled={formBatal.processing || !formBatal.data.cancel_reason}
+                            className="rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-50">
+                            Ya, Batalkan Tagihan
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+
             <Modal show={dialog !== null} onClose={() => { setDialog(null); setPesanError(''); }} maxWidth="sm">
                 {dialog && (() => {
                     const isi = {
                         'hapus-header': ['Hapus Gelombang', 'Seluruh rincian tagihan di dalamnya ikut terhapus.', true,
                             () => aksi(route('keuangan.pemasukan.tagihan.destroy_header', dialog.id), 'delete')],
-                        'hapus-detail': ['Batalkan Tagihan', 'Yakin menghapus tagihan siswa ini?', true,
+                        // Judulnya dulu "Batalkan Tagihan" padahal yang dijalankan
+                        // penghapusan. Sekarang pembatalan sungguhan sudah ada,
+                        // jadi dua hal berbeda tidak boleh bernama sama.
+                        'hapus-detail': ['Hapus Tagihan', 'Barisnya hilang sepenuhnya. Untuk gelombang yang sudah dipublish, gunakan Batalkan agar jejaknya tetap ada.', true,
                             () => aksi(route('keuangan.pemasukan.tagihan.destroy', dialog.id), 'delete')],
                         // Target disebut eksplisit supaya operator tidak asal klik.
                         'generate':     ['Auto-Generate Tagihan',

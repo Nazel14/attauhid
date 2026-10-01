@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Gate;
+use Inertia\Inertia;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -100,11 +101,55 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(function ($user, $ability) {
             // Saat migrasi awal tabel roles belum ada; jangan sampai
             // artisan gagal hanya karena pengecekan ini.
-            if (! Schema::hasTable('roles')) {
+            //
+            // Hasilnya disimpan di variabel static: cukup dicek sekali per
+            // request. Versi lama memanggil Schema::hasTable() — satu query
+            // ke information_schema — untuk SETIAP pemeriksaan izin, dan
+            // satu halaman bisa melakukan belasan pemeriksaan.
+            static $adaTabelRoles = null;
+            $adaTabelRoles ??= Schema::hasTable('roles');
+
+            if (! $adaTabelRoles) {
                 return null;
             }
 
             return $user->hasRole('super-admin') ? true : null;
         });
-    }
+
+        // Daftar akun demo dibagikan ke halaman login. Null di produksi
+        // (DEMO_MODE mati), sehingga tombol "Masuk sebagai" tidak pernah
+        // dirender. Hanya peran dan label yang dibagikan — username tidak
+        // ikut ke frontend.
+                // Daftar akun demo dibagikan ke halaman login. Null di produksi
+        // (DEMO_MODE mati), sehingga tombol "Masuk sebagai" tidak pernah
+        // dirender. Username tidak ikut ke frontend.
+        //
+        // Ditutup dalam closure supaya kuerinya hanya jalan saat halaman
+        // memang dirender, dan hanya untuk tamu — halaman setelah login
+        // tidak memakai prop ini sama sekali.
+        Inertia::share('demoAkun', function () {
+            if (! config('modules.demo') || auth()->check()) {
+                return null;
+            }
+
+            $daftar = collect(config('modules.demo_akun', []));
+
+            $akun = \App\Models\User::whereIn('name', $daftar->pluck('username'))
+                ->get()
+                ->keyBy('name');
+
+            return $daftar
+                // Akun yang belum di-seed tidak ditampilkan sama sekali.
+                // Lebih baik tombolnya tidak ada daripada menyambut calon
+                // pembeli dengan pesan error.
+                ->filter(fn ($a) => $akun->has($a['username']))
+                ->map(fn ($a) => [
+                    'peran' => $a['peran'],
+                    'label' => $a['label'],
+                    'modul' => $akun[$a['username']]->availableModules(),
+                ])
+                ->values()
+                ->all();
+        });
+}
 }

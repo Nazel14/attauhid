@@ -231,6 +231,8 @@ Route::middleware([
             ->middleware('permission:tagihan.edit_rincian')->name('tagihan.update_detail');
         Route::delete('/kelola-tagihan/detail/{tagihan}', [TagihanController::class, 'destroy'])
             ->middleware('permission:tagihan.hapus_rincian')->name('tagihan.destroy');
+                    Route::post('/kelola-tagihan/detail/{tagihan}/batalkan', [TagihanController::class, 'batalkan'])
+            ->middleware('permission:tagihan.batalkan')->name('tagihan.batalkan');
 
         /* Pembayaran — satu alur untuk semua kategori pemasukan:
            tagihan, uang masuk, koperasi, donatur. */

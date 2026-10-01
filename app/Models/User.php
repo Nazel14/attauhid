@@ -103,23 +103,29 @@ class User extends Authenticatable
         return $this->role === 'santri';
     }
 
-    /**
+       /**
      * Modul yang boleh diakses user ini.
-     * Dipakai halaman pemilih modul setelah login (step 6).
-     * Role keuangan belum ada sampai modul-nya di-port — hasAnyRole()
-     * cukup mengembalikan false, tidak error.
+     *
+     * Daftarnya dibaca dari config/modules.php, TIDAK ditulis ulang di
+     * sini. Versi lama menyalin kedua daftar ke dalam method ini, sehingga
+     * menambah role di config tidak berpengaruh apa pun — perubahannya
+     * diam-diam tidak terpakai, dan tidak ada pesan error yang memberi
+     * tahu bahwa itu yang terjadi.
      */
     public function availableModules(): array
     {
         $map = [
-            'raport'   => ['super-admin', 'admin', 'guru', 'santri'],
-            'keuangan' => ['super-admin', 'bendahara', 'kepala-sekolah', 'ketua-yayasan', 'pihak-yayasan', 'hrd'],
+            // Nilai kedua hanya jaring pengaman bila kunci config-nya
+            // hilang — bukan sumber kebenaran. Tanpa ini, instalasi yang
+            // config-nya tertinggal akan mengunci semua orang keluar.
+            'raport'   => config('modules.raport_roles', ['super-admin', 'admin', 'guru', 'santri']),
+            'keuangan' => config('modules.keuangan_roles', ['super-admin', 'bendahara']),
         ];
 
         $modules = [];
 
         foreach ($map as $module => $roles) {
-            if (!config("modules.$module")) {
+            if (! config("modules.$module") || empty($roles)) {
                 continue;
             }
 

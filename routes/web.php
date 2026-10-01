@@ -102,6 +102,51 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 
+/* --------------------------------------
+ * Login demo — hanya terdaftar bila DEMO_MODE menyala.
+ * Di instalasi klien, route ini tidak pernah ada.
+ * -------------------------------------- */
+if (config('modules.demo')) {
+    Route::post('/demo/masuk', function (\Illuminate\Http\Request $request) {
+        $peran = $request->input('peran');
+
+        $akun = collect(config('modules.demo_akun', []))->firstWhere('peran', $peran);
+        abort_unless($akun, 404);
+
+        // Jaring pengaman: apa pun isi konfigurasinya, hanya akun yang
+        // namanya berawalan 'demo.' yang boleh dimasuki lewat jalur ini —
+        // jadi tombol demo tidak akan pernah bisa membuka akun sungguhan.
+        abort_unless(str_starts_with($akun['username'], 'demo.'), 403);
+
+        $user = \App\Models\User::where('name', $akun['username'])->first();
+
+        if (! $user) {
+            return back()->with('error', "Akun demo '{$akun['username']}' belum di-seed di server ini.");
+        }
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        $modules = $user->availableModules();
+
+        // Hormati kelompok tombol yang diklik di halaman login — itu
+        // satu-satunya cara pengunjung menyatakan panel mana yang ingin
+        // ia lihat. Versi lama selalu memilih raport bila tersedia,
+        // sehingga tombol Admin di kelompok Keuangan tetap mendarat di
+        // panel tahfizh.
+        //
+        // Tetap tidak dipercaya mentah-mentah: akun yang tidak punya akses
+        // ke modul yang diminta diarahkan ke modul yang memang boleh ia
+        // buka, bukan ditolak.
+        $diminta = $request->input('modul');
+        session(['modul_aktif' => in_array($diminta, $modules, true)
+            ? $diminta
+            : (in_array('raport', $modules, true) ? 'raport' : 'keuangan')]);
+
+        return redirect()->route('dashboard');
+    })->name('demo.masuk');
+}
+
 // Ambil CSRF token terbaru — dipakai form native (InputSetoran) sebelum submit
 Route::get('/csrf-token', fn () => response()->json(['token' => csrf_token()]))
     ->middleware('web')

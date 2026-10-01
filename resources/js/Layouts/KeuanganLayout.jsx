@@ -1,7 +1,112 @@
-import { useState, useEffect } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { useState, useEffect, useRef } from 'react';
+import { Link, router, usePage } from '@inertiajs/react';
 import LogoutButton from '@/Components/LogoutButton';
 import AppLogo from '@/Components/AppLogo';
+
+/* ============================================================
+ * NOTIFIKASI
+ *
+ * Komponennya disalin dari halaman Santri (Guru/Santri/Index.jsx) supaya
+ * seluruh aplikasi memberi kabar dengan cara yang sama — pengguna tidak
+ * perlu belajar dua bahasa isyarat untuk dua panel.
+ *
+ * Dipasang di layout, bukan di tiap halaman: sebelum ini SELURUH panel
+ * keuangan menyimpan data dalam diam. Controllernya mengirim
+ * ->with('success', ...) tapi tidak ada satu pun yang menampilkannya.
+ * ============================================================ */
+const NOTIF_DURATION = 10000;
+
+function Toast({ notif, onClose, duration = NOTIF_DURATION }) {
+    if (! notif) return null;
+    const success = notif.type === 'success';
+
+    return (
+        <>
+            {/* key={notif.id} memaksa elemen dibuat ulang, sehingga animasi
+                masuk dan batang waktunya mengulang dari awal untuk tiap
+                notifikasi — tanpa ini notifikasi kedua muncul tanpa gerak. */}
+            <div
+                key={notif.id}
+                className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-[300] overflow-hidden rounded-2xl border border-stone-200 dark:border-coal-700 bg-white/95 dark:bg-coal-800/95 shadow-2xl backdrop-blur-md"
+                style={{ animation: 'toastIn .3s cubic-bezier(.21,1.02,.73,1)' }}
+                role="alert"
+            >
+                <div className="flex items-start gap-3 p-3.5">
+                    <span className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ${success ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300' : 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-300'}`}>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                            <path d={success
+                                ? 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
+                                : 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'} />
+                        </svg>
+                    </span>
+
+                    <div className="min-w-0 flex-1 pt-0.5">
+                        <p className={`text-xs font-bold ${success ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
+                            {success ? 'Berhasil' : 'Gagal'}
+                        </p>
+                        <p className="mt-0.5 break-words text-sm text-stone-600 dark:text-stone-300"
+                            dangerouslySetInnerHTML={{ __html: notif.message }} />
+                    </div>
+
+                    <button onClick={onClose} aria-label="Tutup notifikasi"
+                        className="flex-shrink-0 rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-coal-700 dark:hover:text-stone-200 transition">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                            <path d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                {/* Batang waktu: pengguna bisa melihat sisa waktu baca,
+                    bukan menebak kapan notifikasinya hilang. */}
+                <div className="h-1 w-full bg-stone-200 dark:bg-coal-700">
+                    <div className={`h-full ${success ? 'bg-emerald-500' : 'bg-red-500'}`}
+                        style={{ animation: `toastBar ${duration}ms linear forwards` }} />
+                </div>
+            </div>
+
+            <style>{`
+                @keyframes toastIn { from { opacity: 0; transform: translateY(-14px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+                @keyframes toastBar { from { width: 100%; } to { width: 0%; } }
+            `}</style>
+        </>
+    );
+}
+
+function Notifikasi() {
+    const [notif, setNotif] = useState(null);
+    const timerRef = useRef(null);
+    const flashAwal = usePage().props?.flash;
+
+    const showToast = (message, type = 'success') => {
+        setNotif({ message, type, id: Date.now() });
+        clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => setNotif(null), NOTIF_DURATION);
+    };
+
+    useEffect(() => {
+        // Pesan yang sudah ada saat halaman pertama dimuat.
+        if (flashAwal?.success) showToast(flashAwal.success, 'success');
+        else if (flashAwal?.error) showToast(flashAwal.error, 'error');
+
+        // Dibaca dari event Inertia, bukan dari useEffect atas props:
+        // membatalkan dua tagihan beruntun menghasilkan teks yang persis
+        // sama, dan React tidak akan melihat perubahan apa pun — notifikasi
+        // keduanya tidak pernah tampil.
+        const off = router.on('success', (e) => {
+            const f = e.detail.page.props.flash ?? {};
+            if (f.success) showToast(f.success, 'success');
+            else if (f.error) showToast(f.error, 'error');
+        });
+
+        return () => {
+            off();
+            clearTimeout(timerRef.current);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    return <Toast notif={notif} onClose={() => setNotif(null)} duration={NOTIF_DURATION} />;
+}
 
 function ThemeToggle({ dark, onToggle }) {
     return (
@@ -446,6 +551,8 @@ export default function KeuanganLayout({ children }) {
 
     return (
         <div className="min-h-screen bg-cream-50 text-stone-900 dark:bg-coal-800 dark:text-cream-50">
+            <Notifikasi />
+
             {open && <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden" onClick={closeNav} />}
 
             <aside className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-cream-300 bg-cream-100 transition-transform duration-300 lg:hidden dark:border-coal-600 dark:bg-coal-700 ${open ? 'translate-x-0' : '-translate-x-full'}`}>

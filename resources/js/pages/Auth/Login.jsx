@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage, router } from '@inertiajs/react';
 
 /* Teks & warna berbeda per panel — dipakai header kartu supaya user
    tahu persis ke mana dia akan masuk sebelum menekan tombol. */
@@ -22,8 +22,39 @@ const PANEL = {
 export default function Login({ status, flash }) {
     // Dibagikan HandleInertiaRequests — pemilih hanya muncul bila
     // kedua modul memang aktif di instalasi ini.
-    const { modules = {} } = usePage().props;
+    const { modules = {}, demoAkun } = usePage().props;
     const duaModul = modules.raport && modules.keuangan;
+
+    // Tombol demo hanya dirender bila server membagikan daftarnya —
+    // dan server hanya membagikannya saat DEMO_MODE menyala. Di produksi
+    // propnya null, jadi seluruh blok ini tidak pernah muncul.
+    const modeDemo = demoAkun?.length > 0;
+
+    // Pintu darurat. Di situs demo pun Anda masih perlu masuk sebagai akun
+    // asli untuk memperbaiki data atau seeding ulang, jadi formnya
+    // disembunyikan — bukan dihapus.
+    const [formManual, setFormManual] = useState(false);
+    const tampilForm = !modeDemo || formManual;
+
+    const [demoLoading, setDemoLoading] = useState(null);
+    const masukDemo = (peran, modul) => {
+        // Satu akun bisa muncul di dua kelompok (Admin ada di Tahfizh dan
+        // Keuangan), jadi penanda 'memproses' harus memuat keduanya.
+        setDemoLoading(`${modul}:${peran}`);
+        router.post(route('demo.masuk'), { peran, modul }, {
+            onFinish: () => setDemoLoading(null),
+        });
+    };
+
+    // Modulnya datang dari server — dibaca dari availableModules() tiap akun,
+    // bukan ditulis ulang di sini. Akun yang belum di-seed tidak dikirim sama
+    // sekali, jadi kelompok yang kosong otomatis hilang.
+    const grupDemo = !modeDemo ? [] : [
+        { id: 'raport', label: 'Tahfizh', icon: <BookIcon className="h-3.5 w-3.5" /> },
+        { id: 'keuangan', label: 'Keuangan', icon: <WalletIcon className="h-3.5 w-3.5" /> },
+    ]
+        .map((g) => ({ ...g, akun: demoAkun.filter((a) => a.modul?.includes(g.id)) }))
+        .filter((g) => g.akun.length > 0);
 
     const { data, setData, post, processing, errors } = useForm({
         name: '',
@@ -35,6 +66,15 @@ export default function Login({ status, flash }) {
     // disembunyikan jadi teks generik saat hanya satu modul yang nyala.
     // Tab pemilih (duaModul) yang tetap kondisional, bukan labelnya.
     const panel = PANEL[data.modul] ?? PANEL.raport;
+
+    // Tab pemilih panel tidak ditampilkan di mode demo: peran yang dipilih
+    // sudah menentukan panelnya sendiri, dan tab "Tahfizh" di atas tombol
+    // "Bendahara" justru saling membantah. Karena tabnya hilang, judulnya
+    // ikut dinetralkan — kalau tidak, HRD dan Bendahara berdiri di bawah
+    // tulisan "Panel Tahfizh".
+    const judulNetral = !tampilForm && duaModul;
+    const judul = judulNetral ? 'Sistem Management Tahfizh' : panel.judul;
+    const sub = judulNetral ? 'Setoran, presensi, rapor, dan keuangan' : panel.sub;
 
     const [showPw, setShowPw] = useState(false);
     const [dark, setDark] = useState(() => {
@@ -111,7 +151,7 @@ export default function Login({ status, flash }) {
                 <div className="relative z-10 w-full max-w-sm overflow-hidden rounded-3xl border border-stone-200/80 bg-white/90 shadow-[0_24px_60px_-24px_rgba(120,80,60,0.25)] backdrop-blur-sm dark:border-[#443e37] dark:bg-[#34302b]/95 dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.5)]">
 
                     {/* ===== TAB PEMILIH PANEL ===== */}
-                    {duaModul && (
+                    {duaModul && tampilForm && (
                         <div className="grid grid-cols-2 border-b border-stone-200/80 dark:border-[#443e37]">
                             {[
                                 { id: 'raport', icon: <BookIcon className="h-[18px] w-[18px]" /> },
@@ -154,15 +194,15 @@ export default function Login({ status, flash }) {
                     <div className="p-8">
                         {/* Header — judul & subjudul SELALU mengikuti panel aktif,
                             baik satu modul maupun dua modul. */}
-                        <div className="mb-7 flex flex-col items-center text-center">
+                        <div className={`flex flex-col items-center text-center ${tampilForm ? 'mb-7' : 'mb-5'}`}>
                             <div className="mb-4 flex h-[68px] w-[68px] items-center justify-center rounded-2xl bg-white p-3 shadow-sm ring-1 ring-stone-200 dark:bg-[#3d3833] dark:ring-white/10">
                                 <img src="/favicon.ico" alt="Logo" className="h-full w-full" style={{ objectFit: 'contain' }} />
                             </div>
                             <h1 className="mb-1 text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100">
-                                {panel.judul}
+                                {judul}
                             </h1>
                             <p className="whitespace-nowrap text-xs font-medium text-stone-500 dark:text-stone-400">
-                                {panel.sub}
+                                {sub}
                             </p>
                         </div>
 
@@ -178,6 +218,7 @@ export default function Login({ status, flash }) {
                             </div>
                         )}
 
+                        {tampilForm && (
                         <form onSubmit={submit}>
                             {/* Username */}
                             <div className="mb-4">
@@ -245,8 +286,69 @@ export default function Login({ status, flash }) {
                                 {!processing && <ArrowIcon className="h-4 w-4" />}
                             </button>
                         </form>
+                        )}
 
-                        <div className="mt-6 border-t border-stone-200/70 pt-4 text-center dark:border-[#443e37]">
+                        {modeDemo && !formManual && (
+                            <div>
+                                <div className="mb-4 flex flex-col items-center gap-2 text-center">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/70 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-400">
+                                        <FlaskIcon className="h-3 w-3" /> Mode Demo
+                                    </span>
+                                    <p className="text-[12px] text-stone-500 dark:text-stone-400">
+                                        Pilih peran untuk mencoba. Tidak perlu akun.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {grupDemo.map((g) => (
+                                        <div key={g.id}>
+                                            {/* Judul kelompok tidak perlu bila cuma satu
+                                                modul yang terpasang di instalasi ini. */}
+                                            {grupDemo.length > 1 && (
+                                                <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-stone-400 dark:text-stone-500">
+                                                    {g.icon}
+                                                    {g.label}
+                                                </p>
+                                            )}
+                                            {/* Bila jumlahnya ganjil, tombol terakhir
+                                                melebar dua kolom. Tanpa ini ada lubang
+                                                kosong di kanan yang terlihat seperti
+                                                tombol yang gagal dirender. */}
+                                            <div className="grid grid-cols-2 gap-2 [&>*:last-child:nth-child(odd)]:col-span-2">
+                                                {g.akun.map((a) => {
+                                                    const kunci = `${g.id}:${a.peran}`;
+                                                    return (
+                                                        <button
+                                                            key={kunci}
+                                                            type="button"
+                                                            onClick={() => masukDemo(a.peran, g.id)}
+                                                            disabled={demoLoading !== null}
+                                                            className="flex items-center justify-center rounded-xl border border-stone-200 bg-cream-50 px-2 py-2.5 text-[12px] font-semibold text-stone-700 transition hover:border-claude-400 hover:bg-white hover:text-claude-600 active:scale-[0.98] disabled:opacity-50 dark:border-[#443e37] dark:bg-[#2b2723] dark:text-stone-300 dark:hover:border-claude-500/50 dark:hover:text-claude-300"
+                                                        >
+                                                            {demoLoading === kunci ? 'Memproses…' : a.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Pintu darurat pengelola. Sengaja berupa teks kecil, bukan
+                            tombol, supaya tidak bersaing dengan tombol peran di atas. */}
+                        {modeDemo && (
+                            <button
+                                type="button"
+                                onClick={() => setFormManual((v) => !v)}
+                                className="mt-4 w-full text-center text-[11px] font-medium text-stone-400 underline-offset-2 transition hover:text-stone-600 hover:underline dark:text-stone-500 dark:hover:text-stone-300"
+                            >
+                                {formManual ? '← Kembali ke pilihan demo' : 'Masuk dengan akun sendiri'}
+                            </button>
+                        )}
+
+                        <div className={`border-t border-stone-200/70 pt-4 text-center dark:border-[#443e37] ${tampilForm ? 'mt-6' : 'mt-5'}`}>
                             <p className="text-[10px] uppercase tracking-wide text-stone-400 dark:text-stone-500">
                                 © {new Date().getFullYear()} Sistem Management Tahfizh
                             </p>
@@ -279,4 +381,5 @@ const EyeIcon = (p) => <Svg {...p}><path d="M2.04 12.32a1 1 0 010-.64C3.42 7.51 
 const EyeOffIcon = (p) => <Svg {...p}><path d="M3.98 8.22A10.48 10.48 0 001.93 12C3.23 16.34 7.24 19.5 12 19.5c.99 0 1.95-.14 2.86-.4M6.23 6.23A10.45 10.45 0 0112 4.5c4.76 0 8.77 3.16 10.07 7.5a10.52 10.52 0 01-4.3 5.77M6.23 6.23L3 3m3.23 3.23l3.65 3.65m7.89 7.89L21 21m-3.23-3.23l-3.65-3.65m0 0a3 3 0 10-4.24-4.24m4.24 4.24L9.88 9.88" /></Svg>;
 const ArrowIcon = (p) => <Svg {...p}><path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></Svg>;
 const BookIcon = (p) => <Svg {...p}><path d="M12 6.25a5.23 5.23 0 00-3.5-1.33c-1.24 0-2.38.43-3.28 1.15A.75.75 0 005 6.65v10.6c0 .6.63.98 1.15.7a4.5 4.5 0 012.35-.6c1.36 0 2.6.53 3.5 1.4m0-12.5a5.23 5.23 0 013.5-1.33c1.24 0 2.38.43 3.28 1.15a.75.75 0 01.22.53v10.6c0 .6-.63.98-1.15.7a4.5 4.5 0 00-2.35-.6c-1.36 0-2.6.53-3.5 1.4m0-12.5v12.5" /></Svg>;
+const FlaskIcon = (p) => <Svg {...p}><path d="M9 3h6M10 3v6.5L4.6 18a2 2 0 001.7 3h11.4a2 2 0 001.7-3L14 9.5V3M7.5 14h9" /></Svg>;
 const WalletIcon = (p) => <Svg {...p}><path d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 100 4.5h3.75A2.25 2.25 0 0021 12zm0 0v3.75A2.25 2.25 0 0118.75 18H5.25A2.25 2.25 0 013 15.75V8.25A2.25 2.25 0 015.25 6h10.5A2.25 2.25 0 0118 8.25v1.5" /></Svg>;
