@@ -76,12 +76,17 @@ return [
     |----------------------------------------------------------------------
     | Role Modul Keuangan
     |----------------------------------------------------------------------
-    | Himpunan role yang boleh masuk dan boleh dikelola dari panel keuangan.
-    | Dipakai di tiga tempat:
-    |   1. routes/keuangan.php  -> gerbang 'role:' di level grup
-    |   2. UserController@index -> filter daftar user
-    |   3. UserController store/update/destroy -> Rule::in()
-        4. User::availableModules()  -> menentukan panel yang boleh dibuka
+    | Himpunan role yang boleh MASUK panel keuangan. Dipakai di dua tempat:
+    |   1. routes/keuangan.php       -> gerbang 'role:' di level grup
+    |   2. User::availableModules()  -> menentukan panel yang boleh dibuka
+    |
+    | Komentar lama menyebut dua tempat lagi — filter di UserController@index
+    | dan Rule::in() di store/update/destroy. Keduanya sudah tidak ada di
+    | kode, dan keterangan yang basi itu sempat membuat orang mengira ada
+    | celah keamanan yang sebenarnya tidak pernah ada. Daftar ini TIDAK
+    | membatasi role mana yang boleh dibuat lewat Manajemen User: halaman
+    | itu digembok 'role:super-admin' di routes/keuangan.php, dan
+    | validasinya menerima role apa pun yang terdaftar di tabel roles.
     |
     | Guru & santri sengaja tidak ada di sini: keduanya tetap dikelola
     | dari AdminController raport, bukan dari panel keuangan.

@@ -51,8 +51,10 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
 
     const [isBatal, setIsBatal] = useState(false);
     const [batalTarget, setBatalTarget] = useState(null);
+    const [batalMassal, setBatalMassal] = useState(false);
+    const [terpilihBatal, setTerpilihBatal] = useState([]);
 
-    const formBatal = useForm({ cancel_reason: '', cancel_note: '' });
+    const formBatal = useForm({ cancel_reason: '', cancel_note: '', ids: [] });
 
     const formHeader = useForm({ title: '', tariff_id: '', period: '', due_date: '' });
     const formDetail = useForm({ invoice_header_id: selectedHeaderId || '', student_id: '', nominal: '' });
@@ -86,6 +88,14 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
 
         return () => clearTimeout(t);
     }, [searchHeader, monthHeader, searchDetail, statusDetail, sortField, sortDirection]);
+
+    // Pilihan dibersihkan saat gelombang atau halaman berganti. Id yang
+    // tercentang milik baris yang sudah tidak terlihat, dan membatalkan
+    // sesuatu yang tidak ada di layar adalah cara tercepat membuat orang
+    // berhenti percaya pada tombolnya.
+    useEffect(() => {
+        setTerpilihBatal([]);
+    }, [selectedHeaderId, details?.current_page]);
 
     // Dipanggil dari tombol "Rincian" di kolom Aksi (bukan lagi dari klik baris).
     const pilihHeader = (id) => {
@@ -171,18 +181,38 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
     };
 
     const bukaBatal = (d) => {
+        setBatalMassal(false);
         setBatalTarget(d);
         formBatal.clearErrors();
-        formBatal.setData({ cancel_reason: '', cancel_note: '' });
+        formBatal.setData({ cancel_reason: '', cancel_note: '', ids: [] });
+        setIsBatal(true);
+    };
+
+    const bukaBatalMassal = () => {
+        setBatalMassal(true);
+        setBatalTarget(null);
+        formBatal.clearErrors();
+        formBatal.setData({ cancel_reason: '', cancel_note: '', ids: terpilihBatal });
         setIsBatal(true);
     };
 
     const submitBatal = (e) => {
         e.preventDefault();
-        formBatal.post(route('keuangan.pemasukan.tagihan.batalkan', batalTarget.id), {
-            onSuccess: () => setIsBatal(false),
+
+        const opts = {
             preserveScroll: true,
-        });
+            onSuccess: () => { setIsBatal(false); setTerpilihBatal([]); },
+        };
+
+        // Dua route berbeda, satu form. Untuk pembatalan satuan field `ids`
+        // ikut terkirim tapi diabaikan server — lebih murah daripada
+        // memelihara dua form dengan isi yang sama persis.
+        if (batalMassal) {
+            formBatal.post(route('keuangan.pemasukan.tagihan.batalkan_massal'), opts);
+            return;
+        }
+
+        formBatal.post(route('keuangan.pemasukan.tagihan.batalkan', batalTarget.id), opts);
     };
 
     const aksi = (url, method = 'post') => {
@@ -225,6 +255,23 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
         can('tagihan.batalkan') &&
         d.status !== 'Cancelled' &&
         Math.abs(Number(d.total_amount) - Number(d.remaining_balance)) < 0.01;
+
+    // Hanya baris yang memang bisa dibatalkan yang punya kotak centang.
+    // "Pilih semua" pun hanya menjaring baris itu, bukan ke-23-nya — supaya
+    // angka di batang pilihan selalu sama dengan jumlah yang benar-benar
+    // akan dibatalkan, bukan janji yang sebagian ditolak server nanti.
+    const idBisaBatal = (details?.data ?? []).filter(bisaBatal).map((d) => d.id);
+    const semuaTercentang = idBisaBatal.length > 0 && terpilihBatal.length === idBisaBatal.length;
+
+    const toggleSemuaBatal = () => setTerpilihBatal(semuaTercentang ? [] : idBisaBatal);
+    const toggleSatuBatal = (id) =>
+        setTerpilihBatal((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+
+    const nominalTerpilih = (details?.data ?? [])
+        .filter((d) => terpilihBatal.includes(d.id))
+        .reduce((total, d) => total + Number(d.total_amount), 0);
+
+    const cbCls = 'h-4 w-4 cursor-pointer rounded border-stone-300 text-claude-600 focus:ring-claude-500 dark:border-coal-600';
 
     const bisaCetakSatuan =
         can('tagihan.cetak_massal') &&
@@ -520,6 +567,27 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                         </div>
                     </div>
 
+                    {terpilihBatal.length > 0 && (
+                        <div className="mb-4 flex flex-col gap-3 rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200 sm:flex-row sm:items-center sm:justify-between dark:bg-amber-500/10 dark:ring-amber-500/25">
+                            <div className="min-w-0">
+                                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                                    {terpilihBatal.length} tagihan terpilih · {formatCurrency(nominalTerpilih)}
+                                </p>
+                                {/* Nominalnya ikut ditampilkan karena itulah angka
+                                    yang akan hilang dari piutang — jumlah baris saja
+                                    tidak memberi tahu seberapa besar keputusannya. */}
+                                <button type="button" onClick={() => setTerpilihBatal([])}
+                                    className="text-[11px] text-amber-700/80 underline-offset-2 hover:underline dark:text-amber-400/80">
+                                    Bersihkan pilihan
+                                </button>
+                            </div>
+                            <button type="button" onClick={bukaBatalMassal}
+                                className="shrink-0 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-500">
+                                Batalkan Terpilih
+                            </button>
+                        </div>
+                    )}
+
                     <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
                         <div className="relative sm:max-w-sm sm:flex-1">
                             <input type="text" value={searchDetail} onChange={(e) => setSearchDetail(e.target.value)}
@@ -552,7 +620,16 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                             return (
                                 <div key={d.id} className={`overflow-hidden rounded-2xl ring-1 transition ${aktif ? 'bg-claude-500/5 ring-claude-500/40' : 'ring-stone-200 dark:ring-coal-600'}`}>
                                     <div className="flex items-start justify-between gap-3 p-4">
-                                        <div className="min-w-0">
+                                        {bisaBatal(d) && (
+                                            <input type="checkbox" checked={terpilihBatal.includes(d.id)}
+                                                onChange={() => toggleSatuBatal(d.id)}
+                                                aria-label={`Pilih tagihan ${d.siswa?.name || ''}`}
+                                                className={`mt-0.5 shrink-0 ${cbCls}`} />
+                                        )}
+                                        {/* flex-1 wajib: kotak centang menambah anak ketiga di
+                                            container justify-between, dan tanpa ini badge status
+                                            berhenti menempel di kanan. */}
+                                        <div className="min-w-0 flex-1">
                                             <p className="truncate text-sm font-semibold text-stone-800 dark:text-cream-100">{d.siswa?.name}</p>
                                             <p className="mt-0.5 truncate text-xs text-stone-400">
                                                 <span className="text-claude-600 dark:text-claude-300">{d.invoice_number}</span> · NIS {d.siswa?.nis}
@@ -621,6 +698,14 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                         <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
                             <thead className="bg-stone-50 dark:bg-coal-800">
                                 <tr>
+                                    <th className="w-10 px-4 py-3.5">
+                                        {idBisaBatal.length > 0 && (
+                                            <input type="checkbox" checked={semuaTercentang} onChange={toggleSemuaBatal}
+                                                ref={(el) => { if (el) el.indeterminate = terpilihBatal.length > 0 && ! semuaTercentang; }}
+                                                title={`Pilih ${idBisaBatal.length} tagihan yang bisa dibatalkan di halaman ini`}
+                                                className={cbCls} />
+                                        )}
+                                    </th>
                                     <th onClick={() => handleSort('invoice_number')} className={thCls}><div className="flex items-center">No. Invoice <SortIcon field="invoice_number" /></div></th>
                                     <th className={thPlain}>Siswa</th>
                                     <th onClick={() => handleSort('total_amount')} className={thCls}><div className="flex items-center">Tagihan <SortIcon field="total_amount" /></div></th>
@@ -634,6 +719,14 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                     const aktif = selectedInvoiceId === d.id;
                                     return (
                                         <tr key={d.id} className={`transition ${aktif ? 'bg-claude-500/10' : 'hover:bg-cream-50 dark:hover:bg-coal-600/40'}`}>
+                                            <td className="px-4 py-3.5">
+                                                {bisaBatal(d) && (
+                                                    <input type="checkbox" checked={terpilihBatal.includes(d.id)}
+                                                        onChange={() => toggleSatuBatal(d.id)}
+                                                        aria-label={`Pilih tagihan ${d.siswa?.name || ''}`}
+                                                        className={cbCls} />
+                                                )}
+                                            </td>
                                             <td className="whitespace-nowrap px-4 py-3.5 text-sm font-medium text-claude-600 dark:text-claude-300">{d.invoice_number}</td>
                                             <td className="px-4 py-3.5 text-sm">
                                                 <span className="font-medium text-stone-800 dark:text-cream-100">{d.siswa?.name}</span><br />
@@ -695,7 +788,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                         </tr>
                                     );
                                 }) : (
-                                    <tr><td colSpan={6} className="px-6 py-12 text-center text-sm text-stone-500 dark:text-stone-400">Belum ada rincian siswa di gelombang ini.</td></tr>
+                                    <tr><td colSpan={7} className="px-6 py-12 text-center text-sm text-stone-500 dark:text-stone-400">Belum ada rincian siswa di gelombang ini.</td></tr>
                                 )}
                             </tbody>
                         </table>
@@ -909,14 +1002,28 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
 
             <Modal show={isBatal} onClose={() => setIsBatal(false)} maxWidth="md">
                 <form onSubmit={submitBatal} className="max-h-[85vh] overflow-y-auto p-5 sm:p-6">
-                    <h2 className="text-base font-semibold text-stone-800 dark:text-cream-50">Batalkan Tagihan</h2>
+                    <h2 className="text-base font-semibold text-stone-800 dark:text-cream-50">
+                        {batalMassal ? `Batalkan ${formBatal.data.ids.length} Tagihan` : 'Batalkan Tagihan'}
+                    </h2>
                     <p className="mt-1 break-words text-sm text-stone-500 dark:text-stone-400">
-                        {batalTarget?.siswa?.name} · {batalTarget?.invoice_number} · {formatCurrency(batalTarget?.total_amount || 0)}
+                        {batalMassal
+                            ? `Total ${formatCurrency(nominalTerpilih)} keluar dari piutang gelombang ini`
+                            : `${batalTarget?.siswa?.name} · ${batalTarget?.invoice_number} · ${formatCurrency(batalTarget?.total_amount || 0)}`}
                     </p>
 
                     <div className="mt-4 rounded-xl bg-amber-50 p-3 text-xs leading-relaxed text-amber-800 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/25">
-                        Santri ini tidak perlu membayar tagihan tersebut, dan nominalnya keluar dari total piutang.
-                        Barisnya tetap tersimpan beserta alasan dan nama Anda.
+                        {batalMassal ? (
+                            <>
+                                Alasan yang Anda pilih berlaku untuk <strong>seluruh</strong> tagihan terpilih.
+                                Bila alasannya berbeda-beda, batalkan terpisah — alasan inilah yang nanti
+                                dibaca saat yayasan menanyakan dasar pembebasannya.
+                            </>
+                        ) : (
+                            <>
+                                Santri ini tidak perlu membayar tagihan tersebut, dan nominalnya keluar dari total piutang.
+                                Barisnya tetap tersimpan beserta alasan dan nama Anda.
+                            </>
+                        )}
                     </div>
 
                     <div className="mt-5 space-y-4">
@@ -946,7 +1053,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                             <TextInput value={formBatal.data.cancel_note}
                                 onChange={(e) => formBatal.setData('cancel_note', e.target.value)}
                                 className="mt-1.5 block w-full"
-                                placeholder="Contoh: surat keterangan tidak mampu" />
+                                placeholder="Contoh: surat keterangan tidak mampu dari RT" />
                             <InputError message={formBatal.errors.cancel_note} className="mt-1.5" />
                         </div>
                     </div>
@@ -955,7 +1062,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                         <SecondaryButton type="button" onClick={() => setIsBatal(false)} className="justify-center">Batal</SecondaryButton>
                         <button type="submit" disabled={formBatal.processing || !formBatal.data.cancel_reason}
                             className="rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-50">
-                            Ya, Batalkan Tagihan
+                            {batalMassal ? `Ya, Batalkan ${formBatal.data.ids.length} Tagihan` : 'Ya, Batalkan Tagihan'}
                         </button>
                     </div>
                 </form>

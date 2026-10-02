@@ -385,6 +385,92 @@ class TagihanController extends Controller
         return redirect()->back()->with('success', 'Tagihan dibatalkan.');
     }
 
+    /**
+     * Membatalkan beberapa tagihan sekaligus dengan satu alasan.
+     *
+     * Satu alasan untuk seluruh pilihan memang disengaja: kalau alasannya
+     * berbeda-beda, memang seharusnya dibatalkan satu per satu. Yang
+     * dilayani di sini adalah kasus sebaliknya — satu keputusan yang
+     * kebetulan menyangkut banyak santri, seperti pembebasan serentak.
+     */
+    public function batalkanMassal(Request $request)
+    {
+        $data = $request->validate([
+            'ids'           => 'required|array|min:1',
+            'ids.*'         => 'integer',
+            'cancel_reason' => ['required', Rule::in(array_keys(Tagihan::ALASAN_BATAL))],
+            'cancel_note'   => 'nullable|string|max:255',
+        ], [
+            'ids.required'           => 'Tidak ada tagihan yang dipilih.',
+            'cancel_reason.required' => 'Alasan pembatalan wajib dipilih.',
+            'cancel_reason.in'       => 'Alasan pembatalan tidak dikenali.',
+        ]);
+
+        $berhasil = 0;
+        $dilewati = [];
+
+        DB::transaction(function () use ($data, &$berhasil, &$dilewati) {
+            $tagihans = Tagihan::with(['header', 'siswa:id,name'])
+                ->whereIn('id', $data['ids'])
+                ->get();
+
+            foreach ($tagihans as $tagihan) {
+                // Setiap baris diperiksa ulang dengan gerbang yang sama persis
+                // seperti pembatalan satuan. Tidak ada jalan pintas massal:
+                // daftar id datang dari browser dan bisa memuat apa saja.
+                $boleh = $tagihan->status !== 'Cancelled'
+                    && $tagihan->header
+                    && $tagihan->header->status === 'Published'
+                    && bccomp((string) $tagihan->total_amount, (string) $tagihan->remaining_balance, 2) === 0;
+
+                if (! $boleh) {
+                    // Dilewati, bukan menggagalkan seluruh transaksi — satu
+                    // tagihan bermasalah tidak boleh membatalkan sembilan
+                    // lainnya yang sebenarnya sah.
+                    $dilewati[] = $tagihan->siswa?->name ?: $tagihan->invoice_number;
+                    continue;
+                }
+
+                $tagihan->update([
+                    'status'            => 'Cancelled',
+                    'remaining_balance' => 0,
+                    'cancel_reason'     => $data['cancel_reason'],
+                    'cancel_note'       => $data['cancel_note'] ?? null,
+                    'cancelled_by'      => Auth::id(),
+                    'cancelled_at'      => now(),
+                ]);
+
+                $tagihan->header->decrement('total_expected_amount', (float) $tagihan->total_amount);
+
+                $berhasil++;
+            }
+        });
+
+        if ($berhasil === 0) {
+            return redirect()->back()->withErrors([
+                'batal_error' => 'Tidak ada tagihan yang dibatalkan. Semua yang dipilih sudah dibatalkan atau sudah menerima pembayaran.',
+            ]);
+        }
+
+        $pesan = "{$berhasil} tagihan dibatalkan.";
+
+        // Hasil massal hampir tidak pernah seragam. Yang dilewati HARUS
+        // disebut — tanpa ini bendahara mengira semuanya berhasil, dan
+        // selisihnya baru ketahuan saat laporan piutang tidak cocok.
+        if ($dilewati) {
+            $jumlah = count($dilewati);
+            $daftar = implode(', ', array_slice($dilewati, 0, 5));
+
+            if ($jumlah > 5) {
+                $daftar .= ', dan ' . ($jumlah - 5) . ' lainnya';
+            }
+
+            $pesan .= "<br><br>{$jumlah} dilewati karena sudah dibatalkan atau sudah menerima pembayaran: <strong>{$daftar}</strong>.";
+        }
+
+        return redirect()->back()->with('success', $pesan);
+    }
+
     public function autoGenerate(InvoiceHeader $header)
     {
         if ($header->status !== 'Draft') {

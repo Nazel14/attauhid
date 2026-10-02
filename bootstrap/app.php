@@ -127,24 +127,59 @@ return Application::configure(basePath: dirname(__DIR__))
          * ============================================================
          * 403 — Akses ditolak
          * ============================================================
-         * Kalau user sudah TIDAK login lagi (efek samping logout), jangan
-         * tampilkan halaman 403 — arahkan ke login. Kalau masih login,
-         * biarkan 403 asli tampil karena itu memang pelanggaran izin.
+         * Tiga keadaan yang berbeda, dan ketiganya pernah tampil sebagai
+         * hal yang sama:
+         *
+         * 1. SUDAH TIDAK LOGIN (efek samping logout). Bukan pelanggaran
+         *    izin — arahkan ke login, jangan tuduh orang tanpa akses.
+         *
+         * 2. MASIH LOGIN, PERMINTAAN INERTIA. Inertia tidak bisa
+         *    menampilkan halaman Blade: isinya dipampang mentah sebagai
+         *    lapisan putih di atas halaman yang sedang dibuka, sementara
+         *    halaman aslinya masih terlihat di belakangnya. Kembalikan ke
+         *    halaman asal dengan pesan — toast yang menyampaikannya.
+         *
+         * 3. MASIH LOGIN, KUNJUNGAN LANGSUNG (URL diketik, tab baru).
+         *    Di sini halaman 403 memang tempatnya. Biarkan apa adanya.
          */
         $exceptions->render(function (HttpException $e, Request $request) {
-            if ($e->getStatusCode() !== 403 || $request->user()) {
+            if ($e->getStatusCode() !== 403) {
                 return null;
             }
 
+            // --- Keadaan 1 ---
+            if (! $request->user()) {
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => 'Sesi berakhir.'], 401);
+                }
+
+                if ($request->header('X-Inertia')) {
+                    return Inertia::location(route('login'));
+                }
+
+                return redirect()->route('login');
+            }
+
+            // abort(403, 'pesan') menyimpan alasannya di sini. Kosong bila
+            // dipanggil tanpa pesan — mis. gerbang permission bawaan.
+            $pesan = $e->getMessage() ?: 'Anda tidak memiliki akses untuk tindakan ini.';
+
             if ($request->expectsJson()) {
-                return response()->json(['message' => 'Sesi berakhir.'], 401);
+                return response()->json(['message' => $pesan], 403);
             }
 
+            // --- Keadaan 2 ---
+            // 303, bukan 302: Inertia mewajibkannya setelah POST/PUT/DELETE
+            // supaya browser mengikuti redirect dengan GET, bukan mengulang
+            // metode aslinya ke alamat tujuan.
             if ($request->header('X-Inertia')) {
-                return Inertia::location(route('login'));
+                $request->session()->flash('error', $pesan);
+
+                return back(303);
             }
 
-            return redirect()->route('login');
+            // --- Keadaan 3 ---
+            return null;
         });
 
     })->create();
