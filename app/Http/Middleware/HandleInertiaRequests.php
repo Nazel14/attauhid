@@ -46,8 +46,10 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user,
                 // Kirim semua permission user ke React (gating menu/tombol)
-                'permissions' => $user
-                    ? $user->getAllPermissions()->pluck('name')
+            'permissions' => $user
+                    ? ($user->hasRole('super-admin')
+                        ? \Spatie\Permission\Models\Permission::pluck('name')
+                        : $user->getAllPermissions()->pluck('name'))
                     : [],
             ],
 

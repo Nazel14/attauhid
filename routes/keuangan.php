@@ -19,6 +19,7 @@ use App\Http\Controllers\Keuangan\Payroll\PayrollController;
 use App\Http\Controllers\Keuangan\Outbound\RkasController;
 use App\Http\Controllers\System\RoleController;
 use App\Http\Controllers\System\UserController;
+use App\Http\Controllers\Keuangan\Pengaturan\IdentitasController;
 use Illuminate\Support\Facades\Route;
 
 /* ======================================
@@ -352,6 +353,11 @@ Route::middleware([
             Route::post('/', [UserController::class, 'store'])->name('store');
             Route::put('/{user}', [UserController::class, 'update'])->name('update');
             Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
+        });
+
+                Route::prefix('identitas')->name('identitas.')->group(function () {
+            Route::get('/', [IdentitasController::class, 'index'])->name('index');
+            Route::post('/', [IdentitasController::class, 'update'])->name('update');
         });
     });
 });

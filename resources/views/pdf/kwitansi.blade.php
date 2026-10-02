@@ -21,7 +21,11 @@
         .muted { color: #78716c; }
         .primary { color: #D97757; }
 
-        .kop { border-bottom: 2px solid #57534e; padding-bottom: 8px; }
+        /* padding-bottom HARUS di sel, bukan di tabel: DomPDF mengabaikan
+           padding pada elemen <table>, itulah sebab badge "PEMBAYARAN
+           TAGIHAN" menempel di garis kop. */
+        .kop { border-bottom: 2px solid #57534e; }
+        .kop td { padding-bottom: 10px; }
         .kop-nama { margin: 0; font-size: 14px; font-weight: bold; color: #D97757; }
         .kop-alamat { margin: 2px 0 0 0; font-size: 8px; color: #78716c; }
         .judul { margin: 0; font-size: 17px; letter-spacing: 2px; font-weight: bold; }
@@ -45,6 +49,15 @@
         }
         .terbilang { font-size: 8px; font-style: italic; color: #57534e; margin: 5px 0 0 0; }
         .ttd-nama { margin: 0; font-weight: bold; border-top: 1px solid #57534e; display: inline-block; padding: 3px 12px 0 12px; font-size: 10px; }
+        /* Kotak tanda tangan: tinggi tetap, isinya boleh ada boleh tidak.
+           Tidak memakai margin negatif — DomPDF tidak menanganinya dengan
+           benar, gambarnya tertarik naik ke baris jabatan dan berhimpitan
+           dengan nama di bawahnya. */
+        /* line-height & font-size nol: <img> adalah elemen inline yang
+           duduk di garis baseline, sehingga menyisakan ruang turunan huruf
+           di bawahnya. Itu yang membuat nama penanda tangan terdorong
+           menjauh dari tanda tangannya. */
+        .ttd-kotak { vertical-align: bottom; text-align: center; line-height: 0; font-size: 0; }
         .footer { font-size: 7px; color: #a8a29e; margin: 3px 0 0 0; }
         .lunas { color: #059669; font-weight: bold; }
         .belum { color: #dc2626; font-weight: bold; }
@@ -69,6 +82,27 @@
     $untuk = $pembayaran->tagihan
         ? ($pembayaran->tagihan->header?->title ?? 'Tagihan')
         : $kategoriLabel;
+
+    // Nama & alamat di kop. Diambil dari pengaturan supaya pemilik bisa
+    // mengubahnya sendiri; config('app.name') hanya cadangan untuk
+    // instalasi yang belum mengisinya. APP_NAME tidak dipakai langsung
+    // karena ia juga menjadi judul tab browser di seluruh aplikasi —
+    // mengubahnya demi kwitansi akan mengubah hal lain tanpa diduga.
+    $kopNama   = \App\Models\Setting::get('kop_nama', config('app.name'));
+    $kopAlamat = \App\Models\Setting::get('kop_alamat', config('app.school_address'));
+
+    // Identitas penanda tangan — diatur super-admin di Pengaturan Sistem.
+    // Semua nilainya boleh kosong: kwitansi tetap tercetak, hanya kembali
+    // ke bentuk lama yang ditandatangani manual dengan pulpen.
+    $ttdAktif   = \App\Models\Setting::get('ttd_aktif') === '1';
+    $ttdGambar  = $ttdAktif ? \App\Models\Setting::get('ttd_gambar') : null;
+    $ttdNama    = \App\Models\Setting::get('ttd_nama');
+    $ttdJabatan = \App\Models\Setting::get('ttd_jabatan');
+
+    // Petugas yang menginput. display_name dipakai, bukan name, karena
+    // kolom users.name berisi username login — "demo.bendahara" tidak
+    // pantas tercetak di berkas yang dipegang wali santri.
+    $petugas = $pembayaran->penyetuju?->display_name;
 @endphp
 
 <div class="kwitansi">
@@ -77,16 +111,16 @@
     <table class="layout kop">
         <tr>
             @if($logo)
-                <td width="9%" style="vertical-align: middle;">
-                    <img src="{{ $logo }}" style="height: 34px; width: auto;" alt="">
+                <td width="12%" style="vertical-align: middle;">
+                    <img src="{{ $logo }}" height="48" alt="">
                 </td>
-                <td width="51%" style="vertical-align: middle; padding-left: 8px;">
+                <td width="48%" style="vertical-align: middle; padding-left: 10px;">
             @else
                 <td width="60%" style="vertical-align: middle;">
             @endif
-                <p class="kop-nama">{{ config('app.name') }}</p>
-                @if(config('app.school_address'))
-                    <p class="kop-alamat">{{ config('app.school_address') }}</p>
+                <p class="kop-nama">{{ $kopNama }}</p>
+                @if($kopAlamat)
+                    <p class="kop-alamat">{{ $kopAlamat }}</p>
                 @endif
             </td>
             <td width="40%" class="text-right">
@@ -153,8 +187,51 @@
                 <p class="muted" style="margin: 0; font-size: 8.5px;">
                     {{ $pembayaran->payment_date?->translatedFormat('d F Y') }}
                 </p>
-                <p style="margin: 2px 0 26px 0; font-size: 9.5px;">Penerima,</p>
-                <p class="ttd-nama">{{ $pembayaran->penyetuju?->name ?? 'Bendahara' }}</p>
+
+                {{-- Jabatan pimpinan bila tanda tangan lembaga dipasang;
+                     kalau belum, kembali ke "Penerima," seperti semula. --}}
+                <p style="margin: 2px 0 0 0; font-size: 9.5px;">{{ $ttdJabatan ?: 'Penerima' }},</p>
+
+                {{-- Satu sel tabel bertinggi tetap. Ini bentuk paling andal
+                     di DomPDF untuk ruang kosong yang tingginya dijamin:
+                     div dengan height sering diabaikan, dan gambar inline
+                     ikut mengalir ke baris tetangganya. Tingginya sama
+                     baik tanda tangan terpasang maupun tidak, sehingga
+                     kwitansi tetap muat satu halaman A5. --}}
+                <table class="layout">
+                    <tr>
+                        {{-- Dua tinggi berbeda, dan itu disengaja. Tanpa
+                             tanda tangan, 26px adalah ruang yang cukup untuk
+                             membubuhkan tanda tangan dengan pulpen — sama
+                             persis dengan versi sebelum fitur ini ada, jadi
+                             kwitansi instalasi yang belum memasang tanda
+                             tangan tidak berubah tingginya sedikit pun.
+                             Dengan tanda tangan, 62px supaya coretannya
+                             terbaca; 28px membuatnya seperti noda. Ini
+                             kira-kira batas praktisnya — lebih dari ini
+                             dan kwitansi berisiko pecah jadi dua halaman.
+                             Tingginya dibatasi, lebarnya ikut proporsi —
+                             tanda tangan paling memanjang sekalipun masih
+                             muat di kolom kanan yang selebar 45%. --}}
+                        <td height="{{ $ttdGambar ? 60 : 26 }}" align="center" class="ttd-kotak">
+                            @if($ttdGambar)
+                                <img src="{{ $ttdGambar }}" height="60" alt="">
+                            @endif
+                        </td>
+                    </tr>
+                </table>
+
+                <p class="ttd-nama">{{ $ttdNama ?: ($petugas ?: 'Bendahara') }}</p>
+
+                {{-- Petugas tetap tercatat meski yang menandatangani
+                     lembaga. Ditaruh di kaki, bukan sebagai baris tabel,
+                     supaya tidak menambah tinggi halaman. --}}
+                {{-- Nama petugas penginput sengaja TIDAK dicetak di sini.
+                     Kwitansi ini dipegang wali santri, dan yang mengesahkan
+                     adalah lembaga lewat tanda tangan di atas. Jejak siapa
+                     yang menginput tetap tersimpan di sistem (kolom
+                     dibuat_oleh pada pembayaran) dan terlihat di panel
+                     keuangan — hanya tidak ikut ke kertas. --}}
                 <p class="footer">
                     Sah tanpa tanda tangan basah · dicetak {{ now()->translatedFormat('d/m/Y H:i') }}
                 </p>

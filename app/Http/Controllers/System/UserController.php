@@ -82,6 +82,11 @@ class UserController extends Controller
 
         $users = $query->paginate(10)->withQueryString();
 
+        // Satu-satunya halaman yang memang perlu membaca password: admin
+        // membacakannya ulang ke pengguna yang lupa. Dibuka di sini saja,
+        // bukan di $hidden model, supaya halaman lain tidak ikut terbuka.
+        $users->through(fn (User $u) => $u->makeVisible('plain_password'));
+
         $roles = Role::orderBy('name')->get(['id', 'name']);
 
         // Dipakai frontend untuk memutuskan role mana yang boleh dilepas:

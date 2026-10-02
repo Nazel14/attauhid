@@ -188,6 +188,10 @@ const I = {
     // --- ikon sub-menu: pengaturan ---
     role: 'M9 12l2 2 4-4M12 3l7 4v5c0 4.418-2.99 8.166-7 9-4.01-.834-7-4.582-7-9V7l7-4z',
     userMgmt: 'M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+    // Pena, bukan coretan tanda tangan. Coretan terbaca bagus pada 32px
+    // tapi luruh jadi gumpalan di 16px — dan dalam mode sidebar menciut,
+    // ikon adalah satu-satunya petunjuk karena labelnya hilang.
+    ttd: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
 };
 
 export default function KeuanganLayout({ children }) {
@@ -315,6 +319,7 @@ export default function KeuanganLayout({ children }) {
                 // Pengaturan hilang di instalasi yang memakai salah satunya.
                 { name: 'keuangan.pengaturan.role.index', label: 'Management Role', perm: ['sistem.role.kelola', 'sistem.kelola_role'], icon: I.role },
                 { name: 'keuangan.pengaturan.user.index', label: 'Management User', perm: ['sistem.user.kelola', 'sistem.kelola_user'], icon: I.userMgmt },
+                { name: 'keuangan.pengaturan.identitas.index', label: 'Identitas & Tanda Tangan', perm: [], icon: I.ttd },
             ],
         },
     ]

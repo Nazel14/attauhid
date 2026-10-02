@@ -25,9 +25,10 @@ class User extends Authenticatable
         'profile_photo_updated_at',
     ];
 
-    protected $hidden = [
+protected $hidden = [
         'password',
         'remember_token',
+        'plain_password',
     ];
 
     protected $casts = [
