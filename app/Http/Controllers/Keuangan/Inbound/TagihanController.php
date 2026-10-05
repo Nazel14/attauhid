@@ -171,9 +171,35 @@ class TagihanController extends Controller
 
     public function destroyHeader(InvoiceHeader $header)
     {
-        if ($header->status !== 'Draft') {
+        /*
+         * Penjaganya adalah UANG, bukan status.
+         *
+         * Versi sebelumnya menolak apa pun yang bukan Draft. Itu salah di
+         * dua arah sekaligus: gelombang Closed yang tidak pernah menerima
+         * sepeser pun ikut terkunci padahal aman dibuang, sementara Draft
+         * yang entah bagaimana sudah menerima pembayaran justru lolos.
+         *
+         * Yang benar-benar tidak boleh hilang adalah rujukan pembayaran.
+         * Uang yang sudah masuk tetap tercatat di buku kas, tapi tanpa
+         * tagihan induknya ia tidak bisa lagi dijelaskan berasal dari
+         * siswa mana dan untuk tagihan apa.
+         */
+        $dipakai = DB::table('inbound_payments')
+            ->join('invoices', 'invoices.id', '=', 'inbound_payments.invoice_id')
+            ->where('invoices.invoice_header_id', $header->id)
+            ->whereNull('invoices.deleted_at')
+            ->selectRaw('COUNT(*) AS jumlah, COALESCE(SUM(inbound_payments.nominal), 0) AS total')
+            ->first();
+
+        if ($dipakai && (int) $dipakai->jumlah > 0) {
+            // Pesannya menyebut angkanya, bukan sekadar "tidak bisa".
+            // "Statusnya bukan Draft" tidak memberi tahu apa pun tentang
+            // jalan keluarnya; "sudah menerima 3 pembayaran" memberi tahu.
             return redirect()->back()->withErrors([
-                'header_error' => 'Hanya gelombang berstatus Draft yang dapat dihapus.',
+                'header_error' => 'Gelombang ini sudah menerima '
+                    . $dipakai->jumlah . ' pembayaran senilai Rp '
+                    . number_format((float) $dipakai->total, 0, ',', '.')
+                    . '. Hapus atau batalkan pembayarannya lebih dulu bila gelombang ini memang harus dibuang.',
             ]);
         }
 

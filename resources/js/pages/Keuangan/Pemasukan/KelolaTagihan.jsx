@@ -418,7 +418,14 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                             Edit
                                         </button>
                                     )}
-                                    {can('tagihan.hapus_batch') && h.status === 'Draft' && (
+                                    {/* Tidak lagi dibatasi status Draft. Syarat
+                                        sebenarnya — belum ada pembayaran di
+                                        dalamnya — diperiksa di server, karena
+                                        hanya di sana jumlah pembayaran diketahui.
+                                        Tombolnya muncul, dan bila gelombangnya
+                                        memang sudah menerima uang, server
+                                        menolak sambil menyebutkan berapa. */}
+                                    {can('tagihan.hapus_batch') && (
                                         <button type="button" onClick={() => { setPesanError(''); setDialog({ jenis: 'hapus-header', id: h.id }); }}
                                             className="flex flex-1 items-center justify-center gap-1.5 border-l border-stone-100 py-2.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-coal-600 dark:text-red-400 dark:hover:bg-red-500/10">
                                             Hapus
@@ -489,7 +496,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                                         Edit
                                                     </button>
                                                 )}
-                                                {can('tagihan.hapus_batch') && h.status === 'Draft' && (
+                                                {can('tagihan.hapus_batch') && (
                                                     <button type="button" onClick={() => { setPesanError(''); setDialog({ jenis: 'hapus-header', id: h.id }); }}
                                                         className={`${btnGhost} text-red-600 ring-red-200 hover:bg-red-50 dark:text-red-400 dark:ring-red-500/20 dark:hover:bg-red-500/10`}>
                                                         Hapus
@@ -1071,7 +1078,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
             <Modal show={dialog !== null} onClose={() => { setDialog(null); setPesanError(''); }} maxWidth="sm">
                 {dialog && (() => {
                     const isi = {
-                        'hapus-header': ['Hapus Gelombang', 'Seluruh rincian tagihan di dalamnya ikut terhapus.', true,
+                        'hapus-header': ['Hapus Gelombang', 'Seluruh rincian tagihan di dalamnya ikut terhapus. Gelombang yang sudah menerima pembayaran akan ditolak.', true,
                             () => aksi(route('keuangan.pemasukan.tagihan.destroy_header', dialog.id), 'delete')],
                         // Judulnya dulu "Batalkan Tagihan" padahal yang dijalankan
                         // penghapusan. Sekarang pembatalan sungguhan sudah ada,
