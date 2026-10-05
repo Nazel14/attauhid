@@ -42,12 +42,10 @@
         .titik { width: 2%; text-align: center; color: #78716c; }
         .nilai { width: 74%; border-bottom: 1px dotted #a8a29e; }
 
-        .nominal-box {
-            background: #faf9f5; border: 1.5px solid #57534e;
-            border-radius: 4px; padding: 7px 14px;
-            font-size: 15px; font-weight: bold; display: inline-block;
-        }
-        .terbilang { font-size: 8px; font-style: italic; color: #57534e; margin: 5px 0 0 0; }
+        /* Jumlah yang diterima pada kwitansi INI. Kotak besar di bawah
+           sudah dihapus, jadi angka ini yang menggantikan perannya. */
+        .jumlah { font-size: 14px; font-weight: bold; }
+        .terbilang { font-size: 8.5px; font-style: italic; color: #57534e; }
         .ttd-nama { margin: 0; font-weight: bold; border-top: 1px solid #57534e; display: inline-block; padding: 3px 12px 0 12px; font-size: 10px; }
         /* Kotak tanda tangan: tinggi tetap, isinya boleh ada boleh tidak.
            Tidak memakai margin negatif — DomPDF tidak menanganinya dengan
@@ -61,6 +59,17 @@
         .footer { font-size: 7px; color: #a8a29e; margin: 3px 0 0 0; }
         .lunas { color: #059669; font-weight: bold; }
         .belum { color: #dc2626; font-weight: bold; }
+        /* Stempel LUNAS. Bingkai ganda, tidak dimiringkan: DomPDF
+           menangani transform: rotate() dengan tidak konsisten, dan
+           stempel miring separuh jauh lebih buruk daripada yang lurus. */
+        .stempel {
+            display: inline-block;
+            border: 2.5px solid #059669; outline: 1px solid #059669;
+            outline-offset: 2px; border-radius: 5px;
+            color: #059669; padding: 5px 18px;
+            font-size: 17px; font-weight: bold; letter-spacing: 4px;
+        }
+        .stempel-tgl { margin: 6px 0 0 0; font-size: 7.5px; color: #059669; letter-spacing: .5px; }
     </style>
 </head>
 <body>
@@ -78,6 +87,13 @@
     $kategoriLabel = \App\Models\Keuangan\Inbound\Pembayaran::KATEGORI[$pembayaran->kategori] ?? 'Pemasukan';
     $pihak  = $pembayaran->siswa?->name ?: ($pembayaran->nama_pihak ?: 'Pihak Umum');
     $lunas  = $pembayaran->tagihan && $pembayaran->tagihan->remaining_balance <= 0;
+
+    // max(0, ...) menjaga sisa tidak pernah tercetak negatif bila ada
+    // kelebihan bayar — angka minus di kwitansi selalu memicu pertanyaan
+    // yang tidak ada jawabannya.
+    $totalTagihan = (float) ($pembayaran->tagihan?->total_amount ?? 0);
+    $sisaTagihan  = max(0, (float) ($pembayaran->tagihan?->remaining_balance ?? 0));
+    $sudahDibayar = max(0, $totalTagihan - $sisaTagihan);
 
     $untuk = $pembayaran->tagihan
         ? ($pembayaran->tagihan->header?->title ?? 'Tagihan')
@@ -161,27 +177,53 @@
                 <span class="muted">· diterima di {{ $pembayaran->rekening?->account_name ?? '—' }}</span>
             </td>
         </tr>
-        @if($pembayaran->tagihan)
+        {{-- Nominal kwitansi ini. Kotak besar di bawah sudah dihapus,
+             jadi tanpa baris ini kwitansi tidak menyebutkan sama sekali
+             berapa uang yang baru diterima. --}}
+        <tr>
+            <td class="label">Jumlah dibayar</td>
+            <td class="titik">:</td>
+            <td class="nilai">
+                <span class="jumlah">Rp {{ number_format($pembayaran->nominal, 0, ',', '.') }},-</span>
+            </td>
+        </tr>
+
+        {{-- HANYA muncul bila menambah informasi, yaitu saat tagihannya
+             dicicil. Pada pembayaran lunas sekali bayar, akumulasinya
+             sama persis dengan baris di atas. Kata LUNAS juga tidak
+             diulang di sini — stempel di bawah sudah menyatakannya. --}}
+        @if($pembayaran->tagihan && (int) $sudahDibayar !== (int) $pembayaran->nominal)
             <tr>
-                <td class="label">Sisa tagihan</td>
+                <td class="label">Total pembayaran</td>
                 <td class="titik">:</td>
                 <td class="nilai">
-                    <span class="{{ $lunas ? 'lunas' : 'belum' }}">
-                        Rp {{ number_format($pembayaran->tagihan->remaining_balance, 0, ',', '.') }}@if($lunas) — LUNAS @endif
-                    </span>
+                    <strong>Rp {{ number_format($sudahDibayar, 0, ',', '.') }}</strong>
+                    <span class="muted">dari Rp {{ number_format($totalTagihan, 0, ',', '.') }}</span>
+                    @if(! $lunas)
+                        <span class="belum">· sisa Rp {{ number_format($sisaTagihan, 0, ',', '.') }}</span>
+                    @endif
                 </td>
             </tr>
         @endif
     </table>
 
-    {{-- NOMINAL & TANDA TANGAN --}}
+    {{-- Terbilang berdiri di luar tabel: tanpa label, tanpa titik-titik.
+         Itu bentuk yang dikenal orang dari kwitansi kertas. --}}
+    <p class="terbilang" style="margin: 7px 0 0 0;">
+        # {{ ucfirst(trim(\App\Support\Terbilang::of((int) $pembayaran->nominal))) }} rupiah #
+    </p>
+
+    {{-- STEMPEL & TANDA TANGAN --}}
     <table class="layout" style="margin-top: 14px;">
         <tr>
-            <td width="55%" valign="top">
-                <div class="nominal-box">Rp {{ number_format($pembayaran->nominal, 0, ',', '.') }},-</div>
-                <p class="terbilang">
-                    # {{ ucfirst(trim(\App\Support\Terbilang::of((int) $pembayaran->nominal))) }} rupiah #
-                </p>
+            {{-- Saat belum lunas kolom ini dibiarkan kosong: kwitansi
+                 cicilan tidak boleh membawa tanda apa pun yang bisa
+                 disalahbaca sebagai pelunasan. --}}
+            <td width="55%" valign="middle" style="padding-top: 8px;">
+                @if($lunas)
+                    <span class="stempel">LUNAS</span>
+                    <p class="stempel-tgl">{{ $pembayaran->payment_date?->translatedFormat('d F Y') }}</p>
+                @endif
             </td>
             <td width="45%" class="text-center">
                 <p class="muted" style="margin: 0; font-size: 8.5px;">
