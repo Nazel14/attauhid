@@ -11,6 +11,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -184,10 +185,20 @@ class TagihanController extends Controller
          * tagihan induknya ia tidak bisa lagi dijelaskan berasal dari
          * siswa mana dan untuk tagihan apa.
          */
-        $dipakai = DB::table('inbound_payments')
+        $kueri = DB::table('inbound_payments')
             ->join('invoices', 'invoices.id', '=', 'inbound_payments.invoice_id')
-            ->where('invoices.invoice_header_id', $header->id)
-            ->whereNull('invoices.deleted_at')
+            ->where('invoices.invoice_header_id', $header->id);
+
+        // Saringan soft delete dipasang HANYA bila kolomnya memang ada.
+        // Versi sebelumnya menyaring 'invoices.deleted_at' tanpa memeriksa
+        // dulu — bila kolomnya tidak ada, kueri gagal, Laravel melempar
+        // 500, dan Inertia tidak punya pesan apa pun untuk ditampilkan:
+        // dialognya diam, tidak ada error, tidak ada apa-apa.
+        if (Schema::hasColumn('invoices', 'deleted_at')) {
+            $kueri->whereNull('invoices.deleted_at');
+        }
+
+        $dipakai = $kueri
             ->selectRaw('COUNT(*) AS jumlah, COALESCE(SUM(inbound_payments.nominal), 0) AS total')
             ->first();
 
