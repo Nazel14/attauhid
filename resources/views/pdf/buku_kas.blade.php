@@ -23,12 +23,27 @@
 </head>
 <body>
 
+@php
+    // Kop dibaca dari pengaturan, sama seperti kwitansi. Sebelumnya tiap
+    // PDF memakai config('app.name') sendiri-sendiri, sehingga setelah
+    // pemilik mengubah nama lembaga di Pengaturan Sistem, hanya kwitansi
+    // yang ikut berubah — tiga dokumen lain tetap memakai nama lama.
+    $kopNama   = \App\Models\Setting::get('kop_nama', config('app.name'));
+    $kopAlamat = \App\Models\Setting::get('kop_alamat', config('app.school_address'));
+
+    // Tanda tangan lembaga, sumber yang sama dengan kwitansi.
+    $ttdAktif   = \App\Models\Setting::get('ttd_aktif') === '1';
+    $ttdGambar  = $ttdAktif ? \App\Models\Setting::get('ttd_gambar') : null;
+    $ttdNama    = \App\Models\Setting::get('ttd_nama');
+    $ttdJabatan = \App\Models\Setting::get('ttd_jabatan');
+@endphp
+
 <table class="layout kop">
     <tr>
         <td width="60%">
-            <p class="primary" style="margin:0; font-size:14px; font-weight:bold;">{{ config('app.name') }}</p>
-            @if(config('app.school_address'))
-                <p class="muted" style="margin:2px 0 0 0; font-size:8px;">{{ config('app.school_address') }}</p>
+            <p class="primary" style="margin:0; font-size:14px; font-weight:bold;">{{ $kopNama }}</p>
+            @if($kopAlamat)
+                <p class="muted" style="margin:2px 0 0 0; font-size:8px;">{{ $kopAlamat }}</p>
             @endif
         </td>
         <td width="40%" class="text-right">
@@ -75,7 +90,7 @@
                 <td>
                     {{ $m->keterangan }}
                     @if($m->pembuat)
-                        <br><span class="muted" style="font-size:7.5px;">oleh {{ $m->pembuat->name }}</span>
+                        <br><span class="muted" style="font-size:7.5px;">oleh {{ $m->pembuat->display_name }}</span>
                     @endif
                 </td>
                 <td class="text-right debit">{{ $m->jenis === 'Debit' ? 'Rp ' . number_format($m->nominal, 0, ',', '.') : '—' }}</td>
@@ -102,8 +117,28 @@
         </td>
         <td width="40%" class="text-center">
             <p class="muted" style="margin:0;">Mengetahui,</p>
-            <div style="height:45px;"></div>
-            <p style="margin:0; font-weight:bold; border-top:1px solid #57534e; display:inline-block; padding:3px 20px 0 20px;">Bendahara</p>
+
+            {{-- Sel bertinggi tetap: tanpa tanda tangan, 45px adalah ruang
+                 untuk membubuhkannya dengan pulpen — sama seperti versi
+                 sebelumnya. Dengan tanda tangan, 60px agar coretannya
+                 terbaca. Pola yang sama dengan kwitansi. --}}
+            <table class="layout">
+                <tr>
+                    <td height="{{ $ttdGambar ? 60 : 45 }}" align="center"
+                        style="vertical-align: bottom; text-align: center; line-height: 0; font-size: 0;">
+                        @if($ttdGambar)
+                            <img src="{{ $ttdGambar }}" height="60" alt="">
+                        @endif
+                    </td>
+                </tr>
+            </table>
+
+            <p style="margin:0; font-weight:bold; border-top:1px solid #57534e; display:inline-block; padding:3px 20px 0 20px;">
+                {{ $ttdNama ?: 'Bendahara' }}
+            </p>
+            @if($ttdJabatan)
+                <p class="muted" style="margin:2px 0 0 0; font-size:7.5px;">{{ $ttdJabatan }}</p>
+            @endif
         </td>
     </tr>
 </table>

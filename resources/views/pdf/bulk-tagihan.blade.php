@@ -39,11 +39,11 @@
             }
         }
 
-        // Identitas sekolah — sementara diambil dari config app.
-        // Untuk versi jual, ini sebaiknya jadi tabel pengaturan tersendiri
-        // agar tiap klien bisa mengubahnya dari UI.
-        $namaSekolah  = config('app.name');
-        $alamatSekolah = config('app.school_address', '');
+        // Identitas lembaga dibaca dari tabel settings — pengaturannya ada
+        // di Pengaturan Sistem -> Identitas & Tanda Tangan. config('app.name')
+        // tinggal jadi cadangan untuk instalasi yang belum mengisinya.
+        $namaSekolah   = \App\Models\Setting::get('kop_nama', config('app.name'));
+        $alamatSekolah = \App\Models\Setting::get('kop_alamat', config('app.school_address', ''));
     @endphp
 
     @foreach($tagihans as $tagihan)

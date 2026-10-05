@@ -38,6 +38,13 @@
             break;
         }
     }
+
+    // Kop dibaca dari pengaturan, sama seperti kwitansi. Sebelumnya tiap
+    // PDF memakai config('app.name') sendiri-sendiri, sehingga setelah
+    // pemilik mengubah nama lembaga di Pengaturan Sistem, hanya kwitansi
+    // yang ikut berubah — tiga dokumen lain tetap memakai nama lama.
+    $kopNama   = \App\Models\Setting::get('kop_nama', config('app.name'));
+    $kopAlamat = \App\Models\Setting::get('kop_alamat', config('app.school_address'));
 @endphp
 
 @foreach ($header->details as $d)
@@ -50,9 +57,9 @@
                 @else
                     <td width="60%" style="vertical-align: middle;">
                 @endif
-                    <p class="primary" style="margin: 0; font-size: 12px; font-weight: bold;">{{ config('app.name') }}</p>
-                    @if(config('app.school_address'))
-                        <p class="muted" style="margin: 1px 0 0 0; font-size: 7.5px;">{{ config('app.school_address') }}</p>
+                    <p class="primary" style="margin: 0; font-size: 12px; font-weight: bold;">{{ $kopNama }}</p>
+                    @if($kopAlamat)
+                        <p class="muted" style="margin: 1px 0 0 0; font-size: 7.5px;">{{ $kopAlamat }}</p>
                     @endif
                 </td>
                 <td width="40%" class="text-right">
@@ -130,7 +137,9 @@
                     · dokumen resmi tanpa tanda tangan basah
                 </td>
                 <td width="40%" class="text-right muted" style="font-size: 7.5px;">
-                    Disahkan: {{ $header->pembayar?->name ?? '—' }}
+                    {{-- display_name, bukan name: kolom users.name berisi
+                         username login, dan slip gaji ini dipegang pegawai. --}}
+                    Disahkan: {{ $header->pembayar?->display_name ?? '—' }}
                 </td>
             </tr>
         </table>
