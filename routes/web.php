@@ -127,6 +127,31 @@ if (config('modules.demo')) {
         Auth::login($user);
         $request->session()->regenerate();
 
+        // Login demo dicatat seperti login biasa. AuthenticatedSessionController
+        // menulisnya manual (bukan lewat event listener), jadi jalur ini harus
+        // menulis sendiri — kalau tidak, aktivitas demo hilang dari log.
+        try {
+            $displayRole = $user->role;
+
+            if ($user->role === 'admin') {
+                $displayRole = $user->hasPermissionTo('kelola-admin')
+                    ? 'Admin Super'
+                    : 'Admin Biasa';
+            }
+
+            \App\Models\LogActivity::create([
+                'user_id'       => $user->id,
+                'role'          => $user->role,
+                'activity_type' => 'login',
+                'module'        => 'auth',
+                'description'   => 'Login demo sebagai ' . $displayRole,
+                'ip_address'    => $request->ip(),
+                'user_agent'    => $request->userAgent(),
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to log demo login activity: ' . $e->getMessage());
+        }
+
         $modules = $user->availableModules();
 
         // Hormati kelompok tombol yang diklik di halaman login — itu

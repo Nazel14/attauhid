@@ -217,12 +217,25 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
 
     const aksi = (url, method = 'post') => {
         setProses(true);
-        router[method](url, method === 'post' ? {} : undefined, {
+
+        const opsi = {
             preserveScroll: true,
             onFinish: () => setProses(false),
             onSuccess: () => { setDialog(null); setPesanError(''); },
             onError: (err) => setPesanError(err.status_error || err.header_error || err.delete_error || err.batal_error || 'Gagal memproses.'),
-        });
+        };
+
+        // router.delete hanya menerima (url, options) — tanpa argumen data,
+        // berbeda dari router.post(url, data, options). Versi lama menyelipkan
+        // `undefined` di posisi kedua, sehingga seluruh callback mendarat di
+        // argumen ketiga yang diabaikan Inertia: dialog tidak pernah tertutup,
+        // error tidak pernah tampil, dan `proses` tidak pernah direset.
+        if (method === 'delete') {
+            router.delete(url, opsi);
+            return;
+        }
+
+        router[method](url, {}, opsi);
     };
 
     const badgeInvoice = (s) => ({
