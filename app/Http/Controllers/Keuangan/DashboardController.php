@@ -49,7 +49,10 @@ class DashboardController extends Controller
                 // scopeAktif() sudah didefinisikan di model Santri.
                 $totalSiswa = Siswa::aktif()->count();
 
-                $siswaNunggak = Tagihan::where('status', '!=', 'Paid')
+                // 'Cancelled' bukan tunggakan — tagihan yang dibatalkan sudah
+                // tidak ditagih lagi. Sebelum fitur pembatalan ada, status itu
+                // belum mungkin muncul sehingga '!= Paid' masih benar.
+                $siswaNunggak = Tagihan::whereNotIn('status', ['Paid', 'Cancelled'])
                     ->distinct('student_id')
                     ->count('student_id');
 
@@ -122,18 +125,45 @@ class DashboardController extends Controller
         return $hasil;
     }
 
+    /**
+     * Tunggakan pada AKHIR tiap bulan, direkonstruksi dari riwayat pembayaran.
+     *
+     * Versi sebelumnya menyaring status SEKARANG lalu memotongnya dengan
+     * created_at — yang tergambar adalah keadaan hari ini yang dipotong mundur,
+     * bukan keadaan bulan itu. Akibatnya garisnya nyaris selalu menanjak:
+     * bulan lama punya lebih sedikit tagihan, terlepas dari apakah tunggakan
+     * sebenarnya membaik atau memburuk.
+     *
+     * Di sini tiap bulan dihitung ulang dari nol. Sebuah tagihan tertunggak
+     * pada akhir bulan M bila ia sudah terbit saat itu, belum dibatalkan
+     * sampai saat itu, dan pembayaran disetujui yang masuk hingga M masih
+     * kurang dari nilai tagihannya. Batas 'disetujui' mengikuti aturan yang
+     * sama dengan totalIncome di atas, supaya dua angka di satu halaman
+     * tidak memakai definisi "uang masuk" yang berbeda.
+     */
     private function trenTunggakan(int $totalSiswa): array
     {
         $hasil = [];
 
         for ($i = 5; $i >= 0; $i--) {
-            $tgl = now()->subMonths($i);
+            $tgl   = now()->subMonths($i);
+            $batas = $tgl->copy()->endOfMonth();
 
-            // Versi edufinance memakai whereYear('<=') digabung whereMonth('<=')
-            // yang keliru untuk lintas tahun. Di sini cukup satu batas tanggal.
-            $nunggak = Tagihan::where('status', '!=', 'Paid')
-                ->where('created_at', '<=', $tgl->copy()->endOfMonth())
-                ->distinct('student_id')
+            $nunggak = Tagihan::query()
+                ->where('created_at', '<=', $batas)
+                ->where(function ($q) use ($batas) {
+                    $q->whereNull('cancelled_at')
+                      ->orWhere('cancelled_at', '>', $batas);
+                })
+                ->whereRaw('(
+                    SELECT COALESCE(SUM(p.nominal), 0)
+                      FROM inbound_payments p
+                     WHERE p.invoice_id = invoices.id
+                       AND p.deleted_at IS NULL
+                       AND p.status_approval = ?
+                       AND p.payment_date <= ?
+                ) < invoices.total_amount', ['disetujui', $batas->toDateString()])
+                ->distinct()
                 ->count('student_id');
 
             $hasil[] = [
