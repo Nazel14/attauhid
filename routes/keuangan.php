@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Keuangan\DashboardController;
+use App\Http\Controllers\Keuangan\PimpinanController;
 use App\Http\Controllers\Keuangan\Finance\LaporanController;
 use App\Http\Controllers\Keuangan\Inbound\PembayaranController;
 use App\Http\Controllers\Keuangan\Inbound\TagihanController;
@@ -41,6 +42,11 @@ Route::middleware([
 
     /* ---------- DASHBOARD ---------- */
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Ringkasan pimpinan — dipisah dari dashboard bendahara karena
+    // pembacanya berbeda: yang satu bertindak, yang satu mengamati.
+    Route::get('/pimpinan', [PimpinanController::class, 'index'])
+        ->middleware('permission:laporan.pimpinan')->name('pimpinan');
 
     /* ---------- 4b. MASTER DATA ---------- */
     Route::prefix('master-data')->name('master-data.')->group(function () {
