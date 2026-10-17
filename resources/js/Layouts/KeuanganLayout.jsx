@@ -150,6 +150,7 @@ const ROLE_PRIORITAS = [
 const I = {
     // --- ikon grup ---
     dash: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+    pimpinan: 'M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1z M8 16v-3 M12 16v-6 M16 16v-4',
     master: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
     masuk: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
     keluar: 'M17 13l-5 5m0 0l-5-5m5 5V6',
@@ -396,6 +397,25 @@ export default function KeuanganLayout({ children }) {
                     </svg>
                     {!isMini && <span className="truncate">Dashboard</span>}
                 </Link>
+
+                {/* Tautan tersendiri, bukan di dalam grup Laporan. Pembacanya
+                    kemungkinan hanya memegang permission ini saja — menaruhnya
+                    di balik accordion membuat satu-satunya halaman yang boleh
+                    ia buka justru harus dicari dulu. */}
+                {has('keuangan.pimpinan') && can('laporan.pimpinan') && (
+                    <Link href={route('keuangan.pimpinan')} onClick={closeNav}
+                        title={isMini ? 'Ringkasan Pimpinan' : undefined}
+                        className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${isMini ? 'justify-center' : ''} ${
+                            isCurrent('keuangan.pimpinan')
+                                ? 'bg-gradient-to-r from-claude-500 to-claude-600 text-white shadow-lg shadow-claude-500/25'
+                                : 'text-stone-500 hover:bg-cream-200 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-coal-600/60 dark:hover:text-white'
+                        }`}>
+                        <svg className={`h-[18px] w-[18px] flex-shrink-0 ${isCurrent('keuangan.pimpinan') ? 'text-white' : 'text-stone-400 dark:text-stone-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={I.pimpinan} />
+                        </svg>
+                        {!isMini && <span className="truncate">Ringkasan Pimpinan</span>}
+                    </Link>
+                )}
 
                 {GROUPS.map((g) => {
                     const aktif = (() => { try { return route().current(g.prefix + '*'); } catch (e) { return false; } })();
