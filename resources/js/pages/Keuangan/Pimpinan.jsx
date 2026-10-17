@@ -16,7 +16,7 @@ const warnaPersen = (p) =>
 const warnaBatang = (p) =>
     p >= 50 ? 'bg-red-500' : p >= 33 ? 'bg-amber-500' : 'bg-claude-500';
 
-export default function Pimpinan({ tahun, tunggakanKelas, keringanan }) {
+export default function Pimpinan({ tahun, tunggakanKelas, keringanan, bebanGaji, rkas }) {
     const kelas = tunggakanKelas ?? [];
     const alasan = keringanan ?? [];
 
@@ -131,6 +131,93 @@ export default function Pimpinan({ tahun, tunggakanKelas, keringanan }) {
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <div className={`mt-5 ${kartu}`}>
+                <div className="mb-4">
+                    <h2 className="text-base font-semibold text-stone-800 dark:text-cream-50">Beban Gaji {tahun}</h2>
+                    <p className="mt-0.5 text-xs text-stone-400">
+                        Bagian pemasukan yang terpakai untuk penggajian — dihitung dari batch yang sudah dibayarkan.
+                    </p>
+                </div>
+
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                    <div className="shrink-0">
+                        <p className={`text-3xl font-bold leading-none ${warnaPersen(bebanGaji?.persen ?? 0)}`}>
+                            {bebanGaji?.persen ?? 0}%
+                        </p>
+                        <p className="mt-1.5 text-xs text-stone-400">dari pemasukan</p>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-coal-600">
+                            <div className={`h-full rounded-full ${warnaBatang(bebanGaji?.persen ?? 0)}`}
+                                style={{ width: `${Math.min(bebanGaji?.persen ?? 0, 100)}%` }} />
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500 dark:text-stone-400">
+                            <span>Gaji dibayarkan <strong className="font-semibold text-stone-700 dark:text-stone-200">{formatCurrency(bebanGaji?.gaji ?? 0)}</strong></span>
+                            <span>Pemasukan <strong className="font-semibold text-stone-700 dark:text-stone-200">{formatCurrency(bebanGaji?.pemasukan ?? 0)}</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className={`mt-5 ${kartu}`}>
+                <div className="mb-4">
+                    <h2 className="text-base font-semibold text-stone-800 dark:text-cream-50">
+                        Serapan Anggaran{rkas?.periode ? ` · ${rkas.periode}` : ''}
+                    </h2>
+                    <p className="mt-0.5 text-xs text-stone-400">
+                        Lima pos dengan serapan tertinggi — yang hampir habis itu yang perlu diputuskan.
+                    </p>
+                </div>
+
+                {rkas ? (
+                    <>
+                        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            {[
+                                ['Pagu', formatCurrency(rkas.anggaran), 'text-stone-700 dark:text-stone-200'],
+                                ['Terserap', formatCurrency(rkas.terserap), 'text-claude-600 dark:text-claude-300'],
+                                ['Sisa', formatCurrency(rkas.sisa), 'text-emerald-600 dark:text-emerald-400'],
+                                ['Serapan', `${rkas.persen}%`, warnaPersen(rkas.persen)],
+                            ].map(([label, nilai, warna]) => (
+                                <div key={label} className="rounded-xl bg-stone-50 p-3 dark:bg-coal-800">
+                                    <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">{label}</p>
+                                    <p className={`mt-1 break-words text-sm font-bold leading-tight ${warna}`}>{nilai}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600">
+                            <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
+                                <thead className="bg-stone-50 dark:bg-coal-800">
+                                    <tr>
+                                        <th className={th}>Kegiatan</th>
+                                        <th className={thNum}>Pagu</th>
+                                        <th className={thNum}>Terpakai</th>
+                                        <th className={thNum}>Serapan</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                                    {rkas.pos.map((p) => (
+                                        <tr key={p.kode} className="transition hover:bg-cream-50 dark:hover:bg-coal-600/40">
+                                            <td className="px-3 py-3 text-sm">
+                                                <span className="font-medium text-stone-800 dark:text-cream-100">{p.nama}</span><br />
+                                                <span className="text-xs text-stone-400">{p.kode}</span>
+                                            </td>
+                                            <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-stone-500 dark:text-stone-400">{formatCurrency(p.pagu)}</td>
+                                            <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-stone-600 dark:text-stone-300">{formatCurrency(p.realisasi)}</td>
+                                            <td className={`whitespace-nowrap px-3 py-3 text-right text-sm font-semibold ${warnaPersen(p.persen)}`}>{p.persen}%</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
+                ) : (
+                    <p className="py-12 text-center text-sm text-stone-500 dark:text-stone-400">
+                        Belum ada periode RKAS yang difinalkan.
+                    </p>
+                )}
             </div>
         </KeuanganLayout>
     );

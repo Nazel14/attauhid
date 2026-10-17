@@ -49,10 +49,13 @@ class DashboardController extends Controller
                 // scopeAktif() sudah didefinisikan di model Santri.
                 $totalSiswa = Siswa::aktif()->count();
 
-                // 'Cancelled' bukan tunggakan — tagihan yang dibatalkan sudah
-                // tidak ditagih lagi. Sebelum fitur pembatalan ada, status itu
-                // belum mungkin muncul sehingga '!= Paid' masih benar.
-                $siswaNunggak = Tagihan::whereNotIn('status', ['Paid', 'Cancelled'])
+                // Dua syarat, keduanya mengikuti LaporanController::tunggakan()
+                // supaya angka di dashboard dan di laporan tidak pernah berbeda:
+                // hanya status Unpaid/Installment — 'Cancelled' sudah tidak
+                // ditagih, dan hanya gelombang Published — tagihan yang masih
+                // Draft belum pernah sampai ke wali murid, jadi belum piutang.
+                $siswaNunggak = Tagihan::whereIn('status', ['Unpaid', 'Installment'])
+                    ->whereHas('header', fn ($q) => $q->where('status', 'Published'))
                     ->distinct('student_id')
                     ->count('student_id');
 
@@ -150,6 +153,7 @@ class DashboardController extends Controller
             $batas = $tgl->copy()->endOfMonth();
 
             $nunggak = Tagihan::query()
+                ->whereHas('header', fn ($q) => $q->where('status', 'Published'))
                 ->where('created_at', '<=', $batas)
                 ->where(function ($q) use ($batas) {
                     $q->whereNull('cancelled_at')
