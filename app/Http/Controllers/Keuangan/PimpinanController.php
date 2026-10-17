@@ -112,11 +112,11 @@ class PimpinanController extends Controller
      * menjawab pertanyaan yang sudah ditulis sendiri di model Tagihan:
      * "Berapa yang kita bebaskan tahun ini?"
      *
-     * Dua angka dilaporkan karena pertanyaannya memang dua. Nilai tagihan
-     * adalah nominal penuh yang dibatalkan, dan itu yang relevan untuk
-     * 'salah input' — seluruh tagihannya memang tidak pernah sah. Nilai
-     * dibebaskan adalah sisa yang belum terbayar saat dibatalkan, dan itulah
-     * uang yang benar-benar tidak jadi masuk.
+     * Nominalnya diambil dari total_amount, bukan remaining_balance.
+     * Pembatalan menolkan sisa tagihan, jadi remaining_balance selalu 0 di
+     * sini. Lagi pula tagihan hanya boleh dibatalkan selama belum menerima
+     * pembayaran sama sekali, sehingga yang dibebaskan memang selalu sama
+     * dengan nilai penuh tagihannya.
      */
     private function keringananPerAlasan(int $tahun)
     {
@@ -126,16 +126,14 @@ class PimpinanController extends Controller
             ->groupBy('cancel_reason')
             ->selectRaw('cancel_reason,
                          COUNT(*) AS jumlah,
-                         COALESCE(SUM(total_amount), 0)      AS nominal_tagihan,
-                         COALESCE(SUM(remaining_balance), 0) AS nominal_dibebaskan')
+                         COALESCE(SUM(total_amount), 0) AS nominal')
             ->get()
             ->map(fn ($r) => [
-                'label'      => Tagihan::ALASAN_BATAL[$r->cancel_reason] ?? 'Tanpa alasan',
-                'jumlah'     => (int) $r->jumlah,
-                'tagihan'    => (float) $r->nominal_tagihan,
-                'dibebaskan' => (float) $r->nominal_dibebaskan,
+                'label'   => Tagihan::ALASAN_BATAL[$r->cancel_reason] ?? 'Tanpa alasan',
+                'jumlah'  => (int) $r->jumlah,
+                'nominal' => (float) $r->nominal,
             ])
-            ->sortByDesc('dibebaskan')
+            ->sortByDesc('nominal')
             ->values();
     }
 
@@ -161,6 +159,11 @@ class PimpinanController extends Controller
             'gaji'      => $gaji,
             'pemasukan' => $pemasukan,
             'persen'    => $pemasukan > 0 ? round($gaji / $pemasukan * 100, 1) : 0,
+            // Nol karena belum ada penggajian sama sekali berbeda artinya
+            // dari nol karena gajinya memang belum dibayarkan. Yang pertama
+            // bukan angka, hanya ketiadaan data — dan menampilkannya sebagai
+            // 0% membuat halaman tampak rusak.
+            'ada_data'  => PayrollHeader::where('periode_tahun', $tahun)->exists(),
         ];
     }
 

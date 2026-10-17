@@ -16,6 +16,11 @@ const warnaPersen = (p) =>
 const warnaBatang = (p) =>
     p >= 50 ? 'bg-red-500' : p >= 33 ? 'bg-amber-500' : 'bg-claude-500';
 
+const warnaSerapan = (p) =>
+    p >= 90 ? 'text-red-600 dark:text-red-400'
+    : p >= 75 ? 'text-amber-600 dark:text-amber-400'
+    : 'text-stone-600 dark:text-stone-300';
+
 export default function Pimpinan({ tahun, tunggakanKelas, keringanan, bebanGaji, rkas }) {
     const kelas = tunggakanKelas ?? [];
     const alasan = keringanan ?? [];
@@ -178,7 +183,7 @@ export default function Pimpinan({ tahun, tunggakanKelas, keringanan, bebanGaji,
                                 ['Pagu', formatCurrency(rkas.anggaran), 'text-stone-700 dark:text-stone-200'],
                                 ['Terserap', formatCurrency(rkas.terserap), 'text-claude-600 dark:text-claude-300'],
                                 ['Sisa', formatCurrency(rkas.sisa), 'text-emerald-600 dark:text-emerald-400'],
-                                ['Serapan', `${rkas.persen}%`, warnaPersen(rkas.persen)],
+                                ['Serapan', `${rkas.persen}%`, warnaSerapan(rkas.persen)],
                             ].map(([label, nilai, warna]) => (
                                 <div key={label} className="rounded-xl bg-stone-50 p-3 dark:bg-coal-800">
                                     <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">{label}</p>
@@ -206,7 +211,7 @@ export default function Pimpinan({ tahun, tunggakanKelas, keringanan, bebanGaji,
                                             </td>
                                             <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-stone-500 dark:text-stone-400">{formatCurrency(p.pagu)}</td>
                                             <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-stone-600 dark:text-stone-300">{formatCurrency(p.realisasi)}</td>
-                                            <td className={`whitespace-nowrap px-3 py-3 text-right text-sm font-semibold ${warnaPersen(p.persen)}`}>{p.persen}%</td>
+                                            <td className={`whitespace-nowrap px-3 py-3 text-right text-sm font-semibold ${warnaSerapan(p.persen)}`}>{p.persen}%</td>
                                         </tr>
                                     ))}
                                 </tbody>
