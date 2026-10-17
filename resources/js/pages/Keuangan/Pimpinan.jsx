@@ -16,17 +16,20 @@ const warnaPersen = (p) =>
 const warnaBatang = (p) =>
     p >= 50 ? 'bg-red-500' : p >= 33 ? 'bg-amber-500' : 'bg-claude-500';
 
+// Serapan anggaran dibaca terbalik dari tunggakan: 69% terpakai di
+// pertengahan tahun ajaran itu wajar, bukan peringatan. Merah baru
+// pantas ketika posnya benar-benar nyaris habis.
 const warnaSerapan = (p) =>
     p >= 90 ? 'text-red-600 dark:text-red-400'
     : p >= 75 ? 'text-amber-600 dark:text-amber-400'
     : 'text-stone-600 dark:text-stone-300';
 
 export default function Pimpinan({ tahun, tunggakanKelas, keringanan, bebanGaji, rkas }) {
-    const kelas = tunggakanKelas ?? [];
+    const kelas  = tunggakanKelas ?? [];
     const alasan = keringanan ?? [];
 
     const totalTunggakan  = kelas.reduce((t, k) => t + Number(k.nominal), 0);
-    const totalDibebaskan = alasan.reduce((t, k) => t + Number(k.dibebaskan), 0);
+    const totalDibebaskan = alasan.reduce((t, k) => t + Number(k.nominal), 0);
 
     return (
         <KeuanganLayout>
@@ -35,7 +38,7 @@ export default function Pimpinan({ tahun, tunggakanKelas, keringanan, bebanGaji,
             <div className="mb-5 sm:mb-6">
                 <h1 className="text-lg font-bold text-stone-800 dark:text-cream-50 sm:text-xl">Ringkasan Pimpinan</h1>
                 <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-                    Keadaan piutang per rombel dan keringanan yang diberikan sepanjang {tahun}.
+                    Piutang, keringanan, beban gaji, dan serapan anggaran sepanjang {tahun}.
                 </p>
             </div>
 
@@ -52,7 +55,7 @@ export default function Pimpinan({ tahun, tunggakanKelas, keringanan, bebanGaji,
                     <p className="mt-1.5 break-words text-base font-bold leading-tight text-stone-700 dark:text-stone-200 sm:mt-2 sm:text-xl">
                         {formatCurrency(totalDibebaskan)}
                     </p>
-                    <p className="mt-1 text-xs text-stone-400">sisa tagihan saat dibatalkan</p>
+                    <p className="mt-1 text-xs text-stone-400">nilai tagihan yang dibatalkan</p>
                 </div>
             </div>
 
@@ -106,7 +109,7 @@ export default function Pimpinan({ tahun, tunggakanKelas, keringanan, bebanGaji,
                 <div className="mb-4">
                     <h2 className="text-base font-semibold text-stone-800 dark:text-cream-50">Keringanan &amp; Pembatalan {tahun}</h2>
                     <p className="mt-0.5 text-xs text-stone-400">
-                        Nilai tagihan adalah nominal penuh yang dibatalkan; dibebaskan adalah sisa yang belum terbayar saat itu.
+                        Nilai penuh tagihan yang dibatalkan — pembatalan hanya mungkin sebelum ada pembayaran masuk.
                     </p>
                 </div>
 
@@ -115,9 +118,8 @@ export default function Pimpinan({ tahun, tunggakanKelas, keringanan, bebanGaji,
                         <thead className="bg-stone-50 dark:bg-coal-800">
                             <tr>
                                 <th className={th}>Alasan</th>
-                                <th className={thNum}>Tagihan</th>
-                                <th className={thNum}>Nilai Tagihan</th>
-                                <th className={thNum}>Dibebaskan</th>
+                                <th className={thNum}>Jumlah Tagihan</th>
+                                <th className={thNum}>Nilai Dibebaskan</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
@@ -125,11 +127,10 @@ export default function Pimpinan({ tahun, tunggakanKelas, keringanan, bebanGaji,
                                 <tr key={a.label} className="transition hover:bg-cream-50 dark:hover:bg-coal-600/40">
                                     <td className="whitespace-nowrap px-3 py-3 text-sm font-medium text-stone-800 dark:text-cream-100">{a.label}</td>
                                     <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-stone-600 dark:text-stone-300">{a.jumlah}</td>
-                                    <td className="whitespace-nowrap px-3 py-3 text-right text-sm text-stone-500 dark:text-stone-400">{formatCurrency(a.tagihan)}</td>
-                                    <td className="whitespace-nowrap px-3 py-3 text-right text-sm font-semibold text-stone-700 dark:text-stone-200">{formatCurrency(a.dibebaskan)}</td>
+                                    <td className="whitespace-nowrap px-3 py-3 text-right text-sm font-semibold text-stone-700 dark:text-stone-200">{formatCurrency(a.nominal)}</td>
                                 </tr>
                             )) : (
-                                <tr><td colSpan={4} className="px-6 py-12 text-center text-sm text-stone-500 dark:text-stone-400">
+                                <tr><td colSpan={3} className="px-6 py-12 text-center text-sm text-stone-500 dark:text-stone-400">
                                     Belum ada tagihan yang dibatalkan tahun ini.
                                 </td></tr>
                             )}
@@ -146,24 +147,30 @@ export default function Pimpinan({ tahun, tunggakanKelas, keringanan, bebanGaji,
                     </p>
                 </div>
 
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                    <div className="shrink-0">
-                        <p className={`text-3xl font-bold leading-none ${warnaPersen(bebanGaji?.persen ?? 0)}`}>
-                            {bebanGaji?.persen ?? 0}%
-                        </p>
-                        <p className="mt-1.5 text-xs text-stone-400">dari pemasukan</p>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <div className="h-2 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-coal-600">
-                            <div className={`h-full rounded-full ${warnaBatang(bebanGaji?.persen ?? 0)}`}
-                                style={{ width: `${Math.min(bebanGaji?.persen ?? 0, 100)}%` }} />
+                {!bebanGaji?.ada_data ? (
+                    <p className="py-8 text-center text-sm text-stone-500 dark:text-stone-400">
+                        Belum ada batch penggajian untuk {tahun}.
+                    </p>
+                ) : (
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                        <div className="shrink-0">
+                            <p className={`text-3xl font-bold leading-none ${warnaPersen(bebanGaji.persen)}`}>
+                                {bebanGaji.persen}%
+                            </p>
+                            <p className="mt-1.5 text-xs text-stone-400">dari pemasukan</p>
                         </div>
-                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500 dark:text-stone-400">
-                            <span>Gaji dibayarkan <strong className="font-semibold text-stone-700 dark:text-stone-200">{formatCurrency(bebanGaji?.gaji ?? 0)}</strong></span>
-                            <span>Pemasukan <strong className="font-semibold text-stone-700 dark:text-stone-200">{formatCurrency(bebanGaji?.pemasukan ?? 0)}</strong></span>
+                        <div className="min-w-0 flex-1">
+                            <div className="h-2 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-coal-600">
+                                <div className={`h-full rounded-full ${warnaBatang(bebanGaji.persen)}`}
+                                    style={{ width: `${Math.min(bebanGaji.persen, 100)}%` }} />
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500 dark:text-stone-400">
+                                <span>Gaji dibayarkan <strong className="font-semibold text-stone-700 dark:text-stone-200">{formatCurrency(bebanGaji.gaji)}</strong></span>
+                                <span>Pemasukan <strong className="font-semibold text-stone-700 dark:text-stone-200">{formatCurrency(bebanGaji.pemasukan)}</strong></span>
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
             </div>
 
             <div className={`mt-5 ${kartu}`}>
