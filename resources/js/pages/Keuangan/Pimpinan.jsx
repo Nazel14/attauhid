@@ -24,7 +24,7 @@ const warnaSerapan = (p) =>
     : p >= 75 ? 'text-amber-600 dark:text-amber-400'
     : 'text-stone-600 dark:text-stone-300';
 
-export default function Pimpinan({ tahun, tunggakanKelas, keringanan, bebanGaji, rkas }) {
+export default function Pimpinan({ tahun, tunggakanKelas, keringanan, bebanGaji, rkas, tahfizh }) {
     const kelas  = tunggakanKelas ?? [];
     const alasan = keringanan ?? [];
 
@@ -231,6 +231,74 @@ export default function Pimpinan({ tahun, tunggakanKelas, keringanan, bebanGaji,
                     </p>
                 )}
             </div>
+
+            {/* Blok tahfizh hanya dirender bila modul raport menyala —
+                controller mengirim null bila tidak, dan halaman ini tetap
+                utuh di instalasi klien yang cuma memakai panel keuangan. */}
+            {tahfizh && (
+                <div className={`mt-5 ${kartu}`}>
+                    <div className="mb-4">
+                        <h2 className="text-base font-semibold text-stone-800 dark:text-cream-50">Ringkasan Tahfizh</h2>
+                        <p className="mt-0.5 text-xs text-stone-400">
+                            Capaian hafalan terhadap target tahun ajaran berjalan, dan santri yang berhenti setor.
+                        </p>
+                    </div>
+
+                    <div className="mb-4 grid grid-cols-3 gap-3">
+                        <div className="rounded-xl bg-stone-50 p-3 dark:bg-coal-800">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Santri Aktif</p>
+                            <p className="mt-1 text-sm font-bold leading-tight text-stone-700 dark:text-stone-200">{tahfizh.aktif}</p>
+                        </div>
+                        <div className="rounded-xl bg-stone-50 p-3 dark:bg-coal-800">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Rata-rata Capaian</p>
+                            <p className="mt-1 text-sm font-bold leading-tight text-claude-600 dark:text-claude-300">{tahfizh.rataCapaian}%</p>
+                        </div>
+                        <div className="rounded-xl bg-stone-50 p-3 dark:bg-coal-800">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Vakum ≥ {tahfizh.hariVakum} Hari</p>
+                            <p className={`mt-1 text-sm font-bold leading-tight ${tahfizh.jumlahVakum > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-stone-700 dark:text-stone-200'}`}>
+                                {tahfizh.jumlahVakum} <span className="font-normal text-stone-400">/ {tahfizh.aktif}</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    {tahfizh.vakum.length > 0 ? (
+                        <div className="overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600">
+                            <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
+                                <thead className="bg-stone-50 dark:bg-coal-800">
+                                    <tr>
+                                        <th className={th}>Santri</th>
+                                        <th className={th}>Setoran Terakhir</th>
+                                        <th className={thNum}>Lama Vakum</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                                    {tahfizh.vakum.map((v) => (
+                                        <tr key={v.nama} className="transition hover:bg-cream-50 dark:hover:bg-coal-600/40">
+                                            <td className="whitespace-nowrap px-3 py-3 text-sm font-medium text-stone-800 dark:text-cream-100">{v.nama}</td>
+                                            <td className="whitespace-nowrap px-3 py-3 text-sm text-stone-500 dark:text-stone-400">
+                                                {v.terakhir ?? 'Belum pernah setor'}
+                                            </td>
+                                            <td className="whitespace-nowrap px-3 py-3 text-right text-sm font-semibold text-amber-600 dark:text-amber-400">
+                                                {v.hari !== null ? `${v.hari} hari` : '—'}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <p className="py-8 text-center text-sm text-stone-500 dark:text-stone-400">
+                            Semua santri aktif setor dalam {tahfizh.hariVakum} hari terakhir.
+                        </p>
+                    )}
+
+                    {tahfizh.jumlahVakum > tahfizh.vakum.length && (
+                        <p className="mt-3 text-xs text-stone-400">
+                            Menampilkan {tahfizh.vakum.length} dari {tahfizh.jumlahVakum} santri — yang paling lama vakum lebih dulu.
+                        </p>
+                    )}
+                </div>
+            )}
         </KeuanganLayout>
     );
 }

@@ -276,6 +276,8 @@ Route::middleware([
             ->middleware('permission:absensi.lihat')->name('absensi.holidays');
         Route::post('/absensi/update', [AbsensiController::class, 'update'])
             ->middleware('permission:absensi.kelola')->name('absensi.update');
+        Route::post('/absensi/simpan', [AbsensiController::class, 'simpan'])
+            ->middleware('permission:absensi.kelola')->name('absensi.simpan');
         Route::post('/absensi/bulk-hadir', [AbsensiController::class, 'bulkHadir'])
             ->middleware('permission:absensi.kelola')->name('absensi.bulk_hadir');
 

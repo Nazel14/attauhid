@@ -10,7 +10,17 @@ import InputError from '@/Components/InputError';
 import SearchableSelect from '@/Components/SearchableSelect';
 import { formatCurrency } from '@/Utils/formatCurrency';
 
-const PERLU_SISWA = ['tagihan', 'uang_masuk'];
+// Hanya tagihan yang memilih siswa terdaftar. Uang masuk (pendaftaran)
+// dibayar calon siswa yang belum tentu diterima → nama diisi manual.
+const PERLU_SISWA = ['tagihan'];
+
+// Label & placeholder isian nama manual per kategori.
+const NAMA_PIHAK = {
+    uang_masuk: { label: 'Nama Calon Siswa', wajib: true,  contoh: 'Contoh: Muhammad Fauzan', kolom: 'Calon Siswa' },
+    donatur:    { label: 'Nama Donatur / Instansi', wajib: true, contoh: 'Contoh: Hamba Allah / PT Sukses Makmur', kolom: 'Donatur' },
+    koperasi:   { label: 'Nama Pihak / Mitra', wajib: false, contoh: 'Contoh: Koperasi Sekolah', kolom: 'Pihak / Keterangan' },
+};
+const namaPihak = (k) => NAMA_PIHAK[k] || NAMA_PIHAK.koperasi;
 
 const LANGKAH = [
     { id: 'draft',     label: 'Draft' },
@@ -126,7 +136,9 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
             payment_date: item.payment_date,
             student_id: item.student_id || '',
             invoice_id: item.invoice_id || '',
-            nama_pihak: item.nama_pihak || '',
+            // Data uang masuk lama masih memakai siswa terdaftar dan nama_pihak
+            // kosong → isi dari nama siswa supaya validasi nama wajib lolos.
+            nama_pihak: item.nama_pihak || (!PERLU_SISWA.includes(item.kategori) ? item.siswa?.name : '') || '',
             account_id: item.account_id,
             payment_method: item.payment_method,
             nominal: Math.floor(item.nominal).toString(),
@@ -373,7 +385,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                             <tr>
                                 <th onClick={() => handleSort('receipt_number')} className={thCls}><div className="flex items-center">No. Kwitansi <SortIcon field="receipt_number" /></div></th>
                                 <th onClick={() => handleSort('payment_date')} className={thCls}><div className="flex items-center">Tanggal <SortIcon field="payment_date" /></div></th>
-                                <th className={thPlain}>{PERLU_SISWA.includes(kategori) ? 'Siswa' : 'Pihak / Keterangan'}</th>
+                                <th className={thPlain}>{PERLU_SISWA.includes(kategori) ? 'Siswa' : namaPihak(kategori).kolom}</th>
                                 <th onClick={() => handleSort('nominal')} className={thCls}><div className="flex items-center">Jumlah <SortIcon field="nominal" /></div></th>
                                 <th onClick={() => handleSort('status_approval')} className={thCls}><div className="flex items-center">Status <SortIcon field="status_approval" /></div></th>
                                 <th className={thAksi}>Aksi</th>
@@ -642,12 +654,17 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                         {!perluSiswa && (
                             <div>
                                 <InputLabel>
-                                    {data.kategori === 'donatur' ? 'Nama Donatur / Instansi' : 'Nama Pihak / Mitra'}
-                                    {data.kategori === 'donatur' && <span className="text-red-500"> *</span>}
+                                    {namaPihak(data.kategori).label}
+                                    {namaPihak(data.kategori).wajib && <span className="text-red-500"> *</span>}
                                 </InputLabel>
                                 <TextInput value={data.nama_pihak} onChange={(e) => setData('nama_pihak', e.target.value)}
                                     className="mt-1.5 block w-full"
-                                    placeholder={data.kategori === 'donatur' ? 'Contoh: Hamba Allah / PT Sukses Makmur' : 'Contoh: Koperasi Sekolah'} />
+                                    placeholder={namaPihak(data.kategori).contoh} />
+                                {data.kategori === 'uang_masuk' && (
+                                    <p className="mt-1 text-xs text-stone-400">
+                                        Diisi manual karena calon siswa belum terdaftar — masih tahap seleksi.
+                                    </p>
+                                )}
                                 <InputError message={errors.nama_pihak} className="mt-1.5" />
                             </div>
                         )}
@@ -700,7 +717,10 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                             <InputLabel value="Catatan / Keterangan" />
                             <TextInput value={data.catatan} onChange={(e) => setData('catatan', e.target.value)}
                                 className="mt-1.5 block w-full"
-                                placeholder={data.kategori === 'koperasi' ? 'Contoh: Penjualan seragam olahraga' : 'Keterangan tambahan…'} />
+                                placeholder={{
+                                    koperasi:   'Contoh: Penjualan seragam olahraga',
+                                    uang_masuk: 'Contoh: Uang pendaftaran gelombang 1, TA 2027/2028',
+                                }[data.kategori] || 'Keterangan tambahan…'} />
                             <InputError message={errors.catatan} className="mt-1.5" />
                         </div>
                     </div>

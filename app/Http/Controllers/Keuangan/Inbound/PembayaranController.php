@@ -17,8 +17,17 @@ use Inertia\Inertia;
 
 class PembayaranController extends Controller
 {
-    /** Kategori yang mewajibkan siswa. */
-    private const PERLU_SISWA = ['tagihan', 'uang_masuk'];
+    /**
+     * Kategori yang mewajibkan siswa terdaftar.
+     *
+     * 'uang_masuk' sengaja TIDAK di sini: uang pendaftaran dibayar calon
+     * siswa yang masih ikut seleksi dan belum tentu diterima, jadi belum
+     * ada di master siswa. Namanya diisi manual lewat `nama_pihak`.
+     */
+    private const PERLU_SISWA = ['tagihan'];
+
+    /** Kategori yang mewajibkan nama pihak diisi manual. */
+    private const PERLU_NAMA = ['uang_masuk', 'donatur'];
 
     public function index(Request $request)
     {
@@ -102,7 +111,10 @@ class PembayaranController extends Controller
                 // detik yang sama — ditambah string acak.
                 'receipt_number'  => Pembayaran::PREFIX[$kategori] . '-' . date('Ymd') . '-' . strtoupper(Str::random(5)),
                 'kategori'        => $kategori,
-                'student_id'      => $tagihan?->student_id ?? ($data['student_id'] ?? null),
+                // Hanya kategori ber-siswa yang menyimpan student_id; uang masuk
+                // memakai nama manual, jadi student_id dibiarkan kosong.
+                'student_id'      => $tagihan?->student_id
+                                     ?? (in_array($kategori, self::PERLU_SISWA, true) ? ($data['student_id'] ?? null) : null),
                 'invoice_id'      => $data['invoice_id'] ?? null,
                 'nama_pihak'      => $data['nama_pihak'] ?? null,
                 'account_id'      => $data['account_id'],
@@ -300,16 +312,16 @@ class PembayaranController extends Controller
             $aturan['invoice_id'] = 'required|exists:invoices,id';
         }
 
-        if ($kategori === 'donatur') {
-            $aturan['nama_pihak'] = 'required|string|max:255';
-        } else {
-            $aturan['nama_pihak'] = 'nullable|string|max:255';
-        }
+        $aturan['nama_pihak'] = in_array($kategori, self::PERLU_NAMA, true)
+            ? 'required|string|max:255'
+            : 'nullable|string|max:255';
 
         return $request->validate($aturan, [
             'student_id.required'       => 'Siswa wajib dipilih.',
             'invoice_id.required'       => 'Tagihan wajib dipilih.',
-            'nama_pihak.required'       => 'Nama donatur wajib diisi.',
+            'nama_pihak.required'       => $kategori === 'uang_masuk'
+                                            ? 'Nama calon siswa wajib diisi.'
+                                            : 'Nama donatur wajib diisi.',
             'account_id.required'       => 'Rekening tujuan wajib dipilih.',
             'proof_of_payment.required' => 'Bukti transfer wajib diunggah.',
         ]);

@@ -1,5 +1,5 @@
 /**
- * AISAR HANDLER v1.9 — renderer khusus metode Aisar.
+ * AISAR HANDLER v2.3 — renderer khusus metode Aisar.
  * ------------------------------------------------------------------
  * WAJIB dimuat SETELAH iqro-handler.js dan aisar-data.js.
  *
@@ -11,6 +11,88 @@
  *
  * Cara kerja: wrap window.loadIqro → bila metode form = 'Aisar',
  * render pakai buildAisarPageHtml; selain itu diteruskan ke handler asli.
+ *
+ * ------------------------------------------------------------------
+ * PERUBAHAN v2.3 — marking per kata juga di sel grid
+ *
+ *   Gejala: di baris penuh tiap kata bisa ditandai sendiri, tetapi di
+ *   baris grid 2–3 kolom (mis. "مِن جِبَالٍ", "وَمَن جَهَرَ بِهِۦ") satu
+ *   klik mewarnai SELURUH sel.
+ *
+ *   Penyebab: bolehPecah() hanya memecah sel grid bila memakai "•".
+ *   Sel grid bersepasi dirender utuh sebagai satu .word-item.
+ *
+ *   Perbaikan: sel grid bersepasi kini ikut dipecah per kata (sama
+ *   dengan baris penuh dan iqro-handler v4.8). Sel satu kata tetap satu
+ *   unit. Sel badge (hl) dan narrow tetap utuh. Bisa dimatikan lewat
+ *   AISAR_SPLIT_GRID = false.
+ *
+ *   Efek samping: countTotalWords() naik di halaman ber-grid bersepasi
+ *   (jilid 3–5), jadi nilai setoran lama & baru tidak sebanding.
+ *
+ * ------------------------------------------------------------------
+ * PERUBAHAN v2.2 — pengukuran auto-fit diperbaiki
+ *
+ *   Gejala: setelah v2.1, baris penuh membesar sampai batas lalu kalimatnya
+ *   turun baris / terpotong.
+ *
+ *   Penyebab: v2.1 mengubah wadah sel yang dipecah per kata dari
+ *   inline-block menjadi inline-flex. Anak block di dalam flex container
+ *   punya min-width:auto, jadi wadah TIDAK PERNAH tertekan dan
+ *   span.scrollWidth berhenti melaporkan lebar teks sebenarnya. Loop
+ *   pembesar mengira masih muat terus sampai AISAR_MAX_FONT, lalu fallback
+ *   mengalihkan ke mode mengalir.
+ *
+ *   Perbaikan: yang diukur bukan lagi wadah, melainkan .aisar-tokens yang
+ *   diberi width:max-content. Lebar elemen itu selalu sama dengan lebar
+ *   teks asli, tidak ikut tertekan, dan tidak terpengaruh masalah
+ *   scrollWidth yang tidak menghitung luapan RTL ke kiri.
+ *
+ * ------------------------------------------------------------------
+ * PERUBAHAN v2.1 — baris penuh "naik" ke atas
+ *
+ *   Cabang sel yang dipecah per kata memakai display:inline-block dengan
+ *   min-height:90px. Pada inline-block, sisa tinggi dari min-height jatuh
+ *   SELURUHNYA di bawah line box, sehingga teks menempel ke tepi atas.
+ *   Cabang sel utuh tidak kena karena sudah inline-flex + align-items:center.
+ *
+ *   Sekarang kedua cabang memakai inline-flex, dengan token dibungkus SATU
+ *   span block di dalamnya (pola .iqro-tokens di iqro-handler) supaya alur
+ *   teks Arab tidak putus.
+ *
+ * ------------------------------------------------------------------
+ * PERUBAHAN v2.0
+ *
+ *   1. AUTO-FIT KINI BISA MEMBESARKAN, bukan hanya mengecilkan.
+ *
+ *      Gejala: kalimat di baris penuh terlihat "menggumpal" kecil di
+ *      tengah baris. Posisinya memang center sempurna, tetapi menyisakan
+ *      100–200 px kosong di KEDUA sisi.
+ *
+ *      Penyebab: fitOneSpan hanya punya loop penyusut. Kalimat pendek
+ *      berhenti di ukuran default (AISAR_SCREEN_FONT_SIZE / opsi
+ *      `fontSize` halaman) dan sisa lebarnya dibiarkan kosong.
+ *
+ *      Sekarang baris penuh dibesarkan sampai hampir memenuhi lebar
+ *      baris, dibatasi AISAR_MAX_FONT. Sel grid dan sel waqaf TIDAK
+ *      ikut dibesarkan — lihat komentar di fitOneSpan.
+ *
+ *      Efek samping: PDF ikut berubah (captureIqroPerPage memanggil
+ *      aisarAutoFit), dan opsi `fontSize` per halaman ditimpa untuk
+ *      baris penuh non-wrap.
+ *
+ *   2. Label surat (opsi `surah`) tidak lagi memakai float.
+ *
+ *      float:left salah di kedua cabang baris penuh:
+ *        - Baris wrap (block): float menyempitkan line box dari kiri,
+ *          teks yang di-center bergeser ke kanan sejauh setengah lebar
+ *          label.
+ *        - Baris non-wrap: induknya display:flex, dan float TIDAK
+ *          berlaku di dalam flex container. Label berubah jadi flex
+ *          item biasa, sehingga yang ter-center adalah "kalimat +
+ *          label" sebagai satu grup, bukan kalimatnya sendiri.
+ *
+ *      Sekarang position:absolute, jadi label tidak ikut dihitung.
  *
  * ------------------------------------------------------------------
  * PERUBAHAN v1.9
@@ -42,15 +124,17 @@
  * GRANULARITAS MARKING (v1.7)
  *
  *   Sel dipecah per kata bila:
- *     - baris berisi SATU kolom penuh (kalimat panjang), atau
+ *     - teks sel berisi lebih dari satu kata (baris penuh MAUPUN sel
+ *       grid sejak v2.3), atau
  *     - teks sel memakai pemisah "•"
- *   Sel grid pendek (2–5 kolom) TIDAK dipecah: satu sel = satu unit latihan.
+ *   Sel satu kata, sel badge (hl) dan sel narrow tetap satu unit.
  *
  *   Token yang isinya hanya pemisah / tanda akhir ayat (۝٦, ۞, tanda hubung)
  *   dirender pasif — tidak bisa diklik, tidak terhitung sebagai kesalahan.
  *
- *   PENTING soal CSS: token memakai display:inline, dan wadahnya TIDAK
- *   boleh flex. Inline-block/flex memutus alur teks Arab.
+ *   PENTING soal CSS: token memakai display:inline, dan tidak boleh jadi
+ *   anak LANGSUNG dari flex container — alur teks Arab akan putus dan
+ *   spasi antar kata hilang. Karena itu token dibungkus .aisar-tokens.
  *
  *   Efek samping: countTotalWords() menghitung lebih banyak unit di
  *   jilid 2–5, sehingga nilai setoran lama & baru tidak sebanding.
@@ -62,10 +146,13 @@
  *      mengalir supaya seluruh ayat muncul utuh di PDF. Ukuran font diatur
  *      manual lewat opsi `fontSize` di aisar-data.js.
  *
- *   2. Halaman NON-wrap di-auto-fit: font disusutkan sampai AISAR_MIN_FONT.
+ *   2. Halaman NON-wrap di-auto-fit: font disusutkan sampai AISAR_MIN_FONT,
+ *      dan untuk BARIS PENUH dibesarkan sampai AISAR_MAX_FONT (v2.0).
  *      Kalau masih meluber, wadah dialihkan ke mode mengalir.
  *
- *   3. Auto-fit mengukur WADAH sel (.aisar-fit), bukan token per kata.
+ *   3. Auto-fit mengukur .aisar-tokens (bila ada) atau scrollWidth wadah —
+ *      TIDAK PERNAH token per kata: tiap kata pasti "muat" sendiri-sendiri
+ *      sehingga baris panjang tidak akan pernah disusutkan.
  *
  *   4. Sel `narrow` (nama surat, badge) dilewati auto-fit.
  *
@@ -91,6 +178,15 @@
     // Batas bawah auto-fit (halaman NON-wrap). Turunkan ke 18–20 bila ingin
     // baris panjang tetap satu baris di layar sempit (mobile).
     const AISAR_MIN_FONT         = 22;
+    // Batas ATAS auto-fit, khusus baris penuh (satu sel = satu kalimat).
+    // Turunkan ke 38–40 bila baris panjang terasa terlalu besar dibanding
+    // baris grid di sekitarnya.
+    const AISAR_MAX_FONT         = 38;
+
+    // v2.3: true = sel grid (2–5 kolom) yang bersepasi ikut dipecah per kata,
+    // sehingga tiap kata bisa diberi warna koreksi sendiri. false = perilaku
+    // lama (satu sel grid = satu unit marking).
+    const AISAR_SPLIT_GRID       = true;
 
     const LINE   = 'var(--q-line,rgba(255,255,255,0.3))';
     const FG     = 'var(--q-fg,#fff)';
@@ -187,16 +283,32 @@
             });
         });
 
+        // Non-wrap WAJIB inline-flex + align-items:center.
+        // Dulu inline-block: sisa ruang dari min-height:90px jatuh SELURUHNYA
+        // di bawah line box, sehingga teks menempel ke atas baris.
         const boxStyle = wrap
             ? 'display:block;width:100%;white-space:normal;word-break:normal;text-align:center;'
-            : 'display:inline-block;white-space:nowrap;text-align:center;';
+            : 'display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;text-align:center;';
+
+        // .aisar-tokens punya DUA tugas:
+        //   1. Membungkus token jadi satu anak block. Kalau token jadi anak
+        //      LANGSUNG flex container, tiap kata berubah jadi flex item dan
+        //      alur teks Arab putus (spasi antar kata hilang).
+        //   2. width:max-content menjadikannya ELEMEN UKUR auto-fit: lebarnya
+        //      selalu = lebar teks sebenarnya, tidak ikut tertekan saat wadah
+        //      sempit. Wadahnya sendiri tidak bisa dipakai karena sebagai flex
+        //      container ia tidak melaporkan luapan lewat scrollWidth.
+        const tokenStyle = wrap
+            ? 'display:block;width:100%;text-align:center;'
+            : 'display:block;width:max-content;max-width:none;text-align:center;';
 
         return '<span class="aisar-fit" ' + wrapAttr +
             'style="' + boxStyle + extraPad +
             'min-height:' + minH + ';height:auto;line-height:' + lh + ';' +
             'box-sizing:border-box;overflow:visible;' +
             "font-family:'Amiri Quran','Amiri',serif;font-size:" + fontSize + 'px;' + fgStyle +
-            '">' + potongan.join(' ') + '</span>';
+            '"><span class="aisar-tokens" style="' + tokenStyle + '">' +
+            potongan.join(' ') + '</span></span>';
     }
 
     // ---- bulat waqaf (replika iqro-handler) ----
@@ -241,7 +353,9 @@
             const s = String(t);
             if (s === '◯' || s === '○') return false;
             if (/•/.test(s)) return true;
-            return barisPenuh && /\s/.test(s.trim());
+            // Sel grid bersepasi ikut dipecah (v2.3) supaya tiap kata
+            // bisa ditandai sendiri, bukan seluruh sel sekaligus.
+            return (barisPenuh || AISAR_SPLIT_GRID) && /\s/.test(s.trim());
         };
 
         // band pembatas: { divider: "teks" }
@@ -283,11 +397,26 @@
             const c0     = cells[0];
             const isObj0 = c0 && typeof c0 === 'object';
             const txt0   = isObj0 ? c0.text : c0;
+
+            // Label surat DIANGKAT KELUAR dari alur teks.
+            //
+            // float:left salah di kedua cabang:
+            //   - Baris wrap (block): float menyempitkan line box dari kiri,
+            //     teks yang di-center bergeser ke kanan sejauh setengah
+            //     lebar label.
+            //   - Baris non-wrap: induknya display:flex, dan float TIDAK
+            //     berlaku di dalam flex container. Label jadi flex item
+            //     biasa, sehingga yang ter-center adalah "kalimat + label"
+            //     sebagai satu grup — bukan kalimatnya sendiri.
+            //
+            // position:absolute membuat label tidak ikut dihitung sama
+            // sekali, jadi kalimat selalu center terhadap baris.
             const surahHtml = (isObj0 && c0.surah)
-                ? '<span style="float:left;margin-top:4px;margin-inline-start:2px;' +
+                ? '<span style="position:absolute;left:10px;top:6px;' +
                   'font-family:\'Amiri\',serif;font-size:12px;color:' + FG + ';opacity:.6;' +
-                  'line-height:1;white-space:nowrap;">' + c0.surah + '</span>'
+                  'line-height:1;white-space:nowrap;pointer-events:none;">' + c0.surah + '</span>'
                 : '';
+
             const inner = cellHtml(
                 txt0, false,
                 (isObj0 && c0.size) ? c0.size : pageSize,
@@ -296,18 +425,29 @@
             );
 
             if (wrap) {
+                // text-align:center ditaruh di BARIS, bukan hanya di dalam
+                // .aisar-fit. Kalau sel lewat jalur withBulat, yang keluar
+                // adalah .iqro-waqaf-cell (inline-flex) — bukan .aisar-fit —
+                // sehingga center dari dalam sel tidak pernah terpakai dan
+                // isinya menempel ke tepi kanan (awal arah RTL).
                 return '' +
-                    '<div class="iqro-row-scroll" style="display:block;direction:rtl;' + rowBorder +
+                    '<div class="iqro-row-scroll" style="position:relative;display:block;direction:rtl;text-align:center;' + rowBorder +
                     'padding:6px 10px;overflow:visible;width:100%;box-sizing:border-box;">' +
                         inner + surahHtml +
                     '</div>';
             }
 
+            // justify-content SENGAJA tetap flex-start dengan margin-inline:auto
+            // di anaknya. Jangan diganti justify-content:center — begitu kalimat
+            // lebih lebar dari baris, center membuat bagian awal meluber ke luar
+            // area scroll dan tidak bisa dijangkau. Auto margin otomatis jatuh
+            // ke 0 saat sempit, jadi scroll tetap jalan.
             return '' +
-                '<div class="iqro-row-scroll" style="display:flex;direction:rtl;justify-content:flex-start;align-items:center;' + rowBorder + 'padding:2px 4px;overflow-x:auto;overflow-y:visible;scrollbar-width:thin;">' +
-                    '<div style="margin-inline:auto;min-width:0;display:flex;align-items:flex-start;">' +
-                        inner + surahHtml +
+                '<div class="iqro-row-scroll" style="position:relative;display:flex;direction:rtl;justify-content:flex-start;align-items:center;' + rowBorder + 'padding:2px 4px;overflow-x:auto;overflow-y:visible;scrollbar-width:thin;">' +
+                    '<div style="margin-inline:auto;min-width:0;display:flex;align-items:center;">' +
+                        inner +
                     '</div>' +
+                    surahHtml +
                 '</div>';
         }
 
@@ -419,9 +559,13 @@
     // ==================================================================
     // AUTO-FIT FONT
     // ------------------------------------------------------------------
-    // Mengecilkan font tiap WADAH sel (.aisar-fit) sampai muat di lebar
-    // SEL-nya sendiri, dengan batas bawah AISAR_MIN_FONT. Jika di batas itu
-    // masih meluber, wadah dialihkan ke mode mengalir.
+    // Menyesuaikan font tiap WADAH sel (.aisar-fit) terhadap lebar SEL-nya
+    // sendiri:
+    //   - semua sel  : disusutkan sampai muat, batas bawah AISAR_MIN_FONT;
+    //                  kalau di batas itu masih meluber, wadah dialihkan
+    //                  ke mode mengalir.
+    //   - baris penuh: SEBELUM itu dibesarkan sampai hampir memenuhi lebar
+    //                  baris, batas atas AISAR_MAX_FONT (v2.0).
     //
     // DILEWATI untuk sel narrow dan wadah bertanda data-wrap="1".
     // ==================================================================
@@ -477,22 +621,59 @@
         avail -= 4; // toleransi pembulatan
         if (avail <= 0) return;
 
-        let size  = parseFloat(window.getComputedStyle(span).fontSize) || AISAR_SCREEN_FONT_SIZE;
-        let guard = 40; // pengaman anti infinite loop
+        // ELEMEN UKUR.
+        // Untuk sel yang dipecah per kata, .aisar-tokens ber-width:max-content
+        // → rect-nya = lebar teks asli. Wadahnya sendiri TIDAK bisa dipakai:
+        // sebagai flex container ia tidak pernah melaporkan luapan lewat
+        // scrollWidth, sehingga loop pembesar tidak pernah berhenti (bug v2.1).
+        const meas  = span.querySelector('.aisar-tokens');
+        const lebar = meas
+            ? function () { return meas.getBoundingClientRect().width; }
+            : function () { return span.scrollWidth; };
 
-        while (span.scrollWidth > avail && size > AISAR_MIN_FONT && guard-- > 0) {
+        let size  = parseFloat(window.getComputedStyle(span).fontSize) || AISAR_SCREEN_FONT_SIZE;
+        let guard = 80; // pengaman anti infinite loop (dipakai bersama dua loop)
+
+        // ── MEMBESARKAN baris penuh ──────────────────────────────────────
+        // Auto-fit lama HANYA bisa mengecilkan. Akibatnya kalimat pendek di
+        // baris penuh berhenti di ukuran default dan menyisakan ruang kosong
+        // 100–200px di kiri DAN kanan: posisinya center, tapi menggumpal.
+        //
+        // Hanya untuk baris penuh. Sel grid dilewati karena jatah lebarnya
+        // sudah ditentukan kolom, dan sel waqaf dilewati karena punya saudara
+        // (titik + bulat) yang tidak ikut terhitung — kalau dibesarkan,
+        // barisnya justru meluber.
+        const barisPenuh = !cell && !span.closest('.iqro-waqaf-cell');
+        if (barisPenuh) {
+            const target = avail - 24; // sisakan napas 12px di kiri & kanan
+            while (lebar() < target && size < AISAR_MAX_FONT && guard-- > 0) {
+                size += 1;
+                span.style.fontSize = size + 'px';
+                syncMarks(size);
+            }
+        }
+
+        // Loop penyusut ini sekaligus menangani kelebihan satu langkah dari
+        // loop pembesar di atas, jadi tidak perlu koreksi terpisah.
+        while (lebar() > avail && size > AISAR_MIN_FONT && guard-- > 0) {
             size -= 1;
             span.style.fontSize = size + 'px';
             syncMarks(size);
         }
 
         // Masih meluber di ukuran minimum → berhenti mengecil, biarkan mengalir.
-        if (span.scrollWidth > avail) {
+        if (lebar() > avail) {
             span.style.whiteSpace = 'normal';
             span.style.display    = 'block';
             span.style.width      = '100%';
             span.style.lineHeight = '2.1';
             span.style.minHeight  = '0';
+            // Tokens ikut dilepas dari max-content. Tanpa ini ia tetap satu
+            // baris panjang dan wadah yang sudah dibuat mengalir jadi percuma.
+            if (meas) {
+                meas.style.width    = '100%';
+                meas.style.maxWidth = '100%';
+            }
         }
     }
 
@@ -770,5 +951,5 @@
     window.renderAisarRange = renderAisarRange;
     window.aisarAutoFit     = aisarAutoFit;
 
-    console.log('✅ aisar-handler.js v1.9 ready (badge penuh setinggi baris)');
+    console.log('✅ aisar-handler.js v2.3 ready (marking per kata di grid: ' + AISAR_SPLIT_GRID + ', batas ' + AISAR_MAX_FONT + 'px)');
 })();

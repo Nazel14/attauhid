@@ -1,17 +1,19 @@
 import KeuanganLayout from '@/Layouts/KeuanganLayout';
 import { Head, router, usePage } from '@inertiajs/react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Modal from '@/Components/Modal';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TombolKembali from '@/Components/TombolKembali';
 
 const GAYA = {
-    'Hadir': { kode: 'H', cls: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300' },
-    'Sakit': { kode: 'S', cls: 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-500/20 dark:text-purple-300' },
-    'Izin':  { kode: 'I', cls: 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-500/20 dark:text-blue-300' },
-    'Alfa':  { kode: 'A', cls: 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-500/20 dark:text-red-300' },
-    null:    { kode: '·', cls: 'bg-stone-50 text-stone-300 hover:bg-stone-200 dark:bg-coal-900 dark:text-stone-600 dark:hover:bg-coal-600' },
+    'Hadir': { kode: 'H', cls: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:hover:bg-emerald-500/30' },
+    'Sakit': { kode: 'S', cls: 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-500/20 dark:text-purple-300 dark:hover:bg-purple-500/30' },
+    'Izin':  { kode: 'I', cls: 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:hover:bg-blue-500/30' },
+    'Alfa':  { kode: 'A', cls: 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-500/20 dark:text-red-300 dark:hover:bg-red-500/30' },
+    // Sel kosong dibuat ringan (garis tipis), bukan kotak gelap penuh —
+    // supaya yang sudah terisi langsung menonjol.
+    null:    { kode: '', cls: 'text-stone-300 ring-1 ring-inset ring-stone-200 hover:bg-stone-100 dark:text-stone-600 dark:ring-coal-600 dark:hover:bg-coal-600' },
 };
 
 // Kuas yang dipilih di toolbar. 'Hapus' mengosongkan sel.
@@ -20,14 +22,41 @@ const KUAS = [
     { id: 'Sakit', label: 'Sakit', kode: 'S', aktif: 'bg-purple-500 text-white ring-purple-500' },
     { id: 'Izin',  label: 'Izin',  kode: 'I', aktif: 'bg-blue-500 text-white ring-blue-500' },
     { id: 'Alfa',  label: 'Alfa',  kode: 'A', aktif: 'bg-red-500 text-white ring-red-500' },
-    { id: 'Hapus', label: 'Kosongkan', kode: '·', aktif: 'bg-stone-700 text-white ring-stone-700 dark:bg-coal-900 dark:ring-coal-900' },
+    { id: 'Hapus', label: 'Kosongkan', kode: '', aktif: 'bg-stone-700 text-white ring-stone-700 dark:bg-coal-900 dark:ring-coal-900' },
 ];
 
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 const HARI = ['M', 'S', 'S', 'R', 'K', 'J', 'S'];
 
+// Lebar kolom rekap di kanan. Offset `right` dihitung dari angka ini —
+// sebelumnya offset 38px tidak cocok dengan lebar asli kolom (ada padding),
+// sehingga kolom rekap menimpa tanggal 22–25.
+const W_REKAP = 44;
+
+// ── Draf disimpan di localStorage ─────────────────────────────────────
+// Kuncinya per user, supaya dua admin di satu komputer tidak saling
+// mewarisi draf. Semua akses dibungkus try/catch: mode privat / storage
+// penuh tidak boleh membuat halaman crash — draf tinggal tidak awet saja.
+const kunciStorage = (userId) => `absensi-draft:${userId ?? 'anon'}`;
+
+const bacaDraf = (key) => {
+    try {
+        const isi = JSON.parse(window.localStorage.getItem(key) || '{}');
+        return isi && typeof isi === 'object' && !Array.isArray(isi) ? isi : {};
+    } catch {
+        return {};
+    }
+};
+
+const tulisDraf = (key, draf) => {
+    try {
+        if (Object.keys(draf).length) window.localStorage.setItem(key, JSON.stringify(draf));
+        else window.localStorage.removeItem(key);
+    } catch { /* storage tidak tersedia — abaikan */ }
+};
+
 export default function DataAbsensi({ pegawai, daysInMonth, filters }) {
-    const { auth } = usePage().props;
+    const { auth, errors } = usePage().props;
     const can = (p) => (auth.permissions || []).includes(p);
     const bisaKelola = can('absensi.kelola');
 
@@ -36,15 +65,34 @@ export default function DataAbsensi({ pegawai, daysInMonth, filters }) {
     const [libur, setLibur] = useState({});
     const [konfirmasi, setKonfirmasi] = useState(false);
     const [proses, setProses] = useState(false);
+    const [menyimpan, setMenyimpan] = useState(false);
 
     // Status yang akan dituliskan saat sel diklik.
     const [kuas, setKuas] = useState('Hadir');
 
-    // Perubahan lokal: props dari server baru menyusul setelah redirect,
-    // ini yang membuat kotak langsung berubah begitu diklik.
-    const [ubah, setUbah] = useState({});
+    // DRAFT: perubahan yang BELUM disimpan, { "empId|Y-m-d": status|null }.
+    // Klik sel hanya mengubah draft; database baru tersentuh saat Simpan.
+    // Dimuat dari localStorage → tetap ada setelah pindah menu, pindah
+    // bulan, refresh, atau browser ditutup.
+    const STORAGE_KEY = kunciStorage(auth?.user?.id);
+    const [draft, setDraft] = useState(() => bacaDraf(STORAGE_KEY));
+
+    // Setiap draf berubah → tulis ke localStorage (kosong = dihapus).
+    useEffect(() => { tulisDraf(STORAGE_KEY, draft); }, [draft, STORAGE_KEY]);
+
+    const jumlahDraft = Object.keys(draft).length;
+    const adaDraft = jumlahDraft > 0;
+
+    // Ref untuk listener keyboard supaya selalu baca nilai terbaru.
+    const adaDraftRef = useRef(false);
+    adaDraftRef.current = adaDraft;
 
     const [tahun, bulan] = periode.split('-');
+
+    // Draf bisa mencakup beberapa bulan; yang tidak terlihat ditampilkan
+    // terpisah supaya admin tahu masih ada draf di bulan lain.
+    const jumlahBulanIni = Object.keys(draft).filter((k) => k.includes(`|${tahun}-${bulan}-`)).length;
+    const jumlahBulanLain = jumlahDraft - jumlahBulanIni;
 
     useEffect(() => {
         let batal = false;
@@ -65,7 +113,8 @@ export default function DataAbsensi({ pegawai, daysInMonth, filters }) {
         if (pertamaKali.current) { pertamaKali.current = false; return; }
 
         const t = setTimeout(() => {
-            setUbah({});
+            // Draft TIDAK dikosongkan saat mencari nama: kuncinya per pegawai,
+            // jadi perubahan pegawai yang sedang tersembunyi tetap ikut disimpan.
             router.get(route('keuangan.penggajian.absensi'), { bulan, tahun, search },
                 { preserveState: true, preserveScroll: true, replace: true });
         }, 300);
@@ -73,32 +122,96 @@ export default function DataAbsensi({ pegawai, daysInMonth, filters }) {
         return () => clearTimeout(t);
     }, [periode, search]);
 
+    // Tidak ada lagi konfirmasi "tinggalkan halaman?": draf sudah awet di
+    // localStorage, jadi pindah menu / refresh tidak menghilangkan apa pun.
+
+    // Ctrl/Cmd + S = Simpan.
+    useEffect(() => {
+        const onKey = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                if (adaDraftRef.current) simpan();
+            }
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    });
+
     const kunci = (employeeId, tanggal) => `${employeeId}|${tanggal}`;
 
-    const klikSel = (employeeId, tanggal, statusSekarang) => {
-        if (!bisaKelola) return;
+    // Status dari server (tanpa draft), untuk tahu apakah klik = kembali ke asal.
+    const statusServer = useMemo(() => {
+        const peta = {};
+        (pegawai?.data || []).forEach((p) => {
+            p.absensi.forEach((x) => { peta[kunci(p.id, String(x.date).slice(0, 10))] = x.status; });
+        });
+        return peta;
+    }, [pegawai]);
 
-        // Klik ulang pada status yang sama = kosongkan; jadi tidak perlu
-        // pindah kuas hanya untuk membatalkan satu sel.
-        const target = (kuas === 'Hapus' || statusSekarang === kuas) ? null : kuas;
-
-        setUbah((s) => ({ ...s, [kunci(employeeId, tanggal)]: target }));
-
-        router.post(route('keuangan.penggajian.absensi.update'),
-            { employee_id: employeeId, date: tanggal, status: target || '' },
-            {
-                preserveScroll: true,
-                preserveState: true,
-                // Tanpa `only` — partial reload hanya berlaku pada visit GET,
-                // memakainya di POST membuat props tidak pernah diperbarui.
-                onError: () => {
-                    setUbah((s) => {
-                        const n = { ...s };
-                        delete n[kunci(employeeId, tanggal)];
-                        return n;
-                    });
-                },
+    // Draf yang ternyata SAMA dengan data server dibuang otomatis — misalnya
+    // admin lain sudah mengisi status yang sama, atau draf lama dari
+    // localStorage sudah tidak relevan. Hanya untuk pegawai & bulan yang
+    // sedang tampil, karena hanya itu yang datanya kita punya.
+    useEffect(() => {
+        const tampil = new Set((pegawai?.data || []).map((p) => String(p.id)));
+        const awalan = `${tahun}-${bulan}-`;
+        setDraft((s) => {
+            let berubah = false;
+            const n = { ...s };
+            Object.entries(s).forEach(([k, v]) => {
+                const [id, tgl] = k.split('|');
+                if (!tampil.has(id) || !tgl.startsWith(awalan)) return;
+                if ((statusServer[k] ?? null) === v) { delete n[k]; berubah = true; }
             });
+            return berubah ? n : s;
+        });
+    }, [statusServer]);
+
+    const klikSel = (employeeId, tanggal, statusSekarang) => {
+        if (!bisaKelola || menyimpan) return;
+
+        // Klik ulang pada status yang sama = kosongkan.
+        const target = (kuas === 'Hapus' || statusSekarang === kuas) ? null : kuas;
+        const k = kunci(employeeId, tanggal);
+        const asal = statusServer[k] ?? null;
+
+        setDraft((s) => {
+            const n = { ...s };
+            // Kembali ke status asal → bukan perubahan lagi, buang dari draft.
+            if (target === asal) delete n[k];
+            else n[k] = target;
+            return n;
+        });
+    };
+
+    const simpan = () => {
+        if (!adaDraft || menyimpan) return;
+
+        const perubahan = Object.entries(draft).map(([k, status]) => {
+            const [employee_id, date] = k.split('|');
+            return { employee_id: Number(employee_id), date, status: status || '' };
+        });
+
+        setMenyimpan(true);
+        router.post(route('keuangan.penggajian.absensi.simpan'), { perubahan }, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => setDraft({}),
+            onFinish: () => setMenyimpan(false),
+        });
+    };
+
+    // Draf sekarang awet, jadi membuangnya perlu konfirmasi.
+    const batalkan = () => {
+        if (!window.confirm(`Buang ${jumlahDraft} draf absensi yang belum disimpan?`)) return;
+        setDraft({});
+    };
+
+    // Pindah bulan TIDAK membuang draf: kuncinya memuat tanggal, jadi draf
+    // bulan lain tetap tersimpan dan ikut terkirim saat Simpan.
+    const gantiPeriode = (nilai) => {
+        if (!nilai) return;
+        setPeriode(nilai);
     };
 
     const jalankanBulk = () => {
@@ -106,60 +219,41 @@ export default function DataAbsensi({ pegawai, daysInMonth, filters }) {
         router.post(route('keuangan.penggajian.absensi.bulk_hadir'), { bulan, tahun }, {
             preserveScroll: true,
             onFinish: () => setProses(false),
-            onSuccess: () => { setKonfirmasi(false); setUbah({}); },
+            onSuccess: () => { setKonfirmasi(false); setDraft({}); },
         });
     };
 
     const tglString = (i) => `${tahun}-${bulan}-${String(i).padStart(2, '0')}`;
 
-    // Info per tanggal dipakai header tabel dan kalender mobile.
+    // Info per tanggal dipakai header tabel, sel, dan kalender mobile.
+    // `merah` = Minggu / libur nasional, `redup` = Sabtu (ikut dilewati
+    // "Isi Hadir Sebulan", jadi ditandai juga supaya konsisten).
     const infoHari = (i) => {
         const tgl = tglString(i);
-        const d = new Date(tgl);
-        const minggu = d.getDay() === 0;
+        const d = new Date(`${tgl}T00:00:00`);
+        const hari = d.getDay();
+        const minggu = hari === 0;
+        const sabtu = hari === 6;
         const nasional = libur[tgl] !== undefined;
 
-        return { tgl, hari: d.getDay(), minggu, nasional, merah: minggu || nasional };
+        return { tgl, hari, minggu, sabtu, nasional, merah: minggu || nasional, redup: sabtu && !nasional };
     };
+
+    const judulHari = ({ tgl, nasional, minggu, sabtu }) =>
+        nasional ? libur[tgl] : (minggu ? 'Minggu' : (sabtu ? 'Sabtu' : 'Hari kerja'));
 
     // Offset agar kolom kalender mobile sejajar dengan nama harinya.
-    const offsetAwal = new Date(tglString(1)).getDay();
+    const offsetAwal = new Date(`${tglString(1)}T00:00:00`).getDay();
 
-    const kolomTanggal = () => {
-        const cols = [];
-
-        for (let i = 1; i <= daysInMonth; i++) {
-            const { tgl, hari, minggu, nasional, merah } = infoHari(i);
-
-            cols.push(
-                <th key={i} title={nasional ? libur[tgl] : (minggu ? 'Minggu' : 'Hari kerja')}
-                    className={`min-w-[38px] max-w-[38px] border-b border-r px-1 py-2.5 text-center text-xs font-semibold ${
-                        merah
-                            ? 'border-stone-200 bg-red-50 text-red-600 dark:border-coal-600 dark:bg-red-500/10 dark:text-red-300'
-                            : 'border-stone-200 bg-stone-50 text-stone-500 dark:border-coal-600 dark:bg-coal-800 dark:text-stone-400'
-                    }`}>
-                    <span className="mb-0.5 block text-[9px] font-normal opacity-70">{HARI[hari]}</span>
-                    {i}
-                </th>
-            );
-        }
-
-        return cols;
-    };
-
-    // Hitung rekap + resolusi status lokal, dipakai kedua tampilan.
+    // Hitung rekap + resolusi status (draft di atas data server).
     const rekap = (p) => {
-        const peta = {};
-        p.absensi.forEach((x) => { peta[x.date] = x.status; });
-
-        // Perubahan lokal ditimpakan di atas data server.
         const status = (tgl) => {
             const k = kunci(p.id, tgl);
-            return Object.prototype.hasOwnProperty.call(ubah, k) ? ubah[k] : (peta[tgl] || null);
+            return Object.prototype.hasOwnProperty.call(draft, k) ? draft[k] : (statusServer[k] ?? null);
         };
+        const diubah = (tgl) => Object.prototype.hasOwnProperty.call(draft, kunci(p.id, tgl));
 
         let h = 0, s = 0, i = 0, a = 0;
-
         for (let d = 1; d <= daysInMonth; d++) {
             const st = status(tglString(d));
             if (st === 'Hadir') h++;
@@ -168,17 +262,41 @@ export default function DataAbsensi({ pegawai, daysInMonth, filters }) {
             else if (st === 'Alfa') a++;
         }
 
-        return { status, h, s, i, a };
+        return { status, diubah, h, s, i, a };
     };
 
-    const stickyKanan = 'sticky z-30 border-b border-l px-2 py-2.5 text-center text-[11px] font-semibold uppercase';
+    // Penanda sel yang belum disimpan: cincin amber + titik di pojok.
+    const tandaDraft = 'ring-2 ring-amber-400 ring-offset-1 ring-offset-white dark:ring-offset-coal-700';
+    const titikDraft = <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-amber-400" />;
+
+    // Kolom rekap kanan: lebar tetap + background PADAT (bukan /10 transparan)
+    // supaya tanggal di belakangnya tidak tembus saat tabel digeser.
+    const REKAP = [
+        { k: 'h', label: 'H', cls: 'bg-emerald-50 text-emerald-700 dark:bg-[#1f3329] dark:text-emerald-300' },
+        { k: 's', label: 'S', cls: 'bg-purple-50 text-purple-700 dark:bg-[#2c2338] dark:text-purple-300' },
+        { k: 'i', label: 'I', cls: 'bg-blue-50 text-blue-700 dark:bg-[#1e2a3a] dark:text-blue-300' },
+        { k: 'a', label: 'A', cls: 'bg-red-50 text-red-700 dark:bg-[#3a2222] dark:text-red-300' },
+    ];
+    const kananPx = (idx) => (REKAP.length - 1 - idx) * W_REKAP;
+    const rekapBase = 'sticky border-b border-stone-200 text-center dark:border-coal-600';
 
     // Tinggi & radius seragam untuk semua kontrol filter.
     const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-600';
-    // color-scheme ikut tema agar ikon kalender bawaan browser tidak silau di dark mode.
     const monthCls = `${fieldCls} pr-2 [color-scheme:light] dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60 hover:[&::-webkit-calendar-picker-indicator]:opacity-100`;
 
     const kotakRekap = 'flex flex-1 flex-col items-center rounded-lg py-1.5 text-[10px] font-semibold';
+
+    const paginasi = (l) => l.url && router.get(l.url, {}, { preserveScroll: true, preserveState: true });
+
+    const tombolSimpan = (
+        <PrimaryButton onClick={simpan} disabled={!adaDraft || menyimpan}
+            className="h-10 shrink-0 justify-center gap-2 disabled:opacity-50">
+            {menyimpan ? 'Menyimpan…' : 'Simpan'}
+            {adaDraft && !menyimpan && (
+                <span className="rounded-md bg-white/25 px-1.5 py-0.5 text-[11px] font-bold leading-none">{jumlahDraft}</span>
+            )}
+        </PrimaryButton>
+    );
 
     return (
         <KeuanganLayout>
@@ -188,14 +306,17 @@ export default function DataAbsensi({ pegawai, daysInMonth, filters }) {
 
             <div className="mb-5 sm:mb-6">
                 <h1 className="text-lg font-bold text-stone-800 dark:text-cream-50 sm:text-xl">Timesheet Kehadiran</h1>
-                <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Pilih status di bawah, lalu ketuk kotak tanggal untuk menandainya. Ketuk ulang kotak dengan status sama untuk mengosongkan.</p>
+                <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                    Pilih status, ketuk kotak tanggal untuk menandai, lalu tekan <span className="font-semibold text-stone-700 dark:text-cream-100">Simpan</span>.
+                    Ketuk ulang kotak dengan status sama untuk mengosongkan.
+                </p>
             </div>
 
             <div className="mb-5 rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <div className="sm:w-44">
-                            <input type="month" value={periode} onChange={(e) => setPeriode(e.target.value)}
+                            <input type="month" value={periode} onChange={(e) => gantiPeriode(e.target.value)}
                                 aria-label="Pilih periode" className={`${monthCls} font-medium`} />
                         </div>
 
@@ -210,12 +331,28 @@ export default function DataAbsensi({ pegawai, daysInMonth, filters }) {
                     </div>
 
                     {bisaKelola && (
-                        <PrimaryButton onClick={() => setKonfirmasi(true)} className="h-10 shrink-0 justify-center">Isi Hadir Sebulan</PrimaryButton>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                            {/* Status simpan selalu terlihat, bukan hanya saat ada draft. */}
+                            <span className={`flex items-center gap-1.5 text-xs font-medium sm:mr-2 ${adaDraft ? 'text-amber-600 dark:text-amber-400' : 'text-stone-400'}`}>
+                                <span className={`h-2 w-2 rounded-full ${adaDraft ? 'bg-amber-400' : 'bg-emerald-500'}`} />
+                                {adaDraft
+                                    ? `${jumlahDraft} draf belum disimpan${jumlahBulanLain ? ` (${jumlahBulanLain} di bulan lain)` : ''}`
+                                    : 'Semua tersimpan'}
+                            </span>
+                            <SecondaryButton onClick={() => setKonfirmasi(true)} disabled={adaDraft}
+                                title={adaDraft ? 'Simpan atau batalkan perubahan dulu' : undefined}
+                                className="h-10 shrink-0 justify-center disabled:opacity-50">
+                                Isi Hadir Sebulan
+                            </SecondaryButton>
+                            {tombolSimpan}
+                        </div>
                     )}
                 </div>
 
-                {/* Pemilih status — menggantikan siklus klik yang membingungkan.
-                    Di mobile digeser horizontal: 5 chip tidak muat sebaris. */}
+                {errors?.perubahan && (
+                    <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">{errors.perubahan}</p>
+                )}
+
                 {bisaKelola ? (
                     <div className="mt-4 border-t border-stone-100 pt-4 dark:border-coal-600">
                         <span className="mb-2 block text-xs font-medium text-stone-500 dark:text-stone-400">Tandai sebagai:</span>
@@ -255,12 +392,10 @@ export default function DataAbsensi({ pegawai, daysInMonth, filters }) {
                 )}
             </div>
 
-            {/* Mobile: satu kartu kalender per pegawai. Grid 31 kolom dengan
-                4 kolom sticky di kanan menyisakan <100px area isi di 360px —
-                praktis tidak bisa dipakai. */}
+            {/* ===================== MOBILE ===================== */}
             <div className="space-y-3 sm:hidden">
                 {pegawai?.data?.length > 0 ? pegawai.data.map((p) => {
-                    const { status, h, s, i, a } = rekap(p);
+                    const { status, diubah, h, s, i, a } = rekap(p);
 
                     return (
                         <div key={p.id} className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600">
@@ -269,49 +404,42 @@ export default function DataAbsensi({ pegawai, daysInMonth, filters }) {
                                 {p.nip && <span className="text-xs text-stone-400">{p.nip}</span>}
                             </div>
 
-                            <div className="mt-3 grid grid-cols-7 gap-1">
+                            <div className="mt-3 grid grid-cols-7 gap-1.5">
                                 {HARI.map((nama, idx) => (
                                     <span key={idx} className={`text-center text-[10px] font-semibold ${idx === 0 ? 'text-red-500' : 'text-stone-400'}`}>
                                         {nama}
                                     </span>
                                 ))}
 
-                                {/* Sel kosong sebelum tanggal 1 agar kolom sejajar hari. */}
                                 {Array.from({ length: offsetAwal }, (_, idx) => <span key={`kosong-${idx}`} />)}
 
                                 {Array.from({ length: daysInMonth }, (_, idx) => {
                                     const hariKe = idx + 1;
-                                    const { tgl, merah, nasional, minggu } = infoHari(hariKe);
-                                    const st = status(tgl);
+                                    const info = infoHari(hariKe);
+                                    const st = status(info.tgl);
                                     const g = GAYA[st];
+                                    const ubah = diubah(info.tgl);
 
                                     return (
                                         <button key={hariKe} disabled={!bisaKelola}
-                                            onClick={() => klikSel(p.id, tgl, st)}
-                                            title={nasional ? libur[tgl] : (minggu ? 'Minggu' : 'Hari kerja')}
-                                            className={`flex aspect-square w-full flex-col items-center justify-center rounded-lg text-[10px] font-semibold transition ${g.cls} ${
-                                                merah ? 'ring-1 ring-red-200 dark:ring-red-500/25' : ''
-                                            } ${!bisaKelola ? 'cursor-not-allowed' : 'active:scale-95'}`}>
-                                            <span className={`text-[9px] font-normal leading-none ${merah ? 'text-red-500 dark:text-red-300' : 'opacity-50'}`}>{hariKe}</span>
+                                            onClick={() => klikSel(p.id, info.tgl, st)}
+                                            title={judulHari(info)}
+                                            className={`relative flex aspect-square w-full flex-col items-center justify-center rounded-lg text-[11px] font-semibold transition ${g.cls} ${
+                                                !st && (info.merah || info.redup) ? 'bg-stone-50 dark:bg-white/[0.03]' : ''
+                                            } ${ubah ? tandaDraft : ''} ${!bisaKelola ? 'cursor-not-allowed' : 'active:scale-95'}`}>
+                                            <span className={`text-[9px] font-normal leading-none ${info.merah ? 'text-red-500 dark:text-red-300' : 'opacity-60'}`}>{hariKe}</span>
                                             <span className="leading-tight">{g.kode}</span>
+                                            {ubah && titikDraft}
                                         </button>
                                     );
                                 })}
                             </div>
 
                             <div className="mt-3 flex gap-1.5 border-t border-stone-100 pt-3 dark:border-coal-600">
-                                <span className={`${kotakRekap} bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300`}>
-                                    <span className="text-sm">{h}</span>Hadir
-                                </span>
-                                <span className={`${kotakRekap} bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300`}>
-                                    <span className="text-sm">{s}</span>Sakit
-                                </span>
-                                <span className={`${kotakRekap} bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300`}>
-                                    <span className="text-sm">{i}</span>Izin
-                                </span>
-                                <span className={`${kotakRekap} bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300`}>
-                                    <span className="text-sm">{a}</span>Alfa
-                                </span>
+                                <span className={`${kotakRekap} bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300`}><span className="text-sm">{h}</span>Hadir</span>
+                                <span className={`${kotakRekap} bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300`}><span className="text-sm">{s}</span>Sakit</span>
+                                <span className={`${kotakRekap} bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300`}><span className="text-sm">{i}</span>Izin</span>
+                                <span className={`${kotakRekap} bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300`}><span className="text-sm">{a}</span>Alfa</span>
                             </div>
                         </div>
                     );
@@ -325,7 +453,7 @@ export default function DataAbsensi({ pegawai, daysInMonth, filters }) {
                     <p className="text-xs text-stone-500 dark:text-stone-400">Menampilkan {pegawai.from || 0}–{pegawai.to || 0} dari {pegawai.total} pegawai</p>
                     <div className="mt-3 flex flex-wrap justify-center gap-1">
                         {pegawai.links.map((l, i) => (
-                            <button key={i} onClick={() => l.url && router.get(l.url, {}, { preserveScroll: true })} disabled={!l.url}
+                            <button key={i} onClick={() => paginasi(l)} disabled={!l.url}
                                 className={`rounded-lg px-3 py-1.5 text-sm transition ${l.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
                                 dangerouslySetInnerHTML={{ __html: l.label }} />
                         ))}
@@ -333,54 +461,81 @@ export default function DataAbsensi({ pegawai, daysInMonth, filters }) {
                 </div>
             </div>
 
-            {/* Desktop: grid timesheet penuh. */}
+            {/* ===================== DESKTOP ===================== */}
             <div className="hidden overflow-hidden rounded-2xl bg-white ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:block">
-                <div className="overflow-x-auto" style={{ maxHeight: '65vh' }}>
+                <div className="overflow-auto" style={{ maxHeight: '65vh' }}>
                     <table className="min-w-max border-separate border-spacing-0">
                         <thead>
                             <tr>
-                                <th className="sticky left-0 z-40 min-w-[220px] border-b border-r border-stone-200 bg-stone-100 px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-stone-600 dark:border-coal-600 dark:bg-coal-800 dark:text-stone-300">
+                                {/* Header ikut sticky di atas saat tabel di-scroll vertikal. */}
+                                <th className="sticky left-0 top-0 z-40 min-w-[240px] border-b border-r border-stone-200 bg-stone-100 px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-stone-600 shadow-[4px_0_6px_-4px_rgba(0,0,0,0.15)] dark:border-coal-600 dark:bg-coal-800 dark:text-stone-300">
                                     Pegawai
                                 </th>
-                                {kolomTanggal()}
-                                <th className={`${stickyKanan} right-[114px] min-w-[38px] border-stone-200 bg-emerald-50 text-emerald-700 dark:border-coal-600 dark:bg-emerald-500/10 dark:text-emerald-300`}>H</th>
-                                <th className={`${stickyKanan} right-[76px] min-w-[38px] border-stone-200 bg-purple-50 text-purple-700 dark:border-coal-600 dark:bg-purple-500/10 dark:text-purple-300`}>S</th>
-                                <th className={`${stickyKanan} right-[38px] min-w-[38px] border-stone-200 bg-blue-50 text-blue-700 dark:border-coal-600 dark:bg-blue-500/10 dark:text-blue-300`}>I</th>
-                                <th className={`${stickyKanan} right-0 min-w-[38px] border-stone-200 bg-red-50 text-red-700 dark:border-coal-600 dark:bg-red-500/10 dark:text-red-300`}>A</th>
+
+                                {Array.from({ length: daysInMonth }, (_, idx) => {
+                                    const info = infoHari(idx + 1);
+                                    return (
+                                        <th key={idx} title={judulHari(info)}
+                                            className={`sticky top-0 z-20 w-[40px] min-w-[40px] border-b border-stone-200 px-0 py-2 text-center text-xs font-semibold dark:border-coal-600 ${
+                                                info.merah
+                                                    ? 'bg-red-50 text-red-600 dark:bg-[#3a2626] dark:text-red-300'
+                                                    : info.redup
+                                                        ? 'bg-stone-100 text-stone-400 dark:bg-coal-900 dark:text-stone-500'
+                                                        : 'bg-stone-50 text-stone-500 dark:bg-coal-800 dark:text-stone-400'
+                                            }`}>
+                                            <span className="mb-0.5 block text-[9px] font-normal opacity-70">{HARI[info.hari]}</span>
+                                            {idx + 1}
+                                        </th>
+                                    );
+                                })}
+
+                                {REKAP.map((r, idx) => (
+                                    <th key={r.k} style={{ right: kananPx(idx), width: W_REKAP, minWidth: W_REKAP, maxWidth: W_REKAP }}
+                                        className={`${rekapBase} top-0 z-40 py-3 text-[11px] font-bold ${idx === 0 ? 'border-l shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.15)]' : ''} ${r.cls}`}>
+                                        {r.label}
+                                    </th>
+                                ))}
                             </tr>
                         </thead>
                         <tbody>
                             {pegawai?.data?.length > 0 ? pegawai.data.map((p) => {
-                                const { status, h, s, i, a } = rekap(p);
+                                const hasil = rekap(p);
+                                const { status, diubah } = hasil;
 
                                 return (
                                     <tr key={p.id} className="group">
-                                        <td className="sticky left-0 z-20 border-b border-r border-stone-200 bg-white px-5 py-2 group-hover:bg-cream-50 dark:border-coal-600 dark:bg-coal-700 dark:group-hover:bg-coal-600/40">
-                                            <span className="whitespace-nowrap text-sm font-medium text-stone-800 dark:text-cream-100">{p.name}</span>
-                                            {p.nip && <span className="ml-2 text-xs text-stone-400">{p.nip}</span>}
+                                        <td className="sticky left-0 z-30 border-b border-r border-stone-200 bg-white px-5 py-2 shadow-[4px_0_6px_-4px_rgba(0,0,0,0.15)] group-hover:bg-cream-50 dark:border-coal-600 dark:bg-coal-700 dark:group-hover:bg-coal-600">
+                                            <span className="block whitespace-nowrap text-sm font-medium text-stone-800 dark:text-cream-100">{p.name}</span>
+                                            {p.nip && <span className="text-[11px] text-stone-400">{p.nip}</span>}
                                         </td>
 
                                         {Array.from({ length: daysInMonth }, (_, idx) => {
-                                            const tgl = tglString(idx + 1);
-                                            const st = status(tgl);
+                                            const info = infoHari(idx + 1);
+                                            const st = status(info.tgl);
                                             const g = GAYA[st];
+                                            const ubah = diubah(info.tgl);
 
                                             return (
-                                                <td key={idx} className="border-b border-r border-stone-100 p-1 text-center dark:border-coal-600">
+                                                <td key={idx} className={`border-b border-stone-100 p-1 text-center dark:border-coal-600 ${
+                                                    info.merah ? 'bg-red-50/50 dark:bg-red-500/[0.04]' : info.redup ? 'bg-stone-50 dark:bg-white/[0.02]' : ''
+                                                }`}>
                                                     <button disabled={!bisaKelola}
-                                                        onClick={() => klikSel(p.id, tgl, st)}
-                                                        title={`${p.name} · ${tgl}${st ? ` · ${st}` : ''}`}
-                                                        className={`h-7 w-7 rounded-lg text-xs font-semibold transition ${g.cls} ${!bisaKelola ? 'cursor-not-allowed' : ''}`}>
+                                                        onClick={() => klikSel(p.id, info.tgl, st)}
+                                                        title={`${p.name} · ${info.tgl} · ${judulHari(info)}${st ? ` · ${st}` : ''}${ubah ? ' · belum disimpan' : ''}`}
+                                                        className={`relative mx-auto flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold transition ${g.cls} ${ubah ? tandaDraft : ''} ${!bisaKelola ? 'cursor-not-allowed' : ''}`}>
                                                         {g.kode}
+                                                        {ubah && titikDraft}
                                                     </button>
                                                 </td>
                                             );
                                         })}
 
-                                        <td className={`${stickyKanan} right-[114px] border-stone-200 bg-emerald-50/90 text-sm font-semibold text-emerald-700 dark:border-coal-600 dark:bg-emerald-500/10 dark:text-emerald-300`}>{h}</td>
-                                        <td className={`${stickyKanan} right-[76px] border-stone-200 bg-purple-50/90 text-sm font-semibold text-purple-700 dark:border-coal-600 dark:bg-purple-500/10 dark:text-purple-300`}>{s}</td>
-                                        <td className={`${stickyKanan} right-[38px] border-stone-200 bg-blue-50/90 text-sm font-semibold text-blue-700 dark:border-coal-600 dark:bg-blue-500/10 dark:text-blue-300`}>{i}</td>
-                                        <td className={`${stickyKanan} right-0 border-stone-200 bg-red-50/90 text-sm font-semibold text-red-700 dark:border-coal-600 dark:bg-red-500/10 dark:text-red-300`}>{a}</td>
+                                        {REKAP.map((r, idx) => (
+                                            <td key={r.k} style={{ right: kananPx(idx), width: W_REKAP, minWidth: W_REKAP, maxWidth: W_REKAP }}
+                                                className={`${rekapBase} z-20 py-2 text-sm font-semibold ${idx === 0 ? 'border-l shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.15)]' : ''} ${r.cls}`}>
+                                                {hasil[r.k]}
+                                            </td>
+                                        ))}
                                     </tr>
                                 );
                             }) : (
@@ -391,16 +546,45 @@ export default function DataAbsensi({ pegawai, daysInMonth, filters }) {
                 </div>
 
                 <div className="flex flex-col items-center justify-between gap-3 border-t border-stone-200 p-4 dark:border-coal-600 sm:flex-row">
-                    <p className="text-sm text-stone-500 dark:text-stone-400">Menampilkan {pegawai.from || 0}–{pegawai.to || 0} dari {pegawai.total} pegawai</p>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-500 dark:text-stone-400">
+                        <span>Menampilkan {pegawai.from || 0}–{pegawai.to || 0} dari {pegawai.total} pegawai</span>
+                        <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-red-100 dark:bg-red-500/20" />Minggu / libur nasional</span>
+                        <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-stone-200 dark:bg-coal-900" />Sabtu</span>
+                        {bisaKelola && <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-400" />Belum disimpan</span>}
+                    </div>
                     <div className="flex flex-wrap gap-1">
                         {pegawai.links.map((l, i) => (
-                            <button key={i} onClick={() => l.url && router.get(l.url, {}, { preserveScroll: true })} disabled={!l.url}
+                            <button key={i} onClick={() => paginasi(l)} disabled={!l.url}
                                 className={`rounded-lg px-3 py-1.5 text-sm transition ${l.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
                                 dangerouslySetInnerHTML={{ __html: l.label }} />
                         ))}
                     </div>
                 </div>
             </div>
+
+            {/* ── Bar simpan melayang: muncul begitu ada perubahan ───────────
+                sticky (bukan fixed) supaya lebarnya ikut area konten, tidak
+                menimpa sidebar. */}
+            {bisaKelola && adaDraft && (
+                <div className="sticky bottom-4 z-50 mt-4">
+                    <div className="mx-auto flex max-w-xl items-center gap-3 rounded-2xl bg-stone-900 px-4 py-3 text-white shadow-2xl ring-1 ring-black/10 dark:bg-coal-900 dark:ring-coal-600">
+                        <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-amber-400" />
+                        <span className="flex-1 text-sm">
+                            <span className="font-semibold">{jumlahDraft} draf</span> belum disimpan
+                            {jumlahBulanLain > 0 && <span className="text-stone-400"> · {jumlahBulanLain} di bulan lain</span>}
+                            <span className="ml-2 hidden text-xs text-stone-400 md:inline">Ctrl+S</span>
+                        </span>
+                        <button type="button" onClick={batalkan} disabled={menyimpan}
+                            className="rounded-lg px-3 py-1.5 text-sm text-stone-300 transition hover:bg-white/10 hover:text-white disabled:opacity-50">
+                            Buang draf
+                        </button>
+                        <button type="button" onClick={simpan} disabled={menyimpan}
+                            className="rounded-lg bg-claude-500 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-claude-600 disabled:opacity-60">
+                            {menyimpan ? 'Menyimpan…' : 'Simpan'}
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <Modal show={konfirmasi} onClose={() => setKonfirmasi(false)} maxWidth="sm">
                 <div className="p-5 text-center sm:p-6">
@@ -411,7 +595,7 @@ export default function DataAbsensi({ pegawai, daysInMonth, filters }) {
                     <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
                         Semua hari kerja {BULAN[parseInt(bulan, 10) - 1]} {tahun} diisi “Hadir”, kecuali Sabtu, Minggu, dan libur nasional.
                     </p>
-                    <p className="mt-2 text-xs italic text-stone-400">Status Sakit, Izin, dan Alfa yang sudah ada tidak akan ditimpa.</p>
+                    <p className="mt-2 text-xs italic text-stone-400">Langsung tersimpan. Status Sakit, Izin, dan Alfa yang sudah ada tidak akan ditimpa.</p>
                     <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-center">
                         <SecondaryButton onClick={() => setKonfirmasi(false)} disabled={proses} className="justify-center">Batal</SecondaryButton>
                         <PrimaryButton onClick={jalankanBulk} disabled={proses} className="justify-center">Ya, Isi Hadir</PrimaryButton>

@@ -65,6 +65,61 @@ class AbsensiController extends Controller
         return redirect()->back();
     }
 
+    /**
+     * Simpan banyak perubahan sekaligus (tombol "Simpan" di timesheet).
+     *
+     * Payload: perubahan = [{ employee_id, date, status|null }, ...]
+     * status kosong/null → baris absensi tanggal itu dihapus.
+     * Semua perubahan masuk dalam satu transaksi: gagal satu, batal semua.
+     */
+    public function simpan(Request $request)
+    {
+        $data = $request->validate([
+            'perubahan'               => 'required|array|min:1|max:3000',
+            'perubahan.*.employee_id' => 'required|integer',
+            'perubahan.*.date'        => 'required|date_format:Y-m-d',
+            'perubahan.*.status'      => 'nullable|in:' . implode(',', Absensi::STATUS),
+        ], [
+            'perubahan.required' => 'Tidak ada perubahan untuk disimpan.',
+        ]);
+
+        $perubahan = collect($data['perubahan']);
+
+        // Cek pegawai sekali query, bukan rule `exists` per baris
+        // (3.000 baris = 3.000 query).
+        //
+        // Draf tersimpan di browser dan bisa berumur berhari-hari, jadi
+        // pegawai di dalamnya mungkin sudah dihapus. Baris seperti itu
+        // DILEWATI, bukan menggagalkan semuanya — kalau ditolak, draf itu
+        // akan terus gagal disimpan dan admin terjebak.
+        $valid     = Pegawai::whereIn('id', $perubahan->pluck('employee_id')->unique())->pluck('id')->flip();
+        $dilewati  = $perubahan->reject(fn ($p) => $valid->has($p['employee_id']))->count();
+        $perubahan = $perubahan->filter(fn ($p) => $valid->has($p['employee_id']));
+
+        DB::transaction(function () use ($perubahan) {
+            foreach ($perubahan as $p) {
+                if (empty($p['status'])) {
+                    Absensi::where('employee_id', $p['employee_id'])
+                        ->whereDate('date', $p['date'])
+                        ->delete();
+                    continue;
+                }
+
+                Absensi::updateOrCreate(
+                    ['employee_id' => $p['employee_id'], 'date' => $p['date']],
+                    ['status' => $p['status']]
+                );
+            }
+        });
+
+        $pesan = $perubahan->count() . ' perubahan absensi berhasil disimpan.';
+        if ($dilewati) {
+            $pesan .= " {$dilewati} dilewati karena pegawainya sudah tidak ada.";
+        }
+
+        return redirect()->back()->with('success', $pesan);
+    }
+
     public function bulkHadir(Request $request)
     {
         $data = $request->validate([

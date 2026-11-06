@@ -9,13 +9,22 @@ use App\Models\Keuangan\MasterData\Kelas;
 use App\Models\Keuangan\Outbound\RkasDetail;
 use App\Models\Keuangan\Outbound\RkasHeader;
 use App\Models\Keuangan\Payroll\PayrollHeader;
+use App\Models\Santri;
+use App\Models\Setoran;
+use App\Models\TahunAjaran;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class PimpinanController extends Controller
 {
     /** Sama dengan DashboardController — halaman ini juga murni informatif. */
     private const CACHE_MENIT = 10;
+
+    /** Ambang "lama tidak setor". Dua pekan, bukan sebulan: sebulan terlalu
+     *  terlambat untuk menolong anak yang mulai berhenti. */
+    private const HARI_VAKUM = 14;
 
     public function index()
     {
@@ -29,6 +38,7 @@ class PimpinanController extends Controller
                 'keringanan'     => $this->keringananPerAlasan($tahun),
                 'bebanGaji'      => $this->bebanGaji($tahun),
                 'rkas'           => $this->realisasiRkas(),
+                'tahfizh'        => $this->ringkasanTahfizh(),
             ]
         );
 
@@ -38,6 +48,7 @@ class PimpinanController extends Controller
             'keringanan'     => $data['keringanan'],
             'bebanGaji'      => $data['bebanGaji'],
             'rkas'           => $data['rkas'],
+            'tahfizh'        => $data['tahfizh'],
         ]);
     }
 
@@ -214,6 +225,112 @@ class PimpinanController extends Controller
             'sisa'     => $anggaran - $terserap,
             'persen'   => $anggaran > 0 ? round($terserap / $anggaran * 100, 1) : 0,
             'pos'      => $pos,
+        ];
+    }
+
+    /**
+     * Separuh gambaran yang bukan uang: berapa santri aktif, sejauh mana
+     * capaian hafalannya, dan siapa yang berhenti setor.
+     *
+     * Mengembalikan null bila modul raport dimatikan. Halaman ini hidup di
+     * panel keuangan, jadi ia tidak boleh ikut rusak di instalasi klien
+     * yang hanya memakai satu modul — penjagaannya sama dengan yang dipakai
+     * routes/web.php untuk memuat rute raport.
+     *
+     * Dikerjakan dengan tiga query agregat, bukan dengan memanggil
+     * Santri::getPersenHafalanByTahunAjaran() per santri. Accessor itu
+     * benar, tapi memanggilnya untuk lima puluh santri berarti seratus
+     * query untuk satu kartu.
+     */
+    private function ringkasanTahfizh(): ?array
+    {
+        if (! config('modules.raport')) {
+            return null;
+        }
+
+        $santri = Santri::aktif()->orderBy('name')->get(['id', 'name', 'target_juz']);
+
+        if ($santri->isEmpty()) {
+            return [
+                'aktif'       => 0,
+                'rataCapaian' => 0,
+                'hariVakum'   => self::HARI_VAKUM,
+                'jumlahVakum' => 0,
+                'vakum'       => [],
+            ];
+        }
+
+        $taId  = TahunAjaran::getAktifId();
+        $ids   = $santri->pluck('id');
+        $batas = now()->subDays(self::HARI_VAKUM)->startOfDay();
+
+        // Juz yang sudah disetor tahun ajaran berjalan. kategori_setoran
+        // NULL berarti baris itu presensi tanpa setoran — bukan hafalan.
+        $tersetor = Setoran::query()
+            ->whereIn('santri_id', $ids)
+            ->whereNotNull('kategori_setoran')
+            ->when($taId, fn ($q) => $q->where('tahun_ajaran_id', $taId))
+            ->groupBy('santri_id')
+            ->selectRaw('santri_id, COALESCE(SUM(total_juz), 0) AS juz')
+            ->pluck('juz', 'santri_id');
+
+        // Target khusus tahun ajaran ini; yang tidak punya memakai
+        // santris.target_juz. Urutan jatuh yang sama dengan
+        // Santri::getPersenHafalanByTahunAjaran().
+        $targetTa = $taId
+            ? DB::table('santri_target_hafalan')
+                ->whereIn('santri_id', $ids)
+                ->where('tahun_ajaran_id', $taId)
+                ->pluck('target_juz', 'santri_id')
+            : collect();
+
+        // Setoran terakhir per santri — lintas tahun ajaran, karena yang
+        // ditanyakan adalah "kapan terakhir anak ini setor", bukan "kapan
+        // terakhir di tahun ini".
+        $terakhir = Setoran::query()
+            ->whereIn('santri_id', $ids)
+            ->whereNotNull('kategori_setoran')
+            ->groupBy('santri_id')
+            ->selectRaw('santri_id, MAX(tanggal) AS tanggal')
+            ->pluck('tanggal', 'santri_id');
+
+        $persen = [];
+        $vakum  = [];
+
+        foreach ($santri as $s) {
+            $target = (float) ($targetTa[$s->id] ?? $s->target_juz ?? 0);
+
+            // Santri tanpa target tidak ikut menghitung rata-rata. Memberinya
+            // nilai nol akan menarik angka seluruh pesantren ke bawah karena
+            // targetnya belum diisi, bukan karena anaknya tertinggal.
+            if ($target > 0) {
+                $persen[] = min((float) ($tersetor[$s->id] ?? 0) / $target * 100, 100);
+            }
+
+            $tgl = $terakhir[$s->id] ?? null;
+
+            if (! $tgl || Carbon::parse($tgl)->lt($batas)) {
+                $vakum[] = [
+                    'nama'     => $s->name,
+                    'terakhir' => $tgl ? Carbon::parse($tgl)->translatedFormat('d M Y') : null,
+                    'hari'     => $tgl
+                        ? (int) abs(Carbon::parse($tgl)->startOfDay()->diffInDays(now()->startOfDay()))
+                        : null,
+                ];
+            }
+        }
+
+        // Yang paling lama vakum lebih dulu. Yang belum pernah setor sama
+        // sekali ditaruh paling atas — itu kasus paling jelas dan paling
+        // mudah terlewat.
+        usort($vakum, fn ($a, $b) => ($b['hari'] ?? PHP_INT_MAX) <=> ($a['hari'] ?? PHP_INT_MAX));
+
+        return [
+            'aktif'       => $santri->count(),
+            'rataCapaian' => count($persen) > 0 ? round(array_sum($persen) / count($persen), 1) : 0,
+            'hariVakum'   => self::HARI_VAKUM,
+            'jumlahVakum' => count($vakum),
+            'vakum'       => array_slice($vakum, 0, 5),
         ];
     }
 }
