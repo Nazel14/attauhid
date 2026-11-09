@@ -1,0 +1,16 @@
+[33mcommit b71644c44f3fbf6dd6e43891c0e103eae1e284b2[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: Nazel <nazelzahran@gmail.com>
+Date:   Fri Nov 6 23:00:03 2026 +0700
+
+    fix: baris penuh aisar ikut dibesarkan auto-fit
+
+ .../Controllers/Keuangan/Inbound/PembayaranController.php  |  30 [32m+[m[31m-[m
+ .../Controllers/Keuangan/Payroll/AbsensiController.php     |  55 [32m++[m
+ app/Http/Controllers/Keuangan/PimpinanController.php       | 117 [32m++++[m
+ public/js/aisar-data.js                                    | 712 [32m++++++++++++[m[31m-------------[m
+ public/js/aisar-handler.js                                 | 227 [32m+++++++[m[31m-[m
+ resources/js/pages/Keuangan/Pemasukan/Pembayaran.jsx       |  34 [32m+[m[31m-[m
+ resources/js/pages/Keuangan/Penggajian/DataAbsensi.jsx     | 438 [32m++++++++++[m[31m-----[m
+ resources/js/pages/Keuangan/Pimpinan.jsx                   |  70 [32m++[m[31m-[m
+ routes/keuangan.php                                        |   2 [32m+[m
+ 9 files changed, 1162 insertions(+), 523 deletions(-)
