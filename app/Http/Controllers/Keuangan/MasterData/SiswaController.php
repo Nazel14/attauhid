@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Keuangan\MasterData;
 use App\Http\Controllers\Controller;
 use App\Models\Keuangan\MasterData\Kelas;
 use App\Models\Keuangan\MasterData\Siswa;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -138,6 +139,45 @@ class SiswaController extends Controller
         $siswa->update($validated);
 
         return redirect()->back()->with('success', 'Data siswa berhasil diperbarui.');
+    }
+
+        public function destroy(Siswa $siswa)
+    {
+        // Tombol ini untuk membuang SALAH INPUT, bukan untuk meluluskan atau
+        // mengeluarkan santri. Santri yang benar-benar pernah bersekolah di
+        // sini selalu meninggalkan jejak, dan jejak itu tidak boleh kehilangan
+        // pemiliknya — tagihan tanpa siswa merusak laporan tunggakan, setoran
+        // tanpa santri merusak rapor.
+        $jejak = [];
+
+        if ($siswa->tagihan()->exists())    $jejak[] = 'tagihan';
+        if ($siswa->pembayaran()->exists()) $jejak[] = 'pembayaran';
+        if ($siswa->setorans()->exists())   $jejak[] = 'setoran';
+        if ($siswa->presensis()->exists())  $jejak[] = 'presensi';
+
+        if ($jejak) {
+            return redirect()->back()->withErrors([
+                'delete_error' => 'Gagal! Siswa ini sudah punya riwayat '
+                    . implode(', ', $jejak) . '. Untuk siswa yang sudah tidak '
+                    . 'bersekolah di sini, ubah statusnya menjadi "lulus" atau '
+                    . '"keluar" lewat tombol Edit — datanya tetap tersimpan dan '
+                    . 'laporan tahun sebelumnya tidak rusak.',
+            ]);
+        }
+
+        DB::transaction(function () use ($siswa) {
+            // Baris turunan milik santri ini sendiri, tidak dirujuk modul lain.
+            $siswa->kelasHistories()->delete();
+            $siswa->targetHafalans()->delete();
+
+            if ($siswa->user) {
+                $siswa->user->delete();
+            }
+
+            $siswa->forceDelete();
+        });
+
+        return redirect()->back()->with('success', 'Data siswa berhasil dihapus.');
     }
 
     /* ================= Helper ================= */

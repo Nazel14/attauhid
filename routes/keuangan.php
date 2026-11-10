@@ -114,10 +114,10 @@ Route::middleware([
                 ->middleware('permission:master.kelas.hapus')->name('destroy');
         });
 
-        // Siswa (students) — tanpa destroy, permission master.siswa.hapus
-        // memang tidak ada di daftar 90 permission.
         Route::get('/siswa', [SiswaController::class, 'index'])
             ->middleware('permission:master.siswa.lihat')->name('siswa');
+        Route::delete('/siswa/{siswa}', [SiswaController::class, 'destroy'])
+            ->middleware('permission:master.siswa.hapus')->name('siswa.destroy');
 
         // Daftar santri per kelas. Param bisa id kelas atau 'tanpa-kelas'
         // untuk siswa yang belum dapat pembagian — mereka tetap harus

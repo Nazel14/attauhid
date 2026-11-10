@@ -4,6 +4,7 @@ namespace App\Models\Keuangan\MasterData;
 
 use App\Models\Santri;
 
+
 /**
  * Siswa adalah nama lain dari Santri — keduanya menunjuk tabel `santris`.
  * Class ini dipertahankan supaya controller keuangan yang sudah memakai

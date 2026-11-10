@@ -23,6 +23,13 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
     const [isEditing, setIsEditing] = useState(false);
     const [editId, setEditId] = useState(null);
 
+    // Yang disimpan barisnya, bukan cuma id — supaya nama siswa bisa
+    // ditampilkan di modal konfirmasi. Menghapus siswa yang salah jauh
+    // lebih mahal daripada menghapus rekening.
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deleteItem, setDeleteItem] = useState(null);
+    const [deleteError, setDeleteError] = useState('');
+
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         nis: '',
         name: '',
@@ -94,8 +101,28 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
         else post(route('keuangan.master-data.siswa.store'), opts);
     };
 
-    // Tidak ada tombol hapus — permission master.siswa.hapus memang tidak ada.
-    const adaAksi = can('master.siswa.edit');
+    const confirmDelete = (item) => {
+        setDeleteError('');
+        setDeleteItem(item);
+        setIsDeleteModalOpen(true);
+    };
+
+    const executeDelete = () => {
+        if (!deleteItem) return;
+
+        // router.delete hanya menerima (url, options) — TANPA argumen data,
+        // berbeda dari router.post(url, data, options). Menyelipkan apa pun
+        // di posisi kedua membuat seluruh callback mendarat di argumen ketiga
+        // yang diabaikan Inertia: dialog tidak pernah tertutup dan pesan
+        // error tidak pernah tampil.
+        router.delete(route('keuangan.master-data.siswa.destroy', deleteItem.id), {
+            preserveScroll: true,
+            onSuccess: () => { setIsDeleteModalOpen(false); setDeleteItem(null); },
+            onError: (err) => { if (err.delete_error) setDeleteError(err.delete_error); },
+        });
+    };
+
+    const adaAksi = can('master.siswa.edit') || can('master.siswa.hapus');
     const judul = kelas ? `Siswa ${kelas.name}` : 'Siswa Tanpa Kelas';
 
     const thCls = 'cursor-pointer px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-stone-500 transition hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200';
@@ -114,6 +141,18 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
     );
 
     const btnGhost = 'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium ring-1 transition';
+
+    const IkonUbah = ({ className = 'h-3.5 w-3.5' }) => (
+        <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
+    );
+
+    const IkonHapus = ({ className = 'h-3.5 w-3.5' }) => (
+        <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+    );
 
     // santris.status enum: aktif / lulus / keluar
     const BadgeStatus = ({ item }) => (
@@ -236,13 +275,22 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
                             </div>
 
                             {adaAksi && (
-                                <button onClick={() => openEditModal(item)}
-                                    className="flex w-full items-center justify-center gap-1.5 border-t border-stone-100 py-2.5 text-xs font-medium text-claude-600 transition hover:bg-claude-500/10 dark:border-coal-600 dark:text-claude-300">
-                                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                    Ubah Data
-                                </button>
+                                <div className="grid grid-cols-2 border-t border-stone-100 dark:border-coal-600">
+                                    {can('master.siswa.edit') && (
+                                        <button onClick={() => openEditModal(item)}
+                                            className={`flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-claude-600 transition hover:bg-claude-500/10 dark:text-claude-300 ${can('master.siswa.hapus') ? 'border-r border-stone-100 dark:border-coal-600' : 'col-span-2'}`}>
+                                            <IkonUbah />
+                                            Ubah Data
+                                        </button>
+                                    )}
+                                    {can('master.siswa.hapus') && (
+                                        <button onClick={() => confirmDelete(item)}
+                                            className={`flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10 ${!can('master.siswa.edit') ? 'col-span-2' : ''}`}>
+                                            <IkonHapus />
+                                            Hapus
+                                        </button>
+                                    )}
+                                </div>
                             )}
                         </div>
                     )) : (
@@ -281,14 +329,21 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
                                     <td className="whitespace-nowrap px-5 py-4"><BadgeStatus item={item} /></td>
                                     {adaAksi && (
                                         <td className="whitespace-nowrap px-5 py-4 text-right text-xs">
-                                            <div className="flex items-center justify-end">
-                                                <button onClick={() => openEditModal(item)}
-                                                    className={`${btnGhost} text-claude-600 ring-claude-200 hover:bg-claude-500/10 dark:text-claude-300 dark:ring-claude-500/30`}>
-                                                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                    </svg>
-                                                    Ubah
-                                                </button>
+                                            <div className="flex items-center justify-end gap-2">
+                                                {can('master.siswa.edit') && (
+                                                    <button onClick={() => openEditModal(item)}
+                                                        className={`${btnGhost} text-claude-600 ring-claude-200 hover:bg-claude-500/10 dark:text-claude-300 dark:ring-claude-500/30`}>
+                                                        <IkonUbah />
+                                                        Ubah
+                                                    </button>
+                                                )}
+                                                {can('master.siswa.hapus') && (
+                                                    <button onClick={() => confirmDelete(item)}
+                                                        className={`${btnGhost} text-red-600 ring-red-200 hover:bg-red-50 dark:text-red-400 dark:ring-red-500/20 dark:hover:bg-red-500/10`}>
+                                                        <IkonHapus />
+                                                        Hapus
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     )}
@@ -379,6 +434,10 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
                                     </select>
                                     <ChevronBawah modal />
                                 </div>
+                                <p className="mt-1 text-xs text-stone-400">
+                                    Siswa yang berhenti atau lulus diubah statusnya di sini — bukan dihapus,
+                                    supaya tagihan dan setorannya tetap punya pemilik.
+                                </p>
                                 <InputError message={errors.status} className="mt-1.5" />
                             </div>
                         </div>
@@ -429,6 +488,52 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
                         <PrimaryButton type="submit" disabled={processing}>{isEditing ? 'Simpan Perubahan' : 'Simpan Data'}</PrimaryButton>
                     </div>
                 </form>
+            </Modal>
+
+            {/* maxWidth md, bukan sm: pesan penolakan dari server panjang karena
+                menyebutkan jejak apa saja yang ditemukan dan menunjuk ke jalur
+                yang benar (ubah status, bukan hapus). */}
+            <Modal show={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} maxWidth="md">
+                <div className="p-6 text-center">
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400">
+                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+
+                    <h3 className="text-base font-semibold text-stone-800 dark:text-cream-50">Hapus Data Siswa</h3>
+
+                    {/* Nama dan NIS ditampilkan: menghapus baris yang salah di sini
+                        jauh lebih mahal daripada di master data lain. */}
+                    <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                        {deleteItem
+                            ? <>Yakin menghapus <span className="font-semibold text-stone-700 dark:text-cream-100">{deleteItem.name}</span> (NIS {deleteItem.nis})?</>
+                            : 'Yakin menghapus siswa ini?'}
+                    </p>
+
+                    <p className="mt-2 text-xs text-stone-400">
+                        Hanya untuk data yang salah diinput. Siswa yang sudah punya tagihan,
+                        pembayaran, setoran, atau presensi tidak bisa dihapus.
+                    </p>
+
+                    {deleteError && (
+                        <div className="mt-4 rounded-xl bg-red-50 p-3 text-left text-sm text-red-600 ring-1 ring-red-200 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/20">
+                            {deleteError}
+                        </div>
+                    )}
+
+                    <div className="mt-5 flex justify-center gap-2">
+                        <SecondaryButton onClick={() => setIsDeleteModalOpen(false)}>
+                            {deleteError ? 'Tutup' : 'Batal'}
+                        </SecondaryButton>
+                        {!deleteError && (
+                            <button onClick={executeDelete}
+                                className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500">
+                                Ya, Hapus
+                            </button>
+                        )}
+                    </div>
+                </div>
             </Modal>
         </KeuanganLayout>
     );
