@@ -62,9 +62,11 @@ class Santri extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    // Foreign key WAJIB eksplisit. Eloquent menebaknya dari nama class
+    // konkret, dan subclass Siswa membuat tebakannya jadi 'siswa_id'.
     public function kenaikanUsulans()
     {
-        return $this->hasMany(KenaikanUsulan::class);
+        return $this->hasMany(KenaikanUsulan::class, 'santri_id');
     }
     /**
      * Relasi Many-to-One: Santri belongs to one Kelas.
@@ -120,19 +122,23 @@ class Santri extends Model
     // =====================================================
 
     /**
-     * Riwayat kelas santri per tahun ajaran
+     * Riwayat kelas santri per tahun ajaran.
+     *
+     * Foreign key wajib eksplisit — sama alasannya dengan $table di Siswa:
+     * Eloquent menebaknya dari nama class konkret, jadi dipanggil lewat
+     * Siswa tebakannya menjadi 'siswa_id' dan query-nya gagal.
      */
     public function kelasHistories(): HasMany
     {
-        return $this->hasMany(SantriKelasHistory::class);
+        return $this->hasMany(SantriKelasHistory::class, 'santri_id');
     }
 
     /**
-     * Target hafalan per tahun ajaran
+     * Target hafalan per tahun ajaran. FK eksplisit, alasan sama.
      */
     public function targetHafalans(): HasMany
     {
-        return $this->hasMany(SantriTargetHafalan::class);
+        return $this->hasMany(SantriTargetHafalan::class, 'santri_id');
     }
 
     // =====================================================

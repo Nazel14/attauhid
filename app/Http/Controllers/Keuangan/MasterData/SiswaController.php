@@ -169,6 +169,7 @@ class SiswaController extends Controller
             // Baris turunan milik santri ini sendiri, tidak dirujuk modul lain.
             $siswa->kelasHistories()->delete();
             $siswa->targetHafalans()->delete();
+            $siswa->kenaikanUsulans()->delete();
 
             if ($siswa->user) {
                 $siswa->user->delete();
