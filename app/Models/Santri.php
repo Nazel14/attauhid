@@ -76,10 +76,13 @@ class Santri extends Model
 
     /**
      * Relasi Many-to-One: Santri belongs to one Guru (Wali Kelas).
+     *
+     * withTrashed supaya nama pembimbing tetap terbaca setelah gurunya
+     * diarsipkan — santri bimbingannya tidak ikut hilang dari daftar.
      */
     public function guru(): BelongsTo
     {
-        return $this->belongsTo(Guru::class);
+        return $this->belongsTo(Guru::class)->withTrashed();
     }
 
     /**

@@ -181,7 +181,7 @@
     // Batas ATAS auto-fit, khusus baris penuh (satu sel = satu kalimat).
     // Turunkan ke 38–40 bila baris panjang terasa terlalu besar dibanding
     // baris grid di sekitarnya.
-    const AISAR_MAX_FONT         = 38;
+    const AISAR_MAX_FONT         = 34;
 
     // v2.3: true = sel grid (2–5 kolom) yang bersepasi ikut dipecah per kata,
     // sehingga tiap kata bisa diberi warna koreksi sendiri. false = perilaku

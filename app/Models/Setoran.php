@@ -55,9 +55,11 @@ class Setoran extends Model
         return $this->belongsTo(Santri::class);
     }
 
+    // withTrashed: guru yang sudah diarsipkan tetap muncul sebagai penyimak
+    // di riwayat setoran dan rapor tahun-tahun sebelumnya.
     public function guru(): BelongsTo
     {
-        return $this->belongsTo(Guru::class);
+        return $this->belongsTo(Guru::class)->withTrashed();
     }
 
     public function presensi(): BelongsTo

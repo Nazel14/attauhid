@@ -288,30 +288,43 @@ class PegawaiController extends Controller
 
     public function destroy(Pegawai $pegawai)
     {
-        if ($pegawai->absensi()->exists()) {
-            return redirect()->back()->withErrors([
-                'delete_error' => 'Gagal! Pegawai ini sudah memiliki riwayat absensi/gaji.',
-            ]);
-        }
-
-        // Tabel gurus kini dipakai bersama modul raport. Menghapus baris di
-        // sini berarti menghapus guru — termasuk relasi wali kelas, santri
-        // bimbingan, dan riwayat setoran yang menunjuk gurus.id.
+        // Satu-satunya yang tetap DITOLAK. Ini masalah operasional, bukan
+        // masalah data: kelasnya akan kehilangan pengampu, dan yang harus
+        // menyelesaikannya manusia (tunjuk wali kelas pengganti dulu),
+        // bukan sistem.
         if ($pegawai->kelasDiampu()->exists()) {
             return redirect()->back()->withErrors([
-                'delete_error' => 'Gagal! Pegawai ini masih menjadi wali kelas di modul raport.',
+                'delete_error' => 'Gagal! Pegawai ini masih menjadi wali kelas di modul raport. '
+                                . 'Pindahkan kelasnya ke guru lain dulu, baru hapus.',
             ]);
         }
 
-        if ($pegawai->santriBimbingan()->exists() || $pegawai->setorans()->exists()) {
-            return redirect()->back()->withErrors([
-                'delete_error' => 'Gagal! Pegawai ini punya santri bimbingan atau riwayat setoran di modul raport.',
-            ]);
-        }
+        // Riwayat tidak lagi memblokir penghapusan — ia hanya menentukan
+        // CARA menghapusnya. Riwayat absensi, gaji, dan setoran menunjuk
+        // gurus.id; kalau barisnya dilenyapkan, rujukan itu jadi yatim dan
+        // laporan gaji bulan-bulan lalu kehilangan namanya.
+        $punyaRiwayat = $pegawai->absensi()->exists()
+            || $pegawai->setorans()->exists()
+            || $pegawai->santriBimbingan()->exists();
 
-        DB::transaction(function () use ($pegawai) {
-            // Akun login ikut dihapus beserta fotonya — kalau ditinggal,
-            // user tanpa profil masih bisa login tapi panelnya kosong.
+        DB::transaction(function () use ($pegawai, $punyaRiwayat) {
+            if ($punyaRiwayat) {
+                // ARSIP: baris gurus tetap ada (soft delete), sehingga seluruh
+                // riwayat tetap utuh dan namanya tetap terbaca di laporan lama.
+                // Akun loginnya dilucuti seluruh role — orangnya sudah tidak
+                // bekerja di sini, tapi datanya masih dibutuhkan.
+                if ($pegawai->user) {
+                    $pegawai->user->syncRoles([]);
+                }
+
+                $pegawai->update(['is_active' => false]);
+                $pegawai->delete();
+
+                return;
+            }
+
+            // Betul-betul bersih tanpa jejak → hapus permanen, dan NIY-nya
+            // bebas dipakai pegawai baru.
             if ($pegawai->user) {
                 if ($pegawai->user->profile_photo && Storage::disk('public')->exists($pegawai->user->profile_photo)) {
                     Storage::disk('public')->delete($pegawai->user->profile_photo);
@@ -322,6 +335,8 @@ class PegawaiController extends Controller
             $pegawai->forceDelete();
         });
 
-        return redirect()->back()->with('success', 'Data pegawai berhasil dihapus.');
+        return redirect()->back()->with('success', $punyaRiwayat
+            ? 'Pegawai diarsipkan. Riwayat absensi, gaji, dan setorannya tetap tersimpan.'
+            : 'Data pegawai berhasil dihapus.');
     }
 }

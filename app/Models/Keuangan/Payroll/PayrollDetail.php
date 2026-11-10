@@ -37,9 +37,11 @@ class PayrollDetail extends Model
     }
 
     // Foreign key wajib disebut — tanpa ini Eloquent menebak 'pegawai_id'.
+    // withTrashed: pegawai yang sudah diarsipkan tetap harus terbaca namanya
+    // di slip gaji bulan-bulan sebelumnya. Tanpa ini slip lama jadi kosong.
     public function employee(): BelongsTo
     {
-        return $this->belongsTo(Pegawai::class, 'employee_id');
+        return $this->belongsTo(Pegawai::class, 'employee_id')->withTrashed();
     }
 
     public function allowances(): HasMany

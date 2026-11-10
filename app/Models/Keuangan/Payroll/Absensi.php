@@ -21,8 +21,9 @@ class Absensi extends Model
     /** Status yang dihitung sebagai tidak masuk saat penggajian. */
     public const TIDAK_MASUK = ['Sakit', 'Izin', 'Alfa'];
 
+    // di model Absensi
     public function pegawai(): BelongsTo
     {
-        return $this->belongsTo(Pegawai::class, 'employee_id');
+        return $this->belongsTo(Pegawai::class, 'employee_id')->withTrashed();
     }
 }
