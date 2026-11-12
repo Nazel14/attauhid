@@ -51,6 +51,9 @@ class SiswaController extends Controller
                 'name'          => $k->name,
                 'tingkat'       => $k->tingkat,
                 'tahun_ajaran'  => $k->tahun_ajaran,
+                // TK atau Rumah Quran — DataSiswa.jsx memisahkan kartu
+                // kelas berdasarkan ini.
+                'lembaga'       => $k->lembaga ?? 'tk',
                 'is_active'     => (bool) $k->is_active,
                 'guru_name'     => $k->guru->name ?? null,
                 'kapasitas'     => (int) $k->kapasitas,
@@ -107,6 +110,7 @@ class SiswaController extends Controller
                 'name'         => $kelasAktif->name,
                 'tingkat'      => $kelasAktif->tingkat,
                 'tahun_ajaran' => $kelasAktif->tahun_ajaran,
+                'lembaga'      => $kelasAktif->lembaga ?? 'tk',
                 'kapasitas'    => (int) $kelasAktif->kapasitas,
                 'guru_name'    => $kelasAktif->guru->name ?? null,
             ] : null,
