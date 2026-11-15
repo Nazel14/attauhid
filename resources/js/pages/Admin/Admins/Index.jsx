@@ -12,6 +12,36 @@ function PemilikBadge() {
     return <span className="inline-flex items-center rounded-full bg-cream-300 px-2 py-0.5 text-[10px] font-semibold text-stone-700 ring-1 ring-inset ring-cream-400 dark:bg-coal-600 dark:text-stone-200 dark:ring-coal-500">🔒 Pemilik Sistem</span>;
 }
 
+const EyeSvg = () => (
+    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+);
+const EyeOffSvg = () => (
+    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+);
+
+// Hanya dirender untuk Super Admin; nilainya dikirim controller hanya ke Super Admin.
+function PasswordReveal({ value }) {
+    const [show, setShow] = useState(false);
+    if (!value) {
+        return (
+            <span className="text-[11px] italic text-stone-400 dark:text-stone-500" title="Password akun ini belum tersimpan. Tekan Reset agar password baru tersimpan dan bisa dilihat.">
+                Belum tersimpan
+            </span>
+        );
+    }
+    return (
+        <span className="inline-flex items-center gap-1.5">
+            <span className={`font-mono text-xs ${show ? 'text-stone-700 dark:text-stone-200' : 'text-stone-400 dark:text-stone-500'}`}>
+                {show ? value : '••••••••'}
+            </span>
+            <button type="button" onClick={() => setShow((v) => !v)} title={show ? 'Sembunyikan' : 'Tampilkan'}
+                className="text-stone-400 transition hover:text-claude-500 dark:text-stone-500 dark:hover:text-claude-400">
+                {show ? <EyeOffSvg /> : <EyeSvg />}
+            </button>
+        </span>
+    );
+}
+
 function Avatar({ url, name, size = 'h-10 w-10' }) {
     if (url) {
         return <img src={url} alt="Foto" className={`${size} flex-shrink-0 rounded-full border border-cream-300 object-cover object-top dark:border-coal-500`} />;
@@ -23,8 +53,11 @@ function Avatar({ url, name, size = 'h-10 w-10' }) {
     );
 }
 
-export default function AdminsIndex({ admins, counts, pemilik = [] }) {
+export default function AdminsIndex({ admins, counts, pemilik = [], canSeePassword }) {
     const { flash } = usePage().props;
+    // Kolom password hanya untuk Super Admin. Prop canSeePassword dari controller
+    // diutamakan; kalau tidak dikirim, kolom muncul bila data admin membawa plain_password.
+    const showPwCol = canSeePassword ?? (admins?.data ?? []).some((a) => a.plain_password !== undefined);
 
     // ---- Notifikasi (dari flash) ----
     const NOTIF_DURATION = 10000;
@@ -254,6 +287,7 @@ const removePhoto = () => {
                                 <th className="w-10 px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">No</th>
                                 <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Nama Admin</th>
                                 <th className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Level</th>
+                                {showPwCol && <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Password</th>}
                                 <th className="w-44 px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Aksi</th>
                             </tr>
                         </thead>
@@ -274,6 +308,7 @@ const removePhoto = () => {
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 text-center"><PemilikBadge /></td>
+                                    {showPwCol && <td className="px-4 py-3"><span className="text-[11px] italic text-stone-400 dark:text-stone-500">Tersembunyi</span></td>}
                                     <td className="px-4 py-3 text-center">
                                         <span className="text-[10px] italic text-stone-400 dark:text-stone-500">Tidak dapat diubah</span>
                                     </td>
@@ -282,7 +317,7 @@ const removePhoto = () => {
 
                             {rows.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="px-4 py-10 text-center">
+                                    <td colSpan={showPwCol ? 5 : 4} className="px-4 py-10 text-center">
                                         <p className="text-xs font-semibold text-stone-600 dark:text-stone-300">Belum ada admin tambahan</p>
                                         <p className="mx-auto mt-1 max-w-xs text-[11px] leading-relaxed text-stone-400 dark:text-stone-500">
                                             Tekan “Tambah Admin” untuk membuat akun pengelola baru.
@@ -303,6 +338,7 @@ const removePhoto = () => {
                                             </div>
                                         </td>
                                         <td className="px-4 py-3 text-center">{admin.is_super_admin ? <SuperBadge /> : <AdminBadge />}</td>
+                                        {showPwCol && <td className="px-4 py-3"><PasswordReveal value={admin.plain_password} /></td>}
                                         <td className="px-4 py-3">
                                             <div className="flex items-center justify-center gap-2">
                                                 <button onClick={() => openEdit(admin)} className="rounded-lg bg-claude-100 px-2.5 py-1 text-[10px] font-semibold text-claude-700 ring-1 ring-inset ring-claude-300 transition hover:bg-claude-200 dark:bg-claude-500/15 dark:text-claude-300 dark:ring-claude-500/30 dark:hover:bg-claude-500/25">Edit</button>
@@ -362,6 +398,12 @@ const removePhoto = () => {
                                         </p>
                                         {admin.is_super_admin ? <SuperBadge /> : <AdminBadge />}
                                     </div>
+                                    {showPwCol && (
+                                        <div className="mt-1.5 flex items-center gap-1.5">
+                                            <span className="text-[10px] text-stone-400 dark:text-stone-500">Password:</span>
+                                            <PasswordReveal value={admin.plain_password} />
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex flex-shrink-0 items-center gap-1.5">
                                     <button onClick={() => openEdit(admin)} className="rounded-lg bg-claude-100 px-2.5 py-1.5 text-[10px] font-bold text-claude-700 ring-1 ring-inset ring-claude-300 transition active:scale-95 dark:bg-claude-500/15 dark:text-claude-300 dark:ring-claude-500/30">Edit</button>
@@ -538,7 +580,7 @@ const removePhoto = () => {
 
                                 <div className="flex items-start gap-2 rounded-xl border border-claude-200 bg-claude-50 p-3 dark:border-claude-500/30 dark:bg-claude-500/10">
                                     <svg className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-claude-500 dark:text-claude-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                    <p className="text-[10px] leading-relaxed text-claude-700 dark:text-claude-300">Super Admin (maks 3) tidak dapat dihapus. Admin Biasa (maks 5) dapat dikelola sepenuhnya. Password hanya ditampilkan sekali saat dibuat — catat sebelum menutup notifikasi.</p>
+                                    <p className="text-[10px] leading-relaxed text-claude-700 dark:text-claude-300">Super Admin (maks 3) tidak dapat dihapus. Admin Biasa (maks 5) dapat dikelola sepenuhnya. Password admin dapat dilihat Super Admin di kolom Password.</p>
                                 </div>
 
                                 {isEdit && (

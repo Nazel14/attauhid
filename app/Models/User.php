@@ -25,11 +25,45 @@ class User extends Authenticatable
         'profile_photo_updated_at',
     ];
 
-protected $hidden = [
+    protected $hidden = [
         'password',
         'remember_token',
         'plain_password',
     ];
+
+    /**
+     * plain_password tetap tersembunyi untuk semua orang, kecuali:
+     *  - Super Admin di panel admin (route admin.*): semua akun.
+     *  - Guru di panel guru (route guru.*): hanya akun SANTRI.
+     * Guru tidak pernah menerima password guru/admin lain.
+     */
+    public function getHidden()
+    {
+        $hidden = parent::getHidden();
+
+        if ($this->viewerCanSeePlainPassword()) {
+            $hidden = array_values(array_diff($hidden, ['plain_password']));
+        }
+
+        return $hidden;
+    }
+
+    protected function viewerCanSeePlainPassword(): bool
+    {
+        $viewer = auth()->user();
+
+        if (! $viewer instanceof self) {
+            return false;
+        }
+
+        if (request()->routeIs('admin.*') && $viewer->isSuperAdmin()) {
+            return true;
+        }
+
+        return request()->routeIs('guru.*')
+            && $viewer->role === 'guru'
+            && $this->role === 'santri';
+    }
 
     protected $casts = [
         'profile_photo_updated_at' => 'datetime',

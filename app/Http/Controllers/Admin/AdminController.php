@@ -21,6 +21,9 @@ class AdminController extends Controller
     {
         $query = User::where('role', 'admin')->with('roles');
 
+        // Password admin hanya dikirim ke Super Admin.
+        $isSuper = auth()->user()->isSuperAdmin();
+
         // Search
         if ($request->filled('search')) {
             $search = $request->search;
@@ -29,6 +32,7 @@ class AdminController extends Controller
 
         $admins = $query->latest()->paginate(10)->withQueryString()
             ->through(fn ($admin) => [
+                'plain_password'     => $isSuper ? $admin->plain_password : null,
                 'id'                 => $admin->id,
                 'name'               => $admin->name,
                 'profile_photo_url'  => $admin->profile_photo ? asset('storage/' . $admin->profile_photo) : null,
@@ -63,6 +67,7 @@ class AdminController extends Controller
 
         return Inertia::render('Admin/Admins/Index', [
             'admins'  => $admins,
+            'canSeePassword' => $isSuper,
             'pemilik' => $pemilik,
             'counts' => [
                 'superAdmin'   => $superAdminCount,
@@ -116,6 +121,7 @@ class AdminController extends Controller
             $user = User::create([
                 'name' => $validated['name'],
                 'password' => Hash::make($validated['password']),
+                'plain_password' => $validated['password'],
                 'role' => 'admin',
             ]);
 
@@ -153,11 +159,11 @@ class AdminController extends Controller
 
             DB::commit();
 
-            // Password tidak lagi tersimpan dalam bentuk terbaca, jadi inilah
-            // satu-satunya kesempatan melihatnya. Kalau terlewat, gunakan Reset.
+            // Password tersimpan terenkripsi dan bisa dilihat Super Admin
+            // di kolom Password halaman Kelola Admin.
             return redirect()
                 ->route('admin.admins.index')
-                ->with('success', "Admin {$user->name} dibuat. Password: {$validated['password']} — catat sekarang, tidak bisa dilihat lagi.");
+                ->with('success', "Admin {$user->name} berhasil dibuat.");
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -227,11 +233,13 @@ class AdminController extends Controller
                 'name' => $validated['name'],
             ]);
 
-            // Hanya hash yang disimpan, dan hanya bila kolomnya diisi.
+            // Hanya diubah bila kolomnya diisi. Salinan terenkripsi ikut
+            // disimpan agar Super Admin bisa melihatnya.
             $passwordDiubah = ! empty($validated['password']);
 
             if ($passwordDiubah) {
-                $admin->password = Hash::make($validated['password']);
+                $admin->password       = Hash::make($validated['password']);
+                $admin->plain_password = $validated['password'];
                 $admin->save();
             }
 
@@ -303,9 +311,8 @@ class AdminController extends Controller
     /**
      * Reset password admin menjadi password acak baru.
      *
-     * Ini satu-satunya cara mengganti password admin: update() sengaja
-     * tidak menyentuh kolom password, dan sejak password mentah berhenti
-     * disimpan, tidak ada lagi tempat untuk mengintip password lama.
+     * Password baru disimpan sebagai hash (untuk login) dan salinan
+     * terenkripsi (untuk dilihat Super Admin di kolom Password).
      */
     public function resetPassword($id)
     {
@@ -323,9 +330,8 @@ class AdminController extends Controller
 
         DB::beginTransaction();
         try {
-            // Hanya hash yang disimpan. Nilai aslinya ditampilkan sekali
-            // lewat flash di bawah, lalu hilang dari sistem selamanya.
-            $admin->password = Hash::make($passwordBaru);
+            $admin->password       = Hash::make($passwordBaru);
+            $admin->plain_password = $passwordBaru;
             $admin->save();
 
             // Password TIDAK ikut dicatat di log — log dibaca banyak orang.

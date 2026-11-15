@@ -175,9 +175,15 @@ function PasswordReveal({ value }) {
     const [show, setShow] = useState(false);
     return (
         <div className="flex items-center gap-1.5">
-            <span className={`font-mono text-xs ${show ? 'text-stone-700 dark:text-stone-300' : 'text-stone-400 dark:text-stone-500'}`}>
-                {show ? (value || '-') : '••••••••'}
-            </span>
+            {!value ? (
+                <span className="text-[11px] italic text-stone-400 dark:text-stone-500" title="Password santri ini belum tersimpan. Tekan Edit lalu isi password baru agar bisa dilihat.">
+                    Belum tersimpan
+                </span>
+            ) : (
+                <span className={`font-mono text-xs ${show ? 'text-stone-700 dark:text-stone-300' : 'text-stone-400 dark:text-stone-500'}`}>
+                    {show ? value : '••••••••'}
+                </span>
+            )}
             {value && (
                 <button onClick={() => setShow((s) => !s)} className="text-stone-400 hover:text-claude-500 dark:hover:text-claude-400 transition">
                     {show ? <EyeOffIcon className="w-3.5 h-3.5" /> : <EyeIcon className="w-3.5 h-3.5" />}
