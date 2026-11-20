@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Keuangan\MasterData\Kelas;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class KelasController extends Controller
@@ -137,34 +138,46 @@ class KelasController extends Controller
     {
         $kelas = Kelas::findOrFail($id);
 
-        // Tabel kelas kini dipakai bersama raport: santri, riwayat kelas,
-        // presensi, dan setoran semuanya menunjuk ke sini.
-        //
-        // Yang tetap DITOLAK hanya kelas yang masih berisi santri. Menghapusnya
-        // akan membuat santri itu kehilangan kelas tanpa ada yang sadar —
-        // mereka harus dipindahkan dulu secara sengaja.
-        $jumlahSantri = $kelas->santris()->count();
+        /*
+         * Di database, menghapus kelas TIDAK berhenti di baris kelas saja:
+         *
+         *   santris.kelas_id               ON DELETE CASCADE  → santri ikut terhapus
+         *   santri_kelas_history.kelas_id  ON DELETE CASCADE  → riwayat kelas ikut terhapus
+         *   setorans.kelas_id              ON DELETE SET NULL → setoran kehilangan kelasnya
+         *
+         * Jadi pemeriksaannya wajib lengkap di sini. Termasuk santri yang
+         * sudah DIARSIPKAN: santris() biasa tidak menghitung mereka (global
+         * scope SoftDeletes), padahal CASCADE tetap menghapusnya permanen —
+         * beserta rujukan tagihan dan kwitansinya.
+         */
+        $jumlahSantri = $kelas->santris()->withTrashed()->count();
 
         if ($jumlahSantri > 0) {
             return redirect()->back()->withErrors([
-                'delete_error' => "Gagal menghapus! Kelas ini masih berisi {$jumlahSantri} santri/siswa. Pindahkan mereka ke kelas lain terlebih dahulu.",
+                'delete_error' => "Gagal menghapus! Kelas ini masih tercatat untuk {$jumlahSantri} santri/siswa (termasuk yang sudah diarsipkan). Pindahkan mereka ke kelas lain, atau nonaktifkan kelas ini saja.",
             ]);
         }
 
-        // Wali kelas BUKAN lagi alasan menolak. Penugasannya tersimpan di
-        // kolom guru_id baris ini sendiri, jadi ikut hilang bersama kelasnya
-        // — tidak ada data lain yang tertinggal. Versi sebelumnya menolak di
-        // sini, sehingga hampir semua kelas tidak pernah bisa dihapus.
+        $punyaRiwayat = DB::table('santri_kelas_history')->where('kelas_id', $kelas->id)->exists()
+            || DB::table('setorans')->where('kelas_id', $kelas->id)->exists();
+
+        if ($punyaRiwayat) {
+            return redirect()->back()->withErrors([
+                'delete_error' => 'Kelas ini sudah punya riwayat kelas atau setoran, jadi tidak bisa dihapus. Nonaktifkan saja: klik Edit, lalu hilangkan centang "Kelas Sedang Aktif".',
+            ]);
+        }
+
+        // Sampai di sini kelasnya benar-benar kosong dan belum pernah
+        // dipakai — biasanya kelas salah input. Wali kelas tidak jadi
+        // alasan menolak: penugasannya tersimpan di baris ini sendiri.
         try {
             $kelas->delete();
         } catch (QueryException $e) {
-            // Kelas kosong tapi pernah dipakai: setoran, presensi, atau riwayat
-            // kelas lama masih menunjuk ke sini dan database menolak
-            // menghapusnya. Itu memang benar — riwayat hafalan tidak boleh
-            // kehilangan kelasnya. Jalan keluarnya menonaktifkan, bukan hapus.
+            // Jaring pengaman bila kelak ada tabel lain yang menunjuk ke
+            // kelas dengan aturan RESTRICT.
             if ($e->getCode() === '23000') {
                 return redirect()->back()->withErrors([
-                    'delete_error' => 'Kelas ini sudah punya riwayat setoran, presensi, atau riwayat kelas, jadi tidak bisa dihapus. Nonaktifkan saja: klik Edit, lalu hilangkan centang "Kelas Sedang Aktif".',
+                    'delete_error' => 'Kelas ini masih dipakai data lain, jadi tidak bisa dihapus. Nonaktifkan saja: klik Edit, lalu hilangkan centang "Kelas Sedang Aktif".',
                 ]);
             }
 
