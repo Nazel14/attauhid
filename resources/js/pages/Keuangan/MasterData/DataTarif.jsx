@@ -97,10 +97,10 @@ export default function DataTarif({ tarif, dimensions, filters }) {
     // Ringkasan realtime. Semantik AND/OR mudah disalahpahami dan ini
     // dipakai untuk menagih orang, jadi selalu ditampilkan.
     const ringkasanTarget = () => {
-        if (data.is_donation) return 'Donasi (tanpa target santri)';
+        if (data.is_donation) return 'Donasi (tanpa target siswa)';
 
         const terisi = data.targets.filter((t) => t.values.length > 0);
-        if (terisi.length === 0) return 'Semua santri aktif';
+        if (terisi.length === 0) return 'Semua siswa aktif';
 
         return terisi
             .map((t) => `${dimensions[t.type]?.label ?? t.type}: ${t.values.map((v) => labelNilai(t.type, v)).join(', ')}`)
@@ -160,7 +160,7 @@ export default function DataTarif({ tarif, dimensions, filters }) {
         'Semester':     'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20',
         'Tahunan':      'bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-500/20',
         'Sekali Bayar': 'bg-purple-50 text-purple-700 ring-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:ring-purple-500/20',
-    }[p] || 'bg-stone-100 text-stone-600 ring-stone-200 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500');
+    }[p] || 'bg-cream-200 text-stone-600 ring-cream-300 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500');
 
     const adaAksi = can('master.tarif.edit') || can('master.tarif.hapus');
 
@@ -168,10 +168,10 @@ export default function DataTarif({ tarif, dimensions, filters }) {
     const thPlain = 'px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400';
 
     // Tinggi & radius seragam untuk semua kontrol filter.
-    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-600';
+    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600 dark:[color-scheme:dark]';
     const selectCls = `${fieldCls} cursor-pointer appearance-none pr-9`;
     // appearance-none + chevron sendiri: panah bawaan browser tidak mengikuti tema.
-    const selectModal = 'mt-1.5 block w-full cursor-pointer appearance-none rounded-xl border-0 bg-white py-2.5 pl-4 pr-10 text-sm text-stone-800 shadow-sm ring-1 ring-stone-200 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-700';
+    const selectModal = 'mt-1.5 block w-full cursor-pointer appearance-none rounded-xl border-0 bg-white py-2.5 pl-4 pr-10 text-sm text-stone-800 shadow-sm ring-1 ring-cream-300 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600 dark:[color-scheme:dark]';
 
     const ChevronBawah = ({ modal = false }) => (
         <svg className={`pointer-events-none absolute ${modal ? 'right-3.5 top-[calc(50%+3px)]' : 'right-3 top-1/2'} h-4 w-4 -translate-y-1/2 text-stone-400 dark:text-stone-500`}
@@ -194,7 +194,7 @@ export default function DataTarif({ tarif, dimensions, filters }) {
         <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${
             item.is_donation
                 ? 'bg-teal-50 text-teal-700 ring-teal-200 dark:bg-teal-500/10 dark:text-teal-300 dark:ring-teal-500/20'
-                : 'bg-stone-100 text-stone-600 ring-stone-200 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500'
+                : 'bg-cream-200 text-stone-600 ring-cream-300 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500'
         }`}>
             {item.target_summary}
         </span>
@@ -216,7 +216,7 @@ export default function DataTarif({ tarif, dimensions, filters }) {
 
             {/* Hanya mobile: di desktop sidebar sudah menyediakan navigasi. */}
             <Link href={route('keuangan.dashboard')}
-                className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-stone-600 ring-1 ring-stone-200 transition hover:bg-cream-100 active:scale-95 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600 lg:hidden">
+                className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-stone-600 ring-1 ring-cream-300 transition hover:bg-cream-100 active:scale-95 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600 lg:hidden">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
@@ -228,7 +228,7 @@ export default function DataTarif({ tarif, dimensions, filters }) {
                 <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Kelola jenis tagihan dan nominalnya.</p>
             </div>
 
-            <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+            <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                 <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
                         <div className="relative sm:max-w-xs sm:flex-1">
@@ -282,7 +282,7 @@ export default function DataTarif({ tarif, dimensions, filters }) {
                 {/* ===== KARTU — MOBILE & TABLET ===== */}
                 <div className="space-y-2.5 lg:hidden">
                     {tarif.data.length > 0 ? tarif.data.map((item) => (
-                        <div key={item.id} className="overflow-hidden rounded-2xl ring-1 ring-stone-200 dark:ring-coal-600">
+                        <div key={item.id} className="overflow-hidden rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600">
                             <div className="p-4">
                                 <div className="flex items-start justify-between gap-3">
                                     <p className="min-w-0 truncate text-sm font-semibold text-stone-800 dark:text-cream-100">{item.billing_name}</p>
@@ -296,10 +296,10 @@ export default function DataTarif({ tarif, dimensions, filters }) {
                             </div>
 
                             {adaAksi && (
-                                <div className="grid grid-cols-2 border-t border-stone-100 dark:border-coal-600">
+                                <div className="grid grid-cols-2 border-t border-cream-200 dark:border-coal-600">
                                     {can('master.tarif.edit') && (
                                         <button onClick={() => openEditModal(item)}
-                                            className={`flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-claude-600 transition hover:bg-claude-500/10 dark:text-claude-300 ${can('master.tarif.hapus') ? 'border-r border-stone-100 dark:border-coal-600' : 'col-span-2'}`}>
+                                            className={`flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-claude-600 transition hover:bg-claude-500/10 dark:text-claude-300 ${can('master.tarif.hapus') ? 'border-r border-cream-200 dark:border-coal-600' : 'col-span-2'}`}>
                                             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
@@ -319,14 +319,14 @@ export default function DataTarif({ tarif, dimensions, filters }) {
                             )}
                         </div>
                     )) : (
-                        <div className="rounded-2xl py-14 text-center ring-1 ring-stone-200 dark:ring-coal-600">{kosong}</div>
+                        <div className="rounded-2xl py-14 text-center ring-1 ring-cream-300 dark:ring-coal-600">{kosong}</div>
                     )}
                 </div>
 
                 {/* ===== TABEL — DESKTOP ===== */}
-                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 lg:block">
-                    <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
-                        <thead className="bg-stone-50 dark:bg-coal-800">
+                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 lg:block">
+                    <table className="min-w-full divide-y divide-cream-300 dark:divide-coal-600">
+                        <thead className="bg-cream-100 dark:bg-coal-600/40">
                             <tr>
                                 <th onClick={() => handleSort('billing_name')} className={thCls}><div className="flex items-center">Nama Tarif <SortIcon field="billing_name" /></div></th>
                                 <th onClick={() => handleSort('period')} className={thCls}><div className="flex items-center">Periode <SortIcon field="period" /></div></th>
@@ -337,7 +337,7 @@ export default function DataTarif({ tarif, dimensions, filters }) {
                                 {adaAksi && <th className="px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Aksi</th>}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                        <tbody className="divide-y divide-cream-200 bg-white dark:divide-coal-600 dark:bg-coal-700">
                             {tarif.data.length > 0 ? tarif.data.map((item) => (
                                 <tr key={item.id} className="transition hover:bg-cream-50 dark:hover:bg-coal-600/40">
                                     <td className="px-5 py-4 text-sm font-semibold text-stone-800 dark:text-cream-100">{item.billing_name}</td>
@@ -382,7 +382,7 @@ export default function DataTarif({ tarif, dimensions, filters }) {
                             <button key={i} onClick={() => link.url && router.get(link.url, {}, { preserveScroll: true })} disabled={!link.url}
                                 className={`rounded-lg px-3 py-1.5 text-sm transition ${
                                     link.active ? 'bg-claude-500 font-medium text-white'
-                                        : 'text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
+                                        : 'text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
                                 }`}
                                 dangerouslySetInnerHTML={{ __html: link.label }} />
                         ))}
@@ -428,15 +428,15 @@ export default function DataTarif({ tarif, dimensions, filters }) {
                         </div>
 
                         {/* ===== TARIF DONASI ===== */}
-                        <div className="rounded-xl bg-stone-50 p-3.5 ring-1 ring-stone-200 dark:bg-coal-800 dark:ring-coal-600">
+                        <div className="rounded-xl bg-cream-100 p-3.5 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600">
                             <label className="flex cursor-pointer items-start gap-2.5">
                                 <input type="checkbox" checked={data.is_donation}
                                     onChange={(e) => setData('is_donation', e.target.checked)}
-                                    className="mt-0.5 h-4 w-4 rounded border-stone-300 text-claude-500 focus:ring-claude-500 dark:border-coal-600 dark:bg-coal-900" />
+                                    className="mt-0.5 h-4 w-4 rounded border-cream-400 text-claude-500 focus:ring-claude-500 dark:border-coal-600 dark:bg-coal-600/40" />
                                 <span>
                                     <span className="text-sm font-medium text-stone-700 dark:text-stone-200">Tarif donasi / infaq</span>
                                     <span className="mt-0.5 block text-xs text-stone-400">
-                                        Tidak menargetkan santri manapun. Penyumbang ditambahkan manual, auto-generate dinonaktifkan.
+                                        Tidak menargetkan siswa mana pun. Penyumbang ditambahkan manual, auto-generate dinonaktifkan.
                                     </span>
                                 </span>
                             </label>
@@ -452,7 +452,7 @@ export default function DataTarif({ tarif, dimensions, filters }) {
 
                                 <div className="mt-2.5 space-y-2.5">
                                     {data.targets.map((t, idx) => (
-                                        <div key={t.type} className="rounded-xl bg-white p-3.5 ring-1 ring-stone-200 dark:bg-coal-900 dark:ring-coal-700">
+                                        <div key={t.type} className="rounded-xl bg-white p-3.5 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600">
                                             <div className="flex items-center justify-between gap-2">
                                                 <span className="text-xs font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
                                                     {dimensions[t.type]?.label ?? t.type}
@@ -476,7 +476,7 @@ export default function DataTarif({ tarif, dimensions, filters }) {
                                                             className={`rounded-lg px-2.5 py-1.5 text-xs font-medium ring-1 transition ${
                                                                 aktif
                                                                     ? 'bg-claude-500 text-white ring-claude-500'
-                                                                    : 'bg-white text-stone-600 ring-stone-200 hover:bg-cream-100 dark:bg-coal-800 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-700'
+                                                                    : 'bg-white text-stone-600 ring-cream-300 hover:bg-cream-100 dark:bg-coal-600/40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
                                                             }`}>
                                                             {o.label}
                                                         </button>
@@ -517,10 +517,10 @@ export default function DataTarif({ tarif, dimensions, filters }) {
                             </div>
                         )}
 
-                        <div className="border-t border-stone-100 pt-4 dark:border-coal-600">
+                        <div className="border-t border-cream-200 pt-4 dark:border-coal-600">
                             <label className="flex cursor-pointer items-center gap-2">
                                 <input type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)}
-                                    className="h-4 w-4 rounded border-stone-300 text-claude-500 focus:ring-claude-500 dark:border-coal-600 dark:bg-coal-900" />
+                                    className="h-4 w-4 rounded border-cream-400 text-claude-500 focus:ring-claude-500 dark:border-coal-600 dark:bg-coal-600/40" />
                                 <span className="text-sm text-stone-600 dark:text-stone-300">Status Tarif Aktif</span>
                             </label>
                             <p className="mt-2 text-xs text-stone-400">Tarif non-aktif tidak muncul saat membuat gelombang tagihan baru.</p>

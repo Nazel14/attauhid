@@ -88,7 +88,7 @@ function Modal({ open, onClose, title, children, maxWidth = 'sm:max-w-md' }) {
             <div className="absolute inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm" onClick={onClose} />
             <div className={`relative w-full bg-white dark:bg-coal-800 rounded-t-3xl sm:rounded-3xl border border-stone-200 dark:border-coal-700 shadow-2xl overflow-hidden animate-[slideUp_.25s_ease-out] ${maxWidth}`}>
                 <div className="w-10 h-1 bg-stone-300 dark:bg-coal-600 rounded-full mx-auto mt-3 sm:hidden" />
-                <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-100 dark:border-coal-700">
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-cream-200 dark:border-coal-600">
                     <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100">{title}</h3>
                     <button onClick={onClose} className="w-7 h-7 rounded-full bg-stone-100 dark:bg-coal-700 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-coal-600 transition">
                         <XIcon className="w-4 h-4" />
@@ -185,12 +185,15 @@ export default function Index({ sesis = [] }) {
             <Head title="Kelola Sesi Presensi" />
             <Toast notif={notif} onClose={() => setNotif(null)} duration={NOTIF_DURATION} />
 
-            <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 py-6">
-                {/* Kembali — mobile saja */}
-                                <Link href={route('admin.santris.index')}
-                                    className="mb-4 sm:hidden inline-flex items-center gap-1.5 rounded-xl border border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-stone-100 dark:hover:bg-coal-700 active:scale-95">
-                                    <ArrowLeftIcon className="w-4 h-4" /> Kembali ke Daftar Kelas
-                                </Link>
+            <div>
+                {/* Kembali — mobile saja. Tujuannya Dashboard, sama seperti
+                    halaman lain di modul admin. Sebelumnya menunjuk
+                    admin.santris.index tapi bertuliskan "Daftar Kelas" —
+                    rute, tulisan, dan halamannya tiga-tiganya tidak cocok. */}
+                <Link href={route('admin.dashboard')}
+                    className="mb-4 inline-flex items-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-semibold text-stone-600 shadow-sm transition hover:bg-cream-100 active:scale-95 sm:hidden dark:border-coal-600 dark:bg-coal-700 dark:text-stone-300 dark:hover:bg-coal-600">
+                    <ArrowLeftIcon className="w-4 h-4" /> Kembali ke Dashboard
+                </Link>
 
                 {/* ===== HEADER ===== */}
                 <div className="flex items-center gap-3 mb-4">
@@ -199,7 +202,7 @@ export default function Index({ sesis = [] }) {
                     </div>
                     <div className="flex-1 min-w-0">
                         <h1 className="text-lg sm:text-xl font-bold text-stone-900 dark:text-stone-100">Kelola Sesi Presensi</h1>
-                        <p className="text-[11px] text-stone-500 dark:text-stone-500 mt-0.5">Atur sesi yang tersedia untuk input presensi santri</p>
+                        <p className="text-[11px] text-stone-500 dark:text-stone-500 mt-0.5">Atur sesi yang tersedia untuk input presensi siswa</p>
                     </div>
                     <button onClick={openCreate}
                         className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-claude-600 hover:bg-claude-500 shadow-lg shadow-claude-500/25 transition active:scale-95">
@@ -225,9 +228,9 @@ export default function Index({ sesis = [] }) {
                             <p className="text-xs text-stone-400 dark:text-stone-600 mt-1.5">Tap tombol "Tambah Sesi" di atas</p>
                         </div>
                     ) : sesis.map((s) => (
-                        <div key={s.id} className={`rounded-2xl border overflow-hidden transition-all ${s.is_active ? 'border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800' : 'border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 opacity-60'}`}>
+                        <div key={s.id} className={`rounded-2xl border border-cream-300 bg-white overflow-hidden transition-all dark:border-coal-600 dark:bg-coal-700 ${s.is_active ? '' : 'opacity-60'}`}>
                             <div className="flex items-center gap-3 px-4 py-3">
-                                <div className={`w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center font-black text-base ${s.is_active ? 'bg-claude-500/10 border border-claude-500/25 text-claude-600 dark:text-claude-400' : 'bg-stone-100 dark:bg-coal-700 border border-stone-200 dark:border-coal-600 text-stone-400 dark:text-stone-600'}`}>
+                                <div className={`w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center font-black text-base ${s.is_active ? 'bg-claude-500/10 border border-claude-500/25 text-claude-600 dark:text-claude-400' : 'bg-cream-200 dark:bg-coal-600 border border-cream-300 dark:border-coal-500 text-stone-400 dark:text-stone-600'}`}>
                                     {s.urutan}
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -237,16 +240,16 @@ export default function Index({ sesis = [] }) {
                                 {s.is_active ? (
                                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 bg-emerald-50 text-emerald-700 border-emerald-200/70 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">Aktif</span>
                                 ) : (
-                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 bg-stone-100 text-stone-500 border-stone-200 dark:bg-coal-700 dark:text-stone-500 dark:border-coal-600">Nonaktif</span>
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 bg-cream-200 text-stone-500 border-cream-300 dark:bg-coal-600 dark:text-stone-500 dark:border-coal-500">Nonaktif</span>
                                 )}
                             </div>
-                            <div className="grid grid-cols-3 border-t border-stone-100 dark:border-coal-700">
+                            <div className="grid grid-cols-3 border-t border-cream-200 dark:border-coal-600">
                                 <button onClick={() => toggleActive(s)}
-                                    className={`py-2.5 text-xs font-semibold text-center border-r border-stone-100 dark:border-coal-700 transition ${s.is_active ? 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40' : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'}`}>
+                                    className={`py-2.5 text-xs font-semibold text-center border-r border-cream-200 dark:border-coal-600 transition ${s.is_active ? 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40' : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'}`}>
                                     {s.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                                 </button>
                                 <button onClick={() => openEdit(s)}
-                                    className="py-2.5 text-xs font-semibold text-claude-600 dark:text-claude-400 hover:bg-claude-500/10 transition border-r border-stone-100 dark:border-coal-700 flex items-center justify-center gap-1.5">
+                                    className="py-2.5 text-xs font-semibold text-claude-600 dark:text-claude-400 hover:bg-claude-500/10 transition border-r border-cream-200 dark:border-coal-600 flex items-center justify-center gap-1.5">
                                     <EditIcon className="w-3.5 h-3.5" /> Edit
                                 </button>
                                 <button onClick={() => deleteSesi(s)}
@@ -279,7 +282,7 @@ export default function Index({ sesis = [] }) {
                             ) : sesis.map((s) => (
                                 <tr key={s.id} className={`transition-colors hover:bg-stone-50 dark:hover:bg-coal-700/30 ${!s.is_active ? 'opacity-60' : ''}`}>
                                     <td className="px-5 py-3.5">
-                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm ${s.is_active ? 'bg-claude-500/10 border border-claude-500/25 text-claude-600 dark:text-claude-400' : 'bg-stone-100 dark:bg-coal-700 border border-stone-200 dark:border-coal-600 text-stone-400 dark:text-stone-600'}`}>
+                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm ${s.is_active ? 'bg-claude-500/10 border border-claude-500/25 text-claude-600 dark:text-claude-400' : 'bg-cream-200 dark:bg-coal-600 border border-cream-300 dark:border-coal-500 text-stone-400 dark:text-stone-600'}`}>
                                             {s.urutan}
                                         </div>
                                     </td>

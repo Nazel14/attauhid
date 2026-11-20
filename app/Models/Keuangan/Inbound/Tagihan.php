@@ -49,9 +49,15 @@ class Tagihan extends Model
         return $this->belongsTo(InvoiceHeader::class, 'invoice_header_id');
     }
 
+    /**
+     * withTrashed: siswa yang sudah diarsipkan tetap terbaca namanya di
+     * tagihan lama. Tanpa ini, relasinya mengembalikan null dan tagihan
+     * bulan-bulan sebelumnya kehilangan pemiliknya di laporan — tanpa
+     * pesan error apa pun, hanya kolom yang mendadak kosong.
+     */
     public function siswa(): BelongsTo
     {
-        return $this->belongsTo(Siswa::class, 'student_id');
+        return $this->belongsTo(Siswa::class, 'student_id')->withTrashed();
     }
 
     public function items(): HasMany

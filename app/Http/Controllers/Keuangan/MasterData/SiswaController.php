@@ -141,31 +141,46 @@ class SiswaController extends Controller
         return redirect()->back()->with('success', 'Data siswa berhasil diperbarui.');
     }
 
-        public function destroy(Siswa $siswa)
+    /**
+     * Dua jalur, dipilih otomatis dari ada-tidaknya jejak.
+     *
+     * Punya jejak  → ARSIP (soft delete). Baris santris tetap ada, sehingga
+     *                tagihan, kwitansi, dan rapor lama tetap punya pemilik.
+     *                Bergantung pada withTrashed() di TUJUH relasi yang
+     *                menunjuk balik ke Santri/Siswa — kalau salah satunya
+     *                terlewat, nama hilang di laporan TANPA pesan error.
+     *
+     * Tanpa jejak  → HAPUS PERMANEN. Ini jalur salah input; tidak ada apa pun
+     *                yang akan kehilangan rujukan.
+     */
+    public function destroy(Siswa $siswa)
     {
-        // Tombol ini untuk membuang SALAH INPUT, bukan untuk meluluskan atau
-        // mengeluarkan santri. Santri yang benar-benar pernah bersekolah di
-        // sini selalu meninggalkan jejak, dan jejak itu tidak boleh kehilangan
-        // pemiliknya — tagihan tanpa siswa merusak laporan tunggakan, setoran
-        // tanpa santri merusak rapor.
-        $jejak = [];
+        $punyaRiwayat = $siswa->tagihan()->exists()
+            || $siswa->pembayaran()->exists()
+            || $siswa->setorans()->exists()
+            || $siswa->presensis()->exists();
 
-        if ($siswa->tagihan()->exists())    $jejak[] = 'tagihan';
-        if ($siswa->pembayaran()->exists()) $jejak[] = 'pembayaran';
-        if ($siswa->setorans()->exists())   $jejak[] = 'setoran';
-        if ($siswa->presensis()->exists())  $jejak[] = 'presensi';
+        DB::transaction(function () use ($siswa, $punyaRiwayat) {
+            if ($punyaRiwayat) {
+                // status ikut diubah, bukan hanya deleted_at: sebagian laporan
+                // keuangan dibangun dengan query mentah yang tidak lewat
+                // Eloquent, jadi tidak tersaring global scope SoftDeletes.
+                // Tanpa ini, siswa yang sudah diarsipkan masih bisa ikut
+                // auto-generate tagihan bulan berikutnya.
+                $siswa->update(['status' => 'keluar']);
 
-        if ($jejak) {
-            return redirect()->back()->withErrors([
-                'delete_error' => 'Gagal! Siswa ini sudah punya riwayat '
-                    . implode(', ', $jejak) . '. Untuk siswa yang sudah tidak '
-                    . 'bersekolah di sini, ubah statusnya menjadi "lulus" atau '
-                    . '"keluar" lewat tombol Edit — datanya tetap tersimpan dan '
-                    . 'laporan tahun sebelumnya tidak rusak.',
-            ]);
-        }
+                // Perannya dilucuti supaya tidak bisa login lagi, tapi baris
+                // users-nya tidak dihapus — kolom created_by di tagihan lama
+                // menunjuk ke sana.
+                if ($siswa->user) {
+                    $siswa->user->syncRoles([]);
+                }
 
-        DB::transaction(function () use ($siswa) {
+                $siswa->delete();
+
+                return;
+            }
+
             // Baris turunan milik santri ini sendiri, tidak dirujuk modul lain.
             $siswa->kelasHistories()->delete();
             $siswa->targetHafalans()->delete();
@@ -178,7 +193,9 @@ class SiswaController extends Controller
             $siswa->forceDelete();
         });
 
-        return redirect()->back()->with('success', 'Data siswa berhasil dihapus.');
+        return redirect()->back()->with('success', $punyaRiwayat
+            ? 'Siswa diarsipkan. Tagihan, pembayaran, dan kwitansinya tetap tersimpan.'
+            : 'Data siswa berhasil dihapus.');
     }
 
     /* ================= Helper ================= */

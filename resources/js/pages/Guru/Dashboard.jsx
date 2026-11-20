@@ -21,7 +21,11 @@ const TrophyIcon  = (p) => <I {...p} d={<path d="M8 21h8m-4-4v4m6-17H6v4a6 6 0 0
 /* ============================================================
  * KONSTANTA
  * ============================================================ */
-const METODE_COLORS = { quran: '#D97757', iqro: '#D4A24E', aisar: '#7C9885' };
+// Recharts menerima warna sebagai NILAI JavaScript (prop fill/stroke), bukan
+// nama kelas. Tailwind memindai teks sumber dan tidak pernah melihat nilai
+// ini, jadi palet di tailwind.config.js TIDAK berlaku di sini — angkanya
+// harus ditulis manual. Tiga warna diambil dari logo At-Tauhid.
+const METODE_COLORS = { quran: '#7EB842', iqro: '#FA902C', aisar: '#36A7DF' };
 const STATUS = {
     hadir: { dot: 'bg-emerald-500', label: 'Hadir', text: 'text-emerald-600' },
     sakit: { dot: 'bg-orange-500', label: 'Sakit', text: 'text-orange-600' },
@@ -31,7 +35,7 @@ const STATUS = {
 const METODE_BADGE = {
     quran: 'bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 ring-claude-200 dark:ring-claude-500/20',
     iqro:  'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-amber-100 dark:ring-amber-500/20',
-    aisar: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-500/20',
+    aisar: 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 ring-sky-100 dark:ring-sky-500/20',
 };
 
 const getProgress = (s) => Number(s.progress_persen ?? s.progress ?? s.persentase ?? 0);
@@ -47,12 +51,12 @@ const formatTanggalID = (str) => {
  * ============================================================ */
 function StatCard({ icon, label, value, sub, tone = 'stone' }) {
     const toneMap = {
-        stone: 'bg-stone-100 dark:bg-coal-700 text-stone-500 dark:text-stone-400',
+        stone: 'bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400',
         claude: 'bg-claude-100 dark:bg-claude-500/15 text-claude-600 dark:text-claude-400',
         emerald: 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
     };
     return (
-        <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-4 flex items-center gap-3">
+        <div className="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl p-4 flex items-center gap-3">
             <span className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${toneMap[tone]}`}>{icon}</span>
             <div className="min-w-0">
                 <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">{label}</p>
@@ -82,7 +86,7 @@ function MiniStat({ tone, value, label }) {
 }
 
 function MethodBadge({ meta }) {
-    if (!meta) return <span className="text-stone-300 dark:text-coal-600 text-[10px]">–</span>;
+    if (!meta) return <span className="text-stone-300 dark:text-coal-500 text-[10px]">–</span>;
     return (
         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ring-1 text-[10px] font-semibold whitespace-nowrap ${METODE_BADGE[meta.tone]}`}>
             {meta.primary}
@@ -101,7 +105,7 @@ function ProgressBar({ value, color = 'bg-claude-500', dot = null, title }) {
     return (
         <span className="flex items-center gap-1.5 min-w-0" title={title}>
             {dot && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />}
-            <span className="flex-1 h-1 rounded-full bg-stone-200 dark:bg-coal-700 overflow-hidden">
+            <span className="flex-1 h-1 rounded-full bg-cream-300 dark:bg-coal-600 overflow-hidden">
                 <span className={`block h-full rounded-full ${color}`} style={{ width: `${v}%` }} />
             </span>
             <span className="text-[10px] font-semibold text-stone-500 dark:text-stone-400 tabular-nums w-7 text-right">{v}%</span>
@@ -114,7 +118,7 @@ function ProgressBar({ value, color = 'bg-claude-500', dot = null, title }) {
  * ============================================================ */
 export default function Dashboard({ santriList = [], santriSiapNaik = [], santriTamat = [], presensiHariIni = null }) {
     const { auth } = usePage().props;
-    const guruName = auth?.user?.display_name ?? auth?.user?.name ?? 'Ustadz/Ustadzah';
+    const guruName = auth?.user?.display_name ?? auth?.user?.name ?? 'Bapak/Ibu Guru';
 
     const [busyId, setBusyId] = useState(null);
     const sahkanNaik = (s) => {
@@ -126,10 +130,9 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
         });
     };
 
-    /* ---- distribusi metode (client-side dari santriList) ---- */
-   /* ---- distribusi metode (client-side dari santriList) ----
-     * Santri 2-metode (Iqro/Aisar + Al-Qur'an) dihitung di KEDUA metode,
-     * jadi total angka bisa > jumlah santri. */
+    /* ---- distribusi metode (client-side dari santriList) ----
+     * Siswa 2-metode (Iqro/Aisar + Al-Qur'an) dihitung di KEDUA metode,
+     * jadi total angka bisa > jumlah siswa. */
     const metodeData = useMemo(() => {
         let quran = 0, iqro = 0, aisar = 0;
         santriList.forEach((s) => {
@@ -148,7 +151,15 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
         ].filter((d) => d.value > 0);
     }, [santriList]);
 
-    
+    // Jumlah seluruh irisan. Sengaja dipakai sebagai angka di tengah donut,
+    // BUKAN santriList.length — karena siswa dua-metode dihitung dua kali,
+    // kalau tengahnya memakai jumlah siswa maka angka tengah dan jumlah
+    // irisannya tidak cocok dan pembacanya bingung.
+    const totalIrisan = useMemo(
+        () => metodeData.reduce((a, d) => a + d.value, 0),
+        [metodeData]
+    );
+    const adaDuaMetode = totalIrisan > santriList.length;
 
     const presensi = presensiHariIni ?? {
         tanggal: new Date().toISOString().slice(0, 10),
@@ -161,7 +172,7 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
         [santriList]
     );
 
-    // { id: { primary, tone, hasQuran2, progress2 } } — 1 pill gabungan per santri
+    // { id: { primary, tone, hasQuran2, progress2 } } — 1 pill gabungan per siswa
     const metaById = useMemo(() => {
         const map = {};
         santriList.forEach((s) => {
@@ -185,82 +196,86 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
         <GuruAuthenticatedLayout>
             <Head title="Dashboard" />
 
-            <div className="max-w-6xl mx-auto px-3 sm:px-4 py-5">
+            {/* max-w-6xl dipertahankan — dashboard guru sengaja lebih sempit
+                daripada max-w-7xl milik <main> di layout. Padding dan py
+                dibuang karena <main> sudah memberinya; ditulis dua kali,
+                jaraknya berlipat. */}
+            <div className="max-w-6xl mx-auto">
 
                 {/* ===== HEADER ===== */}
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="w-11 h-11 rounded-2xl bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 flex items-center justify-center flex-shrink-0">
+                    <div className="w-11 h-11 rounded-2xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center flex-shrink-0">
                         <DashboardIcon className="w-6 h-6 text-stone-600 dark:text-stone-300" />
                     </div>
                     <div className="min-w-0">
                         <h1 className="text-lg sm:text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">
                             Selamat Datang, {guruName}
                         </h1>
-                        <p className="text-[11px] text-stone-500 mt-0.5">Ringkasan santri ampuan &amp; presensi hari ini</p>
+                        <p className="text-[11px] text-stone-500 mt-0.5">Ringkasan siswa ampuan &amp; presensi hari ini</p>
                     </div>
                 </div>
 
                 {/* ===== USULAN NAIK JILID ===== */}
-{(santriSiapNaik.length > 0 || santriTamat.length > 0) && (
-    <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-5 mb-5">
-        <div className="flex items-center gap-2 mb-4">
-            <span className="w-6 h-6 bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400">
-                <ArrowUpIcon className="w-3.5 h-3.5" />
-            </span>
-            <h2 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">Usulan Naik Jilid</h2>
-            {santriSiapNaik.length > 0 && (
-                <span className="ml-auto text-[11px] font-semibold px-2 py-0.5 rounded-full bg-claude-100 dark:bg-claude-500/15 text-claude-600 dark:text-claude-400">
-                    {santriSiapNaik.length} siap naik
-                </span>
-            )}
-        </div>
+                {(santriSiapNaik.length > 0 || santriTamat.length > 0) && (
+                    <div className="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl p-5 mb-5">
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="w-6 h-6 bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400">
+                                <ArrowUpIcon className="w-3.5 h-3.5" />
+                            </span>
+                            <h2 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">Usulan Naik Jilid</h2>
+                            {santriSiapNaik.length > 0 && (
+                                <span className="ml-auto text-[11px] font-semibold px-2 py-0.5 rounded-full bg-claude-100 dark:bg-claude-500/15 text-claude-600 dark:text-claude-400">
+                                    {santriSiapNaik.length} siap naik
+                                </span>
+                            )}
+                        </div>
 
-        <div className="space-y-2">
-            {santriSiapNaik.map((s) => (
-                <div key={s.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-stone-50 dark:bg-coal-700/40 ring-1 ring-stone-200 dark:ring-coal-700">
-                    <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-stone-800 dark:text-stone-100 truncate">{s.name}</p>
-                        <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                            {s.metode} Jilid {s.jilid_sekarang}
-                            <span className="mx-1 text-claude-500">→</span>
-                            Jilid {s.jilid_berikutnya}
-                            <span className="text-stone-400 dark:text-stone-500"> · {s.halaman_tersetor}/{s.total_halaman} halaman tuntas</span>
-                        </p>
+                        <div className="space-y-2">
+                            {santriSiapNaik.map((s) => (
+                                <div key={s.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-cream-100 dark:bg-coal-600/40 ring-1 ring-cream-300 dark:ring-coal-600">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-semibold text-stone-800 dark:text-stone-100 truncate">{s.name}</p>
+                                        <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                                            {s.metode} Jilid {s.jilid_sekarang}
+                                            <span className="mx-1 text-claude-500">→</span>
+                                            Jilid {s.jilid_berikutnya}
+                                            <span className="text-stone-400 dark:text-stone-500"> · {s.halaman_tersetor}/{s.total_halaman} halaman tuntas</span>
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => sahkanNaik(s)}
+                                        disabled={busyId === s.id}
+                                        className="shrink-0 px-3 py-1.5 rounded-lg bg-claude-500 hover:bg-claude-600 disabled:opacity-50 text-white text-xs font-semibold transition-colors active:scale-95"
+                                    >
+                                        {busyId === s.id ? 'Memproses…' : 'Sahkan'}
+                                    </button>
+                                </div>
+                            ))}
+
+                            {santriTamat.map((s) => (
+                                <div key={`t-${s.id}`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100 dark:ring-emerald-500/20">
+                                    <TrophyIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-semibold text-stone-800 dark:text-stone-100 truncate">{s.name}</p>
+                                        <p className="text-[11px] text-stone-500 dark:text-stone-400">Tuntas seluruh jilid {s.metode} (Jilid {s.jilid})</p>
+                                    </div>
+                                    <span className="shrink-0 text-[10px] font-bold px-2 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">
+                                        Selesai
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {santriSiapNaik.length === 0 && (
+                            <p className="mt-2 text-[11px] text-stone-400">Belum ada siswa yang memenuhi syarat naik jilid.</p>
+                        )}
                     </div>
-                    <button
-                        onClick={() => sahkanNaik(s)}
-                        disabled={busyId === s.id}
-                        className="shrink-0 px-3 py-1.5 rounded-lg bg-claude-500 hover:bg-claude-600 disabled:opacity-50 text-white text-xs font-semibold transition-colors active:scale-95"
-                    >
-                        {busyId === s.id ? 'Memproses…' : 'Sahkan'}
-                    </button>
-                </div>
-            ))}
-
-            {santriTamat.map((s) => (
-                <div key={`t-${s.id}`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100 dark:ring-emerald-500/20">
-                    <TrophyIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-stone-800 dark:text-stone-100 truncate">{s.name}</p>
-                        <p className="text-[11px] text-stone-500 dark:text-stone-400">Tuntas seluruh jilid {s.metode} (Jilid {s.jilid})</p>
-                    </div>
-                    <span className="shrink-0 text-[10px] font-bold px-2 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">
-                        Selesai
-                    </span>
-                </div>
-            ))}
-        </div>
-
-        {santriSiapNaik.length === 0 && (
-            <p className="mt-2 text-[11px] text-stone-400">Belum ada santri yang memenuhi syarat naik jilid.</p>
-        )}
-    </div>
-)}
+                )}
 
                 {/* ===== STAT CARDS ===== */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-                    <StatCard tone="claude" icon={<UsersIcon className="w-5 h-5" />} label="Total Santri" value={santriList.length} />
-                    <StatCard tone="emerald" icon={<CheckIcon className="w-5 h-5" />} label="Hadir Hari Ini" value={presensi.summary.hadir} sub={`dari ${santriList.length} santri`} />
+                    <StatCard tone="claude" icon={<UsersIcon className="w-5 h-5" />} label="Total Siswa" value={santriList.length} />
+                    <StatCard tone="emerald" icon={<CheckIcon className="w-5 h-5" />} label="Hadir Hari Ini" value={presensi.summary.hadir} sub={`dari ${santriList.length} siswa`} />
                     <StatCard tone="stone" icon={<BookIcon className="w-5 h-5" />} label="Setoran Hari Ini" value={totalSetoran} sub="total setoran" />
                 </div>
 
@@ -268,9 +283,9 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
                     {/* ---- DONUT METODE ---- */}
-                    <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-5">
+                    <div className="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl p-5">
                         <div className="flex items-center gap-2 mb-4">
-                            <span className="w-6 h-6 bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400">
+                            <span className="w-6 h-6 bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400">
                                 <ChartIcon className="w-3.5 h-3.5" />
                             </span>
                             <h2 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">Distribusi Metode</h2>
@@ -284,15 +299,18 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
                                             <Pie data={metodeData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={52} outerRadius={72} paddingAngle={3} stroke="none">
                                                 {metodeData.map((d) => <Cell key={d.key} fill={d.color} />)}
                                             </Pie>
+                                            {/* Tooltip Recharts digambar di luar pohon Tailwind, jadi
+                                                warnanya tidak bisa ikut kelas dark:. Dibiarkan terang
+                                                dengan garis netral supaya terbaca di kedua mode. */}
                                             <Tooltip
-                                                contentStyle={{ borderRadius: 12, border: '1px solid #e7e5e4', fontSize: 12, padding: '6px 10px' }}
-                                                formatter={(v, n) => [`${v} santri`, n]}
+                                                contentStyle={{ borderRadius: 12, border: '1px solid #E1E4D8', fontSize: 12, padding: '6px 10px', color: '#2B2F28' }}
+                                                formatter={(v, n) => [`${v} target`, n]}
                                             />
                                         </PieChart>
                                     </ResponsiveContainer>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                        <span className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100">{santriList.length}</span>
-                                        <span className="text-[10px] text-stone-400 -mt-0.5">Santri</span>
+                                        <span className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100">{totalIrisan}</span>
+                                        <span className="text-[10px] text-stone-400 -mt-0.5">Target</span>
                                     </div>
                                 </div>
                                 <div className="mt-3 space-y-2">
@@ -302,25 +320,31 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
                                                 <span className="w-2.5 h-2.5 rounded-full" style={{ background: d.color }} />
                                                 {d.name}
                                             </span>
-                                           <span className="font-bold text-stone-800 dark:text-stone-200">
+                                            <span className="font-bold text-stone-800 dark:text-stone-200">
                                                 {d.value}
                                                 <span className="text-stone-400 font-normal ml-1">
-                                                    ({Math.round((d.value / metodeData.reduce((a, x) => a + x.value, 0)) * 100)}%)
+                                                    ({Math.round((d.value / totalIrisan) * 100)}%)
                                                 </span>
                                             </span>
                                         </div>
                                     ))}
                                 </div>
+                                {adaDuaMetode && (
+                                    <p className="mt-3 text-[10px] leading-relaxed text-stone-400">
+                                        {santriList.length} siswa, {totalIrisan} target — sebagian siswa
+                                        mengambil dua metode sekaligus, jadi dihitung di dua irisan.
+                                    </p>
+                                )}
                             </>
                         ) : (
-                            <div className="h-44 flex items-center justify-center text-xs text-stone-400">Belum ada data santri</div>
+                            <div className="h-44 flex items-center justify-center text-xs text-stone-400">Belum ada data siswa</div>
                         )}
                     </div>
 
                     {/* ---- PRESENSI HARI INI ---- */}
-                    <div className="lg:col-span-2 bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-3.5 sm:p-5">
+                    <div className="lg:col-span-2 bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl p-3.5 sm:p-5">
                         <div className="flex items-center gap-2 mb-4">
-                            <span className="w-6 h-6 bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400">
+                            <span className="w-6 h-6 bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400">
                                 <CheckIcon className="w-3.5 h-3.5" />
                             </span>
                             <h2 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">
@@ -345,7 +369,7 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
                                 </span>
                             ))}
                             <span className="flex items-center gap-1.5">
-                                <span className="w-4 h-4 rounded bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 flex items-center justify-center text-stone-500 dark:text-stone-400">
+                                <span className="w-4 h-4 rounded bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center text-stone-500 dark:text-stone-400">
                                     <BookIcon className="w-2.5 h-2.5" />
                                 </span>
                                 Setoran
@@ -359,22 +383,22 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
                                     const st = STATUS[(r.status || '').toLowerCase()] ?? null;
                                     const pr = Math.min(progressById[r.id] ?? 0, 100);
                                     return (
-                                        <div key={r.id ?? i} className="rounded-xl ring-1 ring-stone-200 dark:ring-coal-700 p-3">
+                                        <div key={r.id ?? i} className="rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 p-3">
                                             <div className="flex items-start gap-2.5">
-                                                <span className="mt-0.5 w-5 h-5 shrink-0 rounded-md bg-stone-100 dark:bg-coal-700 text-[10px] font-bold text-stone-500 dark:text-stone-400 flex items-center justify-center">
+                                                <span className="mt-0.5 w-5 h-5 shrink-0 rounded-md bg-cream-200 dark:bg-coal-600 text-[10px] font-bold text-stone-500 dark:text-stone-400 flex items-center justify-center">
                                                     {i + 1}
                                                 </span>
                                                 <div className="min-w-0 flex-1">
                                                     <p className="text-sm font-semibold text-stone-800 dark:text-stone-100 leading-tight break-words">
                                                         {r.name}
                                                     </p>
-                                                   <span className="block mt-1">
+                                                    <span className="block mt-1">
                                                         <MethodBadge meta={metaById[r.id]} />
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center gap-2 shrink-0">
                                                     {Number(r.jumlah_setoran) > 0 && (
-                                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 text-[10px] font-semibold text-stone-600 dark:text-stone-300">
+                                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-[10px] font-semibold text-stone-600 dark:text-stone-300">
                                                             <BookIcon className="w-3 h-3" /> {r.jumlah_setoran}
                                                         </span>
                                                     )}
@@ -385,7 +409,7 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
                                                                 {r.waktu && <span className="text-[9px] text-stone-400 tabular-nums mt-0.5">{r.waktu}</span>}
                                                             </>
                                                         ) : (
-                                                            <span className="w-4 h-4 rounded-full ring-1 ring-stone-300 dark:ring-coal-600" title="Belum presensi" />
+                                                            <span className="w-4 h-4 rounded-full ring-1 ring-cream-400 dark:ring-coal-500" title="Belum presensi" />
                                                         )}
                                                     </span>
                                                 </div>
@@ -411,33 +435,35 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
                                     );
                                 })
                             ) : (
-                                <div className="rounded-xl ring-1 ring-stone-200 dark:ring-coal-700 px-3 py-8 text-center text-xs text-stone-400">
+                                <div className="rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 px-3 py-8 text-center text-xs text-stone-400">
                                     Belum ada presensi tercatat hari ini.
                                 </div>
                             )}
                         </div>
 
                         {/* ===== DESKTOP: tabel ===== */}
-                        <div className="hidden sm:block rounded-xl ring-1 ring-stone-200 dark:ring-coal-700 overflow-hidden">
-                            <div className="grid grid-cols-[32px_1fr_140px_120px_84px] gap-2 px-3 py-2 bg-stone-50 dark:bg-coal-700/40 text-[11px] font-semibold text-stone-500 dark:text-stone-400">                                <span>No</span>
-                                <span>Nama Santri</span>
+                        <div className="hidden sm:block rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 overflow-hidden">
+                            <div className="grid grid-cols-[32px_1fr_140px_120px_84px] gap-2 px-3 py-2 bg-cream-100 dark:bg-coal-600/40 text-[11px] font-semibold text-stone-500 dark:text-stone-400">
+                                <span>No</span>
+                                <span>Nama Siswa</span>
                                 <span>Metode</span>
                                 <span>Progress</span>
                                 <span className="text-right">Materi</span>
                             </div>
-                            <div className="divide-y divide-stone-100 dark:divide-coal-700/60">
+                            <div className="divide-y divide-cream-200 dark:divide-coal-600/60">
                                 {(presensi.rows || []).length ? (
                                     presensi.rows.map((r, i) => {
                                         const st = STATUS[(r.status || '').toLowerCase()] ?? null;
                                         return (
-                                            <div key={r.id ?? i} className="grid grid-cols-[32px_1fr_140px_120px_84px] gap-2 px-3 py-2.5 items-center">                                                <span className="text-xs text-stone-400">{i + 1}</span>
+                                            <div key={r.id ?? i} className="grid grid-cols-[32px_1fr_140px_120px_84px] gap-2 px-3 py-2.5 items-center">
+                                                <span className="text-xs text-stone-400">{i + 1}</span>
                                                 <span className="min-w-0">
-                                                {/* break-words, bukan truncate — nama panjang turun baris
-                                                    daripada terpotong elipsis. */}
-                                                <span className="block text-sm leading-snug text-stone-700 dark:text-stone-200 break-words">{r.name}</span>
-                                            </span>
-                                            {/* metode — 1 pill gabungan */}
-                                            <span className="flex items-center">
+                                                    {/* break-words, bukan truncate — nama panjang turun baris
+                                                        daripada terpotong elipsis. */}
+                                                    <span className="block text-sm leading-snug text-stone-700 dark:text-stone-200 break-words">{r.name}</span>
+                                                </span>
+                                                {/* metode — 1 pill gabungan */}
+                                                <span className="flex items-center">
                                                     <MethodBadge meta={metaById[r.id]} />
                                                 </span>
                                                 <span className="flex flex-col gap-1 min-w-0 justify-center">
@@ -455,29 +481,30 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
                                                             title="Progress Al-Qur'an"
                                                         />
                                                     )}
-                                                </span>                                                <span className="flex items-center justify-end gap-3">
-                                                {/* slot badge setoran — lebar tetap */}
-                                                <span className="w-11 flex justify-end">
-                                                    {Number(r.jumlah_setoran) > 0 ? (
-                                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 text-[10px] font-semibold text-stone-600 dark:text-stone-300">
-                                                            <BookIcon className="w-3 h-3" /> {r.jumlah_setoran}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-stone-300 dark:text-coal-600">–</span>
-                                                    )}
                                                 </span>
-                                                {/* slot status — lebar tetap */}
-                                                <span className="w-9 flex flex-col items-center">
-                                                    {st ? (
-                                                        <>
-                                                            <span className={`w-3.5 h-3.5 rounded-full ${st.dot}`} title={st.label} />
-                                                            {r.waktu && <span className="text-[9px] text-stone-400 tabular-nums mt-0.5">{r.waktu}</span>}
-                                                        </>
-                                                    ) : (
-                                                        <span className="w-4 h-4 rounded-full ring-1 ring-stone-300 dark:ring-coal-600" title="Belum presensi" />
-                                                    )}
+                                                <span className="flex items-center justify-end gap-3">
+                                                    {/* slot badge setoran — lebar tetap */}
+                                                    <span className="w-11 flex justify-end">
+                                                        {Number(r.jumlah_setoran) > 0 ? (
+                                                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-[10px] font-semibold text-stone-600 dark:text-stone-300">
+                                                                <BookIcon className="w-3 h-3" /> {r.jumlah_setoran}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-stone-300 dark:text-coal-500">–</span>
+                                                        )}
+                                                    </span>
+                                                    {/* slot status — lebar tetap */}
+                                                    <span className="w-9 flex flex-col items-center">
+                                                        {st ? (
+                                                            <>
+                                                                <span className={`w-3.5 h-3.5 rounded-full ${st.dot}`} title={st.label} />
+                                                                {r.waktu && <span className="text-[9px] text-stone-400 tabular-nums mt-0.5">{r.waktu}</span>}
+                                                            </>
+                                                        ) : (
+                                                            <span className="w-4 h-4 rounded-full ring-1 ring-cream-400 dark:ring-coal-500" title="Belum presensi" />
+                                                        )}
+                                                    </span>
                                                 </span>
-                                            </span>
                                             </div>
                                         );
                                     })

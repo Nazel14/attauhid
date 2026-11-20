@@ -29,7 +29,7 @@ function Toast({ notif, onClose, duration = 10000 }) {
         <>
             <div
                 key={notif.id}
-                className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-[300] overflow-hidden rounded-2xl border border-stone-200 dark:border-coal-700 bg-white/95 dark:bg-coal-800/95 shadow-2xl backdrop-blur-md"
+                className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-[300] overflow-hidden rounded-2xl border border-cream-300 dark:border-coal-600 bg-white/95 dark:bg-coal-700/95 shadow-2xl backdrop-blur-md"
                 style={{ animation: 'toastIn .3s cubic-bezier(.21,1.02,.73,1)' }}
                 role="alert"
             >
@@ -43,11 +43,11 @@ function Toast({ notif, onClose, duration = 10000 }) {
                         </p>
                         <p className="mt-0.5 break-words text-sm text-stone-600 dark:text-stone-300" dangerouslySetInnerHTML={{ __html: notif.message }} />
                     </div>
-                    <button onClick={onClose} className="flex-shrink-0 rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-coal-700 dark:hover:text-stone-200 transition">
+                    <button onClick={onClose} className="flex-shrink-0 rounded-lg p-1 text-stone-400 hover:bg-cream-200 hover:text-stone-600 dark:hover:bg-coal-600 dark:hover:text-stone-200 transition">
                         <XIcon className="w-4 h-4" />
                     </button>
                 </div>
-                <div className="h-1 w-full bg-stone-200 dark:bg-coal-700">
+                <div className="h-1 w-full bg-cream-300 dark:bg-coal-600">
                     <div className={`h-full ${success ? 'bg-emerald-500' : 'bg-red-500'}`}
                         style={{ animation: `toastBar ${duration}ms linear forwards` }} />
                 </div>
@@ -60,21 +60,34 @@ function Toast({ notif, onClose, duration = 10000 }) {
     );
 }
 
-/* Preset visual per jenis kelas (gender_restriction) */
+/* Preset visual per jenis kelas (gender_restriction).
+ *
+ * Kunci objek ini ('campuran', 'ikhwan', 'akhwat') adalah nilai kolom
+ * gender_restriction di database — JANGAN diubah. Yang boleh diganti hanya
+ * `label`, yaitu tulisan yang dilihat pengguna.
+ *
+ * `tint` dan `accent` SENGAJA SAMA untuk ketiganya. Sebelumnya kepala kartu
+ * diwarnai menurut gender, sehingga biru dan merah muda jadi warna paling
+ * dominan di halaman dan menenggelamkan warna sekolah. Gender tetap terbaca
+ * dari lencana kecil di pojok — itu sudah cukup, dan tidak perlu diulang
+ * sebagai latar seluruh kartu.
+ */
+const TINT_NETRAL = 'bg-cream-100 dark:bg-coal-600/40';
+const ANGKA_HIJAU = 'text-claude-600 dark:text-claude-400';
+
 const GENDER_THEME = {
-    campuran: { tint: 'bg-violet-50 dark:bg-violet-500/10', accent: 'text-violet-600 dark:text-violet-300', badge: 'bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-500/15 dark:text-violet-300 dark:border-violet-500/25', dot: 'bg-violet-500', label: 'Campuran' },
-    ikhwan:   { tint: 'bg-blue-50 dark:bg-blue-500/10',     accent: 'text-blue-600 dark:text-blue-300',     badge: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/25',       dot: 'bg-blue-500',   label: 'Ikhwan' },
-    akhwat:   { tint: 'bg-pink-50 dark:bg-pink-500/10',     accent: 'text-pink-600 dark:text-pink-300',     badge: 'bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-500/15 dark:text-pink-300 dark:border-pink-500/25',       dot: 'bg-pink-500',   label: 'Akhwat' },
+    campuran: { tint: TINT_NETRAL, accent: ANGKA_HIJAU, badge: 'bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-500/15 dark:text-violet-300 dark:border-violet-500/25', dot: 'bg-violet-500', label: 'Campuran' },
+    ikhwan:   { tint: TINT_NETRAL, accent: ANGKA_HIJAU, badge: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/25',             dot: 'bg-blue-500',   label: 'Laki-laki' },
+    akhwat:   { tint: TINT_NETRAL, accent: ANGKA_HIJAU, badge: 'bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-500/15 dark:text-pink-300 dark:border-pink-500/25',             dot: 'bg-pink-500',   label: 'Perempuan' },
 };
 
 function KelasCard({ kelas }) {
     const theme = GENDER_THEME[kelas.gender_restriction] || GENDER_THEME.campuran;
     const isCampuran = kelas.gender_restriction === 'campuran';
-    const isIkhwan = kelas.gender_restriction === 'ikhwan';
 
     return (
-        <div className="group flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-stone-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5 dark:bg-coal-800 dark:ring-coal-700 dark:hover:shadow-black/30">
-            {/* Header — tint lembut */}
+        <div className="group flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-cream-300 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5 dark:bg-coal-700 dark:ring-coal-600 dark:hover:shadow-black/30">
+            {/* Header — tint netral */}
             <div className={`px-4 pt-4 pb-3.5 ${theme.tint}`}>
                 <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -88,41 +101,38 @@ function KelasCard({ kelas }) {
                 </div>
                 <div className="mt-3 flex items-baseline gap-1.5">
                     <span className={`text-3xl font-black ${theme.accent}`}>{kelas.total_santri}</span>
-                    <span className="text-xs text-stone-500 dark:text-stone-400">santri</span>
+                    <span className="text-xs text-stone-500 dark:text-stone-400">siswa</span>
                 </div>
             </div>
 
-            {/* Body: statistik gender */}
-            <div className="flex-1 px-4 py-3">
-                {isCampuran ? (
+            {/* Rincian gender — HANYA untuk kelas campuran.
+                Di kelas khusus, angkanya sama persis dengan angka besar di
+                kepala kartu, jadi menampilkannya lagi cuma mengulang tanpa
+                menambah informasi; lencana di pojok sudah menyebutkan
+                kekhususannya. */}
+            {isCampuran && (
+                <div className="flex-1 px-4 py-3">
                     <div className="grid grid-cols-2 gap-2">
                         <div className="rounded-xl border border-blue-200/70 bg-blue-50 px-3 py-2 text-center dark:border-blue-500/20 dark:bg-blue-500/10">
-                            <p className="mb-0.5 text-[10px] text-blue-500 dark:text-blue-400">Ikhwan</p>
+                            <p className="mb-0.5 text-[10px] text-blue-500 dark:text-blue-400">Laki-laki</p>
                             <p className="text-lg font-bold text-blue-600 dark:text-blue-300">{kelas.laki_laki}</p>
                         </div>
                         <div className="rounded-xl border border-pink-200/70 bg-pink-50 px-3 py-2 text-center dark:border-pink-500/20 dark:bg-pink-500/10">
-                            <p className="mb-0.5 text-[10px] text-pink-500 dark:text-pink-400">Akhwat</p>
+                            <p className="mb-0.5 text-[10px] text-pink-500 dark:text-pink-400">Perempuan</p>
                             <p className="text-lg font-bold text-pink-600 dark:text-pink-300">{kelas.perempuan}</p>
                         </div>
                     </div>
-                ) : isIkhwan ? (
-                    <div className="rounded-xl border border-blue-200/70 bg-blue-50 px-3 py-2.5 text-center dark:border-blue-500/20 dark:bg-blue-500/10">
-                        <p className="mb-0.5 text-[10px] text-blue-500 dark:text-blue-400">Khusus Ikhwan</p>
-                        <p className="text-lg font-bold text-blue-600 dark:text-blue-300">{kelas.laki_laki} <span className="text-xs font-normal text-blue-500/70">santri</span></p>
-                    </div>
-                ) : (
-                    <div className="rounded-xl border border-pink-200/70 bg-pink-50 px-3 py-2.5 text-center dark:border-pink-500/20 dark:bg-pink-500/10">
-                        <p className="mb-0.5 text-[10px] text-pink-500 dark:text-pink-400">Khusus Akhwat</p>
-                        <p className="text-lg font-bold text-pink-600 dark:text-pink-300">{kelas.perempuan} <span className="text-xs font-normal text-pink-500/70">santriwati</span></p>
-                    </div>
-                )}
-            </div>
+                </div>
+            )}
 
-            {/* Footer */}
-            <div className="px-4 pb-4">
+            {/* Footer.
+                mt-auto menahan tombol tetap di dasar kartu. Tanpa ini, kartu
+                kelas khusus (yang tidak punya blok rincian di atas) tombolnya
+                naik dan tidak sejajar dengan kartu campuran di sebelahnya. */}
+            <div className="mt-auto px-4 pb-4 pt-3">
                 <Link href={route('admin.santris.detail', kelas.id)}
                     className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-claude-600 py-2.5 text-center text-xs font-bold text-white shadow-sm shadow-claude-500/20 transition hover:bg-claude-500 active:scale-95">
-                    Lihat Detail Santri <ArrowRightIcon className="w-3.5 h-3.5" />
+                    Lihat Detail Siswa <ArrowRightIcon className="w-3.5 h-3.5" />
                 </Link>
             </div>
         </div>
@@ -148,14 +158,16 @@ export default function Index({ kelasWithStats = [] }) {
 
     return (
         <AuthenticatedLayout>
-            <Head title="Management Santri per Kelas" />
+            <Head title="Management Siswa per Kelas" />
             <Toast notif={notif} onClose={() => setNotif(null)} duration={NOTIF_DURATION} />
 
-            <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 py-6">
+            {/* Tanpa max-w / mx-auto / padding: <main> di AuthenticatedLayout
+                sudah memberi ketiganya. */}
+            <div>
 
                 {/* Kembali ke Dashboard — mobile saja */}
                 <Link href={route('admin.dashboard')}
-                    className="mb-4 sm:hidden inline-flex items-center gap-1.5 rounded-xl border border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-stone-100 dark:hover:bg-coal-700 active:scale-95">
+                    className="mb-4 sm:hidden inline-flex items-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-semibold text-stone-600 shadow-sm transition hover:bg-cream-100 active:scale-95 dark:border-coal-600 dark:bg-coal-700 dark:text-stone-300 dark:hover:bg-coal-600">
                     <ArrowLeftIcon className="w-4 h-4" /> Kembali ke Dashboard
                 </Link>
 
@@ -165,14 +177,14 @@ export default function Index({ kelasWithStats = [] }) {
                         <GraduationIcon className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <h1 className="text-lg sm:text-xl font-bold text-stone-900 dark:text-stone-100">Management Santri per Kelas</h1>
-                        <p className="text-[11px] text-stone-500 dark:text-stone-500 mt-0.5">Pilih kelas untuk melihat dan mengelola santri</p>
+                        <h1 className="text-lg sm:text-xl font-bold text-stone-900 dark:text-stone-100">Management Siswa per Kelas</h1>
+                        <p className="text-[11px] text-stone-500 dark:text-stone-500 mt-0.5">Pilih kelas untuk melihat dan mengelola siswa</p>
                     </div>
                 </div>
 
                 {/* ===== GRID KELAS CARDS ===== */}
                 {kelasWithStats.length === 0 ? (
-                    <div className="bg-white dark:bg-coal-800 border border-stone-200 dark:border-coal-700 rounded-2xl py-20 text-center shadow-sm dark:shadow-none">
+                    <div className="bg-white dark:bg-coal-700 border border-cream-300 dark:border-coal-600 rounded-2xl py-20 text-center shadow-sm dark:shadow-none">
                         <div className="text-5xl mb-4">🏫</div>
                         <p className="text-sm font-semibold text-stone-600 dark:text-stone-400">Belum ada kelas yang tersedia</p>
                         <p className="text-xs text-stone-400 dark:text-stone-600 mt-1.5">Silakan tambahkan kelas terlebih dahulu</p>

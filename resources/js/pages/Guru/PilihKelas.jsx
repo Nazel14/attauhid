@@ -16,9 +16,12 @@ const UsersIcon = (p) => (
 const ArrowIcon = (p) => <Svg {...p}><path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></Svg>;
 const CheckIcon = (p) => <Svg {...p}><path d="M20 6L9 17l-5-5" /></Svg>;
 
+// Kunci objek ini ('ikhwan', 'akhwat', 'campuran') adalah nilai kolom
+// gender_restriction di database — JANGAN diubah. Yang diganti hanya
+// tulisan yang dilihat pengguna.
 const GENDER_LABEL = {
-    ikhwan: 'Ikhwan',
-    akhwat: 'Akhwat',
+    ikhwan: 'Laki-laki',
+    akhwat: 'Perempuan',
     campuran: 'Campuran',
 };
 
@@ -38,7 +41,11 @@ export default function PilihKelas({ kelasList = [], kelasAktifId = null, guruNa
         <>
             <Head title="Pilih Kelas" />
 
-            <div className="min-h-screen bg-cream-100 px-4 py-10 dark:bg-coal-900">
+            {/* Latar disamakan dengan <body> di app.blade.php (cream-100 /
+                coal-800). Sebelumnya versi gelapnya coal-900 — satu tingkat
+                lebih gelap daripada latar halaman, sehingga terlihat berkedip
+                sepersekian detik sebelum React selesai memasang halaman. */}
+            <div className="min-h-screen bg-cream-100 px-4 py-10 dark:bg-coal-800">
                 <div className="mx-auto w-full max-w-lg">
 
                     <div className="mb-8 text-center">
@@ -65,7 +72,7 @@ export default function PilihKelas({ kelasList = [], kelasAktifId = null, guruNa
                                     className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition active:scale-[0.99] ${
                                         aktif
                                             ? 'border-claude-500/50 bg-claude-500/8 ring-1 ring-claude-500/20'
-                                            : 'border-stone-200 bg-white hover:bg-stone-50 dark:border-coal-700 dark:bg-coal-800 dark:hover:bg-coal-700/50'
+                                            : 'border-cream-300 bg-white hover:bg-cream-100 dark:border-coal-600 dark:bg-coal-700 dark:hover:bg-coal-600/50'
                                     }`}
                                 >
                                     <div className="min-w-0 flex-1">
@@ -73,7 +80,7 @@ export default function PilihKelas({ kelasList = [], kelasAktifId = null, guruNa
                                             {k.name}
                                         </p>
                                         <p className="mt-0.5 text-[11px] text-stone-400 dark:text-stone-500">
-                                            {k.santris_count} santri
+                                            {k.santris_count} siswa
                                             {k.tahun_ajaran ? ` · ${k.tahun_ajaran}` : ''}
                                             {k.gender_restriction ? ` · ${GENDER_LABEL[k.gender_restriction] ?? k.gender_restriction}` : ''}
                                         </p>

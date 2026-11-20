@@ -187,6 +187,7 @@ class TarifController extends Controller
     private function dimensionOptions(): array
     {
         $angkatan = Siswa::aktif()
+            ->tk()
             ->whereNotNull('angkatan')
             ->distinct()
             ->orderByDesc('angkatan')
@@ -195,7 +196,10 @@ class TarifController extends Controller
         return [
             'kelas' => [
                 'label'   => TarifTarget::LABELS['kelas'],
+                // Hanya kelas TK. Santri Rumah Quran membayar infaq sukarela,
+                // jadi kelasnya tidak boleh bisa dijadikan target tagihan.
                 'options' => KelasSantri::where('is_active', true)
+                    ->where('lembaga', KelasSantri::LEMBAGA_TK)
                     ->orderBy('name')
                     ->get(['id', 'name'])
                     ->map(fn ($k) => ['value' => (string) $k->id, 'label' => $k->name]),

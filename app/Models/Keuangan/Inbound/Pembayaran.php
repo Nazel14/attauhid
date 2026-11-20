@@ -31,26 +31,43 @@ class Pembayaran extends Model implements HasMedia
         'disetujui_at' => 'datetime',
     ];
 
+    /**
+     * Urutan di sini = urutan tab di halaman Pembayaran.
+     *
+     * 'infaq_arahan' adalah infaq sukarela santri Rumah Quran: santrinya
+     * dipilih dari daftar, nominalnya bebas, dan tidak pernah terikat
+     * pada tagihan — jadi tidak ada sisa dan tidak ada tunggakan.
+     */
     public const KATEGORI = [
-        'tagihan'    => 'Pembayaran Tagihan',
-        'uang_masuk' => 'Uang Masuk',
-        'koperasi'   => 'Koperasi',
-        'donatur'    => 'Donatur',
-        'lainnya'    => 'Lainnya',
+        'tagihan'      => 'Pembayaran Tagihan',
+        'infaq_arahan' => 'Infaq Rumah Quran',
+        'uang_masuk'   => 'Uang Masuk',
+        'koperasi'     => 'Koperasi',
+        'donatur'      => 'Donatur',
+        'lainnya'      => 'Lainnya',
     ];
 
     /** Prefix nomor kwitansi per kategori. */
     public const PREFIX = [
-        'tagihan'    => 'RCP',
-        'uang_masuk' => 'UM',
-        'koperasi'   => 'KOP',
-        'donatur'    => 'DON',
-        'lainnya'    => 'TRX',
+        'tagihan'      => 'RCP',
+        'infaq_arahan' => 'INF',
+        'uang_masuk'   => 'UM',
+        'koperasi'     => 'KOP',
+        'donatur'      => 'DON',
+        'lainnya'      => 'TRX',
     ];
 
+    /**
+     * withTrashed WAJIB di sini.
+     *
+     * getPihakAttribute() di bawah memakai $this->siswa?->name — kalau
+     * relasinya null, kwitansi TIDAK error melainkan mencetak "—" sebagai
+     * nama penyetor. Gagalnya tidak bersuara, jadi baru ketahuan saat
+     * kwitansi lama dicetak ulang berbulan-bulan kemudian.
+     */
     public function siswa(): BelongsTo
     {
-        return $this->belongsTo(Siswa::class, 'student_id');
+        return $this->belongsTo(Siswa::class, 'student_id')->withTrashed();
     }
 
     public function tagihan(): BelongsTo

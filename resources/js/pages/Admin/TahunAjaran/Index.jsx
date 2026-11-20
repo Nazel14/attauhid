@@ -114,7 +114,7 @@ export default function TahunAjaranIndex({ tahunAjarans = [], aktif = null }) {
                 input[type="date"]{color-scheme:light}
                 html.dark input[type="date"]{color-scheme:dark}
                 html.dark select{color-scheme:dark}
-                html.dark select option{background:#292623;color:#f5f5f4}
+                html.dark select option{background:#323730;color:#F6F7F2}
                 select{
                     -webkit-appearance:none;-moz-appearance:none;appearance:none;
                     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2378716c' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
@@ -231,7 +231,7 @@ export default function TahunAjaranIndex({ tahunAjarans = [], aktif = null }) {
             <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-3">
                 {/* ===== KIRI: Form Tambah ===== */}
                 <div className="lg:col-span-1">
-                    <div className={`${showFormMobile ? 'block' : 'hidden'} rounded-xl border border-cream-300 bg-white p-4 shadow-sm lg:block dark:border-coal-700 dark:bg-coal-800 dark:shadow-none`}>
+                    <div className={`${showFormMobile ? 'block' : 'hidden'} rounded-xl border border-cream-300 bg-white p-4 shadow-sm lg:block dark:border-coal-600 dark:bg-coal-700 dark:shadow-none`}>
                         <h2 className="mb-4 hidden text-xs font-bold uppercase tracking-wider text-stone-500 lg:block dark:text-stone-400">Tambah Tahun Ajaran</h2>
                         <form onSubmit={submitCreate} className="space-y-3">
                             <div>
@@ -319,7 +319,7 @@ export default function TahunAjaranIndex({ tahunAjarans = [], aktif = null }) {
                                                     Aktif
                                                 </span>
                                             ) : ta.sudah_dipakai ? (
-                                                <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-stone-600 ring-1 ring-inset ring-stone-300 dark:bg-coal-800 dark:text-stone-300 dark:ring-coal-600">
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-cream-200 px-2 py-0.5 text-[10px] font-semibold text-stone-600 ring-1 ring-inset ring-cream-400 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500">
                                                     <svg className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                                                     Selesai · Arsip
                                                 </span>

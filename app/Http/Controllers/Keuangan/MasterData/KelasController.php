@@ -27,10 +27,14 @@ class KelasController extends Controller
         // tahun ajaran diperlukan agar daftarnya tidak menumpuk tiap tahun.
         $query->when($request->tahunFilter, fn ($q, $tahun) => $q->where('tahun_ajaran', $tahun));
 
+        // TK dan Rumah Quran berbagi tabel kelas yang sama; filter ini yang
+        // memisahkan keduanya di layar.
+        $query->when($request->lembagaFilter, fn ($q, $lembaga) => $q->where('lembaga', $lembaga));
+
         $sortField     = $request->input('sort_field', 'name');
         $sortDirection = $request->input('sort_direction', 'asc');
 
-        $allowedSorts = ['name', 'tingkat', 'kapasitas', 'is_active', 'tahun_ajaran'];
+        $allowedSorts = ['name', 'tingkat', 'lembaga', 'kapasitas', 'is_active', 'tahun_ajaran'];
         if (in_array($sortField, $allowedSorts)) {
             $query->orderBy($sortField, $sortDirection === 'desc' ? 'desc' : 'asc');
         } else {
@@ -50,9 +54,10 @@ class KelasController extends Controller
             ->pluck('tahun_ajaran');
 
         return Inertia::render('Keuangan/MasterData/DataKelas', [
-            'kelas'     => $kelas,
-            'listTahun' => $listTahun,
-            'filters'   => $request->only(['search', 'tahunFilter', 'sort_field', 'sort_direction']),
+            'kelas'       => $kelas,
+            'listTahun'   => $listTahun,
+            'listLembaga' => Kelas::LEMBAGA,
+            'filters'     => $request->only(['search', 'tahunFilter', 'lembagaFilter', 'sort_field', 'sort_direction']),
         ]);
     }
 
@@ -64,8 +69,12 @@ class KelasController extends Controller
             'name'         => 'required|string|max:255',
             'tahun_ajaran' => 'required|string|max:20',
             'tingkat'      => 'nullable|string|max:100',
+            'lembaga'      => 'required|in:' . implode(',', array_keys(Kelas::LEMBAGA)),
             'kapasitas'    => 'required|integer|min:1',
             'is_active'    => 'boolean',
+        ], [
+            'lembaga.required' => 'Lembaga wajib dipilih.',
+            'lembaga.in'       => 'Lembaga tidak dikenali.',
         ]);
 
         $sudahAda = Kelas::where('name', $validated['name'])
@@ -97,8 +106,12 @@ class KelasController extends Controller
             'name'         => 'required|string|max:255',
             'tahun_ajaran' => 'required|string|max:20',
             'tingkat'      => 'nullable|string|max:100',
+            'lembaga'      => 'required|in:' . implode(',', array_keys(Kelas::LEMBAGA)),
             'kapasitas'    => 'required|integer|min:1',
             'is_active'    => 'boolean',
+        ], [
+            'lembaga.required' => 'Lembaga wajib dipilih.',
+            'lembaga.in'       => 'Lembaga tidak dikenali.',
         ]);
 
         $sudahAda = Kelas::where('name', $validated['name'])

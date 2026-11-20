@@ -30,10 +30,10 @@ const AlertCircle = (p) => <I {...p} d={<path d="M12 8v4m0 4h.01M21 12a9 9 0 11-
 /* ============================================================
  * SHARED CLASSES
  * ============================================================ */
-const INP = "w-full bg-white dark:bg-coal-900 border border-stone-300 dark:border-coal-600 rounded-xl text-stone-900 dark:text-stone-100 text-sm px-3 py-2.5 outline-none focus:border-claude-500 focus:ring-2 focus:ring-claude-500/20 transition placeholder:text-stone-400 dark:placeholder:text-stone-600";
+const INP = "w-full bg-white dark:bg-coal-800 border border-stone-300 dark:border-coal-600 rounded-xl text-stone-900 dark:text-stone-100 text-sm px-3 py-2.5 outline-none focus:border-claude-500 focus:ring-2 focus:ring-claude-500/20 transition placeholder:text-stone-400 dark:placeholder:text-stone-600";
 const LBL = "block text-[11px] font-semibold text-stone-600 dark:text-stone-400 mb-1.5";
 const BTN_SECONDARY = "flex-1 py-2.5 rounded-xl text-sm font-semibold bg-stone-100 dark:bg-coal-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-coal-600 hover:bg-stone-200 dark:hover:bg-coal-600 transition";
-const FILE_INP = "w-full text-xs text-stone-600 dark:text-stone-400 bg-white dark:bg-coal-900 border border-stone-300 dark:border-coal-600 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-claude-500/10 file:text-claude-600 dark:file:text-claude-400 hover:file:bg-claude-500/20";
+const FILE_INP = "w-full text-xs text-stone-600 dark:text-stone-400 bg-white dark:bg-coal-800 border border-stone-300 dark:border-coal-600 rounded-xl px-3 py-2.5 cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-claude-500/10 file:text-claude-600 dark:file:text-claude-400 hover:file:bg-claude-500/20";
 
 const storageUrl = (path) => (path ? `/storage/${path}` : null);
 
@@ -88,7 +88,7 @@ function Modal({ open, onClose, title, children, maxWidth = 'sm:max-w-md' }) {
     return (
         <div className="fixed inset-0 z-[80] flex flex-col justify-end sm:justify-center sm:items-center sm:p-4">
             <div className="absolute inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm" onClick={onClose} />
-            <div className={`relative w-full bg-white dark:bg-coal-800 rounded-t-3xl sm:rounded-3xl border border-stone-200 dark:border-coal-700 shadow-2xl overflow-hidden animate-[slideUp_.25s_ease-out] ${maxWidth}`}>
+            <div className={`relative w-full bg-white dark:bg-coal-700 rounded-t-3xl sm:rounded-3xl border border-stone-200 dark:border-coal-700 shadow-2xl overflow-hidden animate-[slideUp_.25s_ease-out] ${maxWidth}`}>
                 <div className="w-10 h-1 bg-stone-300 dark:bg-coal-600 rounded-full mx-auto mt-3 sm:hidden" />
                 <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone-100 dark:border-coal-700">
                     <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100">{title}</h3>
@@ -271,7 +271,8 @@ export default function Index({ gurus = [] }) {
             <Head title="Management Guru" />
             <Toast notif={notif} onClose={() => setNotif(null)} duration={NOTIF_DURATION} />
 
-            <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 py-6">
+            
+            <div>
                 {/* Tombol kembali — mobile saja */}
             <Link
                 href={route('admin.dashboard')}
@@ -335,7 +336,7 @@ export default function Index({ gurus = [] }) {
                 {/* ===== MOBILE CARDS ===== */}
                 <div className="lg:hidden space-y-2">
                     {gurus.length > 0 && (
-                        <div className="flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-coal-800 border border-stone-200 dark:border-coal-700 rounded-2xl">
+                        <div className="flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-coal-700 border border-stone-200 dark:border-coal-700 rounded-2xl">
                             <input type="checkbox" checked={allSelected} onChange={toggleAll}
                                 ref={(el) => { if (el) el.indeterminate = selected.length > 0 && !allSelected; }}
                                 className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 focus:ring-claude-500 cursor-pointer" />
@@ -345,7 +346,7 @@ export default function Index({ gurus = [] }) {
                     )}
 
                     {gurus.length === 0 ? (
-                        <div className="bg-white dark:bg-coal-800 border border-stone-200 dark:border-coal-700 rounded-2xl py-16 text-center">
+                        <div className="bg-white dark:bg-coal-700 border border-stone-200 dark:border-coal-700 rounded-2xl py-16 text-center">
                             <p className="text-sm font-semibold text-stone-600 dark:text-stone-400">Belum ada data guru</p>
                             <p className="text-xs text-stone-400 dark:text-stone-600 mt-1.5">Tap tombol "Tambah Guru" di atas</p>
                         </div>
@@ -353,7 +354,7 @@ export default function Index({ gurus = [] }) {
                         const isSel = selected.includes(guru.id);
                         const photo = guru.user?.profile_photo ? storageUrl(guru.user.profile_photo) : null;
                         return (
-                            <div key={guru.id} className={`rounded-2xl border overflow-hidden transition-all ${isSel ? 'border-claude-500/50 ring-1 ring-claude-500/15 bg-claude-500/5' : 'border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800'}`}>
+                            <div key={guru.id} className={`rounded-2xl border overflow-hidden transition-all ${isSel ? 'border-claude-500/50 ring-1 ring-claude-500/15 bg-claude-500/5' : 'border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-700'}`}>
                                 <div className="flex items-center gap-3 px-4 py-3">
                                     <input type="checkbox" checked={isSel} onChange={() => toggleOne(guru.id)}
                                         className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 flex-shrink-0 cursor-pointer" />
@@ -398,10 +399,10 @@ export default function Index({ gurus = [] }) {
                 </div>
 
                 {/* ===== DESKTOP TABLE ===== */}
-                <div className="hidden lg:block bg-white dark:bg-coal-800 border border-stone-200 dark:border-coal-700 rounded-2xl overflow-hidden shadow-sm dark:shadow-none">
+                <div className="hidden lg:block bg-white dark:bg-coal-700 border border-stone-200 dark:border-coal-700 rounded-2xl overflow-hidden shadow-sm dark:shadow-none">
                     <table className="min-w-full">
                         <thead>
-                            <tr className="border-b border-stone-200 dark:border-coal-700 bg-stone-50 dark:bg-coal-900/40">
+                            <tr className="border-b border-stone-200 dark:border-coal-700 bg-stone-50 dark:bg-coal-800/40">
                                 <th className="px-4 py-3 w-10">
                                     <input type="checkbox" checked={allSelected} onChange={toggleAll}
                                         ref={(el) => { if (el) el.indeterminate = selected.length > 0 && !allSelected; }}

@@ -3,6 +3,12 @@ import { Link, router, usePage } from '@inertiajs/react';
 import LogoutButton from '@/Components/LogoutButton';
 import AppLogo from '@/Components/AppLogo';
 
+// Nama aplikasi untuk sidebar dan header mobile. Dibaca dari VITE_APP_NAME
+// supaya sama dengan GuruAuthenticatedLayout & AuthenticatedLayout — salinan
+// TK dan salinan pesantren cukup berbeda di .env. Variabel VITE_ dibakar ke
+// bundel saat build: ubah .env lalu jalankan `npm run build` lagi.
+const NAMA_APP = import.meta.env.VITE_APP_NAME || 'TK Attauhid';
+
 /* ============================================================
  * NOTIFIKASI
  *
@@ -195,165 +201,23 @@ const I = {
     ttd: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
 };
 
-export default function KeuanganLayout({ children }) {
-    const { auth, modulUser } = usePage().props;
-    const user = auth?.user;
-    const permissions = auth?.permissions || [];
-    const can = (p) => permissions.includes(p);
+// Modul keuangan diport bertahap. Menu yang route-nya belum ada
+// disembunyikan otomatis — tanpa ini Ziggy melempar error dan
+// seluruh panel jadi blank.
+const has = (name) => {
+    try { return route().has(name); } catch (e) { return false; }
+};
 
-    // Tombol pindah panel hanya untuk akun yang memang punya akses ke raport.
-    const bisaKeRaport = modulUser?.tersedia?.includes('raport');
+const isCurrent = (name) => {
+    try { return route().current(name); } catch (e) { return false; }
+};
 
-    /* ==========================================================
-     * LABEL PERAN
-     * Dibaca dari role yang benar-benar dimiliki akun, BUKAN ditebak
-     * dari permission. Tebakan lewat permission selalu salah untuk akun
-     * yang memegang beberapa peran: super-admin punya SEMUA permission,
-     * jadi ia selalu tertangkap cabang pertama yang cocok — itulah sebab
-     * super-admin sempat berlabel "Kepala Sekolah".
-     * Rangkaian permission di bawah hanya cadangan bila daftar role
-     * belum dibagikan ke frontend lewat HandleInertiaRequests.
-     * ========================================================== */
-    const daftarRole = auth?.roles
-        || user?.roles?.map((r) => (typeof r === 'string' ? r : r.name))
-        || [];
-
-    // Kolom users.role ikut diperiksa: super-admin menyimpannya di sana.
-    const punyaRole = (nama) => user?.role === nama || daftarRole.includes(nama);
-
-    const roleAktif = ROLE_PRIORITAS.find(punyaRole);
-
-    // Rute Pengaturan Sistem digembok 'role:super-admin', bukan permission —
-    // dan tabel permissions memang tidak punya baris 'sistem.*'. Kalau menunya
-    // ikut disaring permission, ia hilang selamanya padahal halamannya sendiri
-    // terbuka. Syarat menu harus sama dengan syarat rutenya.
-    const isSuperAdmin = punyaRole('super-admin');
-
-    const roleLabel =
-        roleAktif ? ROLE_LABEL[roleAktif]
-        // Dua nama diterima di tiap baris: penamaan seeder saat ini dan
-        // penamaan lama, supaya instalasi lama tidak salah label.
-        : can('sistem.role.kelola') || can('sistem.kelola_role') ? ROLE_LABEL['super-admin']
-        : can('pengeluaran.approve_final') || can('pengeluaran.approve_disetujui') ? ROLE_LABEL['ketua-yayasan']
-        : can('pengeluaran.approve_diperiksa') ? ROLE_LABEL['kepala-sekolah']
-        : can('penggajian.generate_batch')     ? ROLE_LABEL['hrd']
-        : can('tagihan.buat_batch')            ? ROLE_LABEL['bendahara']
-        : 'Keuangan';
-
-    // Modul keuangan diport bertahap. Menu yang route-nya belum ada
-    // disembunyikan otomatis — tanpa ini Ziggy melempar error dan
-    // seluruh panel jadi blank.
-    const has = (name) => {
-        try { return route().has(name); } catch (e) { return false; }
-    };
-
-    const [open, setOpen] = useState(false);
-
-    const [collapsed, setCollapsed] = useState(() => {
-        if (typeof window === 'undefined') return false;
-        return localStorage.getItem('sidebar-collapsed') === '1';
-    });
-    useEffect(() => {
-        try { localStorage.setItem('sidebar-collapsed', collapsed ? '1' : '0'); } catch (e) {}
-    }, [collapsed]);
-
-    const [dark, setDark] = useState(() => {
-        if (typeof window === 'undefined') return false;
-        return document.documentElement.classList.contains('dark') || localStorage.getItem('theme') === 'dark';
-    });
-    useEffect(() => {
-        document.documentElement.classList.toggle('dark', dark);
-        try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) {}
-    }, [dark]);
-
-    const closeNav = () => setOpen(false);
-
-    const GROUPS = [
-        {
-            key: 'master', label: 'Master Data', icon: I.master, prefix: 'keuangan.master-data.',
-            items: [
-                { name: 'keuangan.master-data.kelas.index', label: 'Data Kelas', perm: 'master.kelas.lihat', icon: I.kelas },
-                { name: 'keuangan.master-data.siswa', label: 'Data Siswa', perm: 'master.siswa.lihat', icon: I.siswa },
-                { name: 'keuangan.master-data.jabatan', label: 'Data Jabatan', perm: 'master.jabatan.lihat', icon: I.jabatan },
-                { name: 'keuangan.master-data.pegawai', label: 'Data Pegawai', perm: 'master.pegawai.lihat', icon: I.pegawai },
-                { name: 'keuangan.master-data.rekening', label: 'Data Rekening', perm: 'master.rekening.lihat', icon: I.rekening },
-                { name: 'keuangan.master-data.tarif', label: 'Data Tarif', perm: 'master.tarif.lihat', icon: I.tarif },
-                { name: 'keuangan.master-data.rkas_template.index', label: 'Jenis RKAS', perm: 'master.rkas.lihat', icon: I.rkasTemplate },
-            ],
-        },
-        {
-            key: 'pemasukan', label: 'Pemasukan', icon: I.masuk, prefix: 'keuangan.pemasukan.',
-            items: [
-                { name: 'keuangan.pemasukan.tagihan.index', label: 'Kelola Tagihan', perm: 'tagihan.lihat', icon: I.tagihan },
-                { name: 'keuangan.pemasukan.pembayaran.index', label: 'Pembayaran', perm: 'pembayaran.lihat', icon: I.pembayaran },
-            ],
-        },
-        {
-            key: 'pengeluaran', label: 'Anggaran', icon: I.keluar, prefix: 'keuangan.pengeluaran.',
-            items: [
-                { name: 'keuangan.pengeluaran.rkas', label: 'Kelola RKAS', perm: 'rkas.lihat', icon: I.rkas },
-                { name: 'keuangan.pengeluaran.pengajuan', label: 'Kelola Pengeluaran', perm: 'pengeluaran.lihat', icon: I.pengajuan },
-            ],
-        },
-        {
-            key: 'penggajian', label: 'Penggajian', icon: I.gaji, prefix: 'keuangan.penggajian.',
-            items: [
-                { name: 'keuangan.penggajian.absensi', label: 'Data Absensi', perm: 'absensi.lihat', icon: I.absensi },
-                { name: 'keuangan.penggajian.komponen', label: 'Komponen Gaji', perm: 'tunjangan.lihat', icon: I.komponen },
-                { name: 'keuangan.penggajian.data', label: 'Kelola Gaji & Slip', perm: 'penggajian.lihat', icon: I.slipGaji },
-            ],
-        },
-        {
-            key: 'laporan', label: 'Laporan', icon: I.laporan, prefix: 'keuangan.laporan.',
-            items: [
-                { name: 'keuangan.laporan.buku_kas_umum', label: 'Buku Kas Umum', perm: 'laporan.buku_kas', icon: I.buku },
-                { name: 'keuangan.laporan.tunggakan', label: 'Laporan Tunggakan', perm: 'laporan.tunggakan', icon: I.tunggakan },
-                { name: 'keuangan.laporan.realisasi_rkas', label: 'Realisasi RKAS', perm: 'laporan.rkas', icon: I.realisasi },
-            ],
-        },
-        {
-            key: 'pengaturan', label: 'Pengaturan Sistem', icon: I.setting, prefix: 'keuangan.pengaturan.',
-            items: [
-                // perm berupa array = cukup punya salah satu. Dua penamaan
-                // diterima: 'sistem.role.kelola' (seeder saat ini) dan
-                // 'sistem.kelola_role' (penamaan lama). Tanpa ini menu
-                // Pengaturan hilang di instalasi yang memakai salah satunya.
-                { name: 'keuangan.pengaturan.role.index', label: 'Management Role', perm: ['sistem.role.kelola', 'sistem.kelola_role'], icon: I.role },
-                { name: 'keuangan.pengaturan.user.index', label: 'Management User', perm: ['sistem.user.kelola', 'sistem.kelola_user'], icon: I.userMgmt },
-                { name: 'keuangan.pengaturan.identitas.index', label: 'Identitas & Tanda Tangan', perm: [], icon: I.ttd },
-            ],
-        },
-    ]
-        .map((g) => ({
-            ...g,
-            items: g.items.filter((i) => {
-                if (! has(i.name)) return false;
-
-                // Grup pengaturan: super-admin selalu boleh, apa pun isi
-                // tabel permissions. Lihat catatan di atas.
-                if (g.key === 'pengaturan') return isSuperAdmin;
-
-                const daftarPerm = Array.isArray(i.perm) ? i.perm : [i.perm];
-                return daftarPerm.some(can);
-            }),
-        }))
-        .filter((g) => g.items.length > 0);
-
-    const [openGroups, setOpenGroups] = useState(() => {
-        const init = {};
-        GROUPS.forEach((g) => {
-            try { init[g.key] = route().current(g.prefix + '*'); } catch (e) { init[g.key] = false; }
-        });
-        return init;
-    });
-
-    const toggleGroup = (key) => setOpenGroups((s) => ({ ...s, [key]: !s[key] }));
-
-    const isCurrent = (name) => {
-        try { return route().current(name); } catch (e) { return false; }
-    };
-
-    const SidebarBody = ({ isMini = false }) => (
+// Didefinisikan DI LUAR layout dengan sengaja (sama seperti
+// GuruAuthenticatedLayout). Komponen yang dibuat di dalam render induknya
+// dianggap tipe baru setiap render, sehingga seluruh sidebar dibongkar-pasang:
+// posisi scroll menu kembali ke atas tiap kali tema diganti.
+function SidebarBody({ isMini = false, user, roleLabel, can, bisaKeRaport, GROUPS, openGroups, setOpenGroups, toggleGroup, dark, setDark, setCollapsed, closeNav }) {
+    return (
         <div className="flex h-full flex-col">
             <div className={`flex h-16 items-center px-3 ${isMini ? 'justify-center' : 'justify-between'}`}>
                 <div className={`flex items-center gap-2.5 ${isMini ? '' : 'pl-2'}`}>
@@ -362,7 +226,7 @@ export default function KeuanganLayout({ children }) {
                     </div>
                     {!isMini && (
                         <div className="leading-tight">
-                            <p className="text-sm font-bold text-stone-800 dark:text-cream-50">Laporan Tahfizh</p>
+                            <p className="text-sm font-bold text-stone-800 dark:text-cream-50">{NAMA_APP}</p>
                             <p className="text-[10px] text-stone-400 dark:text-stone-500">Panel Keuangan</p>
                         </div>
                     )}
@@ -495,7 +359,7 @@ export default function KeuanganLayout({ children }) {
                 {isMini ? (
                     <div className="flex flex-col items-center gap-2">
                         {bisaKeRaport && (
-                            <a href={route('pindah-modul', 'raport')} title="Buka Panel Tahfizh"
+                            <a href={route('pindah-modul', 'raport')} title="Buka Panel Raport"
                                 className="flex h-9 w-9 items-center justify-center rounded-xl text-stone-400 transition hover:bg-cream-200 hover:text-claude-600 dark:text-stone-500 dark:hover:bg-coal-600 dark:hover:text-claude-300">
                                 <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -533,7 +397,7 @@ export default function KeuanganLayout({ children }) {
                                 <svg className="h-[18px] w-[18px] flex-shrink-0 text-claude-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                                 </svg>
-                                <span className="truncate">Buka Panel Tahfizh</span>
+                                <span className="truncate">Buka Panel Raport</span>
                             </a>
                         )}
 
@@ -573,6 +437,162 @@ export default function KeuanganLayout({ children }) {
             </div>
         </div>
     );
+}
+
+export default function KeuanganLayout({ children }) {
+    const { auth, modulUser } = usePage().props;
+    const user = auth?.user;
+    const permissions = auth?.permissions || [];
+    const can = (p) => permissions.includes(p);
+
+    // Tombol pindah panel hanya untuk akun yang memang punya akses ke raport.
+    const bisaKeRaport = modulUser?.tersedia?.includes('raport');
+
+    /* ==========================================================
+     * LABEL PERAN
+     * Dibaca dari role yang benar-benar dimiliki akun, BUKAN ditebak
+     * dari permission. Tebakan lewat permission selalu salah untuk akun
+     * yang memegang beberapa peran: super-admin punya SEMUA permission,
+     * jadi ia selalu tertangkap cabang pertama yang cocok — itulah sebab
+     * super-admin sempat berlabel "Kepala Sekolah".
+     * Rangkaian permission di bawah hanya cadangan bila daftar role
+     * belum dibagikan ke frontend lewat HandleInertiaRequests.
+     * ========================================================== */
+    const daftarRole = auth?.roles
+        || user?.roles?.map((r) => (typeof r === 'string' ? r : r.name))
+        || [];
+
+    // Kolom users.role ikut diperiksa: super-admin menyimpannya di sana.
+    const punyaRole = (nama) => user?.role === nama || daftarRole.includes(nama);
+
+    const roleAktif = ROLE_PRIORITAS.find(punyaRole);
+
+    // Rute Pengaturan Sistem digembok 'role:super-admin', bukan permission —
+    // dan tabel permissions memang tidak punya baris 'sistem.*'. Kalau menunya
+    // ikut disaring permission, ia hilang selamanya padahal halamannya sendiri
+    // terbuka. Syarat menu harus sama dengan syarat rutenya.
+    const isSuperAdmin = punyaRole('super-admin');
+
+    const roleLabel =
+        roleAktif ? ROLE_LABEL[roleAktif]
+        // Dua nama diterima di tiap baris: penamaan seeder saat ini dan
+        // penamaan lama, supaya instalasi lama tidak salah label.
+        : can('sistem.role.kelola') || can('sistem.kelola_role') ? ROLE_LABEL['super-admin']
+        : can('pengeluaran.approve_final') || can('pengeluaran.approve_disetujui') ? ROLE_LABEL['ketua-yayasan']
+        : can('pengeluaran.approve_diperiksa') ? ROLE_LABEL['kepala-sekolah']
+        : can('penggajian.generate_batch')     ? ROLE_LABEL['hrd']
+        : can('tagihan.buat_batch')            ? ROLE_LABEL['bendahara']
+        : 'Keuangan';
+
+
+    const [open, setOpen] = useState(false);
+
+    const [collapsed, setCollapsed] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return localStorage.getItem('sidebar-collapsed') === '1';
+    });
+    useEffect(() => {
+        try { localStorage.setItem('sidebar-collapsed', collapsed ? '1' : '0'); } catch (e) {}
+    }, [collapsed]);
+
+    const [dark, setDark] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return document.documentElement.classList.contains('dark') || localStorage.getItem('theme') === 'dark';
+    });
+    useEffect(() => {
+        document.documentElement.classList.toggle('dark', dark);
+        try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) {}
+    }, [dark]);
+
+    const closeNav = () => setOpen(false);
+
+    const GROUPS = [
+        {
+            key: 'master', label: 'Master Data', icon: I.master, prefix: 'keuangan.master-data.',
+            items: [
+                { name: 'keuangan.master-data.kelas.index', label: 'Data Kelas', perm: 'master.kelas.lihat', icon: I.kelas },
+                { name: 'keuangan.master-data.siswa', label: 'Data Siswa', perm: 'master.siswa.lihat', icon: I.siswa },
+                { name: 'keuangan.master-data.jabatan', label: 'Data Jabatan', perm: 'master.jabatan.lihat', icon: I.jabatan },
+                { name: 'keuangan.master-data.pegawai', label: 'Data Pegawai', perm: 'master.pegawai.lihat', icon: I.pegawai },
+                { name: 'keuangan.master-data.rekening', label: 'Data Rekening', perm: 'master.rekening.lihat', icon: I.rekening },
+                { name: 'keuangan.master-data.tarif', label: 'Data Tarif', perm: 'master.tarif.lihat', icon: I.tarif },
+                { name: 'keuangan.master-data.rkas_template.index', label: 'Jenis RKAS', perm: 'master.rkas.lihat', icon: I.rkasTemplate },
+            ],
+        },
+        {
+            key: 'pemasukan', label: 'Pemasukan', icon: I.masuk, prefix: 'keuangan.pemasukan.',
+            items: [
+                { name: 'keuangan.pemasukan.tagihan.index', label: 'Kelola Tagihan', perm: 'tagihan.lihat', icon: I.tagihan },
+                { name: 'keuangan.pemasukan.pembayaran.index', label: 'Pembayaran', perm: 'pembayaran.lihat', icon: I.pembayaran },
+            ],
+        },
+        {
+            key: 'pengeluaran', label: 'Anggaran', icon: I.keluar, prefix: 'keuangan.pengeluaran.',
+            items: [
+                { name: 'keuangan.pengeluaran.rkas', label: 'Kelola RKAS', perm: 'rkas.lihat', icon: I.rkas },
+                { name: 'keuangan.pengeluaran.pengajuan', label: 'Kelola Pengeluaran', perm: 'pengeluaran.lihat', icon: I.pengajuan },
+            ],
+        },
+        {
+            key: 'penggajian', label: 'Penggajian', icon: I.gaji, prefix: 'keuangan.penggajian.',
+            items: [
+                { name: 'keuangan.penggajian.absensi', label: 'Data Absensi', perm: 'absensi.lihat', icon: I.absensi },
+                { name: 'keuangan.penggajian.komponen', label: 'Komponen Gaji', perm: 'tunjangan.lihat', icon: I.komponen },
+                { name: 'keuangan.penggajian.data', label: 'Kelola Gaji & Slip', perm: 'penggajian.lihat', icon: I.slipGaji },
+            ],
+        },
+        {
+            key: 'laporan', label: 'Laporan', icon: I.laporan, prefix: 'keuangan.laporan.',
+            items: [
+                { name: 'keuangan.laporan.buku_kas_umum', label: 'Buku Kas Umum', perm: 'laporan.buku_kas', icon: I.buku },
+                { name: 'keuangan.laporan.tunggakan', label: 'Laporan Tunggakan', perm: 'laporan.tunggakan', icon: I.tunggakan },
+                { name: 'keuangan.laporan.realisasi_rkas', label: 'Realisasi RKAS', perm: 'laporan.rkas', icon: I.realisasi },
+            ],
+        },
+        {
+            key: 'pengaturan', label: 'Pengaturan Sistem', icon: I.setting, prefix: 'keuangan.pengaturan.',
+            items: [
+                // perm berupa array = cukup punya salah satu. Dua penamaan
+                // diterima: 'sistem.role.kelola' (seeder saat ini) dan
+                // 'sistem.kelola_role' (penamaan lama). Tanpa ini menu
+                // Pengaturan hilang di instalasi yang memakai salah satunya.
+                { name: 'keuangan.pengaturan.role.index', label: 'Management Role', perm: ['sistem.role.kelola', 'sistem.kelola_role'], icon: I.role },
+                { name: 'keuangan.pengaturan.user.index', label: 'Management User', perm: ['sistem.user.kelola', 'sistem.kelola_user'], icon: I.userMgmt },
+                { name: 'keuangan.pengaturan.identitas.index', label: 'Identitas & Tanda Tangan', perm: [], icon: I.ttd },
+            ],
+        },
+    ]
+        .map((g) => ({
+            ...g,
+            items: g.items.filter((i) => {
+                if (! has(i.name)) return false;
+
+                // Grup pengaturan: super-admin selalu boleh, apa pun isi
+                // tabel permissions. Lihat catatan di atas.
+                if (g.key === 'pengaturan') return isSuperAdmin;
+
+                const daftarPerm = Array.isArray(i.perm) ? i.perm : [i.perm];
+                return daftarPerm.some(can);
+            }),
+        }))
+        .filter((g) => g.items.length > 0);
+
+    const [openGroups, setOpenGroups] = useState(() => {
+        const init = {};
+        GROUPS.forEach((g) => {
+            try { init[g.key] = route().current(g.prefix + '*'); } catch (e) { init[g.key] = false; }
+        });
+        return init;
+    });
+
+    const toggleGroup = (key) => setOpenGroups((s) => ({ ...s, [key]: !s[key] }));
+
+    const sidebarProps = {
+        user, roleLabel, can, bisaKeRaport,
+        GROUPS, openGroups, setOpenGroups, toggleGroup,
+        dark, setDark, setCollapsed, closeNav,
+    };
+
 
     return (
         <div className="min-h-screen bg-cream-50 text-stone-900 dark:bg-coal-800 dark:text-cream-50">
@@ -581,11 +601,11 @@ export default function KeuanganLayout({ children }) {
             {open && <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden" onClick={closeNav} />}
 
             <aside className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-cream-300 bg-cream-100 transition-transform duration-300 lg:hidden dark:border-coal-600 dark:bg-coal-700 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
-                <SidebarBody isMini={false} />
+                <SidebarBody isMini={false} {...sidebarProps} />
             </aside>
 
             <aside className={`fixed inset-y-0 left-0 z-50 hidden border-r border-cream-300 bg-cream-100 transition-all duration-300 lg:block dark:border-coal-600 dark:bg-coal-700 ${collapsed ? 'w-[76px]' : 'w-64'}`}>
-                <SidebarBody isMini={collapsed} />
+                <SidebarBody isMini={collapsed} {...sidebarProps} />
             </aside>
 
             <div className={`transition-all duration-300 ${collapsed ? 'lg:pl-[76px]' : 'lg:pl-64'}`}>
@@ -593,7 +613,7 @@ export default function KeuanganLayout({ children }) {
                     <button onClick={() => setOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-600 hover:bg-cream-200 dark:text-stone-400 dark:hover:bg-coal-600">
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
                     </button>
-                    <span className="text-sm font-bold">Panel Keuangan</span>
+                    <span className="truncate text-sm font-bold">{NAMA_APP}</span>
                     <div className="ml-auto flex items-center">
                         <ThemeToggle dark={dark} onToggle={() => setDark((d) => !d)} />
                     </div>

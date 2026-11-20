@@ -1,16 +1,17 @@
 {
-    "name": "Laporan Perkembangan Tahfizh",
-    "short_name": "Tahfizh",
-    "description": "Pantau hafalan, presensi, dan tagihan santri.",
+    "name": "TK Attauhid",
+    "short_name": "Attauhid",
+    "description": "Sistem sekolah TK Attauhid — setoran, presensi, dan keuangan.",
     "start_url": "/dashboard",
     "scope": "/",
     "display": "standalone",
     "orientation": "portrait",
-    "background_color": "#faf9f5",
-    "theme_color": "#d97757",
+    "background_color": "#F6F7F2",
+    "theme_color": "#7EB842",
     "lang": "id",
     "icons": [
-        { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-        { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+        { "src": "/icons/ikon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "/icons/ikon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+        { "src": "/icons/ikon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
     ]
 }

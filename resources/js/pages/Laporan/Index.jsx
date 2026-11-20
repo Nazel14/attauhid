@@ -23,7 +23,7 @@ function Toast({ notif, onClose, duration = 5000 }) {
         <>
             <div
                 key={notif.id}
-                className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-[300] overflow-hidden rounded-2xl border border-stone-200 dark:border-coal-700 bg-white/95 dark:bg-coal-800/95 shadow-2xl backdrop-blur-md"
+                className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-[300] overflow-hidden rounded-2xl border border-cream-300 dark:border-coal-600 bg-white/95 dark:bg-coal-700/95 shadow-2xl backdrop-blur-md"
                 style={{ animation: 'toastIn .3s cubic-bezier(.21,1.02,.73,1)' }}
                 role="alert"
             >
@@ -37,11 +37,11 @@ function Toast({ notif, onClose, duration = 5000 }) {
                         </p>
                         <p className="mt-0.5 break-words text-sm text-stone-600 dark:text-stone-300">{notif.message}</p>
                     </div>
-                    <button onClick={onClose} className="flex-shrink-0 rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-coal-700 dark:hover:text-stone-200 transition">
+                    <button onClick={onClose} className="flex-shrink-0 rounded-lg p-1 text-stone-400 hover:bg-cream-200 hover:text-stone-600 dark:hover:bg-coal-600 dark:hover:text-stone-200 transition">
                         <XIcon className="w-4 h-4" />
                     </button>
                 </div>
-                <div className="h-1 w-full bg-stone-200 dark:bg-coal-700">
+                <div className="h-1 w-full bg-cream-300 dark:bg-coal-700">
                     <div className={`h-full ${success ? 'bg-emerald-500' : 'bg-red-500'}`}
                         style={{ animation: `toastBar ${duration}ms linear forwards` }} />
                 </div>
@@ -102,7 +102,7 @@ function LaporanCard({ item, authUserId, rp, kategori }) {
     // claude agar arah percakapan terbaca tanpa harus melihat panahnya.
     const kartuCls = masuk
         ? 'bg-claude-50 ring-claude-200 dark:bg-claude-500/10 dark:ring-claude-500/25'
-        : 'bg-white ring-stone-200 dark:bg-coal-700 dark:ring-coal-600';
+        : 'bg-white ring-cream-300 dark:bg-coal-700 dark:ring-coal-600';
 
     return (
         <Link
@@ -119,7 +119,7 @@ function LaporanCard({ item, authUserId, rp, kategori }) {
                                     className={`inline-flex h-4 w-4 shrink-0 items-center justify-center ${
                                         masuk
                                             ? 'text-claude-500'
-                                            : 'text-stone-400 dark:text-coal-400'
+                                            : 'text-stone-400 dark:text-stone-500'
                                     }`}
                                 >
                                     <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -137,7 +137,7 @@ function LaporanCard({ item, authUserId, rp, kategori }) {
                             {STATUS_LABEL[item.status]}
                         </span>
                         {item.dibisukan_at && (
-                            <span className="rounded-full bg-stone-200 px-2.5 py-0.5 text-xs font-medium text-stone-600 dark:bg-coal-700 dark:text-coal-200">
+                            <span className="rounded-full bg-cream-300 px-2.5 py-0.5 text-xs font-medium text-stone-600 dark:bg-coal-600 dark:text-stone-300">
                                 Dibisukan
                             </span>
                         )}
@@ -147,13 +147,13 @@ function LaporanCard({ item, authUserId, rp, kategori }) {
                             </span>
                         )}
                     </div>
-                    <p className="mt-1 text-sm text-stone-500 dark:text-coal-300">
+                    <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
                         {kategori[item.kategori] ?? item.kategori}
                         {item.snapshot?.tanggal && ` · ${fmtTgl(item.snapshot.tanggal)}`}
                     </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                    <span className="text-xs text-stone-400 dark:text-coal-400">
+                    <span className="text-xs text-stone-400 dark:text-stone-500">
                         {new Date(item.updated_at).toLocaleDateString('id-ID', {
                             day: 'numeric', month: 'short',
                         })}
@@ -268,7 +268,7 @@ export default function Index({ laporan, filter, kategori, guruList = [], santri
                     </div>
                     <div>
                         <h1 className="text-lg font-semibold text-stone-800 dark:text-cream-100">Laporan</h1>
-                        <p className="text-sm text-stone-500 dark:text-coal-300">
+                        <p className="text-sm text-stone-500 dark:text-stone-400">
                             Komplain & koreksi data
                         </p>
                     </div>
@@ -276,12 +276,12 @@ export default function Index({ laporan, filter, kategori, guruList = [], santri
                         {isGuru && (
                             <button
                                 onClick={() => setModalSantri(true)}
-                                className="inline-flex items-center gap-2 rounded-xl border border-claude-300 bg-white px-4 py-2.5 text-sm font-semibold text-claude-600 shadow-sm transition hover:bg-claude-50 active:scale-95 dark:border-claude-500/40 dark:bg-coal-800 dark:text-claude-400 dark:hover:bg-claude-500/10"
+                                className="inline-flex items-center gap-2 rounded-xl border border-claude-300 bg-white px-4 py-2.5 text-sm font-semibold text-claude-600 shadow-sm transition hover:bg-claude-50 active:scale-95 dark:border-claude-500/40 dark:bg-coal-600/40 dark:text-claude-400 dark:hover:bg-claude-500/10"
                             >
                                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
-                                Hubungi Santri
+                                Hubungi Siswa
                             </button>
                         )}
                         <button
@@ -311,13 +311,13 @@ export default function Index({ laporan, filter, kategori, guruList = [], santri
                                 if (e.key === 'Escape') setCari('');
                             }}
                             placeholder="Cari nama atau isi pesan…"
-                            className="w-full rounded-xl border-0 bg-white py-2.5 pl-9 pr-9 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:ring-2 focus:ring-claude-500 dark:bg-coal-800 dark:text-cream-100 dark:ring-coal-700"
+                            className="w-full rounded-xl border-0 bg-white py-2.5 pl-9 pr-9 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600"
                         />
                         {cari && (
                             <button
                                 type="button"
                                 onClick={() => setCari('')}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-coal-700"
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-stone-400 transition hover:bg-cream-200 hover:text-stone-600 dark:hover:bg-coal-600"
                             >
                                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -336,7 +336,7 @@ export default function Index({ laporan, filter, kategori, guruList = [], santri
                             className={`rounded-full px-4 py-1.5 text-sm font-medium ring-1 transition ${
                                 aktif(f)
                                     ? 'bg-claude-500 text-white ring-claude-500'
-                                    : 'bg-white text-stone-600 ring-stone-200 hover:bg-stone-50 dark:bg-coal-800 dark:text-coal-200 dark:ring-coal-700 dark:hover:bg-coal-700'
+                                    : 'bg-white text-stone-600 ring-cream-300 hover:bg-cream-100 dark:bg-coal-600/40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
                             }`}
                         >
                             {f === 'semua' ? 'Semua' : STATUS_LABEL[f]}
@@ -347,13 +347,13 @@ export default function Index({ laporan, filter, kategori, guruList = [], santri
                         bukan status laporan. Santri tidak perlu melihatnya. */}
                     {!isSantri && (
                         <>
-                            <span className="mx-1 h-5 w-px bg-stone-200 dark:bg-coal-700" />
+                            <span className="mx-1 h-5 w-px bg-cream-300 dark:bg-coal-700" />
                             <button
                                 onClick={() => setFilter('dibisukan')}
                                 className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium ring-1 transition ${
                                     aktif('dibisukan')
-                                        ? 'bg-stone-600 text-white ring-stone-600'
-                                        : 'bg-white text-stone-600 ring-stone-200 hover:bg-stone-50 dark:bg-coal-800 dark:text-coal-200 dark:ring-coal-700 dark:hover:bg-coal-700'
+                                        ? 'bg-coal-500 text-white ring-coal-500'
+                                        : 'bg-white text-stone-600 ring-cream-300 hover:bg-cream-100 dark:bg-coal-600/40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
                                 }`}
                             >
                                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -367,8 +367,8 @@ export default function Index({ laporan, filter, kategori, guruList = [], santri
 
                 {/* Daftar laporan */}
                 {laporan.data.length === 0 ? (
-                    <div className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600">
-                        <p className="text-sm text-stone-500 dark:text-coal-300">
+                    <div className="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600">
+                        <p className="text-sm text-stone-500 dark:text-stone-400">
                             {filter.q
                                 ? `Tidak ada laporan yang cocok dengan "${filter.q}".`
                                 : filter.status === 'dibisukan'
@@ -396,7 +396,7 @@ export default function Index({ laporan, filter, kategori, guruList = [], santri
                         {monitoring.length > 0 && (
                             <div>
                                 <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
-                                    Monitoring Santri ↔ Guru
+                                    Monitoring Siswa ↔ Guru
                                 </p>
                                 <div className="space-y-3">
                                     {monitoring.map((item) => (
@@ -426,14 +426,14 @@ export default function Index({ laporan, filter, kategori, guruList = [], santri
                                     className={`rounded-lg px-3 py-1.5 text-sm ring-1 ${
                                         link.active
                                             ? 'bg-claude-500 text-white ring-claude-500'
-                                            : 'bg-white text-stone-600 ring-stone-200 hover:bg-stone-50 dark:bg-coal-800 dark:text-coal-200 dark:ring-coal-700'
+                                            : 'bg-white text-stone-600 ring-cream-300 hover:bg-cream-100 dark:bg-coal-600/40 dark:text-stone-300 dark:ring-coal-600'
                                     }`}
                                 />
                             ) : (
                                 <span
                                     key={i}
                                     dangerouslySetInnerHTML={{ __html: link.label }}
-                                    className="rounded-lg px-3 py-1.5 text-sm text-stone-400 dark:text-coal-500"
+                                    className="rounded-lg px-3 py-1.5 text-sm text-stone-400 dark:text-stone-600"
                                 />
                             )
                         )}
@@ -454,8 +454,8 @@ export default function Index({ laporan, filter, kategori, guruList = [], santri
                 <LaporanModal
                     open={true}
                     onClose={() => setModalSantri(false)}
-                    judul="Hubungi Santri"
-                    konteks="Kirim pesan ke santri bimbingan Anda"
+                    judul="Hubungi Siswa"
+                    konteks="Kirim pesan ke siswa bimbingan Anda"
                     penerimaOptions={santriList}
                     kategoriOptions={{
                         pengingat_setoran: 'Pengingat Setoran',

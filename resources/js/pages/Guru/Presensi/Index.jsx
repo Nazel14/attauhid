@@ -18,9 +18,20 @@ const XIcon        = (p) => <I {...p} d={<path d="M6 18L18 6M6 6l12 12" />} />;
 const ArrowLeftIcon = (p) => <I {...p} d={<path d="M10 19l-7-7m0 0l7-7m-7 7h18" />} />;
 
 /* ============================================================
- * KONSTANTA — titik status (warna semantik, dipertahankan)
+ * TOKEN DESAIN — sama dengan Dashboard
  * ============================================================ */
-const STATUS_DOT = { Hadir: 'bg-emerald-500', Alpha: 'bg-red-500', Izin: 'bg-amber-500', Sakit: 'bg-orange-500' };
+const CARD = 'bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl';
+const BTN_SOFT = 'inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 text-stone-600 dark:text-stone-300 hover:bg-cream-100 dark:hover:bg-coal-600 transition active:scale-95';
+const AVATAR = {
+    P: 'bg-pink-50 dark:bg-pink-500/10 ring-pink-100 dark:ring-pink-500/20 text-pink-600 dark:text-pink-400',
+    L: 'bg-sky-50 dark:bg-sky-500/10 ring-sky-100 dark:ring-sky-500/20 text-sky-600 dark:text-sky-400',
+};
+
+/* ============================================================
+ * KONSTANTA — titik status (warna semantik, sama dengan Dashboard)
+ * ============================================================ */
+const STATUS_DOT = { Hadir: 'bg-emerald-500', Sakit: 'bg-orange-500', Izin: 'bg-amber-500', Alpha: 'bg-red-500' };
+const EMPTY_DOT  = 'bg-cream-400 dark:bg-coal-500';
 const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 const DOW    = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
@@ -57,43 +68,41 @@ function PresensiCalendar({ calendar = {}, sesiList = [], onDayClick }) {
 
     // titik mengecil saat sesi makin banyak
     const dotSize = sesiList.length <= 2 ? 'w-2 h-2' : sesiList.length <= 4 ? 'w-1.5 h-1.5' : 'w-1 h-1';
+    const navBtn = 'w-7 h-7 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400 hover:bg-cream-200 dark:hover:bg-coal-600 transition-colors';
 
     return (
         <div>
             {/* nav bulan */}
-            <div className="flex items-center justify-between px-1 py-2 bg-stone-50 dark:bg-coal-700/40">
-                <button onClick={() => move(-1)} className="w-6 h-6 rounded-lg flex items-center justify-center text-stone-500 hover:bg-stone-200 dark:hover:bg-coal-600 transition-colors">
-                    <ChevL className="w-3.5 h-3.5" />
-                </button>
-                <span className="text-xs font-bold tracking-tight text-stone-700 dark:text-stone-300">{MONTHS[cur.m]} {cur.y}</span>
-                <button onClick={() => move(1)} className="w-6 h-6 rounded-lg flex items-center justify-center text-stone-500 hover:bg-stone-200 dark:hover:bg-coal-600 transition-colors">
-                    <ChevR className="w-3.5 h-3.5" />
-                </button>
+            <div className="flex items-center justify-between px-2 py-1.5 bg-cream-100 dark:bg-coal-600/40 border-b border-cream-200 dark:border-coal-600/60">
+                <button onClick={() => move(-1)} className={navBtn}><ChevL className="w-3.5 h-3.5" /></button>
+                <span className="text-xs font-bold tracking-tight text-stone-700 dark:text-stone-200">{MONTHS[cur.m]} {cur.y}</span>
+                <button onClick={() => move(1)} className={navBtn}><ChevR className="w-3.5 h-3.5" /></button>
             </div>
 
             {/* header hari */}
-            <div className="grid grid-cols-7 gap-1 px-3 pt-2">
-                {DOW.map((d) => <span key={d} className="text-center text-[9px] font-semibold text-stone-400 dark:text-stone-500">{d}</span>)}
+            <div className="grid grid-cols-7 gap-1 px-3 pt-2.5">
+                {DOW.map((d) => <span key={d} className="text-center text-[10px] font-semibold text-stone-400">{d}</span>)}
             </div>
 
-            {/* grid tanggal */}
+            {/* grid tanggal — sel memakai coal-600/40 supaya terlihat di atas kartu coal-700 */}
             <div className="grid grid-cols-7 gap-1 px-3 pb-3 pt-1">
                 {cells.map((c, i) => {
                     if (!c) return <div key={i} />;
                     const isToday = c.dateStr === todayStr;
-                    const hasData = Object.keys(c.data).length > 0;
                     return (
                         <button
                             key={i}
                             onClick={() => onDayClick(c)}
-                            className={`min-h-[40px] rounded-lg p-1 flex flex-col items-center justify-start gap-0.5 transition-colors
-                                ${isToday ? 'bg-claude-100 dark:bg-claude-500/20 ring-1 ring-claude-300 dark:ring-claude-500/40' : 'bg-stone-100 dark:bg-coal-700 hover:bg-stone-200 dark:hover:bg-coal-600'}`}
+                            className={`min-h-[40px] rounded-lg p-1 flex flex-col items-center justify-start gap-0.5 transition-colors ring-1
+                                ${isToday
+                                    ? 'bg-claude-100 dark:bg-claude-500/15 ring-claude-300 dark:ring-claude-500/40'
+                                    : 'bg-cream-100 dark:bg-coal-600/40 ring-cream-200 dark:ring-coal-600/60 hover:bg-cream-200 dark:hover:bg-coal-600'}`}
                         >
-                            <span className={`text-[10px] font-bold ${isToday ? 'text-claude-700 dark:text-claude-300' : 'text-stone-600 dark:text-stone-300'}`}>{c.d}</span>
+                            <span className={`text-[10px] font-bold tabular-nums ${isToday ? 'text-claude-700 dark:text-claude-300' : 'text-stone-600 dark:text-stone-300'}`}>{c.d}</span>
                             <span className="flex flex-wrap justify-center gap-0.5">
                                 {sesiList.map((s) => {
                                     const st = c.data[s];
-                                    return <span key={s} title={`${s}: ${st || 'Belum absen'}`} className={`${dotSize} rounded-full ${st ? STATUS_DOT[st] : 'bg-stone-300 dark:bg-coal-500'}`} />;
+                                    return <span key={s} title={`${s}: ${st || 'Belum absen'}`} className={`${dotSize} rounded-full ${st ? STATUS_DOT[st] : EMPTY_DOT}`} />;
                                 })}
                             </span>
                         </button>
@@ -123,38 +132,41 @@ export default function Index({ kelas, guruName, genderSummary, tahunAjaranAktif
         <GuruAuthenticatedLayout>
             <Head title="Presensi Santri" />
 
-            <div className="max-w-6xl mx-auto px-3 sm:px-4 py-5">
-            {/* Kembali — mobile saja */}
-                            <Link href={route('guru.dashboard')}
-                                className="mb-4 sm:hidden inline-flex items-center gap-1.5 rounded-xl border border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-stone-100 dark:hover:bg-coal-700 active:scale-95">
-                                <ArrowLeftIcon className="w-4 h-4" /> Kembali ke Dashboard
-                            </Link>
-            
-                {/* ===== HEADER ===== */}
+            {/* Padding dibuang — <main> di layout sudah memberinya (sama seperti Dashboard). */}
+            <div className="max-w-6xl mx-auto">
+                {/* Kembali — mobile saja */}
+                <Link href={route('guru.dashboard')} className={`${BTN_SOFT} mb-4 sm:hidden`}>
+                    <ArrowLeftIcon className="w-4 h-4" /> Kembali ke Dashboard
+                </Link>
+
+                {/* ===== HEADER (sama dengan Dashboard) ===== */}
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="w-11 h-11 rounded-2xl bg-claude-500 flex items-center justify-center flex-shrink-0 shadow-sm shadow-claude-500/30">
-                        <CalendarIcon className="w-6 h-6 text-white" />
+                    <div className="w-11 h-11 rounded-2xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center flex-shrink-0 text-stone-600 dark:text-stone-300">
+                        <CalendarIcon className="w-6 h-6" />
                     </div>
                     <div className="min-w-0 flex-1">
                         <h1 className="text-lg sm:text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">Presensi Santri</h1>
-                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 font-semibold">{kelas.name}</span>
-                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-coal-700 text-stone-600 dark:text-stone-300 font-medium">{genderLabel}</span>
+                        <p className="text-[11px] text-stone-500 mt-0.5">
+                            Kelas <span className="font-semibold text-claude-600 dark:text-claude-400">{kelas.name}</span>
+                            <span className="mx-1 opacity-40">·</span>{genderLabel}
                             {tahunAjaranAktif && (
-                                <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-semibold">{tahunAjaranAktif.nama} · Aktif</span>
+                                <>
+                                    <span className="mx-1 opacity-40">·</span>{tahunAjaranAktif.nama}
+                                    <span className="ml-1.5 px-1.5 py-px rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[10px] font-semibold">Aktif</span>
+                                </>
                             )}
-                        </div>
+                        </p>
                     </div>
-                    <Link href={route('guru.input.create')} className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-claude-500 hover:bg-claude-600 text-white text-xs font-bold transition-colors active:scale-95">
+                    <Link href={route('guru.input.create')} className="flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-claude-500 hover:bg-claude-600 text-white text-xs font-semibold transition-colors active:scale-95">
                         <PlusIcon className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">Input Presensi</span>
                         <span className="sm:hidden">Input</span>
                     </Link>
                 </div>
 
-                {/* ===== STAT + LEGENDA ===== */}
+                {/* ===== STAT + LEGENDA (sama dengan StatCard Dashboard) ===== */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-                    <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-4 flex items-center gap-3">
+                    <div className={`${CARD} p-4 flex items-center gap-3`}>
                         <span className="w-10 h-10 rounded-xl bg-claude-100 dark:bg-claude-500/15 text-claude-600 dark:text-claude-400 flex items-center justify-center flex-shrink-0">
                             <UsersIcon className="w-5 h-5" />
                         </span>
@@ -163,12 +175,15 @@ export default function Index({ kelas, guruName, genderSummary, tahunAjaranAktif
                             <p className="text-lg font-bold tracking-tight text-stone-900 dark:text-stone-100 leading-tight">{genderSummary.total}</p>
                         </div>
                     </div>
-                    <div className="sm:col-span-2 bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-4 flex items-center justify-around">
+                    <div className={`sm:col-span-2 ${CARD} p-4 flex flex-wrap items-center justify-around gap-x-4 gap-y-2`}>
                         {Object.entries(STATUS_DOT).map(([label, dot]) => (
                             <span key={label} className="flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-300">
                                 <span className={`w-2.5 h-2.5 rounded-full ${dot}`} /> {label}
                             </span>
                         ))}
+                        <span className="flex items-center gap-1.5 text-xs text-stone-400">
+                            <span className={`w-2.5 h-2.5 rounded-full ${EMPTY_DOT}`} /> Belum absen
+                        </span>
                     </div>
                 </div>
 
@@ -176,20 +191,20 @@ export default function Index({ kelas, guruName, genderSummary, tahunAjaranAktif
                 {santris.length ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                         {santris.map((santri) => (
-                            <div key={santri.id} className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl overflow-hidden">
+                            <div key={santri.id} className={`${CARD} overflow-hidden`}>
                                 {/* header kartu */}
-                                <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-stone-100 dark:border-coal-700/60">
+                                <div className="flex items-center justify-between gap-2 px-4 py-3">
                                     <div className="flex items-center gap-2.5 min-w-0">
                                         {santri.photo_url
-                                            ? <img src={santri.photo_url} alt="" className="w-9 h-9 rounded-full object-cover object-top ring-1 ring-stone-200 dark:ring-coal-700 flex-shrink-0" />
-                                            : <span className={`w-9 h-9 rounded-full ring-1 flex items-center justify-center text-xs font-bold flex-shrink-0 ${santri.gender === 'Perempuan' ? 'bg-pink-100 dark:bg-pink-950/60 ring-pink-200 dark:ring-pink-800/60 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950/60 ring-blue-200 dark:ring-blue-800/60 text-blue-600 dark:text-blue-400'}`}>{initial(santri.name)}</span>}
+                                            ? <img src={santri.photo_url} alt="" className="w-9 h-9 rounded-full object-cover object-top ring-1 ring-cream-300 dark:ring-coal-600 flex-shrink-0" />
+                                            : <span className={`w-9 h-9 rounded-full ring-1 flex items-center justify-center text-xs font-bold flex-shrink-0 ${santri.gender === 'Perempuan' ? AVATAR.P : AVATAR.L}`}>{initial(santri.name)}</span>}
                                         <div className="min-w-0">
-                                            <p className="text-sm font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">{santri.name}</p>
-                                            <p className="text-[10px] text-stone-400 dark:text-stone-500 font-mono">{santri.nis}</p>
+                                            <p className="text-sm font-semibold tracking-tight text-stone-800 dark:text-stone-100 truncate">{santri.name}</p>
+                                            <p className="text-[11px] text-stone-400 font-mono">{santri.nis}</p>
                                         </div>
                                     </div>
-                                    <Link href={route('guru.presensis.detail', santri.id)} className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 text-[10px] font-bold text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-coal-600 transition-colors">
-                                        <EyeIcon className="w-3 h-3" /> Detail
+                                    <Link href={route('guru.presensis.detail', santri.id)} className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-[11px] font-semibold text-stone-600 dark:text-stone-300 hover:bg-cream-300 dark:hover:bg-coal-500 transition-colors">
+                                        <EyeIcon className="w-3.5 h-3.5" /> Detail
                                     </Link>
                                 </div>
 
@@ -203,11 +218,11 @@ export default function Index({ kelas, guruName, genderSummary, tahunAjaranAktif
                         ))}
                     </div>
                 ) : (
-                    <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl py-16 text-center">
-                        <span className="inline-flex w-12 h-12 rounded-2xl bg-stone-100 dark:bg-coal-700 items-center justify-center text-stone-400 mb-3">
-                            <CalendarIcon className="w-6 h-6" />
+                    <div className={`${CARD} py-14 flex flex-col items-center text-center`}>
+                        <span className="w-11 h-11 rounded-2xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center mb-3 text-stone-400">
+                            <CalendarIcon className="w-5 h-5" />
                         </span>
-                        <p className="text-sm font-semibold text-stone-600 dark:text-stone-300">Belum ada santri</p>
+                        <p className="text-sm font-semibold text-stone-700 dark:text-stone-300">Belum ada santri</p>
                     </div>
                 )}
             </div>
@@ -215,13 +230,13 @@ export default function Index({ kelas, guruName, genderSummary, tahunAjaranAktif
             {/* ===== MODAL DETAIL HARI ===== */}
             {selectedDay && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50 backdrop-blur-sm" onClick={() => setSelectedDay(null)}>
-                    <div className="w-full max-w-xs bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl shadow-2xl p-5" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-3">
-                            <div>
-                                <p className="text-sm font-bold tracking-tight text-stone-900 dark:text-stone-100">{selectedDay.santriName}</p>
-                                <p className="text-[11px] text-stone-400 dark:text-stone-500">{fmtDate(selectedDay.dateStr)}</p>
+                    <div className={`w-full max-w-xs ${CARD} shadow-2xl p-5`} onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="min-w-0">
+                                <p className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-100 truncate">{selectedDay.santriName}</p>
+                                <p className="text-[11px] text-stone-400">{fmtDate(selectedDay.dateStr)}</p>
                             </div>
-                            <button onClick={() => setSelectedDay(null)} className="w-7 h-7 rounded-lg bg-stone-100 dark:bg-coal-700 flex items-center justify-center text-stone-500 hover:bg-stone-200 dark:hover:bg-coal-600 transition-colors">
+                            <button onClick={() => setSelectedDay(null)} className="w-7 h-7 rounded-lg bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center text-stone-500 dark:text-stone-300 hover:bg-cream-300 dark:hover:bg-coal-500 transition-colors">
                                 <XIcon className="w-4 h-4" />
                             </button>
                         </div>
@@ -229,11 +244,11 @@ export default function Index({ kelas, guruName, genderSummary, tahunAjaranAktif
                             {sesiList.map((s) => {
                                 const st = selectedDay.data[s];
                                 return (
-                                    <div key={s} className="flex items-center justify-between px-3 py-2 rounded-xl bg-stone-50 dark:bg-coal-700/40">
+                                    <div key={s} className="flex items-center justify-between px-3 py-2 rounded-xl bg-cream-100 dark:bg-coal-600/40 ring-1 ring-cream-300 dark:ring-coal-600">
                                         <span className="text-xs text-stone-600 dark:text-stone-300">{s}</span>
                                         <span className="flex items-center gap-1.5 text-xs font-semibold">
-                                            <span className={`w-2 h-2 rounded-full ${st ? STATUS_DOT[st] : 'bg-stone-300 dark:bg-coal-500'}`} />
-                                            <span className={st ? 'text-stone-700 dark:text-stone-200' : 'text-stone-400 dark:text-stone-500'}>{st || 'Belum absen'}</span>
+                                            <span className={`w-2 h-2 rounded-full ${st ? STATUS_DOT[st] : EMPTY_DOT}`} />
+                                            <span className={st ? 'text-stone-700 dark:text-stone-200' : 'text-stone-400'}>{st || 'Belum absen'}</span>
                                         </span>
                                     </div>
                                 );

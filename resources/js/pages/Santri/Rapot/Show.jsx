@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Head } from '@inertiajs/react';
 import SantriAuthenticatedLayout from '@/Layouts/SantriAuthenticatedLayout';
 
@@ -31,7 +31,8 @@ const JILID_RE = /^(Iqro|Aisar|Ummi)\s+Jilid\s+(\d+)/i;
 
 function nilaiTone(n) {
     if (n >= 90) return 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-100 dark:ring-emerald-500/20';
-    if (n >= 75) return 'bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 ring-1 ring-claude-200 dark:ring-claude-500/20';
+    // ≥75 netral — sama dengan Rapot guru
+    if (n >= 75) return 'bg-cream-200 dark:bg-coal-600 text-stone-700 dark:text-stone-200 ring-1 ring-cream-300 dark:ring-coal-500';
     return 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-1 ring-amber-100 dark:ring-amber-500/20';
 }
 function usePaged(rows, perPage) {
@@ -42,15 +43,17 @@ function usePaged(rows, perPage) {
 }
 
 const Card = ({ className = '', children }) => (
-    <div className={`bg-white dark:bg-coal-800 rounded-2xl ring-1 ring-stone-200 dark:ring-coal-700 ${className}`}>{children}</div>
+    <div className={`bg-white dark:bg-coal-700 rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600 ${className}`}>{children}</div>
 );
 
+// Kategori — SAMA dengan halaman guru (Input, Rapot, Setoran)
 const CAT = {
-    Hafalan:  { dot: 'bg-claude-500', text: 'text-claude-600 dark:text-claude-400', chip: 'bg-claude-100 dark:bg-claude-500/15 ring-claude-200 dark:ring-claude-500/20', perPage: 15 },
-    Murajaah: { dot: 'bg-amber-500',  text: 'text-amber-600 dark:text-amber-400',   chip: 'bg-amber-50 dark:bg-amber-500/10 ring-amber-100 dark:ring-amber-500/20', perPage: 6 },
-    Tilawah:  { dot: 'bg-teal-500',   text: 'text-teal-600 dark:text-teal-400',     chip: 'bg-teal-50 dark:bg-teal-500/10 ring-teal-100 dark:ring-teal-500/20', perPage: 6 },
+    Hafalan:  { dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400', chip: 'bg-emerald-50 dark:bg-emerald-500/10 ring-emerald-100 dark:ring-emerald-500/20', perPage: 15 },
+    Murajaah: { dot: 'bg-amber-500',   text: 'text-amber-700 dark:text-amber-400',     chip: 'bg-amber-50 dark:bg-amber-500/10 ring-amber-100 dark:ring-amber-500/20', perPage: 6 },
+    Tilawah:  { dot: 'bg-orange-500',  text: 'text-orange-700 dark:text-orange-400',   chip: 'bg-orange-50 dark:bg-orange-500/10 ring-orange-100 dark:ring-orange-500/20', perPage: 6 },
 };
-const PRES = { Hadir: 'bg-emerald-500', Izin: 'bg-blue-500', Sakit: 'bg-amber-500', Alpha: 'bg-red-500' };
+// Status presensi — SAMA dengan Dashboard guru (Izin amber, Sakit oranye)
+const PRES = { Hadir: 'bg-emerald-500', Izin: 'bg-amber-500', Sakit: 'bg-orange-500', Alpha: 'bg-red-500' };
 
 export default function Show({
     santri, setorans = {}, statistikSetoran = {}, statistikPresensi = {},
@@ -85,7 +88,7 @@ export default function Show({
 
                 {/* ===== HEADER ===== */}
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="w-11 h-11 rounded-2xl bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 flex items-center justify-center flex-shrink-0">
+                    <div className="w-11 h-11 rounded-2xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center flex-shrink-0">
                         <Icon path={P.rapot} className="w-6 h-6 text-stone-600 dark:text-stone-300" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -105,9 +108,9 @@ export default function Show({
                     <Card className="p-4 sm:p-5">
                         <div className="flex items-center gap-4">
                             {photo ? (
-                                <img src={`/storage/${photo}`} alt="Foto" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover object-top ring-1 ring-stone-200 dark:ring-coal-700 flex-shrink-0" />
+                                <img src={`/storage/${photo}`} alt="Foto" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover object-top ring-1 ring-cream-300 dark:ring-coal-600 flex-shrink-0" />
                             ) : (
-                                <span className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ring-1 flex items-center justify-center text-lg font-bold flex-shrink-0 ${isPr ? 'bg-pink-100 dark:bg-pink-950/60 ring-pink-200 dark:ring-pink-800/60 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950/60 ring-blue-200 dark:ring-blue-800/60 text-blue-600 dark:text-blue-400'}`}>
+                                <span className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ring-1 flex items-center justify-center text-lg font-bold flex-shrink-0 ${isPr ? 'bg-pink-50 dark:bg-pink-500/10 ring-pink-100 dark:ring-pink-500/20 text-pink-600 dark:text-pink-400' : 'bg-sky-50 dark:bg-sky-500/10 ring-sky-100 dark:ring-sky-500/20 text-sky-600 dark:text-sky-400'}`}>
                                     {(santri?.name ?? '?').charAt(0).toUpperCase()}
                                 </span>
                             )}
@@ -117,7 +120,7 @@ export default function Show({
                                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
                                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 font-semibold">{santri?.kelas?.name ?? '-'}</span>
                                     {isIqro && (
-                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-coal-700 text-stone-600 dark:text-stone-300 font-semibold ring-1 ring-stone-200 dark:ring-coal-600">
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-600 dark:text-stone-300 font-semibold ring-1 ring-cream-300 dark:ring-coal-500">
                                             {metodeLabel} · Jilid {ss.target_jilid}
                                             {hasQuran2 && <span className="opacity-40 mx-1">+</span>}
                                             {hasQuran2 && "Al-Qur'an"}
@@ -150,7 +153,7 @@ export default function Show({
                                     <Icon path={P.pdf} className="w-4 h-4" /> Preview PDF
                                 </button>
                             ) : (
-                                <span className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-stone-100 dark:bg-coal-700 text-stone-500 dark:text-stone-400 ring-1 ring-stone-200 dark:ring-coal-600 text-sm font-semibold cursor-not-allowed">
+                                <span className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 ring-1 ring-cream-300 dark:ring-coal-500 text-sm font-semibold cursor-not-allowed">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.7" viewBox="0 0 24 24">
                                         <rect x="4.5" y="11" width="15" height="10" rx="2" />
                                         <path strokeLinecap="round" d="M8 11V7a4 4 0 018 0v4" />
@@ -233,8 +236,8 @@ export default function Show({
                                     />                                    <Mini value={num(ss.total_kata)} label="Total Kata" />
                                 </div>
 
-                                <div className="pt-4 border-t border-stone-100 dark:border-coal-700">
-                                    <p className="text-[11px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2.5">Kategori Setoran</p>
+                                <div className="pt-4 border-t border-cream-300 dark:border-coal-600">
+                                    <p className="text-xs font-semibold text-stone-600 dark:text-stone-300 mb-2.5">Kategori Setoran</p>
                                     <div className="space-y-1.5">
                                         <CatCount cat="Hafalan" value={ss.hafalan} />
                                         <CatCount cat="Murajaah" value={ss.murajaah} />
@@ -263,13 +266,13 @@ export default function Show({
 
                                 <div className="grid grid-cols-2 gap-2.5">
                                     <MiniSem tone="emerald" value={sp.hadir} label="Hadir" />
-                                    <MiniSem tone="blue" value={sp.izin} label="Izin" />
-                                    <MiniSem tone="amber" value={sp.sakit} label="Sakit" />
+                                    <MiniSem tone="amber" value={sp.izin} label="Izin" />
+                                    <MiniSem tone="orange" value={sp.sakit} label="Sakit" />
                                     <MiniSem tone="red" value={sp.alpha} label="Alpha" />
                                 </div>
 
-                                <div className="pt-4 border-t border-stone-100 dark:border-coal-700">
-                                    <p className="text-[11px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2.5">Distribusi Kehadiran</p>
+                                <div className="pt-4 border-t border-cream-300 dark:border-coal-600">
+                                    <p className="text-xs font-semibold text-stone-600 dark:text-stone-300 mb-2.5">Distribusi Kehadiran</p>
                                     <div className="space-y-2.5">
                                         {['Hadir', 'Izin', 'Sakit', 'Alpha'].map((k) => {
                                             const v = sp[k.toLowerCase()] ?? 0;
@@ -280,7 +283,7 @@ export default function Show({
                                                         <span className="text-[11px] text-stone-500 dark:text-stone-400">{k}</span>
                                                         <span className="text-[11px] font-bold text-stone-900 dark:text-stone-100 tabular-nums">{v} <span className="text-stone-400 dark:text-stone-500 font-normal">({pct}%)</span></span>
                                                     </div>
-                                                    <div className="w-full h-1.5 rounded-full bg-stone-100 dark:bg-coal-700 overflow-hidden">
+                                                    <div className="w-full h-1.5 rounded-full bg-cream-200 dark:bg-coal-600 overflow-hidden">
                                                         <div className={`h-full rounded-full transition-all duration-700 ${PRES[k]}`} style={{ width: `${pct}%` }} />
                                                     </div>
                                                 </div>
@@ -301,7 +304,7 @@ export default function Show({
                         <SummaryHead icon={P.book} title="Riwayat Setoran Per Kategori" />
                         {!hasAny ? (
                             <div className="p-10 text-center">
-                                <div className="w-14 h-14 mx-auto mb-3 rounded-2xl grid place-items-center bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600">
+                                <div className="w-14 h-14 mx-auto mb-3 rounded-2xl grid place-items-center bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500">
                                     <Icon path={P.doc} className="w-7 h-7 text-stone-400 opacity-60" />
                                 </div>
                                 <p className="text-sm text-stone-500 dark:text-stone-400">Tidak ada data setoran pada semester ini</p>
@@ -312,7 +315,7 @@ export default function Show({
                                     {['Hafalan', 'Murajaah', 'Tilawah'].map((k) => {
                                         const t = CAT[k];
                                         return (
-                                            <button key={k} onClick={() => setMobileTab(k)} className={`shrink-0 px-3 py-2 text-xs font-semibold rounded-xl transition-colors ring-1 ${mobileTab === k ? `${t.chip} ${t.text}` : 'bg-white dark:bg-coal-800 text-stone-500 dark:text-stone-400 ring-stone-200 dark:ring-coal-700'}`}>
+                                            <button key={k} onClick={() => setMobileTab(k)} className={`shrink-0 px-3 py-2 text-xs font-semibold rounded-xl transition-colors ring-1 ${mobileTab === k ? `${t.chip} ${t.text}` : 'bg-white dark:bg-coal-700 text-stone-500 dark:text-stone-400 ring-cream-300 dark:ring-coal-600'}`}>
                                                 {k} <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums bg-black/5 dark:bg-white/10">{groups[k].length}</span>
                                             </button>
                                         );
@@ -344,9 +347,9 @@ export default function Show({
 // ── sub-komponen ──
 function SummaryHead({ icon, title }) {
     return (
-        <div className="px-4 sm:px-5 py-3.5 border-b border-stone-100 dark:border-coal-700">
+        <div className="px-4 sm:px-5 py-3.5 border-b border-cream-300 dark:border-coal-600">
             <h3 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200 flex items-center gap-2">
-                <span className="w-6 h-6 bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400">
+                <span className="w-6 h-6 bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400">
                     <Icon path={icon} className="w-3.5 h-3.5" />
                 </span>
                 {title}
@@ -356,15 +359,19 @@ function SummaryHead({ icon, title }) {
 }
 function Bar({ value, tone = 'claude' }) {
     const fill = tone === 'emerald' ? 'bg-emerald-500' : 'bg-claude-500';
+    // 0% benar-benar kosong (dulu minimal 4% sehingga 0% tampak terisi);
+    // nilai kecil > 0 tetap diberi lebar minimum supaya terlihat. Dibatasi 100%.
+    const v = Number(value) || 0;
+    const w = v > 0 ? Math.min(100, Math.max(4, v)) : 0;
     return (
-        <div className="h-2.5 rounded-full overflow-hidden bg-white/60 dark:bg-coal-700 ring-1 ring-stone-200/60 dark:ring-coal-600">
-            <div className={`h-full rounded-full transition-all duration-700 ${fill}`} style={{ width: `${Math.max(4, value)}%` }} />
+        <div className="h-2.5 rounded-full overflow-hidden bg-cream-300 dark:bg-coal-600">
+            <div className={`h-full rounded-full transition-all duration-700 ${fill}`} style={{ width: `${w}%` }} />
         </div>
     );
 }
 function Mini({ value, label }) {
     return (
-        <div className="rounded-xl p-3 bg-stone-50 dark:bg-coal-700/50 ring-1 ring-stone-200 dark:ring-coal-600">
+        <div className="rounded-xl p-3 bg-cream-100 dark:bg-coal-600/40 ring-1 ring-cream-300 dark:ring-coal-500">
             <div className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100 leading-none tabular-nums">{value}</div>
             <div className="text-[11px] text-stone-500 dark:text-stone-400 mt-1">{label}</div>
         </div>
@@ -372,12 +379,12 @@ function Mini({ value, label }) {
 }
 const SEM = {
     emerald: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-500/20',
-    blue: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 ring-blue-100 dark:ring-blue-500/20',
+    orange: 'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 ring-orange-100 dark:ring-orange-500/20',
     amber: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-amber-100 dark:ring-amber-500/20',
     red: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 ring-red-100 dark:ring-red-500/20',
 };
 function MiniSem({ tone, value, label }) {
-    const dot = { emerald: 'bg-emerald-500', blue: 'bg-blue-500', amber: 'bg-amber-500', red: 'bg-red-500' };
+    const dot = { emerald: 'bg-emerald-500', orange: 'bg-orange-500', amber: 'bg-amber-500', red: 'bg-red-500' };
     return (
         <div className={`rounded-xl p-3 ring-1 ${SEM[tone]}`}>
             <div className="text-2xl font-bold tracking-tight leading-none tabular-nums">{value}</div>
@@ -398,15 +405,15 @@ function CatCount({ cat, value }) {
 }
 
 const Th = ({ children, className = '' }) => (
-    <th className={`px-3 py-2.5 text-left text-[10px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider ${className}`}>{children}</th>
+    <th className={`px-3 py-2.5 text-left text-[11px] font-semibold text-stone-500 dark:text-stone-400 ${className}`}>{children}</th>
 );
 const Td = ({ children, className = '' }) => <td className={`px-3 py-2.5 text-xs ${className}`}>{children}</td>;
 
 function RapotPanel({ cat, rows, className = '', isIqro = false, isDual = false }) {    const t = CAT[cat];
     const pg = usePaged(rows, t.perPage);
     return (
-        <div className={`bg-white dark:bg-coal-800 rounded-2xl ring-1 ring-stone-200 dark:ring-coal-700 overflow-hidden flex flex-col ${className}`}>
-            <div className="px-4 py-3 flex items-center justify-between border-b border-stone-100 dark:border-coal-700">
+        <div className={`bg-white dark:bg-coal-700 rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600 overflow-hidden flex flex-col ${className}`}>
+            <div className="px-4 py-3 flex items-center justify-between border-b border-cream-300 dark:border-coal-600">
                 <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${t.dot}`} />
                     <h4 className="font-bold tracking-tight text-sm text-stone-800 dark:text-stone-200">{cat}</h4>
@@ -425,13 +432,13 @@ function RapotPanel({ cat, rows, className = '', isIqro = false, isDual = false 
                     <div className="overflow-x-auto flex-1">
                         <table className="min-w-full">
                             <thead>
-                                <tr className="bg-stone-50 dark:bg-coal-700/40">
+                                <tr className="bg-cream-100 dark:bg-coal-600/40">
                                     <Th className="w-8">No</Th>
                                     <Th>{isDual ? 'Materi Setoran' : (isIqro ? 'Jilid & Halaman' : 'Surah & Ayat')}</Th>                                    <Th className="w-12 text-center">Jml</Th>
                                     <Th className="w-16 text-center">Nilai</Th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-stone-100 dark:divide-coal-700/60">
+                            <tbody className="divide-y divide-cream-200 dark:divide-coal-600/60">
                                 {pg.slice.map((d, i) => {
                                     const idx = (pg.page - 1) * t.perPage + i + 1;
                                     const isJilid = JILID_RE.test(String(d.surat_start || ''));
@@ -440,14 +447,14 @@ function RapotPanel({ cat, rows, className = '', isIqro = false, isDual = false 
                                         ? `Halaman ${d.ayat_start_min}–${d.ayat_end_max}`
                                         : `Ayat ${d.ayat_start_min}–${d.ayat_end_max}`;
                                     return (
-                                        <tr key={idx} className="hover:bg-stone-50 dark:hover:bg-coal-700/40 transition-colors">
+                                        <tr key={idx} className="hover:bg-cream-100 dark:hover:bg-coal-600/30 transition-colors">
                                             <Td className="text-stone-400 dark:text-stone-500 tabular-nums">{idx}</Td>
                                             <Td>
                                                 <p className="text-xs text-stone-900 dark:text-stone-100 font-semibold leading-tight">{surat}</p>
                                                 <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-0.5">{detail}</p>
                                             </Td>
                                             <Td className="text-center">
-                                                <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 text-stone-600 dark:text-stone-300 tabular-nums">{d.jumlah_setoran}×</span>
+                                                <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-stone-600 dark:text-stone-300 tabular-nums">{d.jumlah_setoran}×</span>
                                             </Td>
                                             <Td className="text-center">
                                                 <span className={`inline-flex items-center justify-center font-bold tabular-nums rounded-lg px-2 py-1 text-xs ${nilaiTone(d.rata_nilai)}`}>{d.rata_nilai}</span>
@@ -475,12 +482,12 @@ function Pagination({ pg }) {
     const nums = []; for (let i = sp; i <= ep; i++) nums.push(i);
 
     const btn = 'px-2.5 py-1 text-xs rounded-md font-medium transition';
-    const normal = `${btn} text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-coal-700 hover:text-stone-900 dark:hover:text-stone-100`;
+    const normal = `${btn} text-stone-500 dark:text-stone-400 hover:bg-cream-200 dark:hover:bg-coal-600 hover:text-stone-900 dark:hover:text-stone-100`;
     const active = `${btn} font-semibold bg-claude-500 text-white`;
     const disabled = `${btn} text-stone-300 dark:text-stone-600 cursor-not-allowed`;
 
     return (
-        <div className="px-3 py-2.5 border-t border-stone-100 dark:border-coal-700 bg-stone-50 dark:bg-coal-700/30">
+        <div className="px-3 py-2.5 border-t border-cream-300 dark:border-coal-600 bg-cream-100 dark:bg-coal-600/40">
             <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="text-[11px] text-stone-400 dark:text-stone-500 tabular-nums">{from}–{to} dari {total}</span>
                 <div className="flex items-center gap-1 flex-wrap">
@@ -497,31 +504,35 @@ function Pagination({ pg }) {
 
 function PdfModal({ onClose, previewSrc, downloadHref }) {
     const [loaded, setLoaded] = useState(false);
+    // onClose disimpan di ref: kalau jadi dependency, listener Escape & kunci
+    // scroll dilepas-pasang setiap parent render (onClose = arrow function baru).
+    const closeRef = useRef(onClose);
+    closeRef.current = onClose;
     useEffect(() => {
-        const onKey = (e) => e.key === 'Escape' && onClose();
+        const onKey = (e) => e.key === 'Escape' && closeRef.current();
         document.addEventListener('keydown', onKey);
         document.body.style.overflow = 'hidden';
         return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
-    }, [onClose]);
+    }, []);
 
     return (
         <div className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm flex items-stretch sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
-            <div onClick={(e) => e.stopPropagation()} className="w-full sm:max-w-5xl bg-white dark:bg-coal-800 sm:rounded-2xl ring-1 ring-stone-200 dark:ring-coal-700 shadow-2xl overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-stone-100 dark:border-coal-700 shrink-0">
+            <div onClick={(e) => e.stopPropagation()} className="w-full sm:max-w-5xl bg-white dark:bg-coal-700 sm:rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600 shadow-2xl overflow-hidden flex flex-col">
+                <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-cream-300 dark:border-coal-600 shrink-0">
                     <h3 className="text-sm sm:text-base font-bold tracking-tight text-stone-900 dark:text-stone-100 flex items-center gap-2">
-                        <span className="w-7 h-7 rounded-lg grid place-items-center bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400"><Icon path={P.pdf} className="w-3.5 h-3.5" /></span>
+                        <span className="w-7 h-7 rounded-lg grid place-items-center bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-stone-500 dark:text-stone-400"><Icon path={P.pdf} className="w-3.5 h-3.5" /></span>
                         Preview Rapot PDF
                     </h3>
                     <div className="flex items-center gap-2">
-                        <a href={downloadHref} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-100 dark:ring-emerald-500/20 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition">
+                        <a href={downloadHref} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-claude-500 hover:bg-claude-600 text-white text-xs font-semibold transition active:scale-95">
                             <Icon path={P.download} className="w-3.5 h-3.5" /> Download
                         </a>
-                        <button onClick={onClose} className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-100 dark:hover:bg-coal-700 transition"><Icon path={P.close} className="w-5 h-5" /></button>
+                        <button onClick={onClose} className="w-8 h-8 rounded-lg grid place-items-center bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-stone-500 dark:text-stone-300 hover:bg-cream-300 dark:hover:bg-coal-500 transition"><Icon path={P.close} className="w-4 h-4" /></button>
                     </div>
                 </div>
                 <div className="flex-1 p-3 sm:p-4 relative">
                     {!loaded && (
-                        <div className="absolute inset-3 sm:inset-4 rounded-lg grid place-items-center bg-stone-50 dark:bg-coal-900 ring-1 ring-stone-200 dark:ring-coal-700">
+                        <div className="absolute inset-3 sm:inset-4 rounded-lg grid place-items-center bg-cream-100 dark:bg-coal-600/40 ring-1 ring-cream-300 dark:ring-coal-600">
                             <div className="text-center">
                                 <span className="inline-block w-8 h-8 rounded-full border-2 border-claude-500/30 border-t-claude-500 animate-spin" />
                                 <p className="mt-3 text-xs text-stone-500 dark:text-stone-400">Menyiapkan PDF…</p>
@@ -532,7 +543,7 @@ function PdfModal({ onClose, previewSrc, downloadHref }) {
                         src={previewSrc}
                         onLoad={() => setLoaded(true)}
                         title="Rapot PDF"
-                        className="w-full rounded-lg bg-white ring-1 ring-stone-200"
+                        className="w-full rounded-lg bg-white ring-1 ring-cream-300 dark:ring-coal-600"
                         style={{ height: 'calc(100vh - 160px)', minHeight: 320 }}
                     />
                 </div>

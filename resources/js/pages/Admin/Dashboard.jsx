@@ -6,6 +6,24 @@ import {
     XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from 'recharts';
 
+// =====================================================================
+// Warna grafik.
+//
+// Recharts menerima warna sebagai NILAI JavaScript (prop `fill`, `stroke`,
+// `stopColor`), bukan sebagai nama kelas. Tailwind memindai teks sumber dan
+// tidak pernah melihat nilai ini, jadi mengubah palet di tailwind.config.js
+// TIDAK akan menyentuh grafik — angkanya harus ditulis di sini.
+//
+// Disatukan sebagai konstanta supaya kalau warna logo berubah, yang disunting
+// cuma tiga baris ini, bukan tersebar di tujuh tempat di dalam JSX.
+// Nilainya diambil dari berkas logo asli di Profil TK Attauhid.
+// =====================================================================
+const WARNA = {
+    hijau:  '#7EB842',
+    biru:   '#36A7DF',
+    oranye: '#FA902C',
+};
+
 export default function Dashboard({ stats = {}, tahunAjaranAktif = null, loginTrend = [], recentActivities = [] }) {
     const { auth } = usePage().props;
     const user = auth.user;
@@ -69,10 +87,12 @@ export default function Dashboard({ stats = {}, tahunAjaranAktif = null, loginTr
     // Kategori Admin hanya ikut bila penggunanya memang berhak melihat
     // angkanya. Tanpa ini admin biasa melihat batang 'Admin' setinggi nol —
     // yang terbaca sebagai data hilang, padahal datanya memang tidak dikirim.
+    //
+    // Tiga warnanya adalah tiga sisi logo At-Tauhid, bukan warna acak.
     const komposisiData = [
-        isSuperAdmin && { label: 'Admin', value: stats.totalAdmins ?? 0, fill: '#D97757' },
-        { label: 'Guru', value: stats.totalGurus ?? 0, fill: '#6A9BCC' },
-        { label: 'Santri', value: stats.totalSantris ?? 0, fill: '#C2A6E1' },
+        isSuperAdmin && { label: 'Admin', value: stats.totalAdmins ?? 0, fill: WARNA.hijau },
+        { label: 'Guru', value: stats.totalGurus ?? 0, fill: WARNA.biru },
+        { label: 'Santri', value: stats.totalSantris ?? 0, fill: WARNA.oranye },
     ].filter(Boolean);
 
     // ===== Aktivitas: gaya per tipe =====
@@ -158,15 +178,15 @@ export default function Dashboard({ stats = {}, tahunAjaranAktif = null, loginTr
                                 <AreaChart data={trendData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="loginFill" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#D97757" stopOpacity={0.35} />
-                                            <stop offset="95%" stopColor="#D97757" stopOpacity={0} />
+                                            <stop offset="5%" stopColor={WARNA.hijau} stopOpacity={0.35} />
+                                            <stop offset="95%" stopColor={WARNA.hijau} stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#a8a29e" strokeOpacity={0.2} vertical={false} />
                                     <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#a8a29e' }} axisLine={false} tickLine={false} />
                                     <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#a8a29e' }} axisLine={false} tickLine={false} width={35} />
                                     <Tooltip content={<ChartTip />} />
-                                    <Area type="monotone" dataKey="count" stroke="#D97757" strokeWidth={2.5} fill="url(#loginFill)" dot={{ r: 3, fill: '#D97757' }} activeDot={{ r: 5 }} />
+                                    <Area type="monotone" dataKey="count" stroke={WARNA.hijau} strokeWidth={2.5} fill="url(#loginFill)" dot={{ r: 3, fill: WARNA.hijau }} activeDot={{ r: 5 }} />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>

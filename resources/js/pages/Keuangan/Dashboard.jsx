@@ -8,6 +8,16 @@ import {
 } from 'recharts';
 
 // Recharts memakai atribut SVG, jadi warnanya tidak bisa lewat kelas Tailwind.
+// Nilai di bawah DISALIN dari tailwind.config.js (palet TK Attauhid) — kalau
+// palet di sana berubah, angka di sini ikut diubah manual.
+const WARNA = {
+    hijau:  '#7EB842', // claude-500 / hijau logo — pemasukan
+    oranye: '#FA902C', // tauhid.oranye — tunggakan (peringatan, bukan bahaya)
+    merah:  '#ef4444', // red-500 — pengeluaran
+    terang: { grid: '#E1E4D8', sumbu: '#78716c', kartu: '#ffffff', teks: '#292524' },        // cream-300, stone-500
+    gelap:  { grid: '#3F453C', sumbu: '#a8a29e', kartu: '#323730', teks: '#F6F7F2' },        // coal-600, stone-400, coal-700, cream-100
+};
+
 // Hook ini mengikuti toggle tema di layout supaya grafik ikut berubah.
 function useDarkMode() {
     const [dark, setDark] = useState(
@@ -46,7 +56,7 @@ function useLayarKecil(query = '(max-width: 639px)') {
 
 function Kartu({ label, nilai, sub, warna, ikon }) {
     return (
-        <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 transition hover:ring-stone-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
+        <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 transition hover:ring-cream-400 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
             <div className="flex items-start justify-between gap-2 sm:gap-3">
                 <div className="min-w-0 flex-1">
                     <p className="truncate text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 sm:text-[11px]">{label}</p>
@@ -65,19 +75,47 @@ function Kartu({ label, nilai, sub, warna, ikon }) {
     );
 }
 
+// Di luar Dashboard dengan sengaja: komponen yang dibuat di dalam render
+// induknya dibongkar-pasang ulang setiap render (mis. saat tema diganti).
+function Transaksi({ judul, items, kosong, positif }) {
+    return (
+        <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
+            <h3 className="mb-4 text-sm font-semibold text-stone-800 dark:text-cream-50">{judul}</h3>
+            <div className="space-y-3">
+                {items?.length > 0 ? items.map((item) => (
+                    <div key={item.id} className="flex flex-col gap-1 border-b border-cream-200 pb-3 last:border-0 last:pb-0 dark:border-coal-600 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                        <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-stone-800 dark:text-cream-100">{item.description}</p>
+                            <p className="truncate text-xs text-stone-400">{item.date} · {item.method || item.category}</p>
+                        </div>
+                        {/* Di mobile nominal turun ke baris bawah — dipaksa sebaris
+                            akan menekan deskripsi jadi tinggal beberapa huruf. */}
+                        <span className={`shrink-0 text-sm font-semibold sm:text-right ${positif ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-700 dark:text-stone-200'}`}>
+                            {positif ? '+' : '−'} {formatCurrency(item.amount)}
+                        </span>
+                    </div>
+                )) : (
+                    <p className="py-6 text-center text-sm text-stone-400">{kosong}</p>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export default function Dashboard({ stats, monthlyData, arrearsTrend, recentIncome, recentExpenses, actionSummary, notifications }) {
     const dark = useDarkMode();
     const kecil = useLayarKecil();
 
-    const grid  = dark ? '#3E3D3A' : '#EDEBE4';
-    const sumbu = dark ? '#9c9a92' : '#73726c';
+    const tema  = dark ? WARNA.gelap : WARNA.terang;
+    const grid  = tema.grid;
+    const sumbu = tema.sumbu;
 
     const tooltipStyle = {
-        backgroundColor: dark ? '#262624' : '#ffffff',
+        backgroundColor: tema.kartu,
         border: `1px solid ${grid}`,
         borderRadius: '12px',
         fontSize: '12px',
-        color: dark ? '#F5F4EF' : '#3d3d3a',
+        color: tema.teks,
     };
 
     // Margin kiri negatif memotong label sumbu Y di layar sempit.
@@ -96,29 +134,6 @@ export default function Dashboard({ stats, monthlyData, arrearsTrend, recentInco
     };
 
     const naik = (v) => (v >= 0 ? '↑' : '↓');
-
-    const Transaksi = ({ judul, items, kosong, positif }) => (
-        <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
-            <h3 className="mb-4 text-sm font-semibold text-stone-800 dark:text-cream-50">{judul}</h3>
-            <div className="space-y-3">
-                {items?.length > 0 ? items.map((item) => (
-                    <div key={item.id} className="flex flex-col gap-1 border-b border-stone-100 pb-3 last:border-0 last:pb-0 dark:border-coal-600 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                        <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-stone-800 dark:text-cream-100">{item.description}</p>
-                            <p className="truncate text-xs text-stone-400">{item.date} · {item.method || item.category}</p>
-                        </div>
-                        {/* Di mobile nominal turun ke baris bawah — dipaksa sebaris
-                            akan menekan deskripsi jadi tinggal beberapa huruf. */}
-                        <span className={`shrink-0 text-sm font-semibold sm:text-right ${positif ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-700 dark:text-stone-200'}`}>
-                            {positif ? '+' : '−'} {formatCurrency(item.amount)}
-                        </span>
-                    </div>
-                )) : (
-                    <p className="py-6 text-center text-sm text-stone-400">{kosong}</p>
-                )}
-            </div>
-        </div>
-    );
 
     return (
         <KeuanganLayout>
@@ -195,13 +210,13 @@ export default function Dashboard({ stats, monthlyData, arrearsTrend, recentInco
             </div>
 
             <div className="mb-5 grid grid-cols-1 gap-4 sm:mb-6 lg:grid-cols-2">
-                <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
+                <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
                     <div className="mb-4 flex items-start justify-between gap-2">
                         <div className="min-w-0">
                             <h3 className="text-sm font-semibold text-stone-800 dark:text-cream-50">Perbandingan Keuangan</h3>
                             <p className="mt-0.5 text-xs text-stone-400">Pemasukan vs pengeluaran (juta rupiah)</p>
                         </div>
-                        <span className="shrink-0 rounded-full bg-stone-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:bg-coal-600 dark:text-stone-300">6 bulan</span>
+                        <span className="shrink-0 rounded-full bg-cream-200 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:bg-coal-600 dark:text-stone-300">6 bulan</span>
                     </div>
                     <div className="h-[220px] w-full sm:h-[260px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -214,14 +229,14 @@ export default function Dashboard({ stats, monthlyData, arrearsTrend, recentInco
                                 <Tooltip contentStyle={tooltipStyle} cursor={{ fill: dark ? '#ffffff08' : '#00000006' }}
                                     formatter={(v, n) => [`Rp ${v} Jt`, n]} />
                                 <Legend wrapperStyle={{ fontSize: kecil ? 11 : 12, paddingTop: 8 }} iconType="circle" iconSize={8} />
-                                <Bar dataKey="income" name="Pemasukan" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={kecil ? 14 : 26} />
-                                <Bar dataKey="expenses" name="Pengeluaran" fill="#ef4444" radius={[6, 6, 0, 0]} maxBarSize={kecil ? 14 : 26} />
+                                <Bar dataKey="income" name="Pemasukan" fill={WARNA.hijau} radius={[6, 6, 0, 0]} maxBarSize={kecil ? 14 : 26} />
+                                <Bar dataKey="expenses" name="Pengeluaran" fill={WARNA.merah} radius={[6, 6, 0, 0]} maxBarSize={kecil ? 14 : 26} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
-                <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
+                <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
                     <div className="mb-4">
                         <h3 className="text-sm font-semibold text-stone-800 dark:text-cream-50">Tren Tunggakan</h3>
                         <p className="mt-0.5 text-xs text-stone-400">Persentase siswa dengan tagihan belum lunas</p>
@@ -231,8 +246,8 @@ export default function Dashboard({ stats, monthlyData, arrearsTrend, recentInco
                             <AreaChart data={arrearsTrend || []} margin={marginChart}>
                                 <defs>
                                     <linearGradient id="gradTunggakan" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#D97757" stopOpacity={0.28} />
-                                        <stop offset="100%" stopColor="#D97757" stopOpacity={0.02} />
+                                        <stop offset="0%" stopColor={WARNA.oranye} stopOpacity={0.28} />
+                                        <stop offset="100%" stopColor={WARNA.oranye} stopOpacity={0.02} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke={grid} vertical={false} />
@@ -241,8 +256,8 @@ export default function Dashboard({ stats, monthlyData, arrearsTrend, recentInco
                                 <YAxis width={lebarY} tick={{ fontSize: fontSumbu, fill: sumbu }} axisLine={false} tickLine={false}
                                     tickFormatter={(v) => `${v}%`} />
                                 <Tooltip contentStyle={tooltipStyle} formatter={(v) => [`${v}%`, 'Tunggakan']} />
-                                <Area type="monotone" dataKey="percentage" stroke="#D97757" strokeWidth={2.5}
-                                    fill="url(#gradTunggakan)" dot={{ r: kecil ? 2.5 : 3, fill: '#D97757' }} activeDot={{ r: 5 }} />
+                                <Area type="monotone" dataKey="percentage" stroke={WARNA.oranye} strokeWidth={2.5}
+                                    fill="url(#gradTunggakan)" dot={{ r: kecil ? 2.5 : 3, fill: WARNA.oranye }} activeDot={{ r: 5 }} />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>

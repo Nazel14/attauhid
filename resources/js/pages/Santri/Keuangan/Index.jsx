@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect } from 'react';
+import { Fragment, useState, useEffect, useRef } from 'react';
 import { Head } from '@inertiajs/react';
 import SantriAuthenticatedLayout from '@/Layouts/SantriAuthenticatedLayout';
 
@@ -43,7 +43,7 @@ function usePaged(rows, perPage) {
 }
 
 const Card = ({ className = '', children }) => (
-    <div className={`bg-white dark:bg-coal-800 rounded-2xl ring-1 ring-stone-200 dark:ring-coal-700 ${className}`}>{children}</div>
+    <div className={`bg-white dark:bg-coal-700 rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600 ${className}`}>{children}</div>
 );
 
 /* Status tagihan → warna semantik.
@@ -52,21 +52,21 @@ const Card = ({ className = '', children }) => (
 const TAGIHAN_STATUS = {
     Paid:        { label: 'Lunas',       chip: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-500/20' },
     Installment: { label: 'Cicilan',     chip: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-amber-100 dark:ring-amber-500/20' },
-    Unpaid:      { label: 'Belum Bayar', chip: 'bg-stone-100 dark:bg-coal-700 text-stone-600 dark:text-stone-300 ring-stone-200 dark:ring-coal-600' },
+    Unpaid:      { label: 'Belum Bayar', chip: 'bg-cream-200 dark:bg-coal-600 text-stone-600 dark:text-stone-300 ring-cream-300 dark:ring-coal-500' },
     Lewat:       { label: 'Lewat Tempo', chip: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 ring-red-100 dark:ring-red-500/20' },
 };
 const statusTagihan = (t) => (t.lewat_tempo ? TAGIHAN_STATUS.Lewat : (TAGIHAN_STATUS[t.status] ?? TAGIHAN_STATUS.Unpaid));
 
 function StatCard({ icon, label, value, sub, tone = 'stone' }) {
     const toneMap = {
-        stone:   'bg-stone-100 dark:bg-coal-700 text-stone-500 dark:text-stone-400',
+        stone:   'bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400',
         claude:  'bg-claude-100 dark:bg-claude-500/15 text-claude-600 dark:text-claude-400',
         emerald: 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
         amber:   'bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400',
         red:     'bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400',
     };
     return (
-        <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-4 flex items-center gap-3">
+        <div className="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl p-4 flex items-center gap-3">
             <span className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${toneMap[tone]}`}>{icon}</span>
             <div className="min-w-0">
                 <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">{label}</p>
@@ -127,7 +127,7 @@ function BarisSalin({ label, nilai }) {
     };
 
     return (
-        <div className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 bg-stone-50 dark:bg-coal-700/50 ring-1 ring-stone-200 dark:ring-coal-600">
+        <div className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 bg-cream-100 dark:bg-coal-600/40 ring-1 ring-cream-300 dark:ring-coal-500">
             <div className="min-w-0">
                 <p className="text-[10px] text-stone-400 dark:text-stone-500">{label}</p>
                 <p className="text-sm font-bold text-stone-900 dark:text-stone-100 font-mono tracking-wide truncate">{nilai}</p>
@@ -135,7 +135,7 @@ function BarisSalin({ label, nilai }) {
             <button
                 type="button"
                 onClick={salin}
-                className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition active:scale-95 ${tersalin ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-100 dark:ring-emerald-500/20' : 'bg-white dark:bg-coal-800 text-stone-600 dark:text-stone-300 ring-1 ring-stone-200 dark:ring-coal-700 hover:bg-stone-100 dark:hover:bg-coal-700'}`}
+                className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition active:scale-95 ${tersalin ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-100 dark:ring-emerald-500/20' : 'bg-white dark:bg-coal-700 text-stone-600 dark:text-stone-300 ring-1 ring-cream-300 dark:ring-coal-600 hover:bg-cream-200 dark:hover:bg-coal-600'}`}
             >
                 <Icon path={tersalin ? P.check : P.copy} className="w-3.5 h-3.5" />
                 {tersalin ? 'Tersalin' : 'Salin'}
@@ -181,7 +181,7 @@ function IsiCaraBayar({ rekening = [], waAdmin, santri, sisa, judul }) {
                         <button
                             key={x.id}
                             onClick={() => setPilih(i)}
-                            className={`shrink-0 px-3 py-2 text-xs font-semibold rounded-xl transition-colors ring-1 ${i === pilih ? 'bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 ring-claude-200 dark:ring-claude-500/20' : 'bg-white dark:bg-coal-800 text-stone-500 dark:text-stone-400 ring-stone-200 dark:ring-coal-700'}`}
+                            className={`shrink-0 px-3 py-2 text-xs font-semibold rounded-xl transition-colors ring-1 ${i === pilih ? 'bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 ring-claude-200 dark:ring-claude-500/20' : 'bg-white dark:bg-coal-700 text-stone-500 dark:text-stone-400 ring-cream-300 dark:ring-coal-600'}`}
                         >
                             {x.nama}
                         </button>
@@ -191,7 +191,7 @@ function IsiCaraBayar({ rekening = [], waAdmin, santri, sisa, judul }) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
                 {r.qris && (
-                    <div className="rounded-xl p-3 bg-white dark:bg-coal-700/30 ring-1 ring-stone-200 dark:ring-coal-600 text-center">
+                    <div className="rounded-xl p-3 bg-cream-100 dark:bg-coal-600/40 ring-1 ring-cream-300 dark:ring-coal-600 text-center">
                         <p className="text-[11px] font-semibold text-stone-600 dark:text-stone-300 mb-2 flex items-center justify-center gap-1.5">
                             <Icon path={P.qr} className="w-3.5 h-3.5" /> Scan QRIS
                         </p>
@@ -206,7 +206,7 @@ function IsiCaraBayar({ rekening = [], waAdmin, santri, sisa, judul }) {
                     {sisa > 0 && <BarisSalin label="Jumlah yang harus dibayar" nilai={rp(sisa)} />}
                     {r.nomor && <BarisSalin label={`No. ${r.tipe === 'Bank' ? 'Rekening' : 'Akun'} ${r.nama}`} nilai={r.nomor} />}
                     {r.pemilik && (
-                        <div className="rounded-xl px-3 py-2.5 bg-stone-50 dark:bg-coal-700/50 ring-1 ring-stone-200 dark:ring-coal-600">
+                        <div className="rounded-xl px-3 py-2.5 bg-cream-100 dark:bg-coal-600/40 ring-1 ring-cream-300 dark:ring-coal-500">
                             <p className="text-[10px] text-stone-400 dark:text-stone-500">Atas Nama</p>
                             <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate">{r.pemilik}</p>
                         </div>
@@ -218,7 +218,7 @@ function IsiCaraBayar({ rekening = [], waAdmin, santri, sisa, judul }) {
             </div>
 
             {waAdmin && (
-                <div className="mt-4 pt-4 border-t border-stone-100 dark:border-coal-700">
+                <div className="mt-4 pt-4 border-t border-cream-300 dark:border-coal-600">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed max-w-xs">
                             Setelah transfer, kirim bukti lewat WhatsApp. Status lunas diperbarui
@@ -241,6 +241,10 @@ function IsiCaraBayar({ rekening = [], waAdmin, santri, sisa, judul }) {
 /* Modal pembayaran. Dipakai dua pemicu: total tunggakan dan per tagihan. */
 function ModalBayar({ data, onClose, rekening, waAdmin, santri }) {
     const terbuka = Boolean(data);
+    // onClose disimpan di ref: kalau jadi dependency, listener Escape & kunci
+    // scroll dilepas-pasang setiap parent render (onClose = arrow function baru).
+    const closeRef = useRef(onClose);
+    closeRef.current = onClose;
 
     // Dikunci hanya saat modal terbuka. Tanpa penjaga `terbuka`, efek ini
     // berjalan sejak halaman dimuat dan mengunci scroll selamanya, karena
@@ -248,7 +252,7 @@ function ModalBayar({ data, onClose, rekening, waAdmin, santri }) {
     useEffect(() => {
         if (!terbuka) return;
 
-        const onKey = (e) => e.key === 'Escape' && onClose();
+        const onKey = (e) => e.key === 'Escape' && closeRef.current();
         document.addEventListener('keydown', onKey);
         document.body.style.overflow = 'hidden';
 
@@ -256,14 +260,14 @@ function ModalBayar({ data, onClose, rekening, waAdmin, santri }) {
             document.removeEventListener('keydown', onKey);
             document.body.style.overflow = '';
         };
-    }, [terbuka, onClose]);
+    }, [terbuka]);
 
     if (!data) return null;
 
     return (
         <div className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
-            <div onClick={(e) => e.stopPropagation()} className="w-full sm:max-w-2xl bg-white dark:bg-coal-800 rounded-t-2xl sm:rounded-2xl ring-1 ring-stone-200 dark:ring-coal-700 shadow-2xl overflow-y-auto max-h-[90vh]">
-                <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100 dark:border-coal-700 sticky top-0 bg-white dark:bg-coal-800">
+            <div onClick={(e) => e.stopPropagation()} className="w-full sm:max-w-2xl bg-white dark:bg-coal-700 rounded-t-2xl sm:rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600 shadow-2xl overflow-y-auto max-h-[90vh]">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-cream-300 dark:border-coal-600 sticky top-0 bg-white dark:bg-coal-700">
                     <div className="min-w-0">
                         <h3 className="text-sm sm:text-base font-bold tracking-tight text-stone-900 dark:text-stone-100 flex items-center gap-2">
                             <span className="w-7 h-7 rounded-lg grid place-items-center bg-claude-100 dark:bg-claude-500/15 text-claude-600 dark:text-claude-400">
@@ -273,7 +277,7 @@ function ModalBayar({ data, onClose, rekening, waAdmin, santri }) {
                         </h3>
                         <p className="text-[11px] text-stone-400 dark:text-stone-500 mt-0.5 truncate">{data.judul}</p>
                     </div>
-                    <button onClick={onClose} className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-100 dark:hover:bg-coal-700 transition shrink-0">
+                    <button onClick={onClose} className="w-8 h-8 rounded-lg grid place-items-center bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-stone-500 dark:text-stone-300 hover:bg-cream-300 dark:hover:bg-coal-500 transition shrink-0">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.7" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </div>
@@ -294,8 +298,8 @@ export default function Index({ santri = null, ringkasan = null, tagihan = [], p
             <SantriAuthenticatedLayout>
                 <Head title="Keuangan" />
                 <div className="max-w-6xl mx-auto px-3 sm:px-4 py-5">
-                    <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl py-16 text-center">
-                        <span className="inline-flex w-12 h-12 rounded-2xl bg-stone-100 dark:bg-coal-700 items-center justify-center text-stone-400 mb-3">
+                    <div className="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl py-16 text-center">
+                        <span className="inline-flex w-12 h-12 rounded-2xl bg-cream-200 dark:bg-coal-600 items-center justify-center text-stone-400 mb-3">
                             <Icon path={P.info} className="w-6 h-6" />
                         </span>
                         <p className="text-sm font-semibold text-stone-600 dark:text-stone-300">Data Tidak Ditemukan</p>
@@ -318,7 +322,7 @@ export default function Index({ santri = null, ringkasan = null, tagihan = [], p
 
                 {/* ===== HEADER ===== */}
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="w-11 h-11 rounded-2xl bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 flex items-center justify-center flex-shrink-0">
+                    <div className="w-11 h-11 rounded-2xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center flex-shrink-0">
                         <Icon path={P.wallet} className="w-6 h-6 text-stone-600 dark:text-stone-300" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -331,7 +335,7 @@ export default function Index({ santri = null, ringkasan = null, tagihan = [], p
                     {/* Santri info */}
                     <Card className="p-4 sm:p-5">
                         <div className="flex items-center gap-4">
-                            <span className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ring-1 flex items-center justify-center text-lg font-bold flex-shrink-0 ${isPr ? 'bg-pink-100 dark:bg-pink-950/60 ring-pink-200 dark:ring-pink-800/60 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950/60 ring-blue-200 dark:ring-blue-800/60 text-blue-600 dark:text-blue-400'}`}>
+                            <span className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ring-1 flex items-center justify-center text-lg font-bold flex-shrink-0 ${isPr ? 'bg-pink-50 dark:bg-pink-500/10 ring-pink-100 dark:ring-pink-500/20 text-pink-600 dark:text-pink-400' : 'bg-sky-50 dark:bg-sky-500/10 ring-sky-100 dark:ring-sky-500/20 text-sky-600 dark:text-sky-400'}`}>
                                 {(santri?.name ?? '?').charAt(0).toUpperCase()}
                             </span>
                             <div className="min-w-0 flex-1">
@@ -368,7 +372,7 @@ export default function Index({ santri = null, ringkasan = null, tagihan = [], p
                             )}
 
                             {r.tagihan_terdekat && (
-                                <div className="rounded-xl px-3.5 py-2.5 bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 min-w-[180px]">
+                                <div className="rounded-xl px-3.5 py-2.5 bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 min-w-[180px]">
                                     <p className="text-[10px] text-stone-400 dark:text-stone-500 font-medium">Jatuh tempo terdekat</p>
                                     <p className="text-xs font-bold text-stone-900 dark:text-stone-100 mt-0.5 truncate">{r.tagihan_terdekat.judul}</p>
                                     <div className="flex items-baseline justify-between gap-3 mt-1">
@@ -401,10 +405,10 @@ export default function Index({ santri = null, ringkasan = null, tagihan = [], p
 
                     {/* Mobile tabs */}
                     <div className="flex gap-2 lg:hidden">
-                        <button onClick={() => setMobileTab('tagihan')} className={`flex-1 py-2.5 text-xs font-semibold rounded-xl transition-colors ring-1 ${mobileTab === 'tagihan' ? 'bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 ring-claude-200 dark:ring-claude-500/20' : 'bg-white dark:bg-coal-800 text-stone-500 dark:text-stone-400 ring-stone-200 dark:ring-coal-700'}`}>
+                        <button onClick={() => setMobileTab('tagihan')} className={`flex-1 py-2.5 text-xs font-semibold rounded-xl transition-colors ring-1 ${mobileTab === 'tagihan' ? 'bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 ring-claude-200 dark:ring-claude-500/20' : 'bg-white dark:bg-coal-700 text-stone-500 dark:text-stone-400 ring-cream-300 dark:ring-coal-600'}`}>
                             Tagihan <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums bg-black/5 dark:bg-white/10">{tagihan.length}</span>
                         </button>
-                        <button onClick={() => setMobileTab('bayar')} className={`flex-1 py-2.5 text-xs font-semibold rounded-xl transition-colors ring-1 ${mobileTab === 'bayar' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-500/20' : 'bg-white dark:bg-coal-800 text-stone-500 dark:text-stone-400 ring-stone-200 dark:ring-coal-700'}`}>
+                        <button onClick={() => setMobileTab('bayar')} className={`flex-1 py-2.5 text-xs font-semibold rounded-xl transition-colors ring-1 ${mobileTab === 'bayar' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-500/20' : 'bg-white dark:bg-coal-700 text-stone-500 dark:text-stone-400 ring-cream-300 dark:ring-coal-600'}`}>
                             Pembayaran <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums bg-black/5 dark:bg-white/10">{pembayaran.length}</span>
                         </button>
                     </div>
@@ -433,7 +437,7 @@ export default function Index({ santri = null, ringkasan = null, tagihan = [], p
 }
 
 const Th = ({ children, className = '' }) => (
-    <th className={`px-3 py-2.5 text-left text-[10px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider ${className}`}>{children}</th>
+    <th className={`px-3 py-2.5 text-left text-[11px] font-semibold text-stone-500 dark:text-stone-400 ${className}`}>{children}</th>
 );
 const Td = ({ children, className = '' }) => <td className={`px-3 py-2.5 text-xs ${className}`}>{children}</td>;
 
@@ -443,8 +447,8 @@ function TagihanPanel({ rows, className = '', onBayar = null }) {
     const [buka, setBuka] = useState(null); // id tagihan yang rinciannya dibuka
 
     return (
-        <div className={`bg-white dark:bg-coal-800 rounded-2xl ring-1 ring-stone-200 dark:ring-coal-700 overflow-hidden flex flex-col ${className}`}>
-            <div className="px-4 sm:px-5 py-3.5 flex items-center justify-between border-b border-stone-100 dark:border-coal-700">
+        <div className={`bg-white dark:bg-coal-700 rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600 overflow-hidden flex flex-col ${className}`}>
+            <div className="px-4 sm:px-5 py-3.5 flex items-center justify-between border-b border-cream-300 dark:border-coal-600">
                 <div className="flex items-center gap-2.5">
                     <span className="w-8 h-8 rounded-lg grid place-items-center bg-claude-100 dark:bg-claude-500/15 ring-1 ring-claude-200 dark:ring-claude-500/20 text-claude-600 dark:text-claude-400">
                         <Icon path={P.bill} className="w-4 h-4" />
@@ -464,13 +468,13 @@ function TagihanPanel({ rows, className = '', onBayar = null }) {
                     <div className="overflow-x-auto flex-1">
                         <table className="min-w-full">
                             <thead>
-                                <tr className="bg-stone-50 dark:bg-coal-700/40">
+                                <tr className="bg-cream-100 dark:bg-coal-600/40">
                                     <Th>Tagihan</Th>
                                     <Th className="w-28 text-right">Sisa</Th>
                                     <Th className="w-24 text-center">Status</Th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-stone-100 dark:divide-coal-700/60">
+                            <tbody className="divide-y divide-cream-200 dark:divide-coal-600/60">
                                 {pg.slice.map((t) => {
                                     const st = statusTagihan(t);
                                     const aktif = buka === t.id;
@@ -480,7 +484,7 @@ function TagihanPanel({ rows, className = '', onBayar = null }) {
                                         <Fragment key={t.id}>
                                             <tr
                                                 onClick={() => setBuka(aktif ? null : t.id)}
-                                                className="hover:bg-stone-50 dark:hover:bg-coal-700/40 transition-colors cursor-pointer"
+                                                className="hover:bg-cream-100 dark:hover:bg-coal-600/30 transition-colors cursor-pointer"
                                             >
                                                 <Td>
                                                     <p className="text-xs text-stone-900 dark:text-stone-100 font-semibold leading-tight flex items-center gap-1.5">
@@ -501,9 +505,9 @@ function TagihanPanel({ rows, className = '', onBayar = null }) {
                                             </tr>
 
                                             {aktif && (
-                                                <tr className="bg-stone-50 dark:bg-coal-700/30">
+                                                <tr className="bg-cream-100 dark:bg-coal-600/40">
                                                     <td colSpan={3} className="px-3 py-3">
-                                                        <p className="text-[10px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">Rincian</p>
+                                                        <p className="text-[11px] font-semibold text-stone-500 dark:text-stone-400 mb-2">Rincian</p>
                                                         {t.rincian?.length ? (
                                                             <div className="space-y-1.5">
                                                                 {t.rincian.map((it, i) => (
@@ -512,7 +516,7 @@ function TagihanPanel({ rows, className = '', onBayar = null }) {
                                                                         <span className="font-semibold text-stone-900 dark:text-stone-100 tabular-nums whitespace-nowrap">{rp(it.nominal)}</span>
                                                                     </div>
                                                                 ))}
-                                                                <div className="flex items-center justify-between gap-3 text-xs pt-2 mt-1 border-t border-stone-200 dark:border-coal-600">
+                                                                <div className="flex items-center justify-between gap-3 text-xs pt-2 mt-1 border-t border-cream-300 dark:border-coal-600">
                                                                     <span className="text-stone-500 dark:text-stone-400">Sudah dibayar</span>
                                                                     <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{rp(t.terbayar)}</span>
                                                                 </div>
@@ -553,8 +557,8 @@ function PembayaranPanel({ rows, className = '' }) {
     const pg = usePaged(rows, 10);
 
     return (
-        <div className={`bg-white dark:bg-coal-800 rounded-2xl ring-1 ring-stone-200 dark:ring-coal-700 overflow-hidden flex flex-col ${className}`}>
-            <div className="px-4 sm:px-5 py-3.5 flex items-center justify-between border-b border-stone-100 dark:border-coal-700">
+        <div className={`bg-white dark:bg-coal-700 rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600 overflow-hidden flex flex-col ${className}`}>
+            <div className="px-4 sm:px-5 py-3.5 flex items-center justify-between border-b border-cream-300 dark:border-coal-600">
                 <div className="flex items-center gap-2.5">
                     <span className="w-8 h-8 rounded-lg grid place-items-center bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100 dark:ring-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                         <Icon path={P.coins} className="w-4 h-4" />
@@ -574,16 +578,16 @@ function PembayaranPanel({ rows, className = '' }) {
                     <div className="overflow-x-auto flex-1">
                         <table className="min-w-full">
                             <thead>
-                                <tr className="bg-stone-50 dark:bg-coal-700/40">
+                                <tr className="bg-cream-100 dark:bg-coal-600/40">
                                     <Th className="w-24">Tanggal</Th>
                                     <Th className="text-right">Nominal</Th>
                                     <Th className="w-28 text-center">Status</Th>
                                     <Th className="w-14 text-center">Bukti</Th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-stone-100 dark:divide-coal-700/60">
+                            <tbody className="divide-y divide-cream-200 dark:divide-coal-600/60">
                                 {pg.slice.map((b) => (
-                                    <tr key={b.id} className="hover:bg-stone-50 dark:hover:bg-coal-700/40 transition-colors">
+                                    <tr key={b.id} className="hover:bg-cream-100 dark:hover:bg-coal-600/30 transition-colors">
                                         <Td className="text-stone-500 dark:text-stone-400 whitespace-nowrap tabular-nums">{fmtDate(b.tanggal)}</Td>
                                         <Td className="text-right">
                                             <p className="font-bold text-stone-900 dark:text-stone-100 tabular-nums">{rp(b.nominal)}</p>
@@ -615,7 +619,7 @@ function Empty({ text, subtext }) {
     return (
         <div className="flex-1 grid place-items-center p-10 text-center min-h-[160px]">
             <div>
-                <div className="w-12 h-12 mx-auto mb-3 rounded-2xl grid place-items-center bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600">
+                <div className="w-12 h-12 mx-auto mb-3 rounded-2xl grid place-items-center bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500">
                     <Icon path={P.bill} className="w-6 h-6 text-stone-400 opacity-60" />
                 </div>
                 <p className="text-xs sm:text-sm font-semibold text-stone-600 dark:text-stone-300">{text}</p>
@@ -635,12 +639,12 @@ function Pagination({ pg }) {
     const nums = []; for (let i = sp; i <= ep; i++) nums.push(i);
 
     const btn = 'px-2.5 py-1 text-xs rounded-md font-medium transition';
-    const normal = `${btn} text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-coal-700 hover:text-stone-900 dark:hover:text-stone-100`;
+    const normal = `${btn} text-stone-500 dark:text-stone-400 hover:bg-cream-200 dark:hover:bg-coal-600 hover:text-stone-900 dark:hover:text-stone-100`;
     const active = `${btn} font-semibold bg-claude-500 text-white`;
     const disabled = `${btn} text-stone-300 dark:text-stone-600 cursor-not-allowed`;
 
     return (
-        <div className="px-3 py-2.5 border-t border-stone-100 dark:border-coal-700 bg-stone-50 dark:bg-coal-700/30">
+        <div className="px-3 py-2.5 border-t border-cream-300 dark:border-coal-600 bg-cream-100 dark:bg-coal-600/40">
             <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="text-[11px] text-stone-400 dark:text-stone-500 tabular-nums">{from}–{to} dari {total}</span>
                 <div className="flex items-center gap-1 flex-wrap">
@@ -654,4 +658,3 @@ function Pagination({ pg }) {
         </div>
     );
 }
-

@@ -3,11 +3,11 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import GuruAuthenticatedLayout from '@/Layouts/GuruAuthenticatedLayout';
 
 /* ============================================================
- * ICONS (inline, tanpa dependency)
+ * IKON — monokrom line, konsisten dengan Dashboard
  * ============================================================ */
 const I = ({ d, className = 'w-4 h-4' }) => (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"
-        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         {d}
     </svg>
 );
@@ -24,41 +24,73 @@ const FileTextIcon = (p) => <I {...p} d={<path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-
 const EmptyIcon = (p) => <I {...p} d={<path d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />} />;
 const AlertTriangleIcon = (p) => <I {...p} d={<path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />} />;
 const RapotIcon = (p) => <I {...p} d={<path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />} />;
+const UsersIcon = (p) => <I {...p} d={<path d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z" />} />;
 const LockIcon = (p) => <I {...p} d={<><rect x="4.5" y="11" width="15" height="10" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></>} />;
 const UnlockIcon = (p) => <I {...p} d={<><rect x="4.5" y="11" width="15" height="10" rx="2" /><path d="M8 11V7a4 4 0 017.5-2" /></>} />;
 
 /* ============================================================
- * SHARED CLASSES
+ * TOKEN DESAIN — sama dengan Dashboard / Input / Kelola Siswa
  * ============================================================ */
-const INP = "w-full bg-white dark:bg-coal-900 border border-stone-300 dark:border-coal-600 rounded-xl text-stone-900 dark:text-stone-100 text-sm px-3 py-2.5 outline-none focus:border-claude-500 focus:ring-2 focus:ring-claude-500/20 transition placeholder:text-stone-400 dark:placeholder:text-stone-600";
-const BTN_SECONDARY = "flex-1 py-2.5 rounded-xl text-sm font-semibold bg-stone-100 dark:bg-coal-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-coal-600 hover:bg-stone-200 dark:hover:bg-coal-600 transition";
+const CARD = 'bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl';
+const SUB = 'bg-cream-100 dark:bg-coal-600/40 ring-1 ring-cream-300 dark:ring-coal-600 rounded-xl';
+const TILE = 'w-6 h-6 rounded-lg bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-stone-500 dark:text-stone-400 flex items-center justify-center flex-shrink-0';
+const INP = 'w-full bg-white dark:bg-coal-600/40 border border-cream-300 dark:border-coal-600 rounded-xl text-stone-900 dark:text-stone-100 text-sm px-3 py-2.5 outline-none focus:border-claude-500 focus:ring-2 focus:ring-claude-500/20 transition placeholder:text-stone-400 dark:placeholder:text-stone-500 dark:[color-scheme:dark]';
+const BTN_SOFT = 'inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 text-stone-600 dark:text-stone-300 hover:bg-cream-100 dark:hover:bg-coal-600 transition active:scale-95';
+const BTN_SECONDARY = 'flex-1 py-2.5 rounded-xl text-sm font-semibold bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-stone-700 dark:text-stone-300 hover:bg-cream-300 dark:hover:bg-coal-500 transition';
+const BTN_PRIMARY = 'flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-claude-500 hover:bg-claude-600 transition active:scale-[.98] disabled:opacity-50 disabled:cursor-not-allowed';
+const CHECKBOX = 'w-4 h-4 rounded border-cream-400 dark:border-coal-500 dark:bg-coal-600/40 text-claude-500 focus:ring-claude-500 cursor-pointer';
+const ROW_BTN = 'inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg ring-1 text-xs font-semibold transition active:scale-95';
+const ROW_NEUTRAL = 'bg-cream-200 dark:bg-coal-600 ring-cream-300 dark:ring-coal-500 hover:bg-cream-300 dark:hover:bg-coal-500 text-stone-600 dark:text-stone-300';
+const ROW_OK = 'bg-emerald-50 dark:bg-emerald-500/10 ring-emerald-100 dark:ring-emerald-500/20 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400';
+const ROW_ACC = 'bg-claude-100 dark:bg-claude-500/15 ring-claude-200 dark:ring-claude-500/20 hover:bg-claude-200 dark:hover:bg-claude-500/25 text-claude-700 dark:text-claude-400';
 
-const progressColors = (persen) => {
-    if (persen >= 80) return { bar: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800/50 dark:text-emerald-400' };
-    if (persen >= 50) return { bar: 'bg-blue-500', text: 'text-blue-600 dark:text-blue-400', badge: 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800/50 dark:text-blue-400' };
-    if (persen >= 25) return { bar: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400', badge: 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950 dark:border-amber-800/50 dark:text-amber-400' };
-    return { bar: 'bg-red-500', text: 'text-red-600 dark:text-red-400', badge: 'bg-red-50 border-red-200 text-red-700 dark:bg-red-950 dark:border-red-800/50 dark:text-red-400' };
+// Sama dengan METODE_BADGE di Dashboard.jsx
+const METODE_BADGE = {
+    quran: 'bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 ring-claude-200 dark:ring-claude-500/20',
+    iqro:  'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-amber-100 dark:ring-amber-500/20',
+    aisar: 'bg-sky-50 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 ring-sky-100 dark:ring-sky-500/20',
+};
+const GENDER = {
+    P: { avatar: 'bg-pink-50 dark:bg-pink-500/10 ring-pink-100 dark:ring-pink-500/20 text-pink-600 dark:text-pink-400', badge: 'bg-pink-50 dark:bg-pink-500/10 ring-pink-100 dark:ring-pink-500/20 text-pink-700 dark:text-pink-400' },
+    L: { avatar: 'bg-sky-50 dark:bg-sky-500/10 ring-sky-100 dark:ring-sky-500/20 text-sky-600 dark:text-sky-400', badge: 'bg-sky-50 dark:bg-sky-500/10 ring-sky-100 dark:ring-sky-500/20 text-sky-700 dark:text-sky-400' },
+};
+const BANNER = {
+    ok:      { box: 'bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100 dark:ring-emerald-500/20 rounded-xl', icon: 'text-emerald-500 dark:text-emerald-400', text: 'text-emerald-800 dark:text-emerald-300' },
+    warn:    { box: 'bg-amber-50 dark:bg-amber-500/10 ring-1 ring-amber-100 dark:ring-amber-500/20 rounded-xl', icon: 'text-amber-500 dark:text-amber-400', text: 'text-amber-800 dark:text-amber-300' },
+    acc:     { box: 'bg-claude-50 dark:bg-claude-500/10 ring-1 ring-claude-200 dark:ring-claude-500/20 rounded-xl', icon: 'text-claude-600 dark:text-claude-400', text: 'text-claude-800 dark:text-claude-300' },
+    neutral: { box: SUB, icon: 'text-stone-400', text: 'text-stone-600 dark:text-stone-400' },
 };
 
+const metodeTone = (s) => {
+    const m = String(s.target_metode || '').toLowerCase();
+    if (m === 'iqro' || m === 'aisar') return m;
+    if (s.is_iqro) return /aisar/i.test(s.target_display || '') ? 'aisar' : 'iqro';
+    return 'quran';
+};
+
+const storageUrl = (path) => (path ? `/storage/${path}` : null);
+
 /* ============================================================
- * TOAST — support success / warning / error
+ * SUB-COMPONENTS
  * ============================================================ */
-function Toast({ notif, onClose, duration = 5000 }) {
+function Toast({ notif, onClose }) {
     if (!notif) return null;
     const styles = {
-        success: { bg: 'bg-emerald-600 border-emerald-500/40', Icon: CheckCircle },
-        warning: { bg: 'bg-amber-500 border-amber-400/40', Icon: AlertTriangleIcon },
-        error: { bg: 'bg-red-600 border-red-500/40', Icon: AlertCircle },
+        success: { tile: 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400', Icon: CheckCircle },
+        warning: { tile: 'bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400', Icon: AlertTriangleIcon },
+        error:   { tile: 'bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400', Icon: AlertCircle },
     };
     const s = styles[notif.type] || styles.success;
     const Icon = s.Icon;
     return (
         <>
-            <div key={notif.id} className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-[300]" style={{ animation: 'slideIn .25s ease-out' }}>
-                <div className={`${s.bg} border text-white px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3`}>
-                    <Icon className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <p className="flex-1 text-sm font-medium" dangerouslySetInnerHTML={{ __html: notif.message }} />
-                    <button onClick={onClose} className="opacity-70 hover:opacity-100"><XIcon className="w-4 h-4" /></button>
+            <div key={notif.id} className="fixed top-3 left-3 right-3 sm:left-auto sm:right-3 sm:w-96 z-[300]" style={{ animation: 'slideIn .25s ease-out' }}>
+                <div className="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl shadow-xl px-3.5 py-3 flex items-start gap-3">
+                    <span className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${s.tile}`}><Icon className="w-4 h-4" /></span>
+                    <p className="flex-1 min-w-0 pt-1.5 text-sm text-stone-800 dark:text-stone-100" dangerouslySetInnerHTML={{ __html: notif.message }} />
+                    <button onClick={onClose} className="flex-shrink-0 mt-1 w-6 h-6 rounded-lg flex items-center justify-center text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 hover:bg-cream-200 dark:hover:bg-coal-600 transition">
+                        <XIcon className="w-3.5 h-3.5" />
+                    </button>
                 </div>
             </div>
             <style>{`@keyframes slideIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }`}</style>
@@ -66,9 +98,6 @@ function Toast({ notif, onClose, duration = 5000 }) {
     );
 }
 
-/* ============================================================
- * MODAL wrapper (bottom-sheet mobile / centered desktop)
- * ============================================================ */
 function Modal({ open, onClose, children, maxWidth = 'sm:max-w-md' }) {
     useEffect(() => {
         document.body.classList.toggle('overflow-hidden', open);
@@ -77,8 +106,8 @@ function Modal({ open, onClose, children, maxWidth = 'sm:max-w-md' }) {
     if (!open) return null;
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-            <div className={`relative bg-white dark:bg-coal-800 border border-stone-200 dark:border-coal-700 rounded-2xl shadow-2xl w-full p-5 ${maxWidth}`}
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+            <div className={`relative bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl shadow-2xl w-full p-5 ${maxWidth}`}
                 style={{ animation: 'popIn .2s ease-out' }}>
                 {children}
             </div>
@@ -87,7 +116,58 @@ function Modal({ open, onClose, children, maxWidth = 'sm:max-w-md' }) {
     );
 }
 
-const storageUrl = (path) => (path ? `/storage/${path}` : null);
+function Banner({ tone, icon: Icon, children }) {
+    const t = BANNER[tone];
+    return (
+        <div className={`${t.box} px-3.5 py-3 mb-4 flex items-start gap-2.5`}>
+            <Icon className={`w-4 h-4 flex-shrink-0 mt-0.5 ${t.icon}`} />
+            <p className={`text-xs leading-relaxed ${t.text}`}>{children}</p>
+        </div>
+    );
+}
+
+function Badge({ className, children }) {
+    return <span className={`inline-flex items-center px-2 py-0.5 rounded-md ring-1 text-[10px] font-semibold whitespace-nowrap ${className}`}>{children}</span>;
+}
+
+function Avatar({ santri, size = 'w-9 h-9 text-xs' }) {
+    const photo = santri.user?.profile_photo ? storageUrl(santri.user.profile_photo) : null;
+    const g = (santri.gender === 'P' || santri.gender === 'Perempuan') ? 'P' : 'L';
+    if (photo) return <img src={photo} alt="" className={`${size} rounded-full object-cover object-top ring-1 ring-cream-300 dark:ring-coal-600 flex-shrink-0`} />;
+    return (
+        <span className={`${size} rounded-full ring-1 flex items-center justify-center font-bold flex-shrink-0 ${GENDER[g].avatar}`}>
+            {santri.name?.charAt(0).toUpperCase()}
+        </span>
+    );
+}
+
+// Bar progress — sama dengan ProgressBar di Dashboard (aksen untuk utama, emerald untuk Al-Qur'an)
+function Bar({ value, color = 'bg-claude-500', label, sub }) {
+    const v = Math.min(Number(value) || 0, 100);
+    return (
+        <div className="min-w-[160px]">
+            <div className="flex items-center gap-2">
+                <span className="flex-1 h-1.5 rounded-full bg-cream-300 dark:bg-coal-600 overflow-hidden">
+                    <span className={`block h-full rounded-full ${color} transition-all duration-500`} style={{ width: `${v}%` }} />
+                </span>
+                <span className="text-[11px] font-semibold tabular-nums text-stone-500 dark:text-stone-400 w-9 text-right shrink-0">{label ?? `${value}%`}</span>
+            </div>
+            {sub && <p className="text-[11px] text-stone-400 mt-1">{sub}</p>}
+        </div>
+    );
+}
+
+function EmptyBlock({ icon: Icon, title, hint }) {
+    return (
+        <div className="py-14 flex flex-col items-center text-center">
+            <span className="w-11 h-11 rounded-2xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center mb-3 text-stone-400">
+                <Icon className="w-5 h-5" />
+            </span>
+            <p className="text-sm font-semibold text-stone-700 dark:text-stone-300">{title}</p>
+            {hint && <p className="text-[11px] text-stone-400 mt-0.5">{hint}</p>}
+        </div>
+    );
+}
 
 /* ============================================================
  * MAIN PAGE — Guru / Rapot / Index
@@ -204,364 +284,301 @@ export default function Index({
         });
     };
 
+    // Data turunan per santri (dipakai kartu mobile & tabel desktop)
+    const rowInfo = (santri) => {
+        const persen = santri.hafalan_persen ?? 0;
+        const totalJuz = santri.hafalan_total_juz ?? 0;
+        const targetJuz = (santri.target_juz ?? 0) > 0 ? santri.target_juz : 30;
+        const isIqro = santri.is_iqro;
+        return {
+            persen, isIqro,
+            iqroKnown: santri.iqro_persen_diketahui,
+            sudahNaik: sudahNaikSet.has(String(santri.id)),
+            dpNaik: isDpNaik(santri),
+            g: (santri.gender === 'P' || santri.gender === 'Perempuan') ? 'P' : 'L',
+            visible: isVisible(santri),
+            capaian: isIqro ? `${santri.total_halaman_iqro ?? 0}/${santri.total_halaman_jilid ?? 0} hal` : `${totalJuz}/${targetJuz} Juz`,
+        };
+    };
+
+    // Fungsi render biasa (BUKAN komponen) — komponen yang didefinisikan di
+    // badan render akan di-unmount/mount ulang setiap state berubah.
+    const progressCell = (santri, info) => (
+        <div className="space-y-2">
+            {info.isIqro && !info.iqroKnown ? (
+                <span className="text-[11px] text-stone-400 italic">Halaman Jilid {santri.target_jilid ?? '-'} belum diatur</span>
+            ) : (
+                <Bar value={info.persen} sub={info.capaian} />
+            )}
+            {santri.has_quran_secondary && (
+                <Bar value={santri.hafalan_persen_2 ?? 0} color="bg-emerald-500"
+                    sub={`${santri.capaian_juz_2 ?? 0}/${santri.target_juz_2 ?? 0} Juz (Al-Qur'an)`} />
+            )}
+        </div>
+    );
+
+    const rapotLockBtn = (santri) => (
+        <button type="button"
+            onClick={() => toggleRapot(santri)}
+            disabled={!bolehAturRapot || rapotBusyId === santri.id}
+            title={santri.rapot_dibuka ? 'Kunci kembali PDF rapot santri' : 'Buka akses PDF rapot santri'}
+            className={`${ROW_BTN} ${santri.rapot_dibuka ? ROW_OK : ROW_NEUTRAL} disabled:opacity-40 disabled:cursor-not-allowed`}>
+            {santri.rapot_dibuka
+                ? <><UnlockIcon className="w-3.5 h-3.5" /> Terbuka</>
+                : <><LockIcon className="w-3.5 h-3.5" /> Terkunci</>}
+        </button>
+    );
+
     return (
         <GuruAuthenticatedLayout>
             <Head title="Rapot Santri" />
             <Toast notif={notif} onClose={() => setNotif(null)} />
 
-            <div className="pb-10">
-                <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 pt-4 sm:pt-6 lg:pt-10">
+            {/* Padding dibuang — <main> di layout sudah memberinya (sama seperti Dashboard). */}
+            <div className="max-w-7xl mx-auto">
 
-                    {/* Kembali — mobile saja */}
-                    <Link href={route('guru.dashboard')}
-                        className="mb-4 sm:hidden inline-flex items-center gap-1.5 rounded-xl border border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-stone-100 dark:hover:bg-coal-700 active:scale-95">
-                        <ArrowLeftIcon className="w-4 h-4" /> Kembali ke Daftar Kelas
-                    </Link>
+                {/* Kembali — mobile saja */}
+                <Link href={route('guru.dashboard')} className={`${BTN_SOFT} mb-4 sm:hidden`}>
+                    <ArrowLeftIcon className="w-4 h-4" /> Kembali ke Daftar Kelas
+                </Link>
 
-                   {/* ===== TOP BAR ===== */}
-<div className="flex items-center gap-3 mb-4">
-    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-claude-500 to-claude-600 flex items-center justify-center shadow-lg shadow-claude-500/25 flex-shrink-0">
-        <RapotIcon className="w-6 h-6 text-white" />
-    </div>
-    <div className="flex-1 min-w-0">
-        <h1 className="text-base sm:text-xl font-bold text-stone-900 dark:text-stone-100 truncate">Rapot Santri</h1>
-                            <p className="text-[11px] text-stone-500 mt-0.5">
-                                Santri yang Anda ampu: <span className="text-claude-600 dark:text-claude-400 font-semibold">{santriList.length} Santri</span>
-                            </p>
-                        </div>
-                        {kelas && santriList.length > 0 && (
-                            <div className="relative w-40 sm:w-64">
-                                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none" />
-                                <input
-                                    type="text"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="Cari nama / NIS..."
-                                    className="w-full pl-9 pr-8 py-2 bg-white dark:bg-coal-800 border border-stone-300 dark:border-coal-700 rounded-xl text-xs text-stone-800 dark:text-stone-200 placeholder-stone-400 dark:placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-claude-500 focus:border-claude-500 transition"
-                                />
-                                {search && (
-                                    <button type="button" onClick={() => setSearch('')}
-                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:text-stone-600 dark:hover:text-stone-400">
-                                        <XIcon className="w-3.5 h-3.5" />
-                                    </button>
-                                )}
-                            </div>
-                        )}
+                {/* ===== HEADER (sama dengan Dashboard) ===== */}
+                <div className="flex flex-wrap items-center gap-3 mb-5">
+                    <div className="w-11 h-11 rounded-2xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center flex-shrink-0 text-stone-600 dark:text-stone-300">
+                        <RapotIcon className="w-6 h-6" />
                     </div>
+                    <div className="flex-1 min-w-0">
+                        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">Rapot Santri</h1>
+                        <p className="text-[11px] text-stone-500 mt-0.5">
+                            Santri yang Anda ampu <span className="font-semibold text-claude-600 dark:text-claude-400">{santriList.length} santri</span>
+                        </p>
+                    </div>
+                    {kelas && santriList.length > 0 && (
+                        <div className="relative w-full sm:w-64">
+                            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none" />
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Cari nama / NIS..."
+                                className={`${INP} !py-2 !text-xs pl-9 pr-8`}
+                            />
+                            {search && (
+                                <button type="button" onClick={() => setSearch('')}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200">
+                                    <XIcon className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
 
-                    {kelas ? (
-                        santriList.length > 0 ? (
-                            <>
-                                {/* ===== BANNER STATUS KENAIKAN ===== */}
-                                {bolehNaik ? (
-                                    <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/30 rounded-xl p-3 mb-4 flex items-start gap-2.5">
-                                        <ArrowUpIcon className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                                        <p className="text-xs text-emerald-700 dark:text-emerald-300">Periode kenaikan kelas <strong>aktif</strong> (semester genap). Centang santri lalu gunakan <strong>Naikkan Terpilih</strong>, atau tombol <strong>Naik</strong> per santri. Santri yang sudah naik tahun ini tidak muncul tombolnya.</p>
-                                    </div>
-                                ) : alasanTutup ? (
-                                    <div className="bg-stone-50 dark:bg-coal-800/40 border border-stone-200 dark:border-coal-700/40 rounded-xl p-3 mb-4 flex items-start gap-2.5">
-                                        <InfoIcon className="w-4 h-4 text-stone-400 flex-shrink-0 mt-0.5" />
-                                        <p className="text-xs text-stone-600 dark:text-stone-400">{alasanTutup}</p>
-                                    </div>
-                                ) : tglMulaiNaikFormatted ? (
-                                    <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/30 rounded-xl p-3 mb-4 flex items-start gap-2.5">
-                                        <ClockIcon className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                                        <p className="text-xs text-amber-700 dark:text-amber-300">Fitur <strong>Naik Kelas</strong> akan aktif mulai <strong>{tglMulaiNaikFormatted}</strong> (1 bulan sebelum semester berakhir).</p>
-                                    </div>
-                                ) : null}
+                {kelas ? (
+                    santriList.length > 0 ? (
+                        <>
+                            {/* ===== BANNER STATUS KENAIKAN ===== */}
+                            {bolehNaik ? (
+                                <Banner tone="ok" icon={ArrowUpIcon}>
+                                    Periode kenaikan kelas <strong>aktif</strong> (semester genap). Centang santri lalu gunakan <strong>Naikkan Terpilih</strong>, atau tombol <strong>Naik</strong> per santri. Santri yang sudah naik tahun ini tidak muncul tombolnya.
+                                </Banner>
+                            ) : alasanTutup ? (
+                                <Banner tone="neutral" icon={InfoIcon}>{alasanTutup}</Banner>
+                            ) : tglMulaiNaikFormatted ? (
+                                <Banner tone="warn" icon={ClockIcon}>
+                                    Fitur <strong>Naik Kelas</strong> akan aktif mulai <strong>{tglMulaiNaikFormatted}</strong> (1 bulan sebelum semester berakhir).
+                                </Banner>
+                            ) : null}
 
-                                {/* ===== BANNER KUNCI PDF RAPOT ===== */}
-                                <div className={`rounded-xl p-3 mb-4 flex items-start gap-2.5 border ${bolehAturRapot ? 'bg-claude-50 dark:bg-claude-500/10 border-claude-200 dark:border-claude-500/25' : 'bg-stone-50 dark:bg-coal-800/40 border-stone-200 dark:border-coal-700/40'}`}>
-                                    {bolehAturRapot
-                                        ? <UnlockIcon className="w-4 h-4 text-claude-500 flex-shrink-0 mt-0.5" />
-                                        : <LockIcon className="w-4 h-4 text-stone-400 flex-shrink-0 mt-0.5" />}
-                                    <p className={`text-xs ${bolehAturRapot ? 'text-claude-700 dark:text-claude-300' : 'text-stone-600 dark:text-stone-400'}`}>
-                                        {bolehAturRapot ? (
-                                            <>Akses <strong>PDF Rapot</strong> santri sedang bisa diatur. Klik ikon gembok pada santri untuk membuka aksesnya.{rapotJendelaText && <> Periode: <strong>{rapotJendelaText}</strong>.</>}</>
-                                        ) : (
-                                            <>{rapotJendelaInfo ?? 'Akses PDF rapot belum bisa diatur.'} PDF santri tetap terkunci di luar periode ini.{rapotJendelaText && <> Periode: <strong>{rapotJendelaText}</strong>.</>}</>
-                                        )}
-                                    </p>
-                                </div>
+                            {/* ===== BANNER KUNCI PDF RAPOT ===== */}
+                            <Banner tone={bolehAturRapot ? 'acc' : 'neutral'} icon={bolehAturRapot ? UnlockIcon : LockIcon}>
+                                {bolehAturRapot ? (
+                                    <>Akses <strong>PDF Rapot</strong> santri sedang bisa diatur. Klik tombol gembok pada santri untuk membuka aksesnya.{rapotJendelaText && <> Periode: <strong>{rapotJendelaText}</strong>.</>}</>
+                                ) : (
+                                    <>{rapotJendelaInfo ?? 'Akses PDF rapot belum bisa diatur.'} PDF santri tetap terkunci di luar periode ini.{rapotJendelaText && <> Periode: <strong>{rapotJendelaText}</strong>.</>}</>
+                                )}
+                            </Banner>
 
-                                {/* ===== BULK ACTION BAR ===== */}
-                                {selected.length > 0 && (
-                                    <div className="bg-claude-50 dark:bg-claude-500/10 border border-claude-200 dark:border-claude-500/25 rounded-xl px-4 py-3 mb-4 flex flex-wrap items-center justify-between gap-3">
-                                        <div>
-                                            <p className="text-sm font-semibold text-claude-700 dark:text-claude-300">{selected.length} santri dipilih</p>
-                                            <button onClick={() => setSelected([])} className="text-[11px] text-claude-600 hover:text-claude-500">Bersihkan pilihan</button>
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            {bolehAturRapot && (
-                                                <>
-                                                    <button onClick={() => bulkRapot('buka')} disabled={rapotBulkBusy}
-                                                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-claude-600 hover:bg-claude-500 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition">
-                                                        <UnlockIcon className="w-3.5 h-3.5" /> Buka PDF Terpilih
-                                                    </button>
-                                                    <button onClick={() => bulkRapot('kunci')} disabled={rapotBulkBusy}
-                                                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-stone-200 hover:bg-stone-300 border border-stone-300 text-stone-700 disabled:opacity-50 dark:bg-coal-700 dark:hover:bg-coal-600 dark:border-coal-600 dark:text-stone-200 text-xs font-bold rounded-lg transition">
-                                                        <LockIcon className="w-3.5 h-3.5" /> Kunci PDF Terpilih
-                                                    </button>
-                                                </>
-                                            )}
-                                            {bolehNaik && selectedNaikIds.length > 0 && (
-                                                <button onClick={openNaikBulk}
-                                                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition">
-                                                    <ArrowUpIcon className="w-3.5 h-3.5" /> Naikkan Terpilih ({selectedNaikIds.length})
+                            {/* ===== BULK ACTION BAR ===== */}
+                            {selected.length > 0 && (
+                                <div className="bg-claude-50 dark:bg-claude-500/10 ring-1 ring-claude-200 dark:ring-claude-500/20 rounded-2xl px-4 py-3 mb-4 flex flex-wrap items-center justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm font-semibold text-claude-700 dark:text-claude-400">{selected.length} santri dipilih</p>
+                                        <button onClick={() => setSelected([])} className="text-[11px] text-stone-500 hover:text-claude-600 dark:text-stone-400 dark:hover:text-claude-400">Bersihkan pilihan</button>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {bolehAturRapot && (
+                                            <>
+                                                <button onClick={() => bulkRapot('buka')} disabled={rapotBulkBusy}
+                                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-claude-500 hover:bg-claude-600 disabled:opacity-50 text-white text-xs font-semibold rounded-xl transition active:scale-95">
+                                                    <UnlockIcon className="w-3.5 h-3.5" /> Buka PDF Terpilih
                                                 </button>
-                                            )}
-                                        </div>
+                                                <button onClick={() => bulkRapot('kunci')} disabled={rapotBulkBusy}
+                                                    className={`${BTN_SOFT} disabled:opacity-50`}>
+                                                    <LockIcon className="w-3.5 h-3.5" /> Kunci PDF Terpilih
+                                                </button>
+                                            </>
+                                        )}
+                                        {bolehNaik && selectedNaikIds.length > 0 && (
+                                            <button onClick={openNaikBulk}
+                                                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition active:scale-95">
+                                                <ArrowUpIcon className="w-3.5 h-3.5" /> Naikkan Terpilih ({selectedNaikIds.length})
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ===== MOBILE CARDS ===== */}
+                            <div className="lg:hidden space-y-2">
+                                {bisaPilih && (
+                                    <div className={`${CARD} flex items-center gap-3 px-4 py-2.5`}>
+                                        <input type="checkbox" checked={allSelected} onChange={toggleAll}
+                                            ref={(el) => { if (el) el.indeterminate = selected.length > 0 && !allSelected; }}
+                                            className={CHECKBOX} />
+                                        <span className="text-xs font-semibold text-stone-600 dark:text-stone-300 flex-1">
+                                            Pilih Semua{bolehAturRapot ? '' : ' (yang belum naik)'}
+                                        </span>
+                                        <span className="text-[11px] text-stone-400">{selectableIds.length} santri</span>
                                     </div>
                                 )}
 
-                                {/* ===== MOBILE CARDS ===== */}
-                                <div className="lg:hidden space-y-2">
-                                    {bisaPilih && (
-                                        <div className="flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-coal-800 border border-stone-200 dark:border-coal-700 rounded-xl">
-                                            <input type="checkbox" checked={allSelected} onChange={toggleAll}
-                                                ref={(el) => { if (el) el.indeterminate = selected.length > 0 && !allSelected; }}
-                                                className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 cursor-pointer" />
-                                            <span className="text-xs font-semibold text-stone-600 dark:text-stone-400 flex-1">
-                                                Pilih Semua{bolehAturRapot ? '' : ' (yang belum naik)'}
-                                            </span>
-                                            <span className="text-[11px] text-stone-500">{selectableIds.length} santri</span>
-                                        </div>
-                                    )}
-
-                                    {santriList.map((santri, index) => {
-                                        const persen = santri.hafalan_persen ?? 0;
-                                        const totalJuz = santri.hafalan_total_juz ?? 0;
-                                        const targetJuz = (santri.target_juz ?? 0) > 0 ? santri.target_juz : 30;
-                                        const colors = progressColors(persen);
-                                        const sudahNaik = sudahNaikSet.has(String(santri.id));
-                                        const dpNaik = isDpNaik(santri);
-                                        const isPerempuan = santri.gender === 'P' || santri.gender === 'Perempuan';
-                                        const photo = santri.user?.profile_photo ? storageUrl(santri.user.profile_photo) : null;
-                                        const visible = isVisible(santri);
-                                        const isIqro = santri.is_iqro;
-                                        const iqroKnown = santri.iqro_persen_diketahui;
-
-                                        return (
-                                            <div key={santri.id} className={`rounded-xl border border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 overflow-hidden transition-all shadow-sm dark:shadow-none ${visible ? '' : 'hidden'}`}>
-                                                <div className="flex items-center gap-3 px-4 py-3">
-                                                    {(bolehAturRapot || dpNaik) ? (
-                                                        <input type="checkbox" checked={selected.includes(String(santri.id))} onChange={() => toggleOne(String(santri.id))}
-                                                            className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 flex-shrink-0 cursor-pointer" />
-                                                    ) : bolehNaik ? (
-                                                        <span className="w-4 h-4 flex-shrink-0 flex items-center justify-center text-emerald-500" title="Sudah naik">
-                                                            <CheckIcon className="w-4 h-4" />
-                                                        </span>
-                                                    ) : null}
-                                                    {photo ? (
-                                                        <img src={photo} alt="" className="w-10 h-10 rounded-full object-cover object-top border border-stone-200 dark:border-coal-700 flex-shrink-0" />
-                                                    ) : (
-                                                        <span className={`w-10 h-10 rounded-full border flex items-center justify-center text-sm font-bold flex-shrink-0 ${isPerempuan ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400'}`}>
-                                                            {santri.name?.charAt(0).toUpperCase()}
-                                                        </span>
-                                                    )}
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate">{santri.name}</p>
-                                                        <p className="text-[11px] text-stone-500 font-mono">{santri.nis ?? '-'}</p>
-                                                    </div>
-                                                    {sudahNaik && bolehNaik ? (
-                                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/30 flex-shrink-0">✓ Naik</span>
-                                                    ) : (
-                                                        <span className="text-[11px] text-stone-400 dark:text-stone-600 flex-shrink-0">#{index + 1}</span>
-                                                    )}
+                                {santriList.map((santri, index) => {
+                                    const info = rowInfo(santri);
+                                    const isSel = selected.includes(String(santri.id));
+                                    return (
+                                        <div key={santri.id} className={`rounded-2xl ring-1 overflow-hidden transition-all ${isSel ? 'ring-2 ring-claude-500 bg-claude-50 dark:bg-claude-500/10' : 'ring-cream-300 dark:ring-coal-600 bg-white dark:bg-coal-700'} ${info.visible ? '' : 'hidden'}`}>
+                                            <div className="flex items-center gap-3 px-4 py-3">
+                                                {(bolehAturRapot || info.dpNaik) ? (
+                                                    <input type="checkbox" checked={isSel} onChange={() => toggleOne(String(santri.id))} className={`${CHECKBOX} flex-shrink-0`} />
+                                                ) : bolehNaik ? (
+                                                    <span className="w-4 h-4 flex-shrink-0 flex items-center justify-center text-emerald-500" title="Sudah naik">
+                                                        <CheckIcon className="w-4 h-4" />
+                                                    </span>
+                                                ) : null}
+                                                <Avatar santri={santri} size="w-10 h-10 text-sm" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-semibold text-stone-800 dark:text-stone-100 truncate">{santri.name}</p>
+                                                    <p className="text-[11px] text-stone-400 font-mono">{santri.nis ?? '-'}</p>
                                                 </div>
+                                                {info.sudahNaik && bolehNaik ? (
+                                                    <Badge className="bg-emerald-50 dark:bg-emerald-500/10 ring-emerald-100 dark:ring-emerald-500/20 text-emerald-700 dark:text-emerald-400 gap-0.5">
+                                                        <CheckIcon className="w-3 h-3" /> Naik
+                                                    </Badge>
+                                                ) : (
+                                                    <span className="text-[11px] text-stone-400 tabular-nums flex-shrink-0">#{index + 1}</span>
+                                                )}
+                                            </div>
 
-                                                <div className="grid grid-cols-3 border-t border-stone-200 dark:border-coal-700/50">
-                                                    <div className="px-3 py-2.5 text-center border-r border-stone-200 dark:border-coal-700/50">
-                                                        <p className="text-[10px] text-stone-500 dark:text-stone-600 mb-1">Gender</p>
-                                                        <p className={`text-xs font-bold ${isPerempuan ? 'text-pink-500 dark:text-pink-400' : 'text-blue-500 dark:text-blue-400'}`}>{isPerempuan ? 'P' : 'L'}</p>
-                                                    </div>
-                                                    <div className="px-3 py-2.5 text-center border-r border-stone-200 dark:border-coal-700/50">
-                                                        <p className="text-[10px] text-stone-500 dark:text-stone-600 mb-1">Target</p>
-                                                        <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{santri.target_display ?? '-'}</p>
-                                                    </div>
-                                                    <div className="px-3 py-2.5 text-center">
-                                                        <p className="text-[10px] text-stone-500 dark:text-stone-600 mb-1">Progress</p>
-                                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-lg border ${colors.badge}`}>{persen}%</span>
-                                                    </div>
+                                            <div className="grid grid-cols-2 border-t border-cream-200 dark:border-coal-600/60 divide-x divide-cream-200 dark:divide-coal-600/60">
+                                                <div className="px-3 py-2.5 text-center">
+                                                    <p className="text-[10px] text-stone-400 mb-1">Gender</p>
+                                                    <Badge className={GENDER[info.g].badge}>{info.g}</Badge>
                                                 </div>
-
-                                                <div className="px-4 py-2.5 border-t border-stone-200 dark:border-coal-700/50 space-y-1.5">
-                                                    {isIqro && !iqroKnown ? (
-                                                        <span className="text-[10px] text-stone-500 dark:text-stone-600 italic">Halaman Jilid {santri.target_jilid ?? '-'} belum diatur</span>
-                                                    ) : (
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="flex-1 bg-stone-200 dark:bg-coal-700 rounded-full h-1.5">
-                                                                <div className={`${colors.bar} h-1.5 rounded-full transition-all duration-500`} style={{ width: `${Math.min(persen, 100)}%` }} />
-                                                            </div>
-                                                            <span className="text-[11px] text-stone-500 whitespace-nowrap">
-                                                                {isIqro ? `${santri.total_halaman_iqro ?? 0}/${santri.total_halaman_jilid ?? 0} hal` : `${totalJuz}/${targetJuz} juz`}
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                    {santri.has_quran_secondary && (
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="flex-1 bg-stone-200 dark:bg-coal-700 rounded-full h-1.5">
-                                                                <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.min(santri.hafalan_persen_2 ?? 0, 100)}%` }} />
-                                                            </div>
-                                                            <span className="text-[11px] text-stone-500 whitespace-nowrap">
-                                                                {santri.capaian_juz_2 ?? 0}/{santri.target_juz_2 ?? 0} juz
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                <div className="border-t border-stone-200 dark:border-coal-700/50 flex divide-x divide-stone-200 dark:divide-coal-700/50">
-                                                    <Link href={route('guru.rapot.show', santri.id)}
-                                                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-claude-600 dark:text-claude-400 hover:bg-claude-500/10 transition">
-                                                        <FileTextIcon className="w-3.5 h-3.5" /> Lihat Rapot
-                                                    </Link>
-                                                    <button type="button"
-                                                        onClick={() => toggleRapot(santri)}
-                                                        disabled={!bolehAturRapot || rapotBusyId === santri.id}
-                                                        title={santri.rapot_dibuka ? 'Kunci kembali PDF rapot santri' : 'Buka akses PDF rapot santri'}
-                                                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed ${santri.rapot_dibuka ? 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40' : 'text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-coal-700'}`}>
-                                                        {santri.rapot_dibuka
-                                                            ? <><UnlockIcon className="w-3.5 h-3.5" /> PDF Terbuka</>
-                                                            : <><LockIcon className="w-3.5 h-3.5" /> PDF Terkunci</>}
-                                                    </button>
-                                                    {dpNaik && (
-                                                        <button type="button" onClick={() => openNaikSingle(santri.id, santri.name)}
-                                                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition">
-                                                            <ArrowUpIcon className="w-3.5 h-3.5" /> Naik
-                                                        </button>
-                                                    )}
+                                                <div className="px-3 py-2.5 text-center">
+                                                    <p className="text-[10px] text-stone-400 mb-1">Target</p>
+                                                    <Badge className={METODE_BADGE[metodeTone(santri)]}>{santri.target_display ?? '-'}</Badge>
                                                 </div>
                                             </div>
-                                        );
-                                    })}
 
-                                    {visibleCount === 0 && (
-                                        <div className="text-center py-12">
-                                            <EmptyIcon className="w-12 h-12 text-stone-300 dark:text-coal-600 mb-3 mx-auto" />
-                                            <p className="text-sm font-semibold text-stone-500">Santri tidak ditemukan</p>
+                                            <div className="px-4 py-3 border-t border-cream-200 dark:border-coal-600/60">
+                                                {progressCell(santri, info)}
+                                            </div>
+
+                                            <div className="border-t border-cream-200 dark:border-coal-600/60 flex divide-x divide-cream-200 dark:divide-coal-600/60">
+                                                <Link href={route('guru.rapot.show', santri.id)}
+                                                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-claude-700 dark:text-claude-400 hover:bg-claude-50 dark:hover:bg-claude-500/10 transition">
+                                                    <FileTextIcon className="w-3.5 h-3.5" /> Lihat Rapot
+                                                </Link>
+                                                <button type="button"
+                                                    onClick={() => toggleRapot(santri)}
+                                                    disabled={!bolehAturRapot || rapotBusyId === santri.id}
+                                                    title={santri.rapot_dibuka ? 'Kunci kembali PDF rapot santri' : 'Buka akses PDF rapot santri'}
+                                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed ${santri.rapot_dibuka ? 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10' : 'text-stone-500 dark:text-stone-400 hover:bg-cream-100 dark:hover:bg-coal-600/40'}`}>
+                                                    {santri.rapot_dibuka
+                                                        ? <><UnlockIcon className="w-3.5 h-3.5" /> PDF Terbuka</>
+                                                        : <><LockIcon className="w-3.5 h-3.5" /> PDF Terkunci</>}
+                                                </button>
+                                                {info.dpNaik && (
+                                                    <button type="button" onClick={() => openNaikSingle(santri.id, santri.name)}
+                                                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition">
+                                                        <ArrowUpIcon className="w-3.5 h-3.5" /> Naik
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
+                                    );
+                                })}
 
-                                {/* ===== DESKTOP TABLE ===== */}
-                                <div className="hidden lg:block bg-white dark:bg-coal-800 border border-stone-200 dark:border-coal-700 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+                                {visibleCount === 0 && (
+                                    <div className={CARD}><EmptyBlock icon={EmptyIcon} title="Santri tidak ditemukan" /></div>
+                                )}
+                            </div>
+
+                            {/* ===== DESKTOP TABLE (sama dengan tabel Dashboard) ===== */}
+                            <div className={`hidden lg:block ${CARD} p-5`}>
+                                <div className="flex items-center gap-2 mb-4">
+                                    <span className={TILE}><UsersIcon className="w-3.5 h-3.5" /></span>
+                                    <h2 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">Daftar Santri</h2>
+                                    <span className="ml-auto text-[11px] text-stone-400">{visibleCount} dari {santriList.length} santri</span>
+                                </div>
+                                <div className="rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 overflow-hidden">
                                     <table className="min-w-full">
                                         <thead>
-                                            <tr className="border-b border-stone-200 dark:border-coal-700 bg-stone-50 dark:bg-coal-900/40">
+                                            <tr className="bg-cream-100 dark:bg-coal-600/40">
                                                 {bisaPilih && (
-                                                    <th className="px-4 py-3 w-10">
+                                                    <th className="px-4 py-2.5 w-10 text-left">
                                                         <input type="checkbox" checked={allSelected} onChange={toggleAll}
                                                             ref={(el) => { if (el) el.indeterminate = selected.length > 0 && !allSelected; }}
-                                                            className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 cursor-pointer" />
+                                                            className={CHECKBOX} />
                                                     </th>
                                                 )}
                                                 {['No', 'Nama Santri', 'NIS', 'Gender', 'Target', 'Progress', 'Aksi'].map((h) => (
-                                                    <th key={h} className="px-4 py-3 text-left text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">{h}</th>
+                                                    <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold text-stone-500 dark:text-stone-400">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-stone-200 dark:divide-coal-700/50">
+                                        <tbody className="divide-y divide-cream-200 dark:divide-coal-600/60">
                                             {santriList.map((santri, index) => {
-                                                const persen = santri.hafalan_persen ?? 0;
-                                                const totalJuz = santri.hafalan_total_juz ?? 0;
-                                                const targetJuz = (santri.target_juz ?? 0) > 0 ? santri.target_juz : 30;
-                                                const colors = progressColors(persen);
-                                                const sudahNaik = sudahNaikSet.has(String(santri.id));
-                                                const dpNaik = isDpNaik(santri);
-                                                const isPerempuan = santri.gender === 'P' || santri.gender === 'Perempuan';
-                                                const photo = santri.user?.profile_photo ? storageUrl(santri.user.profile_photo) : null;
-                                                const visible = isVisible(santri);
-                                                const isIqro = santri.is_iqro;
-                                                const iqroKnown = santri.iqro_persen_diketahui;
+                                                const info = rowInfo(santri);
                                                 const isSel = selected.includes(String(santri.id));
-
                                                 return (
-                                                    <tr key={santri.id} className={`hover:bg-stone-50 dark:hover:bg-coal-700/25 transition-colors ${isSel ? 'bg-claude-50 dark:bg-claude-500/10' : ''} ${visible ? '' : 'hidden'}`}>
+                                                    <tr key={santri.id} className={`transition-colors align-top ${isSel ? 'bg-claude-50 dark:bg-claude-500/10' : 'hover:bg-cream-100 dark:hover:bg-coal-600/30'} ${info.visible ? '' : 'hidden'}`}>
                                                         {bisaPilih && (
-                                                            (bolehAturRapot || dpNaik) ? (
+                                                            (bolehAturRapot || info.dpNaik) ? (
                                                                 <td className="px-4 py-3">
-                                                                    <input type="checkbox" checked={isSel} onChange={() => toggleOne(String(santri.id))}
-                                                                        className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 cursor-pointer" />
+                                                                    <input type="checkbox" checked={isSel} onChange={() => toggleOne(String(santri.id))} className={CHECKBOX} />
                                                                 </td>
                                                             ) : (
-                                                                <td className="px-4 py-3 text-center"><span className="text-emerald-500" title="Sudah naik">✓</span></td>
+                                                                <td className="px-4 py-3 text-center">
+                                                                    <span className="inline-flex text-emerald-500" title="Sudah naik"><CheckIcon className="w-4 h-4" /></span>
+                                                                </td>
                                                             )
                                                         )}
-                                                        <td className="px-4 py-3 text-sm text-stone-500">{index + 1}</td>
+                                                        <td className="px-4 py-3 text-xs text-stone-400 tabular-nums">{index + 1}</td>
                                                         <td className="px-4 py-3">
                                                             <div className="flex items-center gap-2.5">
-                                                                {photo ? (
-                                                                    <img src={photo} alt="" className="w-9 h-9 rounded-full object-cover object-top border border-stone-200 dark:border-coal-700 flex-shrink-0" />
-                                                                ) : (
-                                                                    <span className={`w-9 h-9 rounded-full border flex items-center justify-center text-xs font-bold flex-shrink-0 ${isPerempuan ? 'bg-pink-100 dark:bg-pink-950 border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400'}`}>
-                                                                        {santri.name?.charAt(0).toUpperCase()}
-                                                                    </span>
-                                                                )}
-                                                                <span className="text-sm font-medium text-stone-800 dark:text-stone-200">{santri.name}</span>
+                                                                <Avatar santri={santri} />
+                                                                <span className="text-sm text-stone-700 dark:text-stone-200">{santri.name}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-4 py-3 text-sm font-mono text-stone-500 dark:text-stone-400">{santri.nis ?? '-'}</td>
+                                                        <td className="px-4 py-3 text-xs font-mono text-stone-500 dark:text-stone-400">{santri.nis ?? '-'}</td>
+                                                        <td className="px-4 py-3"><Badge className={GENDER[info.g].badge}>{info.g}</Badge></td>
+                                                        <td className="px-4 py-3"><Badge className={METODE_BADGE[metodeTone(santri)]}>{santri.target_display ?? '-'}</Badge></td>
+                                                        <td className="px-4 py-3">{progressCell(santri, info)}</td>
                                                         <td className="px-4 py-3">
-                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${isPerempuan ? 'bg-pink-50 text-pink-700 border-pink-200/70 dark:bg-pink-500/10 dark:text-pink-400 dark:border-pink-500/20' : 'bg-blue-50 text-blue-700 border-blue-200/70 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20'}`}>
-                                                                {isPerempuan ? 'P' : 'L'}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-                                                                🎯 {santri.target_display ?? '-'}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            {isIqro && !iqroKnown ? (
-                                                                <span className="text-[10px] text-stone-500 dark:text-stone-600 italic">Halaman Jilid {santri.target_jilid ?? '-'} belum diatur</span>
-                                                            ) : (
-                                                                <>
-                                                                    <div className="flex items-center gap-2 min-w-[160px]">
-                                                                        <div className="flex-1 bg-stone-200 dark:bg-coal-700 rounded-full h-1.5">
-                                                                            <div className={`${colors.bar} h-1.5 rounded-full transition-all duration-500`} style={{ width: `${Math.min(persen, 100)}%` }} />
-                                                                        </div>
-                                                                        <span className={`text-xs font-semibold ${colors.text} w-10 text-right shrink-0`}>{persen}%</span>
-                                                                    </div>
-                                                                    <p className="text-[11px] text-stone-500 dark:text-stone-600 mt-1">
-                                                                        {isIqro ? `${santri.total_halaman_iqro ?? 0}/${santri.total_halaman_jilid ?? 0} hal` : `${totalJuz}/${targetJuz} Juz`}
-                                                                    </p>
-                                                                </>
-                                                            )}
-                                                            {santri.has_quran_secondary && (
-                                                                <>
-                                                                    <div className="flex items-center gap-2 min-w-[160px] mt-2">
-                                                                        <div className="flex-1 bg-stone-200 dark:bg-coal-700 rounded-full h-1.5">
-                                                                            <div className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${Math.min(santri.hafalan_persen_2 ?? 0, 100)}%` }} />
-                                                                        </div>
-                                                                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 w-10 text-right shrink-0">{santri.hafalan_persen_2 ?? 0}%</span>
-                                                                    </div>
-                                                                    <p className="text-[11px] text-stone-500 dark:text-stone-600 mt-1">
-                                                                        {santri.capaian_juz_2 ?? 0}/{santri.target_juz_2 ?? 0} Juz (Al-Qur'an)
-                                                                    </p>
-                                                                </>
-                                                            )}
-                                                        </td>                                                        <td className="px-4 py-3">
-                                                            <div className="flex items-center gap-2">
-                                                                <Link href={route('guru.rapot.show', santri.id)}
-                                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-claude-500/10 hover:bg-claude-500/20 border border-claude-500/20 text-claude-600 dark:text-claude-400 text-xs font-semibold rounded-lg transition">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Link href={route('guru.rapot.show', santri.id)} className={`${ROW_BTN} ${ROW_ACC}`}>
                                                                     <FileTextIcon className="w-3.5 h-3.5" /> Lihat Rapot
                                                                 </Link>
-                                                                <button type="button"
-                                                                    onClick={() => toggleRapot(santri)}
-                                                                    disabled={!bolehAturRapot || rapotBusyId === santri.id}
-                                                                    title={santri.rapot_dibuka ? 'Kunci kembali PDF rapot santri' : 'Buka akses PDF rapot santri'}
-                                                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 border text-xs font-semibold rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed ${santri.rapot_dibuka ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:border-emerald-500/20 dark:text-emerald-400' : 'bg-stone-100 hover:bg-stone-200 border-stone-200 text-stone-600 dark:bg-coal-700 dark:hover:bg-coal-600 dark:border-coal-600 dark:text-stone-300'}`}>
-                                                                    {santri.rapot_dibuka
-                                                                        ? <><UnlockIcon className="w-3.5 h-3.5" /> Terbuka</>
-                                                                        : <><LockIcon className="w-3.5 h-3.5" /> Terkunci</>}
-                                                                </button>
-                                                                {dpNaik ? (
-                                                                    <button type="button" onClick={() => openNaikSingle(santri.id, santri.name)}
-                                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 text-emerald-700 dark:bg-emerald-600/20 dark:hover:bg-emerald-600/40 dark:border-emerald-600/30 dark:text-emerald-400 text-xs font-semibold rounded-lg transition">
+                                                                {rapotLockBtn(santri)}
+                                                                {info.dpNaik ? (
+                                                                    <button type="button" onClick={() => openNaikSingle(santri.id, santri.name)} className={`${ROW_BTN} ${ROW_OK}`}>
                                                                         <ArrowUpIcon className="w-3.5 h-3.5" /> Naik
                                                                     </button>
                                                                 ) : bolehNaik ? (
-                                                                    <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-stone-100 dark:bg-coal-800 border border-stone-200 dark:border-coal-700 text-stone-400 dark:text-stone-600 text-xs font-semibold rounded-lg">✓ Sudah naik</span>
+                                                                    <span className={`${ROW_BTN} bg-cream-100 dark:bg-coal-600/40 ring-cream-300 dark:ring-coal-600 text-stone-400`}>
+                                                                        <CheckIcon className="w-3.5 h-3.5" /> Sudah naik
+                                                                    </span>
                                                                 ) : null}
                                                             </div>
                                                         </td>
@@ -570,58 +587,51 @@ export default function Index({
                                             })}
                                         </tbody>
                                     </table>
-                                    {visibleCount === 0 && (
-                                        <div className="text-center py-16">
-                                            <EmptyIcon className="w-12 h-12 text-stone-300 dark:text-coal-600 mb-3 mx-auto" />
-                                            <p className="text-sm font-semibold text-stone-500">Santri tidak ditemukan</p>
-                                        </div>
-                                    )}
+                                    {visibleCount === 0 && <EmptyBlock icon={EmptyIcon} title="Santri tidak ditemukan" />}
                                 </div>
-                            </>
-                        ) : (
-                            <div className="bg-white dark:bg-coal-800 border border-stone-200 dark:border-coal-700 rounded-xl py-16 text-center shadow-sm dark:shadow-none">
-                                <p className="text-sm font-semibold text-stone-600 dark:text-stone-400">Belum ada data santri</p>
-                                <p className="text-xs text-stone-500 dark:text-stone-600 mt-1.5">Silakan tambahkan santri terlebih dahulu</p>
                             </div>
-                        )
+                        </>
                     ) : (
-                        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/30 rounded-xl p-4 flex items-start gap-3">
-                            <AlertTriangleIcon className="w-5 h-5 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                            <p className="text-sm text-amber-700 dark:text-amber-300">Anda belum ditugaskan sebagai wali kelas. Silakan hubungi administrator.</p>
+                        <div className={CARD}>
+                            <EmptyBlock icon={UsersIcon} title="Belum ada data santri" hint="Silakan tambahkan santri terlebih dahulu" />
                         </div>
-                    )}
-
-                </div>
+                    )
+                ) : (
+                    <Banner tone="warn" icon={AlertTriangleIcon}>
+                        Anda belum ditugaskan sebagai wali kelas. Silakan hubungi administrator.
+                    </Banner>
+                )}
             </div>
 
             {/* ===== MODAL NAIK KELAS ===== */}
             <Modal open={showNaik} onClose={() => setShowNaik(false)}>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-300 dark:border-emerald-600/40 rounded-xl flex items-center justify-center text-lg flex-shrink-0">⬆️</div>
+                    <span className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
+                        <ArrowUpIcon className="w-5 h-5" />
+                    </span>
                     <div className="min-w-0">
-                        <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100">Naik Kelas</h3>
-                        <p className="text-xs text-stone-500 truncate">{naikLabel}</p>
+                        <h3 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-100">Naik Kelas</h3>
+                        <p className="text-[11px] text-stone-500 truncate">{naikLabel}</p>
                     </div>
                 </div>
                 {kelasTujuanList.length === 0 ? (
                     <>
-                        <p className="text-sm text-amber-600 dark:text-amber-400 mb-4">Belum ada kelas tujuan lain. Minta admin membuat kelas tujuan dahulu.</p>
+                        <Banner tone="warn" icon={AlertTriangleIcon}>Belum ada kelas tujuan lain. Minta admin membuat kelas tujuan dahulu.</Banner>
                         <button type="button" onClick={() => setShowNaik(false)} className={BTN_SECONDARY + ' w-full'}>Tutup</button>
                     </>
                 ) : (
                     <form onSubmit={submitNaik}>
-                        <label className="block text-xs font-semibold text-stone-600 dark:text-stone-400 mb-1.5">Pilih Kelas Tujuan</label>
+                        <label className="block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1.5">Pilih Kelas Tujuan</label>
                         <select value={kelasTujuan} onChange={(e) => setKelasTujuan(e.target.value)} required className={INP + ' mb-1'}>
                             <option value="">— pilih kelas tujuan —</option>
                             {kelasTujuanList.map((k) => (
                                 <option key={k.id} value={k.id}>{k.name} · {k.tahun_ajaran} · {k.guru?.name || 'Tanpa Guru'}</option>
                             ))}
                         </select>
-                        <p className="text-[10px] text-stone-500 dark:text-stone-600 mb-4">Santri langsung pindah ke kelas & wali kelas tujuan, dan tercatat di riwayat.</p>
+                        <p className="text-[11px] text-stone-400 mb-4">Santri langsung pindah ke kelas & wali kelas tujuan, dan tercatat di riwayat.</p>
                         <div className="flex gap-3">
                             <button type="button" onClick={() => setShowNaik(false)} className={BTN_SECONDARY}>Batal</button>
-                            <button type="submit" disabled={!kelasTujuan || naikProcessing}
-                                className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition">
+                            <button type="submit" disabled={!kelasTujuan || naikProcessing} className={BTN_PRIMARY}>
                                 {naikProcessing ? 'Memproses...' : 'Naikkan'}
                             </button>
                         </div>

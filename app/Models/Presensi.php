@@ -12,7 +12,7 @@ class Presensi extends Model
     use HasFactory;
 
     protected $fillable = [
-        'tahun_ajaran_id', // ← TAMBAHAN BARU
+        'tahun_ajaran_id', 
         'santri_id',
         'guru_id',
         'tanggal',
@@ -42,11 +42,14 @@ class Presensi extends Model
     // =====================================================
 
     /**
-     * Relasi ke Santri
+     * Relasi ke Santri.
+     *
+     * withTrashed: rekap presensi bulan-bulan lalu tetap menampilkan nama,
+     * meski santrinya sudah diarsipkan lewat tombol Hapus di Data Siswa.
      */
     public function santri(): BelongsTo
     {
-        return $this->belongsTo(Santri::class);
+        return $this->belongsTo(Santri::class)->withTrashed();
     }
 
     /**

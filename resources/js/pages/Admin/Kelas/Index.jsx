@@ -201,9 +201,7 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
     const submitKelas = (e) => {
         e.preventDefault();
         if (isEdit) {
-            // Rute update tidak selalu diberi nama eksplisit, jadi pakai URL langsung
-            // (mengikuti pendekatan yang sama dengan versi Blade sebelumnya).
-            kelasForm.put(`/admin/kelas/${editId}`, {
+            kelasForm.put(route('admin.kelas.update', editId), {
                 preserveScroll: true,
                 onSuccess: () => setFormOpen(false),
             });
@@ -217,7 +215,7 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
 
     /* ---- Delete ---- */
     const deleteKelas = (k) => {
-        if (confirm(`Hapus Kelas ${k.name}? Kelas yang masih memiliki santri tidak dapat dihapus.`)) {
+        if (confirm(`Hapus Kelas ${k.name}? Kelas yang masih memiliki siswa tidak dapat dihapus.`)) {
             router.delete(route('admin.kelas.destroy', k.id), { preserveScroll: true });
         }
     };
@@ -257,7 +255,7 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
 
     return (
         <AuthenticatedLayout>
-            <Head title="Management Kelas/Halaqah" />
+            <Head title="Management Kelas" />
             <Toast notif={notif} onClose={() => setNotif(null)} duration={NOTIF_DURATION} />
 
             <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 py-6">
@@ -275,7 +273,7 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
                         <SchoolIcon className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <h1 className="text-lg sm:text-xl font-bold text-stone-900 dark:text-stone-100">Management Kelas/Halaqah</h1>
+                        <h1 className="text-lg sm:text-xl font-bold text-stone-900 dark:text-stone-100">Management Kelas</h1>
                         <div className="flex items-center gap-2 mt-1">
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-claude-500/10 text-claude-600 dark:text-claude-400 border border-claude-500/20">
                                 {kelas.length} kelas
@@ -389,7 +387,7 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
                                         ref={(el) => { if (el) el.indeterminate = selected.length > 0 && !allSelected; }}
                                         className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 cursor-pointer" />
                                 </th>
-                                {['No', 'Nama Kelas', 'Tahun Ajaran', 'Wali Kelas/Murobbi', 'Jenis Kelas', 'Terisi'].map((h) => (
+                                {['No', 'Nama Kelas', 'Tahun Ajaran', 'Wali Kelas', 'Jenis Kelas', 'Terisi'].map((h) => (
                                     <th key={h} className="px-4 py-3 text-left text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">{h}</th>
                                 ))}
                                 <th className="px-4 py-3 text-center text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Aksi</th>
@@ -449,14 +447,14 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
 
             {/* ===== MODAL: TAMBAH / EDIT ===== */}
             <Modal open={formOpen} onClose={() => setFormOpen(false)}
-                title={isEdit ? `Edit Kelas: ${kelasForm.data.name}` : 'Tambah Kelas/Halaqah Baru'} maxWidth="sm:max-w-lg">
+                title={isEdit ? `Edit Kelas: ${kelasForm.data.name}` : 'Tambah Kelas Baru'} maxWidth="sm:max-w-lg">
                 <form onSubmit={submitKelas} className="p-5 space-y-4 overflow-y-auto" style={{ maxHeight: '72vh' }}>
                     <div>
                         <label className={LBL}>Nama Kelas <span className="text-red-500">*</span></label>
                         <input name="name" value={kelasForm.data.name} onChange={onNameChange} required
-                            placeholder="Contoh: Kelas 7A" className={INP} />
+                            placeholder="Contoh: Kelompok A" className={INP} />
                         {err(kelasForm.errors.name)}
-                        <p className="text-[10px] text-stone-400 dark:text-stone-600 mt-1">Smart capitalize aktif (contoh: Kelas 7A)</p>
+                        <p className="text-[10px] text-stone-400 dark:text-stone-600 mt-1">Huruf awal tiap kata otomatis kapital</p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -503,7 +501,7 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
                             <label className={LBL}>Tingkat</label>
                             <input name="tingkat" value={kelasForm.data.tingkat}
                                 onChange={(e) => kelasForm.setData('tingkat', e.target.value)}
-                                placeholder="Contoh: VII" className={INP} />
+                                placeholder="Contoh: A" className={INP} />
                             {err(kelasForm.errors.tingkat)}
                             <p className="text-[10px] text-stone-400 dark:text-stone-600 mt-1">Opsional</p>
                         </div>
@@ -512,7 +510,7 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
                             <input type="number" min="1" max="100" name="kapasitas" value={kelasForm.data.kapasitas}
                                 onChange={(e) => kelasForm.setData('kapasitas', e.target.value)} required className={INP} />
                             {err(kelasForm.errors.kapasitas)}
-                            <p className="text-[10px] text-stone-400 dark:text-stone-600 mt-1">Daya tampung santri</p>
+                            <p className="text-[10px] text-stone-400 dark:text-stone-600 mt-1">Daya tampung siswa</p>
                         </div>
                     </div>
 
@@ -622,7 +620,7 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
                     padding-right:2.25rem;
                 }
                 html.dark select{color-scheme:dark}
-                html.dark select option{background:#292623;color:#f5f5f4}
+                html.dark select option{background:#323730;color:#F6F7F2}
                 @keyframes slideUp{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
                 @media(min-width:640px){@keyframes slideUp{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}}
             `}</style>

@@ -179,10 +179,10 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
     const thPlain = 'px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400';
 
     // Tinggi & radius seragam untuk semua kontrol filter.
-    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-600';
+    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600 dark:[color-scheme:dark]';
     const selectCls = `${fieldCls} cursor-pointer appearance-none pr-9`;
     // appearance-none + chevron sendiri: panah bawaan browser tidak mengikuti tema.
-    const selectModal = 'mt-1.5 block w-full cursor-pointer appearance-none rounded-xl border-0 bg-white py-2.5 pl-4 pr-10 text-sm text-stone-800 shadow-sm ring-1 ring-stone-200 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-700';
+    const selectModal = 'mt-1.5 block w-full cursor-pointer appearance-none rounded-xl border-0 bg-white py-2.5 pl-4 pr-10 text-sm text-stone-800 shadow-sm ring-1 ring-cream-300 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600 dark:[color-scheme:dark]';
 
     const ChevronBawah = ({ modal = false }) => (
         <svg className={`pointer-events-none absolute ${modal ? 'right-3.5 top-[calc(50%+3px)]' : 'right-3 top-1/2'} h-4 w-4 -translate-y-1/2 text-stone-400 dark:text-stone-500`}
@@ -214,7 +214,7 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
     const KomponenRow = ({ type, row, idx, list, warna, labelKey }) => {
         const terpilih = list?.find((x) => String(x.id) === String(row.id));
         return (
-            <div className="rounded-xl bg-stone-50 p-3 dark:bg-coal-900/50">
+            <div className="rounded-xl bg-cream-100 p-3 dark:bg-coal-600/40">
                 {/* Mobile: nominal override turun ke baris bawah — sebaris
                     dengan select membuat keduanya terlalu sempit. */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
@@ -255,7 +255,7 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
 
             {/* Hanya mobile: di desktop sidebar sudah menyediakan navigasi. */}
             <Link href={route('keuangan.dashboard')}
-                className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-stone-600 ring-1 ring-stone-200 transition hover:bg-cream-100 active:scale-95 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600 lg:hidden">
+                className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-stone-600 ring-1 ring-cream-300 transition hover:bg-cream-100 active:scale-95 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600 lg:hidden">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
@@ -267,7 +267,7 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
                 <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Kelola data pegawai, jabatan, dan komponen gajinya.</p>
             </div>
 
-            <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+            <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
                         <div className="relative sm:max-w-sm sm:flex-1">
@@ -297,7 +297,7 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
                 {/* ===== KARTU — MOBILE & TABLET ===== */}
                 <div className="space-y-2.5 lg:hidden">
                     {pegawai.data.length > 0 ? pegawai.data.map((item) => (
-                        <div key={item.id} className="overflow-hidden rounded-2xl ring-1 ring-stone-200 dark:ring-coal-600">
+                        <div key={item.id} className="overflow-hidden rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600">
                             <div className="flex items-start justify-between gap-3 p-4">
                                 <div className="min-w-0">
                                     <p className="truncate text-sm font-semibold text-stone-800 dark:text-cream-100">{item.name}</p>
@@ -311,8 +311,8 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
                                 <BadgeAktif aktif={item.is_active} />
                             </div>
 
-                            <div className="grid grid-cols-2 border-t border-stone-100 dark:border-coal-600">
-                                <div className="border-r border-stone-100 px-3 py-2.5 text-center dark:border-coal-600">
+                            <div className="grid grid-cols-2 border-t border-cream-200 dark:border-coal-600">
+                                <div className="border-r border-cream-200 px-3 py-2.5 text-center dark:border-coal-600">
                                     <p className="mb-1 text-[10px] uppercase tracking-wider text-stone-400">Jabatan</p>
                                     <p className="truncate text-xs font-medium text-stone-700 dark:text-stone-200">
                                         {item.jabatan?.nama_jabatan || <span className="italic text-red-400">Belum ada</span>}
@@ -329,10 +329,10 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
                             </div>
 
                             {adaAksi && (
-                                <div className="flex border-t border-stone-100 dark:border-coal-600">
+                                <div className="flex border-t border-cream-200 dark:border-coal-600">
                                     {can('master.pegawai.kelola_gaji') && (
                                         <button onClick={() => openSalaryModal(item)}
-                                            className="flex flex-1 items-center justify-center gap-1.5 border-r border-stone-100 py-2.5 text-xs font-medium text-emerald-600 transition hover:bg-emerald-50 dark:border-coal-600 dark:text-emerald-400 dark:hover:bg-emerald-500/10">
+                                            className="flex flex-1 items-center justify-center gap-1.5 border-r border-cream-200 py-2.5 text-xs font-medium text-emerald-600 transition hover:bg-emerald-50 dark:border-coal-600 dark:text-emerald-400 dark:hover:bg-emerald-500/10">
                                             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
@@ -341,7 +341,7 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
                                     )}
                                     {can('master.pegawai.edit') && (
                                         <button onClick={() => openEditModal(item)}
-                                            className="flex flex-1 items-center justify-center gap-1.5 border-r border-stone-100 py-2.5 text-xs font-medium text-claude-600 transition hover:bg-claude-500/10 dark:border-coal-600 dark:text-claude-300">
+                                            className="flex flex-1 items-center justify-center gap-1.5 border-r border-cream-200 py-2.5 text-xs font-medium text-claude-600 transition hover:bg-claude-500/10 dark:border-coal-600 dark:text-claude-300">
                                             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
@@ -361,14 +361,14 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
                             )}
                         </div>
                     )) : (
-                        <div className="rounded-2xl py-14 text-center ring-1 ring-stone-200 dark:ring-coal-600">{kosong}</div>
+                        <div className="rounded-2xl py-14 text-center ring-1 ring-cream-300 dark:ring-coal-600">{kosong}</div>
                     )}
                 </div>
 
                 {/* ===== TABEL — DESKTOP ===== */}
-                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 lg:block">
-                    <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
-                        <thead className="bg-stone-50 dark:bg-coal-800">
+                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 lg:block">
+                    <table className="min-w-full divide-y divide-cream-300 dark:divide-coal-600">
+                        <thead className="bg-cream-100 dark:bg-coal-600/40">
                             <tr>
                                 <th onClick={() => handleSort('nip')} className={thCls}><div className="flex items-center">NIY <SortIcon field="nip" /></div></th>
                                 <th onClick={() => handleSort('name')} className={thCls}><div className="flex items-center">Nama Pegawai <SortIcon field="name" /></div></th>
@@ -377,7 +377,7 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
                                 {adaAksi && <th className="px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Aksi</th>}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                        <tbody className="divide-y divide-cream-200 bg-white dark:divide-coal-600 dark:bg-coal-700">
                             {pegawai.data.length > 0 ? pegawai.data.map((item) => (
                                 <tr key={item.id} className="transition hover:bg-cream-50 dark:hover:bg-coal-600/40">
                                     <td className="whitespace-nowrap px-5 py-4 text-sm font-semibold text-stone-800 dark:text-cream-100">{item.nip || '-'}</td>
@@ -437,7 +437,7 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
                             <button key={i} onClick={() => link.url && router.get(link.url, {}, { preserveScroll: true })} disabled={!link.url}
                                 className={`rounded-lg px-3 py-1.5 text-sm transition ${
                                     link.active ? 'bg-claude-500 font-medium text-white'
-                                        : 'text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
+                                        : 'text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
                                 }`}
                                 dangerouslySetInnerHTML={{ __html: link.label }} />
                         ))}
@@ -452,7 +452,7 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
 
                     <div className="mt-5 grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div>
-                            <div className="mb-3 flex items-center justify-between border-b border-stone-200 pb-2 dark:border-coal-600">
+                            <div className="mb-3 flex items-center justify-between border-b border-cream-300 pb-2 dark:border-coal-600">
                                 <h3 className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Tunjangan</h3>
                                 <button type="button" onClick={() => addRow('allowances')} className="text-xs font-medium text-emerald-600 hover:underline dark:text-emerald-400">+ Baris</button>
                             </div>
@@ -462,13 +462,13 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
                                         warna="text-emerald-600 dark:text-emerald-400" labelKey="nama_tunjangan" />
                                 ))}
                                 {salaryForm.data.allowances.length === 0 && (
-                                    <p className="rounded-xl border-2 border-dashed border-stone-200 py-4 text-center text-xs text-stone-400 dark:border-coal-600">Belum ada tunjangan.</p>
+                                    <p className="rounded-xl border-2 border-dashed border-cream-300 py-4 text-center text-xs text-stone-400 dark:border-coal-600">Belum ada tunjangan.</p>
                                 )}
                             </div>
                         </div>
 
                         <div>
-                            <div className="mb-3 flex items-center justify-between border-b border-stone-200 pb-2 dark:border-coal-600">
+                            <div className="mb-3 flex items-center justify-between border-b border-cream-300 pb-2 dark:border-coal-600">
                                 <h3 className="text-xs font-semibold uppercase tracking-wider text-red-600 dark:text-red-400">Potongan</h3>
                                 <button type="button" onClick={() => addRow('deductions')} className="text-xs font-medium text-red-600 hover:underline dark:text-red-400">+ Baris</button>
                             </div>
@@ -478,13 +478,13 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
                                         warna="text-red-600 dark:text-red-400" labelKey="nama_potongan" />
                                 ))}
                                 {salaryForm.data.deductions.length === 0 && (
-                                    <p className="rounded-xl border-2 border-dashed border-stone-200 py-4 text-center text-xs text-stone-400 dark:border-coal-600">Belum ada potongan.</p>
+                                    <p className="rounded-xl border-2 border-dashed border-cream-300 py-4 text-center text-xs text-stone-400 dark:border-coal-600">Belum ada potongan.</p>
                                 )}
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-6 flex flex-col justify-end gap-2 border-t border-stone-100 pt-5 dark:border-coal-600 sm:flex-row">
+                    <div className="mt-6 flex flex-col justify-end gap-2 border-t border-cream-200 pt-5 dark:border-coal-600 sm:flex-row">
                         <SecondaryButton type="button" onClick={() => setIsSalaryModalOpen(false)} className="justify-center">Batal</SecondaryButton>
                         <PrimaryButton type="submit" disabled={salaryForm.processing} className="justify-center">Simpan Pengaturan Gaji</PrimaryButton>
                     </div>
@@ -527,24 +527,24 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
                             </div>
                             <div>
                                 <InputLabel value="Wali Kelas" />
-                                <p className="mt-2 rounded-xl bg-stone-50 px-3.5 py-2.5 text-xs text-stone-500 ring-1 ring-stone-200 dark:bg-coal-900 dark:text-stone-400 dark:ring-coal-600">
+                                <p className="mt-2 rounded-xl bg-cream-100 px-3.5 py-2.5 text-xs text-stone-500 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:text-stone-400 dark:ring-coal-600">
                                     Penugasan wali kelas diatur dari panel raport, karena terikat tahun ajaran.
                                 </p>
                             </div>
                         </div>
 
-                        <div className="border-t border-stone-100 pt-4 dark:border-coal-600">
+                        <div className="border-t border-cream-200 pt-4 dark:border-coal-600">
                             <label className="flex cursor-pointer items-center gap-2">
                                 <input type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)}
-                                    className="h-4 w-4 rounded border-stone-300 text-claude-500 focus:ring-claude-500 dark:border-coal-600 dark:bg-coal-900" />
+                                    className="h-4 w-4 rounded border-cream-400 text-claude-500 focus:ring-claude-500 dark:border-coal-600 dark:bg-coal-600/40" />
                                 <span className="text-sm text-stone-600 dark:text-stone-300">Pegawai Aktif</span>
                             </label>
                         </div>
 
                         {/* --- AKUN LOGIN (opsional) --- */}
-                        <div className="border-t border-stone-100 pt-4 dark:border-coal-600">
+                        <div className="border-t border-cream-200 pt-4 dark:border-coal-600">
                             {sudahPunyaAkun ? (
-                                <p className="rounded-xl bg-stone-50 px-3.5 py-2.5 text-xs leading-relaxed text-stone-500 ring-1 ring-stone-200 dark:bg-coal-900 dark:text-stone-400 dark:ring-coal-600">
+                                <p className="rounded-xl bg-cream-100 px-3.5 py-2.5 text-xs leading-relaxed text-stone-500 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:text-stone-400 dark:ring-coal-600">
                                     Pegawai ini sudah punya akun login. Ubah username, password, atau hak aksesnya dari Pengaturan → Manajemen User.
                                 </p>
                             ) : (
@@ -554,13 +554,13 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
                                         <label className="flex shrink-0 cursor-pointer items-center gap-2">
                                             <input type="checkbox" checked={data.buat_akun}
                                                 onChange={(e) => setData('buat_akun', e.target.checked)}
-                                                className="h-4 w-4 rounded border-stone-300 text-claude-500 focus:ring-claude-500 dark:border-coal-600 dark:bg-coal-900" />
+                                                className="h-4 w-4 rounded border-cream-400 text-claude-500 focus:ring-claude-500 dark:border-coal-600 dark:bg-coal-600/40" />
                                             <span className="text-xs text-stone-500 dark:text-stone-400">Pegawai ini perlu login</span>
                                         </label>
                                     </div>
 
                                     {data.buat_akun ? (
-                                        <div className="space-y-4 rounded-xl bg-stone-50 p-4 ring-1 ring-stone-200 dark:bg-coal-900/50 dark:ring-coal-600">
+                                        <div className="space-y-4 rounded-xl bg-cream-100 p-4 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600">
                                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                                 <div>
                                                     <InputLabel htmlFor="username">Username <span className="text-red-500">*</span></InputLabel>
@@ -606,7 +606,7 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
                                             </div>
                                         </div>
                                     ) : (
-                                        <p className="rounded-xl bg-stone-50 px-3.5 py-2.5 text-xs leading-relaxed text-stone-500 ring-1 ring-stone-200 dark:bg-coal-900 dark:text-stone-400 dark:ring-coal-600">
+                                        <p className="rounded-xl bg-cream-100 px-3.5 py-2.5 text-xs leading-relaxed text-stone-500 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:text-stone-400 dark:ring-coal-600">
                                             Pegawai disimpan tanpa akun login. Akun bisa dibuatkan nanti lewat tombol Ubah.
                                         </p>
                                     )}

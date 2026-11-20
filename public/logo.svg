@@ -1,11 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 116 109">
-  <defs>
-    <linearGradient id="g" x1="50" y1="0" x2="50" y2="93" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#2BAFE6"/>
-      <stop offset="0.55" stop-color="#2ADB6B"/>
-      <stop offset="1" stop-color="#22F03C"/>
-    </linearGradient>
-  </defs>
-  <path d="M37.5 0 H62.5 L100 93 H58.5 L50 53 L41.5 93 H0 Z"
-        fill="url(#g)" stroke="url(#g)" stroke-width="4" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 420" width="420" height="420" role="img" aria-label="TK Attauhid">
+  <title>TK Attauhid</title>
+
+  <!--
+    Logo TK Attauhid — atap + dua sisi kubus, tanpa lingkaran pembungkus.
+
+    KANVASNYA SENGAJA PERSEGI (420 × 420) meskipun gambarnya lebih tinggi
+    daripada lebar. Alasannya favicon: peramban menjejalkan SVG ke kotak
+    persegi, dan sebagian melakukannya dengan MEREGANGKAN gambar, bukan
+    memberi ruang kosong. Dengan kanvas yang sudah persegi sejak awal,
+    proporsinya aman di mana pun — tab peramban, layar utama HP, maupun
+    pratinjau berkas.
+
+    Gambarnya sendiri digeser ke tengah lewat <g transform> di bawah;
+    koordinat jalurnya tidak diubah sama sekali.
+
+    Titik-titiknya diukur dari berkas logo asli di dalam Profil TK
+    Attauhid, lalu disimetriskan terhadap sumbu tengah.
+
+    Warna diambil langsung dari berkas asli, bukan ditebak:
+      hijau  #7EB842   biru  #36A7DF   oranye  #FA902C
+
+    Celah antar bidang adalah TRANSPARANSI, dan lingkaran di tengah atap
+    adalah LUBANG sungguhan (fill-rule evenodd) — bukan bentuk putih yang
+    ditumpuk. Jadi logo tetap benar di atas latar warna apa pun.
+  -->
+
+  <g transform="translate(31 9)">
+    <!-- Sisi atas -->
+    <path fill="#7EB842" fill-rule="evenodd"
+          stroke="#7EB842" stroke-width="9" stroke-linejoin="round"
+          d="M179 0 357.5 103 358 147 299 131 179 197 59 131 0 147 0.5 103 Z
+             M179 59.5 A46.5 46.5 0 1 0 179 152.5 A46.5 46.5 0 1 0 179 59.5 Z" />
+
+    <!-- Sisi kiri -->
+    <path fill="#36A7DF" stroke="#36A7DF" stroke-width="9" stroke-linejoin="round"
+          d="M0.5 186 61 153 168.5 216 168.5 402 2.5 303 Z" />
+
+    <!-- Sisi kanan -->
+    <path fill="#FA902C" stroke="#FA902C" stroke-width="9" stroke-linejoin="round"
+          d="M357.5 186 297 153 189.5 216 189.5 402 355.5 303 Z" />
+  </g>
 </svg>

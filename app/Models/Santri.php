@@ -397,6 +397,32 @@ public function isJilidTamat(): bool
     }
 
     /**
+     * Scope: siswa TK At-Tauhid — yang ditagih lewat gelombang tagihan.
+     *
+     * Siswa tanpa kelas ikut dihitung TK. Rumah Quran selalu punya kelas
+     * (rombel ngaji), sedangkan siswa TK yang belum dibagi rombel tetap
+     * harus bisa ditagih — route master-data pun menyediakan 'tanpa-kelas'.
+     */
+    public function scopeTk($query)
+    {
+        return $query->where(function ($w) {
+            $w->whereNull('kelas_id')
+              ->orWhereHas('kelas', fn ($k) => $k->where('lembaga', Kelas::LEMBAGA_TK));
+        });
+    }
+
+    /** Scope: santri Rumah Quran — membayar infaq sukarela, tidak pernah ditagih. */
+    public function scopeArahan($query)
+    {
+        return $query->whereHas('kelas', fn ($k) => $k->where('lembaga', Kelas::LEMBAGA_ARAHAN));
+    }
+
+    public function isArahan(): bool
+    {
+        return $this->kelas?->lembaga === Kelas::LEMBAGA_ARAHAN;
+    }
+
+    /**
  * Tanggal masuk paling awal di kelas yang sedang ditempati santri.
  * Dipakai sebagai "floor" progress: lanjut antar-semester (tidak reset),
  * reset saat naik/pindah kelas. Null jika tak ada riwayat (fallback all-time).

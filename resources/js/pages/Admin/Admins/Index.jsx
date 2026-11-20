@@ -9,7 +9,7 @@ function AdminBadge() {
     return <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800 ring-1 ring-inset ring-blue-300 dark:bg-blue-400/15 dark:text-blue-300 dark:ring-blue-400/30">⚡ Admin</span>;
 }
 function PemilikBadge() {
-    return <span className="inline-flex items-center rounded-full bg-stone-200 px-2 py-0.5 text-[10px] font-semibold text-stone-700 ring-1 ring-inset ring-stone-300 dark:bg-coal-600 dark:text-stone-200 dark:ring-coal-500">🔒 Pemilik Sistem</span>;
+    return <span className="inline-flex items-center rounded-full bg-cream-300 px-2 py-0.5 text-[10px] font-semibold text-stone-700 ring-1 ring-inset ring-cream-400 dark:bg-coal-600 dark:text-stone-200 dark:ring-coal-500">🔒 Pemilik Sistem</span>;
 }
 
 function Avatar({ url, name, size = 'h-10 w-10' }) {

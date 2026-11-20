@@ -15,6 +15,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * karena wali kelas dan daftar santrinya memang berganti tiap tahun.
  * Konsekuensinya, kelas harus dibuat ulang setiap tahun ajaran baru.
  *
+ * Kolom `lembaga` memisahkan TK At-Tauhid dari Rumah Quran (tempat ngaji).
+ * Siswa ikut lembaga kelasnya: TK ditagih lewat gelombang tagihan,
+ * santri Rumah Quran membayar infaq sukarela tanpa tagihan.
+ *
  * Tabel `classes` sudah tidak dipakai.
  */
 class Kelas extends Model
@@ -29,6 +33,7 @@ class Kelas extends Model
         'guru_id',
         'gender_restriction',
         'tingkat',
+        'lembaga',
         'kapasitas',
         'is_active',
     ];
@@ -42,6 +47,14 @@ class Kelas extends Model
         'ikhwan'   => 'Ikhwan (Laki-laki)',
         'akhwat'   => 'Akhwat (Perempuan)',
         'campuran' => 'Campuran (Ikhwan & Akhwat)',
+    ];
+
+    public const LEMBAGA_TK     = 'tk';
+    public const LEMBAGA_ARAHAN = 'arahan';
+
+    public const LEMBAGA = [
+        self::LEMBAGA_TK     => 'TK At-Tauhid',
+        self::LEMBAGA_ARAHAN => 'Rumah Quran',
     ];
 
     /** Wali kelas */
@@ -77,6 +90,21 @@ class Kelas extends Model
     public function pegawais(): HasMany
     {
         return $this->hasMany(Guru::class, 'id', 'guru_id');
+    }
+
+    public function scopeTk($query)
+    {
+        return $query->where('lembaga', self::LEMBAGA_TK);
+    }
+
+    public function scopeArahan($query)
+    {
+        return $query->where('lembaga', self::LEMBAGA_ARAHAN);
+    }
+
+    public function isArahan(): bool
+    {
+        return $this->lembaga === self::LEMBAGA_ARAHAN;
     }
 
     public function hasGenderMismatch()

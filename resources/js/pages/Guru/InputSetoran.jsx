@@ -34,6 +34,296 @@ const optSantri = (list) =>
 const optSantriPlain = (list) =>
     list.map((s) => `<option value="${s.id}">${s.name}</option>`).join('');
 
+const formatTanggalID = (str) => {
+    if (!str) return '';
+    const d = new Date(str);
+    if (isNaN(d)) return str;
+    return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+};
+
+/* ============================================================
+ * DESIGN TOKEN — disamakan dengan Dashboard.jsx
+ * (kartu ring-1 rounded-2xl, judul section dengan tile ikon,
+ *  palet cream/coal/stone, ikon line monokrom, tanpa emoji)
+ * ============================================================ */
+const CARD = 'bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl';
+const SUB = 'bg-cream-100 dark:bg-coal-600/40 ring-1 ring-cream-300 dark:ring-coal-600 rounded-xl';
+const TILE = 'w-6 h-6 rounded-lg bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-stone-500 dark:text-stone-400 flex items-center justify-center flex-shrink-0';
+const LBL = 'block text-xs font-medium text-stone-600 dark:text-stone-400 mb-1.5';
+const LBL_SM = 'block text-[11px] text-stone-500 dark:text-stone-400 mb-1';
+const REQ = '<span class="text-red-500">*</span>';
+const BTN_SOFT = 'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 hover:bg-cream-300 dark:hover:bg-coal-500 text-stone-600 dark:text-stone-300 text-xs font-semibold transition active:scale-95';
+const BTN_SUBMIT = 'w-full py-3 bg-claude-500 hover:bg-claude-600 text-white font-semibold text-sm rounded-xl transition active:scale-[.98] flex items-center justify-center gap-2';
+const TONE = {
+    claude: 'bg-claude-100 dark:bg-claude-500/15 text-claude-600 dark:text-claude-400',
+    emerald: 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+    stone: 'bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400',
+    red: 'bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400',
+    amber: 'bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400',
+};
+
+/* ---------- ikon (path stroke 24x24) ---------- */
+const P = {
+    target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
+    check: '<path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+    book: '<path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>',
+    bookClosed: '<path d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 006.5 22H20V2H6.5A2.5 2.5 0 004 4.5z"/>',
+    clipboard: '<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>',
+    clock: '<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+    mic: '<path d="M19 11a7 7 0 01-14 0m7 7v3m-4 0h8m-4-6a3 3 0 01-3-3V5a3 3 0 016 0v4a3 3 0 01-3 3z"/>',
+    pencil: '<path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828z"/>',
+    save: '<path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-8 0V4a1 1 0 011-1h6a1 1 0 011 1v3m-8 0h8M9 21v-6h6v6"/>',
+    x: '<path d="M6 18L18 6M6 6l12 12"/>',
+    alert: '<path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+    warn: '<path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>',
+    info: '<path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+    lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>',
+    cursor: '<path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/>',
+    calendar: '<path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>',
+    chart: '<path d="M3 3v18h18M9 17V9m4 8V5m4 12v-6"/>',
+    doc: '<path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>',
+    trash: '<path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M4 7h16m-3 0V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"/>',
+    back: '<path d="M10 19l-7-7m0 0l7-7m-7 7h18"/>',
+    swatch: '<path d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>',
+    chevron: '<path d="M19 9l-7 7-7-7"/>',
+};
+const svg = (d, cls = 'w-3.5 h-3.5', sw = 1.8) =>
+    `<svg class="${cls}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+
+/* ---------- potongan markup berulang ---------- */
+const secHead = (icon, title, extra = '') => `
+    <div class="flex items-center gap-2 mb-4">
+        <span class="${TILE}">${svg(icon)}</span>
+        <h3 class="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">${title}</h3>
+        ${extra}
+    </div>`;
+
+const hint = (icon, text) => `
+    <p class="mt-1.5 flex items-start gap-1 text-[11px] leading-snug text-stone-400 dark:text-stone-500">
+        ${svg(icon, 'w-3 h-3 mt-px flex-shrink-0')}<span>${text}</span>
+    </p>`;
+
+const subTitle = (icon, text) =>
+    `<p class="text-xs font-semibold text-stone-600 dark:text-stone-300 mb-2.5 flex items-center gap-1.5">${svg(icon, 'w-3.5 h-3.5 text-stone-400')} ${text}</p>`;
+
+const toast = (cls, tone, icon, body) => `
+    <div class="${cls} fixed top-3 right-3 left-3 sm:left-auto z-[300] sm:max-w-sm animate-fade-in">
+        <div class="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl shadow-xl px-3.5 py-3 flex items-start gap-3">
+            <span class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${TONE[tone]}">${svg(icon, 'w-4 h-4')}</span>
+            <div class="flex-1 min-w-0 pt-1.5 text-sm text-stone-800 dark:text-stone-100">${body}</div>
+            <button type="button" class="close-notification flex-shrink-0 mt-1 w-6 h-6 rounded-lg flex items-center justify-center text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 hover:bg-cream-200 dark:hover:bg-coal-600 transition">${svg(P.x, 'w-3.5 h-3.5', 2)}</button>
+        </div>
+    </div>`;
+
+const modeCard = (value, tone, icon, label) => `
+    <label class="mode-card cursor-pointer block">
+        <input type="radio" name="input_mode" value="${value}" class="sr-only" onclick="toggleMode(this)" onchange="switchMode(this.value)">
+        <div class="mode-card-inner h-full rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 bg-cream-100 dark:bg-coal-600/40 hover:ring-claude-400 p-2.5 sm:p-3 text-center transition">
+            <span class="w-9 h-9 mx-auto mb-1.5 rounded-xl flex items-center justify-center ${TONE[tone]}">${svg(icon, 'w-5 h-5')}</span>
+            <span class="block text-[11px] sm:text-xs font-semibold text-stone-700 dark:text-stone-300 leading-tight">${label}</span>
+        </div>
+    </label>`;
+
+const statusRadio = (value, dot, required = false) => `
+    <label class="status-radio-label cursor-pointer block">
+        <input type="radio" name="status" value="${value}" ${required ? 'required' : ''} class="sr-only">
+        <div class="status-radio-inner rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 bg-cream-100 dark:bg-coal-600/40 hover:ring-claude-400 p-2.5 text-center transition text-xs font-semibold text-stone-700 dark:text-stone-300 flex items-center justify-center gap-1.5">
+            <span class="w-2 h-2 rounded-full ${dot}"></span>${value}
+        </div>
+    </label>`;
+
+const miniStat = (id, label, box, dot) => `
+    <div class="rounded-xl ring-1 p-3 text-center ${box}">
+        <p class="text-2xl font-bold tracking-tight leading-none" id="${id}">0</p>
+        <p class="mt-1.5 flex items-center justify-center gap-1 text-[11px] font-medium"><span class="w-1.5 h-1.5 rounded-full ${dot}"></span> ${label}</p>
+    </div>`;
+
+const riwayatCard = (mode, afterCls) => `
+    <div class="${afterCls} hidden ${CARD} overflow-hidden">
+        <button type="button" onclick="toggleRiwayatSetoran('${mode}')" class="w-full flex items-center justify-between px-4 sm:px-5 py-3.5 hover:bg-cream-100 dark:hover:bg-coal-600/40 transition">
+            <span class="flex items-center gap-2">
+                <span class="${TILE}">${svg(P.clock)}</span>
+                <span class="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">Riwayat Setoran</span>
+            </span>
+            <svg id="riwayatIcon${mode}" class="w-4 h-4 text-stone-400 transition-transform" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">${P.chevron}</svg>
+        </button>
+        <div id="riwayatBody${mode}" class="hidden px-4 sm:px-5 pb-4 border-t border-cream-300 dark:border-coal-600 pt-3">
+            <div class="flex flex-wrap gap-1.5 mb-2.5" id="riwayatFilter${mode}">
+                <button type="button" class="rs-chip is-active" data-f="">Semua</button>
+                <button type="button" class="rs-chip" data-f="Hafalan">Hafalan</button>
+                <button type="button" class="rs-chip" data-f="Murajaah">Murajaah</button>
+                <button type="button" class="rs-chip" data-f="Tilawah">Tilawah</button>
+            </div>
+            <div id="riwayatList${mode}" class="space-y-1.5 max-h-72 overflow-y-auto custom-scrollbar pr-1"></div>
+        </div>
+    </div>`;
+
+const infoDasar = ({ title, icon, santriSel, santriOpts, tanggalId, sesiId, tanggalHariIni, sesiOpts, hintText, extra = '' }) => `
+    <div class="${CARD} p-4 sm:p-5">
+        ${secHead(icon, title)}
+        ${extra}
+        <div class="space-y-3">
+            <div>
+                <label class="${LBL}">Nama Santri ${REQ}</label>
+                <select name="santri_id" ${santriSel ? `id="${santriSel}"` : ''} required class="form-select w-full">
+                    <option value="">-- Pilih Santri --</option>
+                    ${santriOpts}
+                </select>
+                ${hint(P.info, hintText)}
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="${LBL}">Tanggal ${REQ}</label>
+                    <input type="date" name="tanggal" ${tanggalId ? `id="${tanggalId}"` : ''} value="${tanggalHariIni}" required class="form-input w-full">
+                </div>
+                <div>
+                    <label class="${LBL}">Sesi ${REQ}</label>
+                    <select name="sesi" ${sesiId ? `id="${sesiId}"` : ''} required class="form-select w-full">
+                        <option value="">-- Pilih --</option>
+                        ${sesiOpts}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>`;
+
+const rangeAyat = (mode, suratOpts, loadFn) => `
+    <div id="rangeAyatBlock${mode}">
+        <div class="${SUB} p-3">
+            ${subTitle(P.book, 'Range Ayat')}
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="${LBL_SM}">Surat Mulai ${REQ}</label>
+                    <select name="surat_start" id="suratStart${mode}" required class="form-select-sm w-full">
+                        <option value="">-- Pilih --</option>
+                        ${suratOpts}
+                    </select>
+                </div>
+                <div>
+                    <label class="${LBL_SM}">Ayat Mulai ${REQ}</label>
+                    <select name="ayat_start" id="ayatStart${mode}" disabled required class="form-select-sm w-full">
+                        <option value="">-- Pilih Surat --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="${LBL_SM}">Surat Selesai ${REQ}</label>
+                    <select name="surat_end" id="suratEnd${mode}" required class="form-select-sm w-full">
+                        <option value="">-- Otomatis --</option>
+                        ${suratOpts}
+                    </select>
+                </div>
+                <div>
+                    <label class="${LBL_SM}">Ayat Selesai ${REQ}</label>
+                    <select name="ayat_end" id="ayatEnd${mode}" disabled required class="form-select-sm w-full">
+                        <option value="">-- Pilih Ayat --</option>
+                    </select>
+                </div>
+            </div>
+            <button type="button" onclick="setQuranPanelTitle('quran'); ${loadFn}; if(window.innerWidth < 1024) openDrawer('quran');"
+                    class="mt-3 w-full px-3 py-2 bg-claude-500 hover:bg-claude-600 text-white text-xs font-semibold rounded-lg transition active:scale-[.98] flex items-center justify-center gap-1.5">
+                ${svg(P.book, 'w-4 h-4')} Tampilkan Al-Qur'an
+            </button>
+        </div>
+    </div>`;
+
+const iqroBlock = (mode, withHint) => `
+    <div id="iqroBlock${mode}" class="hidden ${SUB} p-3">
+        <p class="text-xs font-semibold text-stone-600 dark:text-stone-300 mb-2.5 flex items-center gap-1.5">${svg(P.bookClosed, 'w-3.5 h-3.5 text-stone-400')} Pilih Halaman <span class="lbl-metode-jilid">Iqro</span></p>
+        <div class="mb-2">
+            <label class="${LBL_SM}">Jilid ${REQ}</label>
+            <select id="iqroJilid${mode}" class="form-select-sm w-full">
+                <option value="1">Jilid 1</option><option value="2">Jilid 2</option><option value="3">Jilid 3</option>
+                <option value="4">Jilid 4</option><option value="5">Jilid 5</option><option value="6">Jilid 6</option>
+            </select>
+            ${hint(P.lock, 'Otomatis terisi dari target santri.')}
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+            <div>
+                <label class="${LBL_SM}">Halaman Mulai ${REQ}</label>
+                <select id="iqroHalamanStart${mode}" class="form-select-sm w-full"><option value="">-- Mulai --</option></select>
+            </div>
+            <div>
+                <label class="${LBL_SM}">Halaman Selesai ${REQ}</label>
+                <select id="iqroHalamanEnd${mode}" class="form-select-sm w-full"><option value="">-- Selesai --</option></select>
+            </div>
+        </div>
+        ${withHint ? hint(P.info, 'Untuk 1 halaman saja, isi Mulai &amp; Selesai sama.') : ''}
+        <button type="button" id="btnJilid${mode}" data-metode="iqro" onclick="setQuranPanelTitle('iqro'); loadIqro('${mode}'); if(window.innerWidth < 1024) openDrawer('quran');"
+                class="btn-jilid mt-3 w-full px-3 py-2 text-white text-xs font-semibold rounded-lg transition active:scale-[.98] flex items-center justify-center gap-1.5">
+            <span>Tampilkan Halaman <span class="lbl-metode-jilid">Iqro</span></span>
+        </button>
+    </div>`;
+
+const kategoriField = (id) => `
+    <div>
+        <label class="${LBL}">Kategori ${REQ}</label>
+        <select name="kategori_setoran" id="${id}" required class="form-select w-full">
+            <option value="">-- Pilih --</option>
+            <option value="Hafalan">Hafalan</option>
+            <option value="Murajaah">Murajaah</option>
+            <option value="Tilawah">Tilawah</option>
+        </select>
+    </div>`;
+
+const hiddenFields = (m) => `
+    <input type="hidden" name="page_start" id="pageStart${m}">
+    <input type="hidden" name="page_end" id="pageEnd${m}">
+    <input type="hidden" name="page_start_portion" id="pageStartPortion${m}">
+    <input type="hidden" name="page_end_portion" id="pageEndPortion${m}">
+    <input type="hidden" name="total_page" id="totalPage${m}">
+    <input type="hidden" name="juz_start" id="juzStart${m}">
+    <input type="hidden" name="juz_end" id="juzEnd${m}">
+    <input type="hidden" name="total_juz" id="totalJuz${m}">
+    <input type="hidden" name="total_kata" id="totalKata${m}">
+    <input type="hidden" name="kesalahan_kelancaran" id="kesalahanKelancaran${m}" value="0">
+    <input type="hidden" name="kesalahan_tajwid" id="kesalahanTajwid${m}" value="0">
+    <input type="hidden" name="kesalahan_pelafalan" id="kesalahanPelafalan${m}" value="0">
+    <input type="hidden" name="nilai" id="nilai${m}">
+    <input type="hidden" name="pdf_html_content" id="pdfHtmlData${m}">
+    <input type="hidden" name="iqro_jilid" id="iqroJilidHidden${m}">
+    <input type="hidden" name="iqro_halaman" id="iqroHalamanHidden${m}">
+    <input type="hidden" name="iqro_halaman_end" id="iqroHalamanEndHidden${m}">`;
+
+const skorRow = (dot, label, id, valCls, span2 = false) => `
+    <div class="${SUB} p-2.5 flex items-center justify-between ${span2 ? 'col-span-2' : ''}">
+        <span class="flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-400"><span class="w-2 h-2 rounded-full ${dot}"></span>${label}</span>
+        <strong id="${id}" class="text-base font-bold tabular-nums ${valCls}">0</strong>
+    </div>`;
+
+const audioCard = (m, afterCls) => `
+    <div class="${afterCls} hidden mobile-hide-audio ${CARD} p-4 sm:p-5">
+        ${secHead(P.mic, 'Audio &amp; Penilaian')}
+        <div id="sectionAudio${m}" class="space-y-3">
+            <div class="flex gap-2">
+                <button type="button" id="startRecording${m}" onclick="startRecording('${m}')" class="inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-xl transition active:scale-95"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></svg> Rekam</button>
+                <button type="button" id="pauseRecording${m}" onclick="pauseRecording('${m}')" class="hidden inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-800 ring-1 ring-amber-200 text-xs font-semibold rounded-xl transition active:scale-95 dark:bg-amber-500/15 dark:hover:bg-amber-500/25 dark:text-amber-300 dark:ring-amber-500/25"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="8" y="6" width="3.2" height="12" rx="1"/><rect x="12.8" y="6" width="3.2" height="12" rx="1"/></svg> Jeda</button>
+                <button type="button" id="stopRecording${m}" onclick="stopRecording('${m}')" class="hidden inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-stone-700 hover:bg-stone-600 text-white text-xs font-semibold rounded-xl transition active:scale-95 dark:bg-coal-600 dark:hover:bg-coal-500 dark:ring-1 dark:ring-coal-500"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></svg> Stop</button>
+            </div>
+            <div id="recordingTimer${m}" class="hidden text-xs font-semibold tabular-nums text-red-600 dark:text-red-400 text-center py-2 bg-red-50 dark:bg-red-500/10 ring-1 ring-red-100 dark:ring-red-500/20 rounded-xl">Durasi: 0:00</div>
+            <audio id="audioPlayback${m}" controls class="w-full hidden rounded-lg"></audio>
+            <button type="button" id="clearRecording${m}" onclick="clearRecording('${m}')" class="w-full py-2 ${BTN_SOFT} justify-center hidden">${svg(P.trash, 'w-3.5 h-3.5')} Hapus &amp; Rekam Ulang</button>
+            <input type="hidden" name="audio_data" id="audioData${m}">
+            ${hint(P.info, 'Gunakan Jeda untuk berhenti sementara.')}
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                ${skorRow('bg-emerald-500', 'Kelancaran', `displayKelancaran${m}`, 'text-emerald-600 dark:text-emerald-400', true)}
+                ${skorRow('bg-amber-500', 'Tajwid', `displayTajwid${m}`, 'text-amber-600 dark:text-amber-400')}
+                ${skorRow('bg-red-500', 'Pelafalan', `displayPelafalan${m}`, 'text-red-600 dark:text-red-400')}
+                <div class="col-span-2 rounded-xl ring-1 ring-claude-200 dark:ring-claude-500/20 bg-claude-50 dark:bg-claude-500/10 px-3 py-2.5 flex items-center justify-between">
+                    <span class="text-xs font-bold text-stone-700 dark:text-stone-300">Nilai</span>
+                    <strong id="displayNilai${m}" class="text-2xl font-bold tracking-tight tabular-nums text-claude-600 dark:text-claude-400">100</strong>
+                </div>
+            </div>
+        </div>
+    </div>`;
+
+const catatanCard = (m, afterCls) => `
+    <div class="${afterCls} hidden mobile-hide-bottom ${CARD} p-4 sm:p-5">
+        ${secHead(P.pencil, 'Catatan Guru')}
+        <textarea name="catatan_guru" id="catatanGuru${m}" rows="2" class="form-textarea w-full" placeholder="Tambahkan catatan..."></textarea>
+    </div>`;
+
+const metodeHint = hint(P.lock, 'Otomatis terisi sesuai target santri.');
+
 /* ============================================================
  * MARKUP — disalin dari Blade, directive diganti props.
  * ============================================================ */
@@ -44,67 +334,35 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
     const santriPlain = optSantriPlain(santriList);
     const token = `<input type="hidden" name="_token" value="${csrf}">`;
     const errList = Object.values(errors || {}).flat();
+    const tanggalLabel = formatTanggalID(tanggalHariIni);
 
     const notif = `
-    ${flash?.success ? `
-    <div class="success-notification fixed top-3 right-3 left-3 sm:left-auto z-[300] sm:max-w-sm animate-fade-in">
-        <div class="bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-2xl border border-emerald-500/30 flex items-start gap-3">
-            <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            <div class="flex-1 min-w-0"><p class="font-medium text-sm">${flash.success}</p></div>
-            <button type="button" class="close-notification flex-shrink-0 opacity-70 hover:opacity-100"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-        </div>
-    </div>` : ''}
-    ${flash?.error ? `
-    <div class="error-notification fixed top-3 right-3 left-3 sm:left-auto z-[300] sm:max-w-sm animate-fade-in">
-        <div class="bg-red-600 text-white px-4 py-3 rounded-xl shadow-2xl border border-red-500/30 flex items-start gap-3">
-            <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            <div class="flex-1 min-w-0"><p class="font-medium text-sm">${flash.error}</p></div>
-            <button type="button" class="close-notification flex-shrink-0 opacity-70 hover:opacity-100"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-        </div>
-    </div>` : ''}
-    ${flash?.warning ? `
-    <div class="warning-notification fixed top-3 right-3 left-3 sm:left-auto z-[300] sm:max-w-sm animate-fade-in">
-        <div class="bg-amber-500 text-white px-4 py-3 rounded-xl shadow-2xl border border-amber-400/30 flex items-start gap-3">
-            <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-            <div class="flex-1 min-w-0"><p class="font-medium text-sm">${flash.warning}</p></div>
-            <button type="button" class="close-notification flex-shrink-0 opacity-70 hover:opacity-100"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-        </div>
-    </div>` : ''}
-    ${errList.length ? `
-    <div class="error-notification fixed top-3 right-3 left-3 sm:left-auto z-[300] sm:max-w-sm animate-fade-in">
-        <div class="bg-red-600 text-white px-4 py-3 rounded-xl shadow-2xl border border-red-500/30">
-            <div class="flex items-start gap-3">
-                <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <div class="flex-1 min-w-0">
-                    <p class="font-medium text-sm mb-1">Terdapat kesalahan:</p>
-                    <ul class="text-xs space-y-0.5 opacity-90">${errList.map((e) => `<li>• ${e}</li>`).join('')}</ul>
-                </div>
-                <button type="button" class="close-notification flex-shrink-0 opacity-70 hover:opacity-100"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-            </div>
-        </div>
-    </div>` : ''}`;
+    ${flash?.success ? toast('success-notification', 'emerald', P.check, `<p class="font-medium">${flash.success}</p>`) : ''}
+    ${flash?.error ? toast('error-notification', 'red', P.alert, `<p class="font-medium">${flash.error}</p>`) : ''}
+    ${flash?.warning ? toast('warning-notification', 'amber', P.warn, `<p class="font-medium">${flash.warning}</p>`) : ''}
+    ${errList.length ? toast('error-notification', 'red', P.alert, `
+        <p class="font-semibold mb-1">Terdapat kesalahan:</p>
+        <ul class="text-xs space-y-0.5 text-stone-600 dark:text-stone-300">${errList.map((e) => `<li>• ${e}</li>`).join('')}</ul>`) : ''}`;
 
     const taBadge = tahunAjaran ? `
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/40 rounded-xl text-xs mt-2">
-            <svg class="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            <span class="text-gray-900 dark:text-white font-medium">${tahunAjaran}</span>
-            <span class="px-1.5 py-0.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-semibold">Aktif</span>
-        </div>` : '';
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-[11px] font-medium text-stone-600 dark:text-stone-300">
+            ${svg(P.calendar, 'w-3.5 h-3.5 text-stone-400')}
+            ${tahunAjaran}
+            <span class="px-1.5 py-px rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[10px] font-semibold">Aktif</span>
+        </span>` : '';
 
     return `
-<div id="inputPage" class="min-h-screen">
+<div id="inputPage" class="min-h-screen [--acc-50:theme(colors.claude.50)] [--acc-100:theme(colors.claude.100)] [--acc-200:theme(colors.claude.200)] [--acc-400:theme(colors.claude.400)] [--acc:theme(colors.claude.500)] [--acc-600:theme(colors.claude.600)] [--acc-700:theme(colors.claude.700)] [--sf-500:theme(colors.coal.500)] [--sf-600:theme(colors.coal.600)] [--sf-700:theme(colors.coal.700)] [--cr-100:theme(colors.cream.100)] [--cr-200:theme(colors.cream.200)] [--cr-300:theme(colors.cream.300)] [--cr-400:theme(colors.cream.400)]">
     ${notif}
 
-    <div id="mobileDrawerOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden lg:hidden" onclick="closeDrawer()"></div>
+    <div id="mobileDrawerOverlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[150] hidden lg:hidden" onclick="closeDrawer()"></div>
     <div id="mobileDrawer" class="fixed bottom-0 left-0 right-0 z-[160] lg:hidden translate-y-full transition-transform duration-300 ease-out">
-        <div class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700/50 rounded-t-2xl shadow-2xl max-h-[90vh] flex flex-col">
-            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700/50 flex-shrink-0">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-2"></div>
-                    <span id="drawerTitle" class="font-semibold text-gray-900 dark:text-white text-sm">📊 Presensi Hari Ini</span>
-                </div>
-                <button onclick="closeDrawer()" class="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        <div class="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-t-2xl shadow-2xl max-h-[90vh] flex flex-col">
+            <div class="relative flex items-center justify-between px-4 pt-4 pb-3 border-b border-cream-300 dark:border-coal-600 flex-shrink-0">
+                <div class="w-8 h-1 bg-cream-400 dark:bg-coal-500 rounded-full absolute left-1/2 -translate-x-1/2 top-1.5"></div>
+                <span id="drawerTitle" class="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">Presensi Hari Ini</span>
+                <button onclick="closeDrawer()" class="w-7 h-7 rounded-lg bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 hover:bg-cream-300 dark:hover:bg-coal-500 flex items-center justify-center text-stone-500 dark:text-stone-300 transition">
+                    ${svg(P.x, 'w-4 h-4', 2)}
                 </button>
             </div>
             <div id="drawerContent" class="overflow-y-auto flex-1 p-4"></div>
@@ -112,118 +370,66 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
     </div>
 
     <div class="max-w-7xl mx-auto">
-        <div class="mb-4 sm:mb-6">
-            <h1 class="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white leading-tight">Input Presensi &amp; Setoran</h1>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Kelas: <span class="text-indigo-600 dark:text-indigo-400 font-medium">${kelasName}</span>
-                <span class="mx-1.5 opacity-30">|</span>
-                <span class="text-gray-700 dark:text-gray-300">${tanggalHariIni}</span>
-            </p>
+
+        <!-- ===== HEADER (sama dengan Dashboard) ===== -->
+        <div class="flex flex-wrap items-center gap-3 mb-5">
+            <div class="w-11 h-11 rounded-2xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center flex-shrink-0 text-stone-600 dark:text-stone-300">
+                ${svg(P.pencil, 'w-6 h-6', 1.7)}
+            </div>
+            <div class="min-w-0 flex-1">
+                <h1 class="text-lg sm:text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">Input Presensi &amp; Setoran</h1>
+                <p class="text-[11px] text-stone-500 mt-0.5">
+                    Kelas <span class="font-semibold text-claude-600 dark:text-claude-400">${kelasName}</span>
+                    <span class="mx-1 opacity-40">·</span>${tanggalLabel}
+                </p>
+            </div>
             ${taBadge}
         </div>
 
-        <div class="lg:grid lg:grid-cols-5 lg:gap-6">
+        <div class="lg:grid lg:grid-cols-5 lg:gap-5">
             <div class="lg:col-span-2">
                 <div class="lg:sticky lg:top-4 space-y-3">
 
-                    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 sm:p-4 shadow-sm dark:shadow-none">
-                        <p class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg> Pilih Mode Input</p>
-                        <div class="grid grid-cols-3 gap-1.5 sm:gap-2">
-                            <label class="mode-card cursor-pointer">
-                                <input type="radio" name="input_mode" value="combined" class="sr-only" onclick="toggleMode(this)" onchange="switchMode(this.value)">
-                                <div class="mode-card-inner border-2 border-claude-200 dark:border-claude-500/20 bg-claude-50 dark:bg-claude-500/5 rounded-lg p-2 sm:p-3 text-center transition-all hover:border-claude-400 hover:bg-claude-100/60 dark:hover:bg-claude-500/10">
-                                    <div class="mb-1 flex justify-center text-claude-600 dark:text-claude-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path stroke-linecap="round" d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg></div>
-                                    <div class="text-[10px] sm:text-xs font-semibold text-gray-700 dark:text-gray-300 leading-tight">Presensi<br>+ Setoran</div>
-                                </div>
-                            </label>
-                            <label class="mode-card cursor-pointer">
-                                <input type="radio" name="input_mode" value="presensi_only" class="sr-only" onclick="toggleMode(this)" onchange="switchMode(this.value)">
-                                <div class="mode-card-inner border-2 border-blue-200 dark:border-blue-500/20 bg-blue-50 dark:bg-blue-500/5 rounded-lg p-2 sm:p-3 text-center transition-all hover:border-blue-400 hover:bg-blue-100/60 dark:hover:bg-blue-500/10">
-                                    <div class="mb-1 flex justify-center text-blue-600 dark:text-blue-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
-                                    <div class="text-[10px] sm:text-xs font-semibold text-gray-700 dark:text-gray-300 leading-tight">Presensi<br>Saja</div>
-                                </div>
-                            </label>
-                            <label class="mode-card cursor-pointer">
-                                <input type="radio" name="input_mode" value="setoran_only" class="sr-only" onclick="toggleMode(this)" onchange="switchMode(this.value)">
-                                <div class="mode-card-inner border-2 border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/5 rounded-lg p-2 sm:p-3 text-center transition-all hover:border-emerald-400 hover:bg-emerald-100/60 dark:hover:bg-emerald-500/10">
-                                    <div class="mb-1 flex justify-center text-emerald-600 dark:text-emerald-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13"/></svg></div>
-                                    <div class="text-[10px] sm:text-xs font-semibold text-gray-700 dark:text-gray-300 leading-tight">Setoran<br>Tambahan</div>
-                                </div>
-                            </label>
+                    <!-- ===== PILIH MODE ===== -->
+                    <div class="${CARD} p-4 sm:p-5">
+                        ${secHead(P.target, 'Pilih Mode Input')}
+                        <div class="grid grid-cols-3 gap-2">
+                            ${modeCard('combined', 'claude', P.target, 'Presensi<br>+ Setoran')}
+                            ${modeCard('presensi_only', 'emerald', P.check, 'Presensi<br>Saja')}
+                            ${modeCard('setoran_only', 'stone', P.book, 'Setoran<br>Tambahan')}
                         </div>
                     </div>
 
-                    <div id="hintBelumPilih" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-8 shadow-sm dark:shadow-none flex flex-col items-center justify-center text-center">
-                        <div class="w-12 h-12 bg-cream-200 dark:bg-coal-600 rounded-xl flex items-center justify-center mb-3">
-                        <svg class="w-6 h-6 text-stone-400 dark:text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
-                        </div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">Pilih mode input di atas</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-600 mt-1">Form akan muncul di sini</p>
+                    <div id="hintBelumPilih" class="${CARD} p-8 flex flex-col items-center justify-center text-center">
+                        <span class="w-11 h-11 rounded-2xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center mb-3 text-stone-400">
+                            ${svg(P.cursor, 'w-5 h-5')}
+                        </span>
+                        <p class="text-sm font-semibold text-stone-700 dark:text-stone-300">Pilih mode input di atas</p>
+                        <p class="text-[11px] text-stone-400 mt-0.5">Form akan muncul di sini</p>
                     </div>
 
-                    <hr class="border-gray-200 dark:border-gray-800 hidden" id="hrDivider">
+                    <hr class="border-cream-300 dark:border-coal-600 hidden" id="hrDivider">
 
+                    <!-- ===== FORM: PRESENSI + SETORAN ===== -->
                     <form id="formCombined" action="/guru/input/store-combined" method="POST" enctype="multipart/form-data" novalidate class="hidden space-y-3">
                         ${token}
-                        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
-                            <h3 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></span>
-                                Informasi Dasar
-                            </h3>
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Nama Santri <span class="text-red-500 dark:text-red-400">*</span></label>
-                                    <select name="santri_id" id="santriSelectCombined" required class="form-select w-full">
-                                        <option value="">-- Pilih Santri --</option>
-                                        ${santriOpts}
-                                    </select>
-                                    <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1.5">💡 Pilih nama santri dulu untuk menampilkan data setoran.</p>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Tanggal <span class="text-red-500 dark:text-red-400">*</span></label>
-                                        <input type="date" name="tanggal" id="tanggalCombined" value="${tanggalHariIni}" required class="form-input w-full">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Sesi <span class="text-red-500 dark:text-red-400">*</span></label>
-                                        <select name="sesi" id="sesiSelectCombined" required class="form-select w-full">
-                                            <option value="">-- Pilih --</option>
-                                            ${sesiOpts}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        ${infoDasar({
+                            title: 'Informasi Dasar', icon: P.clipboard,
+                            santriSel: 'santriSelectCombined', santriOpts,
+                            tanggalId: 'tanggalCombined', sesiId: 'sesiSelectCombined',
+                            tanggalHariIni, sesiOpts,
+                            hintText: 'Pilih nama santri dulu untuk menampilkan data setoran.',
+                        })}
 
                         <input type="hidden" name="status" value="Hadir">
 
-                        <div class="combined-after-santri hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
-                            <button type="button" onclick="toggleRiwayatSetoran('Combined')" class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition">
-                                <span class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                    <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
-                                    Riwayat Setoran
-                                </span>
-                                <svg id="riwayatIconCombined" class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                            <div id="riwayatBodyCombined" class="hidden px-4 pb-4 border-t border-gray-200 dark:border-gray-800 pt-3">
-                                <div class="flex flex-wrap gap-1.5 mb-2.5" id="riwayatFilterCombined">
-                                    <button type="button" class="rs-chip is-active" data-f="">Semua</button>
-                                    <button type="button" class="rs-chip" data-f="Hafalan">Hafalan</button>
-                                    <button type="button" class="rs-chip" data-f="Murajaah">Murajaah</button>
-                                    <button type="button" class="rs-chip" data-f="Tilawah">Tilawah</button>
-                                </div>
-                                <div id="riwayatListCombined" class="space-y-1.5 max-h-72 overflow-y-auto custom-scrollbar pr-1"></div>
-                            </div>
-                        </div>
+                        ${riwayatCard('Combined', 'combined-after-santri')}
 
-                        <div class="combined-after-santri hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
-                            <h3 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13"/></svg></span>
-                                Data Setoran
-                            </h3>
+                        <div class="combined-after-santri hidden ${CARD} p-4 sm:p-5">
+                            ${secHead(P.book, 'Data Setoran')}
                             <div class="space-y-3">
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Metode <span class="text-red-500 dark:text-red-400">*</span></label>
+                                    <label class="${LBL}">Metode ${REQ}</label>
                                     <div class="metode-field">
                                         <span class="metode-dot" id="metodeDotCombined" data-metode="quran"></span>
                                         <select name="metode" id="metodeCombined" required class="form-select w-full has-dot">
@@ -232,158 +438,42 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
                                             <option value="Aisar">Aisar</option>
                                         </select>
                                     </div>
-                                    <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1.5">🔒 Otomatis terisi sesuai target santri.</p>
+                                    ${metodeHint}
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Kategori <span class="text-red-500 dark:text-red-400">*</span></label>
-                                    <select name="kategori_setoran" id="kategoriSetoranCombined" required class="form-select w-full">
-                                        <option value="">-- Pilih --</option>
-                                        <option value="Hafalan">📚 Hafalan</option>
-                                        <option value="Murajaah">🔄 Murajaah</option>
-                                        <option value="Tilawah">📖 Tilawah</option>
-                                    </select>
-                                </div>
-                                <div id="rangeAyatBlockCombined">
-                                <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-3">
-                                    <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253"/></svg> Range Ayat</p>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="text-[10px] text-gray-500 mb-1 block">Surat Mulai *</label>
-                                            <select name="surat_start" id="suratStartCombined" required class="form-select-sm w-full">
-                                                <option value="">-- Pilih --</option>
-                                                ${suratOpts}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="text-[10px] text-gray-500 mb-1 block">Ayat Mulai *</label>
-                                            <select name="ayat_start" id="ayatStartCombined" disabled required class="form-select-sm w-full">
-                                                <option value="">-- Pilih Surat --</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="text-[10px] text-gray-500 mb-1 block">Surat Selesai *</label>
-                                            <select name="surat_end" id="suratEndCombined" required class="form-select-sm w-full">
-                                                <option value="">-- Otomatis --</option>
-                                                ${suratOpts}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="text-[10px] text-gray-500 mb-1 block">Ayat Selesai *</label>
-                                            <select name="ayat_end" id="ayatEndCombined" disabled required class="form-select-sm w-full">
-                                                <option value="">-- Pilih Ayat --</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <button type="button" onclick="setQuranPanelTitle('quran'); loadQuranCombined(); if(window.innerWidth < 1024) openDrawer('quran');"
-                                            class="mt-2.5 w-full px-3 py-2 bg-claude-500 hover:bg-claude-600 text-white text-xs font-medium rounded-lg transition flex items-center justify-center gap-1.5">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253"/></svg> Tampilkan Al-Qur'an</button>
-                                </div>
-                                </div>
-
-                                <div id="iqroBlockCombined" class="hidden bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-3">
-                                    <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 006.5 22H20V2H6.5A2.5 2.5 0 004 4.5z"/></svg> Pilih Halaman <span class="lbl-metode-jilid">Iqro</span></p>
-                                    <div class="mb-2">
-                                        <label class="text-[10px] text-gray-500 mb-1 block">Jilid *</label>
-                                        <select id="iqroJilidCombined" class="form-select-sm w-full">
-                                            <option value="1">Jilid 1</option><option value="2">Jilid 2</option><option value="3">Jilid 3</option>
-                                            <option value="4">Jilid 4</option><option value="5">Jilid 5</option><option value="6">Jilid 6</option>
-                                        </select>
-                                        <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1">🔒 Otomatis terisi dari target santri.</p>
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="text-[10px] text-gray-500 mb-1 block">Halaman Mulai *</label>
-                                            <select id="iqroHalamanStartCombined" class="form-select-sm w-full"><option value="">-- Mulai --</option></select>
-                                        </div>
-                                        <div>
-                                            <label class="text-[10px] text-gray-500 mb-1 block">Halaman Selesai *</label>
-                                            <select id="iqroHalamanEndCombined" class="form-select-sm w-full"><option value="">-- Selesai --</option></select>
-                                        </div>
-                                    </div>
-                                    <button type="button" id="btnJilidCombined" data-metode="iqro" onclick="setQuranPanelTitle('iqro'); loadIqro('Combined'); if(window.innerWidth < 1024) openDrawer('quran');"
-                                            class="btn-jilid mt-2.5 w-full px-3 py-2 text-white text-xs font-medium rounded-lg transition flex items-center justify-center gap-1.5">
-                                        <span>Tampilkan Halaman <span class="lbl-metode-jilid">Iqro</span></span>
-                                    </button>
-                                </div>
+                                ${kategoriField('kategoriSetoranCombined')}
+                                ${rangeAyat('Combined', suratOpts, 'loadQuranCombined()')}
+                                ${iqroBlock('Combined', false)}
                             </div>
                         </div>
 
-                        <input type="hidden" name="page_start" id="pageStartCombined">
-                        <input type="hidden" name="page_end" id="pageEndCombined">
-                        <input type="hidden" name="page_start_portion" id="pageStartPortionCombined">
-                        <input type="hidden" name="page_end_portion" id="pageEndPortionCombined">
-                        <input type="hidden" name="total_page" id="totalPageCombined">
-                        <input type="hidden" name="juz_start" id="juzStartCombined">
-                        <input type="hidden" name="juz_end" id="juzEndCombined">
-                        <input type="hidden" name="total_juz" id="totalJuzCombined">
-                        <input type="hidden" name="total_kata" id="totalKataCombined">
-                        <input type="hidden" name="kesalahan_kelancaran" id="kesalahanKelancaranCombined" value="0">
-                        <input type="hidden" name="kesalahan_tajwid" id="kesalahanTajwidCombined" value="0">
-                        <input type="hidden" name="kesalahan_pelafalan" id="kesalahanPelafalanCombined" value="0">
-                        <input type="hidden" name="nilai" id="nilaiCombined">
-                        <input type="hidden" name="pdf_html_content" id="pdfHtmlDataCombined">
-                        <input type="hidden" name="iqro_jilid" id="iqroJilidHiddenCombined">
-                        <input type="hidden" name="iqro_halaman" id="iqroHalamanHiddenCombined">
-                        <input type="hidden" name="iqro_halaman_end" id="iqroHalamanEndHiddenCombined">
+                        ${hiddenFields('Combined')}
 
-                        <div class="combined-after-santri hidden mobile-hide-audio bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
-                            <div class="flex items-center p-4 border-b border-gray-200 dark:border-gray-800">
-                                <span class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                    <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-14 0m7 7v3m-4 0h8m-4-6a3 3 0 01-3-3V5a3 3 0 016 0v4a3 3 0 01-3 3z"/></svg></span>
-                                    Audio &amp; Penilaian
-                                </span>
-                            </div>
-                            <div id="sectionAudioCombined" class="px-4 pb-4 pt-3 space-y-3">
-                                <div class="flex gap-2">
-                                    <button type="button" id="startRecordingCombined" onclick="startRecording('Combined')" class="inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-xl shadow-sm transition active:scale-95"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></svg> Rekam</button>
-                                    <button type="button" id="pauseRecordingCombined" onclick="pauseRecording('Combined')" class="hidden inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-800 ring-1 ring-amber-200 text-xs font-semibold rounded-xl transition active:scale-95 dark:bg-amber-500/15 dark:hover:bg-amber-500/25 dark:text-amber-300 dark:ring-amber-500/25"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="8" y="6" width="3.2" height="12" rx="1"/><rect x="12.8" y="6" width="3.2" height="12" rx="1"/></svg> Jeda</button>
-                                    <button type="button" id="stopRecordingCombined" onclick="stopRecording('Combined')" class="hidden inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-stone-700 hover:bg-stone-600 text-white text-xs font-semibold rounded-xl shadow-sm transition active:scale-95 dark:bg-coal-600 dark:hover:bg-coal-500 dark:ring-1 dark:ring-coal-500"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></svg> Stop</button>
-                                </div>
-                                <div id="recordingTimerCombined" class="hidden text-xs font-bold text-blue-600 dark:text-blue-400 text-center py-2 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800/50">⏱️ Durasi: 0:00</div>
-                                <audio id="audioPlaybackCombined" controls class="w-full hidden rounded-lg"></audio>
-                                <button type="button" id="clearRecordingCombined" onclick="clearRecording('Combined')" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg transition hidden flex items-center justify-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M4 7h16m-3 0V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"/></svg> Hapus & Rekam Ulang</button>
-                                <input type="hidden" name="audio_data" id="audioDataCombined">
-                                <p class="text-[10px] text-gray-500 dark:text-gray-600 italic">💡 Gunakan Jeda untuk berhenti sementara</p>
-                                <div class="grid grid-cols-2 gap-2 pt-1">
-                                    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between col-span-2"><span class="text-xs text-gray-600 dark:text-gray-400">🟢 Kelancaran</span><strong id="displayKelancaranCombined" class="text-base text-emerald-600 dark:text-emerald-400">0</strong></div>
-                                    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between"><span class="text-xs text-gray-600 dark:text-gray-400">🟡 Tajwid</span><strong id="displayTajwidCombined" class="text-base text-amber-600 dark:text-amber-400">0</strong></div>
-                                    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between"><span class="text-xs text-gray-600 dark:text-gray-400">🔴 Pelafalan</span><strong id="displayPelafalanCombined" class="text-base text-red-600 dark:text-red-400">0</strong></div>
-                                    <div class="bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-2.5 flex items-center justify-between col-span-2"><span class="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">Nilai</span><strong id="displayNilaiCombined" class="text-2xl text-indigo-600 dark:text-indigo-400">100</strong></div>
-                                </div>
-                            </div>
-                        </div>
+                        ${audioCard('Combined', 'combined-after-santri')}
+                        ${catatanCard('Combined', 'combined-after-santri')}
 
-                        <div class="combined-after-santri hidden mobile-hide-bottom bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
-                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828z"/></svg> Catatan Guru</label>
-                            <textarea name="catatan_guru" id="catatanGuruCombined" rows="2" class="form-textarea w-full" placeholder="Tambahkan catatan..."></textarea>
-                        </div>
-
-                        <button type="submit" id="submitBtnCombined" class="combined-after-santri hidden mobile-hide-bottom w-full py-3 bg-gradient-to-r from-claude-500 to-claude-600 hover:from-claude-600 hover:to-claude-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-claude-500/25 transition flex items-center justify-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-8 0V4a1 1 0 011-1h6a1 1 0 011 1v3m-8 0h8M9 21v-6h6v6"/></svg> Simpan Presensi &amp; Setoran</button>
+                        <button type="submit" id="submitBtnCombined" class="combined-after-santri hidden mobile-hide-bottom ${BTN_SUBMIT}">${svg(P.save, 'w-4 h-4', 2)} Simpan Presensi &amp; Setoran</button>
                     </form>
 
+                    <!-- ===== FORM: PRESENSI SAJA ===== -->
                     <form id="formPresensiOnly" action="/guru/input/store-presensi" method="POST" class="hidden space-y-3">
                         ${token}
-                        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
-                            <h3 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
-                                Presensi Saja
-                            </h3>
+                        <div class="${CARD} p-4 sm:p-5">
+                            ${secHead(P.check, 'Presensi Saja')}
                             <div class="space-y-3">
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Nama Santri <span class="text-red-500 dark:text-red-400">*</span></label>
+                                    <label class="${LBL}">Nama Santri ${REQ}</label>
                                     <select name="santri_id" required class="form-select w-full">
                                         <option value="">-- Pilih Santri --</option>
                                         ${santriPlain}
                                     </select>
-                                    <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1.5">💡 Pilih nama santri terlebih dahulu untuk menampilkan data setoran.</p>
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Tanggal <span class="text-red-500 dark:text-red-400">*</span></label>
+                                        <label class="${LBL}">Tanggal ${REQ}</label>
                                         <input type="date" name="tanggal" value="${tanggalHariIni}" required class="form-input w-full">
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Sesi <span class="text-red-500 dark:text-red-400">*</span></label>
+                                        <label class="${LBL}">Sesi ${REQ}</label>
                                         <select name="sesi" required class="form-select w-full">
                                             <option value="">-- Pilih --</option>
                                             ${sesiOpts}
@@ -391,312 +481,181 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Status Kehadiran <span class="text-red-500 dark:text-red-400">*</span></label>
-                                    <div class="grid grid-cols-2 gap-1.5">
-                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Hadir" required class="sr-only"><div class="status-radio-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-center hover:border-emerald-500/50 transition text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background-color:#10b981;"></span>Hadir</div></label>
-                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Sakit" class="sr-only"><div class="status-radio-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-center hover:border-orange-500/50 transition text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background-color:#f97316;"></span>Sakit</div></label>
-                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Izin" class="sr-only"><div class="status-radio-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-center hover:border-amber-500/50 transition text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background-color:#f59e0b;"></span>Izin</div></label>
-                                        <label class="status-radio-label cursor-pointer"><input type="radio" name="status" value="Alpha" class="sr-only"><div class="status-radio-inner border-2 border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-center hover:border-red-500/50 transition text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center justify-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background-color:#ef4444;"></span>Alpha</div></label>
+                                    <label class="${LBL}">Status Kehadiran ${REQ}</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        ${statusRadio('Hadir', 'bg-emerald-500', true)}
+                                        ${statusRadio('Sakit', 'bg-orange-500')}
+                                        ${statusRadio('Izin', 'bg-amber-500')}
+                                        ${statusRadio('Alpha', 'bg-red-500')}
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">📝 Keterangan <span class="text-gray-500 dark:text-gray-600 text-[10px]">(Opsional)</span></label>
+                                    <label class="${LBL}">Keterangan <span class="text-stone-400 font-normal">(opsional)</span></label>
                                     <textarea name="keterangan" rows="2" class="form-textarea w-full" placeholder="Contoh: Demam tinggi..."></textarea>
                                 </div>
                             </div>
                         </div>
-                        <button type="submit" class="w-full py-3 bg-gradient-to-r from-claude-500 to-claude-600 hover:from-claude-600 hover:to-claude-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-claude-500/25 transition flex items-center justify-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-8 0V4a1 1 0 011-1h6a1 1 0 011 1v3m-8 0h8M9 21v-6h6v6"/></svg> Simpan Presensi</button>
+                        <button type="submit" class="${BTN_SUBMIT}">${svg(P.save, 'w-4 h-4', 2)} Simpan Presensi</button>
                     </form>
 
+                    <!-- ===== FORM: SETORAN TAMBAHAN ===== -->
                     <form id="formSetoranOnly" action="/guru/input/store-setoran" method="POST" enctype="multipart/form-data" novalidate class="hidden space-y-3">
                         ${token}
-                        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
-                            <h3 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13"/></svg></span>
-                                Setoran Tambahan
-                            </h3>
-                            <div class="mb-3 px-3 py-2 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/30 rounded-lg">
-                                <p class="text-[10px] text-amber-700 dark:text-amber-300">⚠️ Santri harus sudah presensi <strong>HADIR</strong> di sesi yang sama.</p>
-                            </div>
+                        ${infoDasar({
+                            title: 'Setoran Tambahan', icon: P.book,
+                            santriSel: 'santriSelectSetoranOnly', santriOpts,
+                            tanggalId: 'tanggalSetoranOnly', sesiId: 'sesiSelectSetoranOnly',
+                            tanggalHariIni, sesiOpts,
+                            hintText: 'Pilih nama santri dulu untuk menampilkan data setoran.',
+                            extra: `
+                            <div class="mb-3 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-500/10 ring-1 ring-amber-100 dark:ring-amber-500/20 flex items-start gap-2 text-[11px] text-amber-700 dark:text-amber-400">
+                                ${svg(P.warn, 'w-3.5 h-3.5 mt-px flex-shrink-0')}
+                                <span>Santri harus sudah presensi <strong>Hadir</strong> di sesi yang sama.</span>
+                            </div>`,
+                        })}
+
+                        ${riwayatCard('SetoranOnly', 'setoran-after-santri')}
+
+                        <div class="setoran-after-santri hidden ${CARD} p-4 sm:p-5">
+                            ${secHead(P.book, 'Data Setoran')}
                             <div class="space-y-3">
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Nama Santri <span class="text-red-500 dark:text-red-400">*</span></label>
-                                    <select name="santri_id" id="santriSelectSetoranOnly" required class="form-select w-full">
-                                        <option value="">-- Pilih Santri --</option>
-                                        ${santriOpts}
-                                    </select>
-                                    <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1.5">💡 Pilih nama santri dulu untuk menampilkan data setoran.</p>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Tanggal <span class="text-red-500 dark:text-red-400">*</span></label>
-                                        <input type="date" name="tanggal" id="tanggalSetoranOnly" value="${tanggalHariIni}" required class="form-input w-full">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Sesi <span class="text-red-500 dark:text-red-400">*</span></label>
-                                        <select name="sesi" id="sesiSelectSetoranOnly" required class="form-select w-full">
-                                            <option value="">-- Pilih --</option>
-                                            ${sesiOpts}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="setoran-after-santri hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
-                            <button type="button" onclick="toggleRiwayatSetoran('SetoranOnly')" class="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition">
-                                <span class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                    <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
-                                    Riwayat Setoran
-                                </span>
-                                <svg id="riwayatIconSetoranOnly" class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                            <div id="riwayatBodySetoranOnly" class="hidden px-4 pb-4 border-t border-gray-200 dark:border-gray-800 pt-3">
-                                <div class="flex flex-wrap gap-1.5 mb-2.5" id="riwayatFilterSetoranOnly">
-                                    <button type="button" class="rs-chip is-active" data-f="">Semua</button>
-                                    <button type="button" class="rs-chip" data-f="Hafalan">Hafalan</button>
-                                    <button type="button" class="rs-chip" data-f="Murajaah">Murajaah</button>
-                                    <button type="button" class="rs-chip" data-f="Tilawah">Tilawah</button>
-                                </div>
-                                <div id="riwayatListSetoranOnly" class="space-y-1.5 max-h-72 overflow-y-auto custom-scrollbar pr-1"></div>
-                            </div>
-                        </div>
-
-                        <div class="setoran-after-santri hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
-                            <h3 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13"/></svg></span>
-                                Data Setoran
-                            </h3>
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Metode <span class="text-red-500 dark:text-red-400">*</span></label>
+                                    <label class="${LBL}">Metode ${REQ}</label>
                                     <select name="metode" id="metodeSetoranOnly" required class="form-select w-full">
-                                        <option value="Al-Qur'an">📖 Al-Qur'an</option>
-                                        <option value="Iqro">🟢 Iqro</option>
-                                        <option value="Aisar">🔵 Aisar</option>
+                                        <option value="Al-Qur'an">Al-Qur'an</option>
+                                        <option value="Iqro">Iqro</option>
+                                        <option value="Aisar">Aisar</option>
                                     </select>
-                                    <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1.5">🔒 Otomatis terisi sesuai target santri.</p>
+                                    ${metodeHint}
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Kategori <span class="text-red-500 dark:text-red-400">*</span></label>
-                                    <select name="kategori_setoran" id="kategoriSetoranOnly" required class="form-select w-full">
-                                        <option value="">-- Pilih --</option>
-                                        <option value="Hafalan">📚 Hafalan</option>
-                                        <option value="Murajaah">🔄 Murajaah</option>
-                                        <option value="Tilawah">📖 Tilawah</option>
-                                    </select>
-                                </div>
-                                <div id="rangeAyatBlockSetoranOnly">
-                                <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-3">
-                                    <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253"/></svg> Range Ayat</p>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="text-[10px] text-gray-500 mb-1 block">Surat Mulai *</label>
-                                            <select name="surat_start" id="suratStartSetoranOnly" required class="form-select-sm w-full">
-                                                <option value="">-- Pilih --</option>
-                                                ${suratOpts}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="text-[10px] text-gray-500 mb-1 block">Ayat Mulai *</label>
-                                            <select name="ayat_start" id="ayatStartSetoranOnly" disabled required class="form-select-sm w-full"><option value="">-- Pilih Surat --</option></select>
-                                        </div>
-                                        <div>
-                                            <label class="text-[10px] text-gray-500 mb-1 block">Surat Selesai *</label>
-                                            <select name="surat_end" id="suratEndSetoranOnly" required class="form-select-sm w-full">
-                                                <option value="">-- Otomatis --</option>
-                                                ${suratOpts}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="text-[10px] text-gray-500 mb-1 block">Ayat Selesai *</label>
-                                            <select name="ayat_end" id="ayatEndSetoranOnly" disabled required class="form-select-sm w-full"><option value="">-- Pilih Ayat --</option></select>
-                                        </div>
-                                    </div>
-                                    <button type="button" onclick="setQuranPanelTitle('quran'); loadQuranSetoranOnly(); if(window.innerWidth < 1024) openDrawer('quran');"
-                                            class="mt-2.5 w-full px-3 py-2 bg-claude-500 hover:bg-claude-600 text-white text-xs font-medium rounded-lg transition flex items-center justify-center gap-1.5">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253"/></svg> Tampilkan Al-Qur'an</button>
-                                </div>
-                                </div>
-
-                                <div id="iqroBlockSetoranOnly" class="hidden bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 rounded-lg p-3">
-                                    <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 006.5 22H20V2H6.5A2.5 2.5 0 004 4.5z"/></svg> Pilih Halaman <span class="lbl-metode-jilid">Iqro</span></p>
-                                    <div class="mb-2">
-                                        <label class="text-[10px] text-gray-500 mb-1 block">Jilid *</label>
-                                        <select id="iqroJilidSetoranOnly" class="form-select-sm w-full">
-                                            <option value="1">Jilid 1</option><option value="2">Jilid 2</option><option value="3">Jilid 3</option>
-                                            <option value="4">Jilid 4</option><option value="5">Jilid 5</option><option value="6">Jilid 6</option>
-                                        </select>
-                                        <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1">🔒 Otomatis terisi dari target santri.</p>
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="text-[10px] text-gray-500 mb-1 block">Halaman Mulai *</label>
-                                            <select id="iqroHalamanStartSetoranOnly" class="form-select-sm w-full"><option value="">-- Mulai --</option></select>
-                                        </div>
-                                        <div>
-                                            <label class="text-[10px] text-gray-500 mb-1 block">Halaman Selesai *</label>
-                                            <select id="iqroHalamanEndSetoranOnly" class="form-select-sm w-full"><option value="">-- Selesai --</option></select>
-                                        </div>
-                                    </div>
-                                    <p class="text-[10px] text-gray-500 dark:text-gray-600 italic mt-1.5">💡 Untuk 1 halaman saja, isi Mulai &amp; Selesai sama.</p>
-                                    <button type="button" id="btnJilidSetoranOnly" data-metode="iqro" onclick="setQuranPanelTitle('iqro'); loadIqro('SetoranOnly'); if(window.innerWidth < 1024) openDrawer('quran');"
-                                            class="btn-jilid mt-2.5 w-full px-3 py-2 text-white text-xs font-medium rounded-lg transition flex items-center justify-center gap-1.5">
-                                        <span>Tampilkan Halaman <span class="lbl-metode-jilid">Iqro</span></span>
-                                    </button>
-                                </div>
+                                ${kategoriField('kategoriSetoranOnly')}
+                                ${rangeAyat('SetoranOnly', suratOpts, 'loadQuranSetoranOnly()')}
+                                ${iqroBlock('SetoranOnly', true)}
                             </div>
                         </div>
 
-                        <input type="hidden" name="page_start" id="pageStartSetoranOnly">
-                        <input type="hidden" name="page_end" id="pageEndSetoranOnly">
-                        <input type="hidden" name="page_start_portion" id="pageStartPortionSetoranOnly">
-                        <input type="hidden" name="page_end_portion" id="pageEndPortionSetoranOnly">
-                        <input type="hidden" name="total_page" id="totalPageSetoranOnly">
-                        <input type="hidden" name="juz_start" id="juzStartSetoranOnly">
-                        <input type="hidden" name="juz_end" id="juzEndSetoranOnly">
-                        <input type="hidden" name="total_juz" id="totalJuzSetoranOnly">
-                        <input type="hidden" name="total_kata" id="totalKataSetoranOnly">
-                        <input type="hidden" name="kesalahan_kelancaran" id="kesalahanKelancaranSetoranOnly" value="0">
-                        <input type="hidden" name="kesalahan_tajwid" id="kesalahanTajwidSetoranOnly" value="0">
-                        <input type="hidden" name="kesalahan_pelafalan" id="kesalahanPelafalanSetoranOnly" value="0">
-                        <input type="hidden" name="nilai" id="nilaiSetoranOnly">
-                        <input type="hidden" name="pdf_html_content" id="pdfHtmlDataSetoranOnly">
-                        <input type="hidden" name="iqro_jilid" id="iqroJilidHiddenSetoranOnly">
-                        <input type="hidden" name="iqro_halaman" id="iqroHalamanHiddenSetoranOnly">
-                        <input type="hidden" name="iqro_halaman_end" id="iqroHalamanEndHiddenSetoranOnly">
+                        ${hiddenFields('SetoranOnly')}
 
-                        <div class="setoran-after-santri hidden mobile-hide-audio bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
-                            <div class="flex items-center p-4 border-b border-gray-200 dark:border-gray-800">
-                                <span class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                    <span class="w-5 h-5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center"><svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-14 0m7 7v3m-4 0h8m-4-6a3 3 0 01-3-3V5a3 3 0 016 0v4a3 3 0 01-3 3z"/></svg></span>
-                                    Audio &amp; Penilaian
-                                </span>
-                            </div>
-                            <div id="sectionAudioSetoranOnly" class="px-4 pb-4 pt-3 space-y-3">
-                                <div class="flex gap-2">
-                                    <button type="button" id="startRecordingSetoranOnly" onclick="startRecording('SetoranOnly')" class="inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-xl shadow-sm transition active:scale-95"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></svg> Rekam</button>
-                                    <button type="button" id="pauseRecordingSetoranOnly" onclick="pauseRecording('SetoranOnly')" class="hidden inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-800 ring-1 ring-amber-200 text-xs font-semibold rounded-xl transition active:scale-95 dark:bg-amber-500/15 dark:hover:bg-amber-500/25 dark:text-amber-300 dark:ring-amber-500/25"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="8" y="6" width="3.2" height="12" rx="1"/><rect x="12.8" y="6" width="3.2" height="12" rx="1"/></svg> Jeda</button>
-                                    <button type="button" id="stopRecordingSetoranOnly" onclick="stopRecording('SetoranOnly')" class="hidden inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-stone-700 hover:bg-stone-600 text-white text-xs font-semibold rounded-xl shadow-sm transition active:scale-95 dark:bg-coal-600 dark:hover:bg-coal-500 dark:ring-1 dark:ring-coal-500"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></svg> Stop</button>
-                                </div>
-                                <div id="recordingTimerSetoranOnly" class="hidden text-xs font-bold text-blue-600 dark:text-blue-400 text-center py-2 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800/50">⏱️ Durasi: 0:00</div>
-                                <audio id="audioPlaybackSetoranOnly" controls class="w-full hidden rounded-lg"></audio>
-                                <button type="button" id="clearRecordingSetoranOnly" onclick="clearRecording('SetoranOnly')" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg transition hidden flex items-center justify-center gap-1">🗑️ Hapus &amp; Rekam Ulang</button>
-                                <input type="hidden" name="audio_data" id="audioDataSetoranOnly">
-                                <p class="text-[10px] text-gray-500 dark:text-gray-600 italic">💡 Gunakan Jeda untuk berhenti sementara</p>
-                                <div class="grid grid-cols-2 gap-2 pt-1">
-                                    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between col-span-2"><span class="text-xs text-gray-600 dark:text-gray-400">🟢 Kelancaran</span><strong id="displayKelancaranSetoranOnly" class="text-base text-emerald-600 dark:text-emerald-400">0</strong></div>
-                                    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between"><span class="text-xs text-gray-600 dark:text-gray-400">🟡 Tajwid</span><strong id="displayTajwidSetoranOnly" class="text-base text-amber-600 dark:text-amber-400">0</strong></div>
-                                    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between"><span class="text-xs text-gray-600 dark:text-gray-400">🔴 Pelafalan</span><strong id="displayPelafalanSetoranOnly" class="text-base text-red-600 dark:text-red-400">0</strong></div>
-                                    <div class="bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-2.5 flex items-center justify-between col-span-2"><span class="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">Nilai</span><strong id="displayNilaiSetoranOnly" class="text-2xl text-indigo-600 dark:text-indigo-400">100</strong></div>
-                                </div>
-                            </div>
-                        </div>
+                        ${audioCard('SetoranOnly', 'setoran-after-santri')}
+                        ${catatanCard('SetoranOnly', 'setoran-after-santri')}
 
-                        <div class="setoran-after-santri hidden mobile-hide-bottom bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 shadow-sm dark:shadow-none">
-                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">📝 Catatan Guru</label>
-                            <textarea name="catatan_guru" id="catatanGuruSetoranOnly" rows="2" class="form-textarea w-full" placeholder="Tambahkan catatan..."></textarea>
-                        </div>
-
-                        <button type="submit" id="submitBtnSetoranOnly" class="setoran-after-santri hidden mobile-hide-bottom w-full py-3 bg-gradient-to-r from-claude-500 to-claude-600 hover:from-claude-600 hover:to-claude-700 text-white font-semibold text-sm rounded-xl shadow-lg shadow-claude-500/25 transition flex items-center justify-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-8 0V4a1 1 0 011-1h6a1 1 0 011 1v3m-8 0h8M9 21v-6h6v6"/></svg> Simpan Setoran Tambahan</button>                    
+                        <button type="submit" id="submitBtnSetoranOnly" class="setoran-after-santri hidden mobile-hide-bottom ${BTN_SUBMIT}">${svg(P.save, 'w-4 h-4', 2)} Simpan Setoran Tambahan</button>
                     </form>
 
                 </div>
             </div>
 
+            <!-- ===== PANEL KANAN (desktop) ===== -->
             <div class="hidden lg:block lg:col-span-3">
-                <div class="lg:sticky lg:top-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+                <div class="lg:sticky lg:top-4 ${CARD} overflow-hidden">
 
-                    <div id="panelPetunjuk" class="p-6">
-                        <div class="text-center mb-6">
-                            <div class="w-14 h-14 bg-cream-200 dark:bg-coal-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-stone-500 dark:text-stone-400"><svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Petunjuk Penggunaan</h3>
-                            <p class="text-xs text-gray-500">Pilih mode input di kiri untuk memulai</p>
-                        </div>
-                        <div class="space-y-3">
-                            <div class="flex items-start gap-3 p-3 bg-claude-50 dark:bg-claude-500/10 rounded-xl border border-claude-200 dark:border-claude-500/20"><div class="w-9 h-9 rounded-xl bg-claude-500/15 text-claude-600 dark:text-claude-400 flex items-center justify-center flex-shrink-0"><svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></div><div><h4 class="text-sm font-semibold text-gray-900 dark:text-white">Presensi + Setoran</h4><p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Catat kehadiran &amp; setoran sekaligus dalam 1 submit.</p></div></div>
-                            <div class="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-200 dark:border-blue-500/20"><div class="w-9 h-9 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0"><svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div><h4 class="text-sm font-semibold text-gray-900 dark:text-white">Presensi Saja</h4><p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Untuk Hadir tanpa setoran, atau Sakit / Izin / Alpha.</p></div></div>
-                            <div class="flex items-start gap-3 p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl border border-emerald-200 dark:border-emerald-500/20"><div class="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0"><svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13"/></svg></div><div><h4 class="text-sm font-semibold text-gray-900 dark:text-white">Setoran Tambahan</h4><p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Setoran ke-2, ke-3, dst. Santri harus sudah hadir.</p></div></div>
+                    <div id="panelPetunjuk" class="p-5">
+                        ${secHead(P.clipboard, 'Petunjuk Penggunaan', '<span class="ml-auto text-[11px] text-stone-400">Pilih mode di kiri untuk memulai</span>')}
+                        <div class="space-y-2">
+                            ${[
+                                ['claude', P.target, 'Presensi + Setoran', 'Catat kehadiran &amp; setoran sekaligus dalam 1 submit.'],
+                                ['emerald', P.check, 'Presensi Saja', 'Untuk Hadir tanpa setoran, atau Sakit / Izin / Alpha.'],
+                                ['stone', P.book, 'Setoran Tambahan', 'Setoran ke-2, ke-3, dst. Santri harus sudah hadir.'],
+                            ].map(([tone, icon, t, d]) => `
+                            <div class="flex items-center gap-3 px-3 py-2.5 ${SUB}">
+                                <span class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${TONE[tone]}">${svg(icon, 'w-5 h-5')}</span>
+                                <div class="min-w-0">
+                                    <p class="text-sm font-semibold text-stone-800 dark:text-stone-100">${t}</p>
+                                    <p class="text-[11px] text-stone-500 dark:text-stone-400">${d}</p>
+                                </div>
+                            </div>`).join('')}
                         </div>
                     </div>
 
-                    <div id="defaultView" class="hidden p-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2"><span class="w-6 h-6 rounded-lg bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 flex items-center justify-center flex-shrink-0"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></span>Presensi — ${tanggalHariIni}</h4>
-                        </div>
+                    <div id="defaultView" class="hidden p-5">
+                        ${secHead(P.check, 'Presensi Hari Ini', `<span class="ml-auto text-[11px] text-stone-400">${tanggalLabel}</span>`)}
+
                         <div class="grid grid-cols-4 gap-2 mb-4">
-                            <div class="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900/30 rounded-lg p-2.5 text-center"><div class="text-xl font-bold text-emerald-600 dark:text-emerald-400" id="statHadir">0</div><div class="text-[10px] text-gray-500 dark:text-gray-500 flex items-center justify-center gap-1"><span class="w-2 h-2 rounded-full" style="background-color:#10b981;"></span>Hadir</div></div>
-                            <div class="bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-900/30 rounded-lg p-2.5 text-center"><div class="text-xl font-bold text-orange-600 dark:text-orange-400" id="statSakit">0</div><div class="text-[10px] text-gray-500 dark:text-gray-500 flex items-center justify-center gap-1"><span class="w-2 h-2 rounded-full" style="background-color:#f97316;"></span>Sakit</div></div>
-                            <div class="bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900/30 rounded-lg p-2.5 text-center"><div class="text-xl font-bold text-amber-600 dark:text-amber-400" id="statIzin">0</div><div class="text-[10px] text-gray-500 dark:text-gray-500 flex items-center justify-center gap-1"><span class="w-2 h-2 rounded-full" style="background-color:#f59e0b;"></span>Izin</div></div>
-                            <div class="bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/30 rounded-lg p-2.5 text-center"><div class="text-xl font-bold text-red-600 dark:text-red-400" id="statAlpha">0</div><div class="text-[10px] text-gray-500 dark:text-gray-500 flex items-center justify-center gap-1"><span class="w-2 h-2 rounded-full" style="background-color:#ef4444;"></span>Alpha</div></div>
+                            ${miniStat('statHadir', 'Hadir', 'bg-emerald-50 dark:bg-emerald-500/10 ring-emerald-100 dark:ring-emerald-500/20 text-emerald-600 dark:text-emerald-400', 'bg-emerald-500')}
+                            ${miniStat('statSakit', 'Sakit', 'bg-orange-50 dark:bg-orange-500/10 ring-orange-100 dark:ring-orange-500/20 text-orange-600 dark:text-orange-400', 'bg-orange-500')}
+                            ${miniStat('statIzin', 'Izin', 'bg-amber-50 dark:bg-amber-500/10 ring-amber-100 dark:ring-amber-500/20 text-amber-600 dark:text-amber-400', 'bg-amber-500')}
+                            ${miniStat('statAlpha', 'Alpha', 'bg-red-50 dark:bg-red-500/10 ring-red-100 dark:ring-red-500/20 text-red-600 dark:text-red-400', 'bg-red-500')}
                         </div>
-                        <div class="flex flex-wrap gap-2 mb-3">
-                            <div class="flex items-center gap-1 text-[10px] text-gray-500"><div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>Hadir</div>
-                            <div class="flex items-center gap-1 text-[10px] text-gray-500"><div class="w-2.5 h-2.5 rounded-full bg-orange-500"></div>Sakit</div>
-                            <div class="flex items-center gap-1 text-[10px] text-gray-500"><div class="w-2.5 h-2.5 rounded-full bg-amber-500"></div>Izin</div>
-                            <div class="flex items-center gap-1 text-[10px] text-gray-500"><div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>Alpha</div>
-                            <div class="flex items-center gap-1 text-[10px] text-gray-500"><span class="px-1 bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400 rounded text-[9px]">📖</span>Setoran</div>
+
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-3 text-[11px] text-stone-500 dark:text-stone-400">
+                            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Hadir</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-orange-500"></span> Sakit</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Izin</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span> Alpha</span>
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-4 h-4 rounded bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center text-stone-500 dark:text-stone-400">${svg(P.book, 'w-2.5 h-2.5')}</span>
+                                Setoran
+                            </span>
                         </div>
-                        <div id="daftarPresensiHariIni" class="max-h-[420px] overflow-y-auto overflow-x-auto tabel-presensi-scroll rounded-lg border border-gray-200 dark:border-gray-800">
+
+                        <div id="daftarPresensiHariIni" class="max-h-[420px] overflow-y-auto overflow-x-auto tabel-presensi-scroll rounded-xl ring-1 ring-cream-300 dark:ring-coal-600">
                             <!-- min-w-max dihapus: kalau dipertahankan, tabel melebar mengikuti
                                  nama terpanjang sehingga teks tidak pernah turun baris dan
                                  malah memunculkan scroll horizontal. -->
                             <table class="w-full text-xs">
-                                <thead class="bg-gray-100 dark:bg-gray-800 sticky top-0 z-10">
-                                    <tr id="tableHeaderRow" class="border-b border-gray-200 dark:border-gray-700">
-                                        <th class="px-2 py-2 text-center text-gray-600 dark:text-gray-400 font-medium w-10">No</th>
-                                        <th class="px-2 py-2 text-left text-gray-600 dark:text-gray-400 font-medium">Nama Santri</th>
-                                        <th class="px-2 py-2 text-left text-gray-600 dark:text-gray-400 font-medium whitespace-nowrap">Metode</th>
-                                        <th class="px-2 py-2 text-left text-gray-600 dark:text-gray-400 font-medium whitespace-nowrap">Progress</th>
+                                <thead class="bg-cream-100 dark:bg-coal-600 sticky top-0 z-10">
+                                    <tr id="tableHeaderRow">
+                                        <th class="px-3 py-2 text-center text-[11px] text-stone-500 dark:text-stone-400 font-semibold w-10">No</th>
+                                        <th class="px-2 py-2 text-left text-[11px] text-stone-500 dark:text-stone-400 font-semibold">Nama Santri</th>
+                                        <th class="px-2 py-2 text-left text-[11px] text-stone-500 dark:text-stone-400 font-semibold whitespace-nowrap">Metode</th>
+                                        <th class="px-2 py-2 text-left text-[11px] text-stone-500 dark:text-stone-400 font-semibold whitespace-nowrap">Progress</th>
                                     </tr>
                                 </thead>
-                                <tbody id="tableBodyPresensi" class="divide-y divide-gray-200 dark:divide-gray-800/50">
-                                    <tr><td colspan="7" class="text-center py-6 text-gray-500 dark:text-gray-600 italic">Memuat data...</td></tr>
+                                <tbody id="tableBodyPresensi" class="divide-y divide-cream-200 dark:divide-coal-600/60">
+                                    <tr><td colspan="7" class="pt-empty">Memuat data...</td></tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
 
-                    <div id="quranPanel" class="hidden p-4 bg-white dark:bg-gray-900">
-                        <div class="hidden md:flex items-center justify-between mb-3 pb-3 border-b border-gray-200 dark:border-gray-800">
-                            <h3 id="quranPanelTitle" class="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2"><svg class="w-4 h-4 text-stone-400 dark:text-stone-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13"/></svg> <span>Al-Qur'an Digital</span></h3>
+                    <div id="quranPanel" class="hidden p-5">
+                        <div class="hidden md:flex items-center justify-between mb-4">
+                            <!-- Tile ikon SENGAJA <i>, bukan <span>: setQuranPanelTitle() di
+                                 unified-input-page.js mengganti teks <span> PERTAMA di h3 ini.
+                                 Kalau tile-nya <span>, ikon tertimpa dan judul tampil ganda. -->
+                            <h3 id="quranPanelTitle" class="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200 flex items-center gap-2"><i class="${TILE} not-italic">${svg(P.book)}</i><span>Al-Qur'an Digital</span></h3>
                             <div class="flex gap-2">
-                                <button type="button" onclick="clearMarking()" class="px-2.5 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded-lg transition border border-gray-200 dark:border-transparent">🗑️ Reset</button>
-                                <button type="button" onclick="backToDefaultView()" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-lg transition">← Kembali</button>
+                                <button type="button" onclick="clearMarking()" class="${BTN_SOFT}">${svg(P.trash, 'w-3.5 h-3.5')} Reset</button>
+                                <button type="button" onclick="backToDefaultView()" class="${BTN_SOFT}">${svg(P.back, 'w-3.5 h-3.5')} Kembali</button>
                             </div>
                         </div>
 
-                        <div class="mb-3 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
-                            <button type="button" onclick="toggleColorGuide(this)" class="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-750 text-left flex justify-between items-center transition">
-                                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">🎨 Panduan Warna Marking</span>
-                                <svg id="colorGuideIcon" class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <div data-color-guide class="mb-3 ${SUB} overflow-hidden">
+                            <button type="button" onclick="toggleColorGuide(this)" class="w-full px-3 py-2.5 hover:bg-cream-200 dark:hover:bg-coal-600 text-left flex justify-between items-center transition">
+                                <span class="text-xs font-semibold text-stone-600 dark:text-stone-300 flex items-center gap-1.5">${svg(P.swatch, 'w-3.5 h-3.5 text-stone-400')} Panduan Warna Marking</span>
+                                <svg id="colorGuideIcon" class="w-4 h-4 text-stone-400 transition-transform" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">${P.chevron}</svg>
                             </button>
-                            <div id="colorGuideContent" class="hidden bg-white dark:bg-gray-900 p-3 border-t border-gray-200 dark:border-gray-800">
-                                <div class="space-y-1.5 text-xs">
-                                    <div class="flex items-center gap-2 p-2 bg-emerald-50 dark:bg-emerald-950/50 rounded"><div class="w-3 h-3 bg-green-400 rounded flex-shrink-0"></div><span class="text-gray-700 dark:text-gray-300"><strong>🟢 Kelancaran</strong> — -4 poin/kata</span></div>
-                                    <div class="flex items-center gap-2 p-2 bg-amber-50 dark:bg-amber-950/50 rounded"><div class="w-3 h-3 bg-yellow-400 rounded flex-shrink-0"></div><span class="text-gray-700 dark:text-gray-300"><strong>🟡 Tajwid</strong> — -4 poin/kata</span></div>
-                                    <div class="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-950/50 rounded"><div class="w-3 h-3 bg-red-400 rounded flex-shrink-0"></div><span class="text-gray-700 dark:text-gray-300"><strong>🔴 Pelafalan</strong> — -4 poin/kata</span></div>
-                                    <p class="text-[10px] text-gray-500 dark:text-gray-600 pt-1">💡 Klik kata untuk marking. Klik lagi untuk ganti/hapus.</p>
+                            <div id="colorGuideContent" class="hidden bg-white dark:bg-coal-700 p-3 border-t border-cream-300 dark:border-coal-600">
+                                <div class="space-y-1.5 text-xs text-stone-700 dark:text-stone-300">
+                                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-green-400 rounded flex-shrink-0"></span><strong>Kelancaran</strong><span class="text-stone-400">— -4 poin/kata</span></div>
+                                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-yellow-400 rounded flex-shrink-0"></span><strong>Tajwid</strong><span class="text-stone-400">— -4 poin/kata</span></div>
+                                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-red-400 rounded flex-shrink-0"></span><strong>Pelafalan</strong><span class="text-stone-400">— -4 poin/kata</span></div>
+                                    ${hint(P.info, 'Klik kata untuk marking. Klik lagi untuk ganti/hapus.')}
                                 </div>
                             </div>
                         </div>
 
-                        <div id="quranDisplay" class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 p-4 text-right overflow-y-auto custom-scrollbar mb-3 rounded-xl" style="font-family: 'Amiri', 'Traditional Arabic', serif; min-height: 280px; max-height: 380px;"></div>
+                        <div id="quranDisplay" class="${SUB} p-4 text-right overflow-y-auto custom-scrollbar mb-3" style="font-family: 'Amiri', 'Traditional Arabic', serif; min-height: 280px; max-height: 380px;"></div>
 
-                        <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 p-3 rounded-xl">
-                            <h4 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg> Statistik Setoran</h4>
-                            <div class="grid grid-cols-3 gap-2 mb-3">
-                                <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-transparent p-2.5 rounded-lg"><div class="text-[10px] text-gray-500 mb-0.5">Total Kata</div><div class="text-xl font-bold text-blue-600 dark:text-blue-400" id="displayTotalKata">0</div></div>
-                                <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-transparent p-2.5 rounded-lg"><div class="text-[10px] text-gray-500 mb-0.5">Juz Range</div><div class="text-lg font-bold text-purple-600 dark:text-purple-400" id="displayJuzRange">-</div></div>
-                                <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-transparent p-2.5 rounded-lg"><div class="text-[10px] text-gray-500 mb-0.5">Total Juz</div><div class="text-xl font-bold text-gray-900 dark:text-white" id="displayTotalJuz">0.00</div></div>
+                        <!-- data-stat-block: penanda untuk openDrawer() — blok ini dibuang
+                             dari clone drawer karena drawer punya statistik sendiri. -->
+                        <div data-stat-block class="${SUB} p-3">
+                            ${subTitle(P.chart, 'Statistik Setoran')}
+                            <div class="grid grid-cols-3 gap-2 mb-2">
+                                <div class="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 p-2.5 rounded-xl"><p class="text-[11px] text-stone-500 dark:text-stone-400">Total Kata</p><p class="text-lg font-bold tracking-tight text-stone-900 dark:text-stone-100 tabular-nums" id="displayTotalKata">0</p></div>
+                                <div class="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 p-2.5 rounded-xl"><p class="text-[11px] text-stone-500 dark:text-stone-400">Juz Range</p><p class="text-lg font-bold tracking-tight text-claude-600 dark:text-claude-400" id="displayJuzRange">-</p></div>
+                                <div class="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 p-2.5 rounded-xl"><p class="text-[11px] text-stone-500 dark:text-stone-400">Total Juz</p><p class="text-lg font-bold tracking-tight text-stone-900 dark:text-stone-100 tabular-nums" id="displayTotalJuz">0.00</p></div>
                             </div>
-                            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-transparent p-2.5 rounded-lg">
-                                <div class="flex items-center justify-between mb-2"><span class="text-[10px] text-gray-500 font-medium flex items-center gap-1"><svg class="w-3 h-3 text-stone-400 dark:text-stone-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> Halaman Mushaf Madinah</span><span class="text-[10px] text-gray-500 dark:text-gray-600">⚙️ Otomatis</span></div>
+                            <div class="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 p-2.5 rounded-xl">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-[11px] text-stone-500 dark:text-stone-400 font-medium flex items-center gap-1">${svg(P.doc, 'w-3 h-3 text-stone-400')} Halaman Mushaf Madinah</span>
+                                    <span class="text-[10px] text-stone-400">Otomatis</span>
+                                </div>
                                 <div class="flex items-center gap-2">
-                                    <div class="flex-1 bg-gray-100 dark:bg-gray-800 px-2.5 py-2 rounded-lg border border-gray-200 dark:border-gray-700"><div class="text-[10px] text-gray-500">Mulai</div><div class="text-base font-bold text-orange-600 dark:text-orange-400" id="displayPageStart">-</div></div>
-                                    <div class="text-gray-400 dark:text-gray-600">→</div>
-                                    <div class="flex-1 bg-gray-100 dark:bg-gray-800 px-2.5 py-2 rounded-lg border border-gray-200 dark:border-gray-700"><div class="text-[10px] text-gray-500">Selesai</div><div class="text-base font-bold text-orange-600 dark:text-orange-400" id="displayPageEnd">-</div></div>
-                                    <div class="flex-1 bg-orange-50 dark:bg-orange-950/50 px-2.5 py-2 rounded-lg border border-orange-200 dark:border-orange-900/30"><div class="text-[10px] text-gray-500">Total</div><div class="text-base font-bold text-orange-600 dark:text-orange-400" id="displayTotalPage">0.00</div></div>
+                                    <div class="flex-1 ${SUB} px-2.5 py-2"><p class="text-[10px] text-stone-500">Mulai</p><p class="text-base font-bold text-stone-800 dark:text-stone-100 tabular-nums" id="displayPageStart">-</p></div>
+                                    <span class="text-claude-500">→</span>
+                                    <div class="flex-1 ${SUB} px-2.5 py-2"><p class="text-[10px] text-stone-500">Selesai</p><p class="text-base font-bold text-stone-800 dark:text-stone-100 tabular-nums" id="displayPageEnd">-</p></div>
+                                    <div class="flex-1 rounded-xl ring-1 ring-claude-200 dark:ring-claude-500/20 bg-claude-50 dark:bg-claude-500/10 px-2.5 py-2"><p class="text-[10px] text-stone-500">Total</p><p class="text-base font-bold text-claude-600 dark:text-claude-400 tabular-nums" id="displayTotalPage">0.00</p></div>
                                 </div>
                             </div>
                         </div>
@@ -708,8 +667,8 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
     </div>
 
     <div id="mobileFab" class="fixed bottom-4 right-4 z-[100] lg:hidden hidden">
-        <button onclick="openDrawer('presensi')" class="flex items-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-full shadow-2xl shadow-indigo-900/50 transition-all active:scale-95">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <button onclick="openDrawer('presensi')" class="flex items-center gap-2 px-4 py-3 bg-claude-500 hover:bg-claude-600 text-white text-sm font-semibold rounded-full shadow-xl shadow-claude-500/30 transition-all active:scale-95">
+            ${svg(P.clipboard, 'w-4 h-4', 2)}
             Presensi
         </button>
     </div>
@@ -719,60 +678,128 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Amiri+Quran&display=swap" rel="stylesheet">
 <style>
-    html.dark #inputPage .dark\\:bg-gray-900 { background-color: #262624 !important; }
+    /* ===== Warna aksen =====
+       Nilai asli diambil dari tailwind.config.js lewat class
+       [--acc:theme(colors.claude.500)] dst. di elemen #inputPage, jadi
+       otomatis ikut kalau palet claude diganti. Blok :where() di bawah
+       hanya CADANGAN (spesifisitas 0) kalau class itu tidak ter-generate. */
+    :where(#inputPage) {
+        --acc-50: #F4F9EC; --acc-100: #E6F2D5; --acc-200: #CDE5AC; --acc-400: #98C963;
+        --acc: #7EB842; --acc-600: #67992F; --acc-700: #507726;
+        --sf-500: #4B5247; --sf-600: #353B33; --sf-700: #262B25;
+        --cr-100: #FAFAF7; --cr-200: #F3F4EE; --cr-300: #E1E4D8; --cr-400: #CDD1C4;
+    }
+    /* Field gelap = coal-600 45% di atas coal-700 — sama dengan baris item
+       Dashboard (bg-coal-600/40), sedikit lebih terang dari kartu. */
+    #inputPage { --field-dk: color-mix(in srgb, var(--sf-600) 45%, var(--sf-700)); }
+
+    /* Override untuk markup yang DIRENDER JS (baris tabel, isi drawer, dsb.)
+       yang masih memakai kelas gray — dipaksa ke palet coal. */
+    html.dark #inputPage .dark\\:bg-gray-900 { background-color: var(--sf-700) !important; }
     html.dark #inputPage .dark\\:bg-gray-800,
-    html.dark #inputPage .dark\\:bg-gray-800\\/50 { background-color: #30302E !important; }
-    html.dark #inputPage .dark\\:border-gray-800 { border-color: #3E3D3A !important; }
-    .setoran-badge { background-color: #e0e7ff; color: #4338ca; }
-    html.dark .setoran-badge { background-color: #312e81; color: #a5b4fc; }
+    html.dark #inputPage .dark\\:bg-gray-800\\/50 { background-color: var(--field-dk) !important; }
+    html.dark #inputPage .dark\\:border-gray-800 { border-color: var(--sf-600) !important; }
+
+    /* ===== Baris tabel presensi (dirender unified-input-page.js) =====
+       public/js tidak dipindai Tailwind, jadi gaya baris ditulis sebagai
+       CSS biasa di sini. Warna lewat variable supaya ikut ganti tema
+       tanpa render ulang (tabel hanya di-refresh berkala). */
+    #inputPage {
+        --pt-fg: #292524; --pt-sub: #78716C; --pt-hover: var(--cr-100); --pt-ring: var(--cr-400);
+    }
+    html.dark #inputPage {
+        --pt-fg: #E7E5E4; --pt-sub: #A8A29E; --pt-hover: color-mix(in srgb, var(--sf-600) 35%, transparent); --pt-ring: var(--sf-500);
+    }
+    .pt-row { vertical-align: top; transition: background-color .15s; }
+    .pt-row:hover { background: var(--pt-hover); }
+    .pt-no { padding: 10px 8px; text-align: center; font-size: 11px; color: var(--pt-sub); font-variant-numeric: tabular-nums; }
+    .pt-td { padding: 10px 8px; }
+    .pt-nowrap { white-space: nowrap; }
+    .pt-name { max-width: 180px; word-break: break-word; line-height: 1.35; font-size: 13px; color: var(--pt-fg); }
+    .pt-th-sesi { padding: 8px; width: 3.5rem; text-align: center; font-size: 11px; font-weight: 600; color: var(--pt-sub); }
+    .pt-cell { padding: 10px 4px; }
+    .pt-stack { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .pt-line { display: flex; align-items: center; gap: 4px; }
+    .pt-dot { display: block; width: 14px; height: 14px; border-radius: 9999px; flex-shrink: 0; }
+    .pt-dot-empty { width: 16px; height: 16px; box-shadow: inset 0 0 0 1px var(--pt-ring); }
+    .pt-waktu { font-size: 9px; color: var(--pt-sub); font-variant-numeric: tabular-nums; }
+    .pt-empty { text-align: center; padding: 32px 8px; font-size: 12px; color: var(--pt-sub); }
+    .pt-error { color: #EF4444; }
+
+    /* Badge setoran di tabel — sama dengan badge di Dashboard */
+    .setoran-badge {
+        display: inline-flex; align-items: center; gap: 2px;
+        padding: 1px 5px; border-radius: 6px; font-size: 10px; font-weight: 600;
+        background-color: var(--cr-200); color: #57534E; box-shadow: inset 0 0 0 1px var(--cr-300);
+    }
+    html.dark .setoran-badge { background-color: var(--sf-600); color: #D6D3D1; box-shadow: inset 0 0 0 1px var(--sf-500); }
+
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--cr-400); border-radius: 10px; }
+    html.dark .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--sf-500); }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--acc); }
+
+    /* Scrollbar kotak Qur'an/Iqro — ada CSS dari script Qur'an yang menimpa
+       .custom-scrollbar (batang biru + panah). Dikunci di sini dengan
+       selector ber-ID + !important, termasuk versi clone di drawer. */
+    #inputPage #quranDisplay::-webkit-scrollbar,
+    #inputPage #quranDisplayDrawer::-webkit-scrollbar { width: 6px !important; height: 6px !important; background: transparent !important; }
+    #inputPage #quranDisplay::-webkit-scrollbar-track,
+    #inputPage #quranDisplayDrawer::-webkit-scrollbar-track { background: transparent !important; box-shadow: none !important; border: 0 !important; }
+    #inputPage #quranDisplay::-webkit-scrollbar-thumb,
+    #inputPage #quranDisplayDrawer::-webkit-scrollbar-thumb { background: var(--cr-400) !important; border-radius: 9999px !important; border: 0 !important; }
+    #inputPage #quranDisplay::-webkit-scrollbar-thumb:hover,
+    #inputPage #quranDisplayDrawer::-webkit-scrollbar-thumb:hover { background: var(--acc) !important; }
+    #inputPage #quranDisplay::-webkit-scrollbar-button,
+    #inputPage #quranDisplayDrawer::-webkit-scrollbar-button { display: none !important; width: 0 !important; height: 0 !important; }
+    html.dark #inputPage #quranDisplay::-webkit-scrollbar-thumb,
+    html.dark #inputPage #quranDisplayDrawer::-webkit-scrollbar-thumb { background: var(--sf-500) !important; }
+    #inputPage #quranDisplay, #inputPage #quranDisplayDrawer { scrollbar-width: thin !important; scrollbar-color: var(--cr-400) transparent !important; }
+    html.dark #inputPage #quranDisplay, html.dark #inputPage #quranDisplayDrawer { scrollbar-color: var(--sf-500) transparent !important; }
 
     /* Tabel presensi: scrollbar diberi jalur sendiri (scrollbar-gutter) supaya
-       tidak menindih kolom terakhir. Track dibuat terlihat agar batas antara
-       area konten dan scrollbar jelas. */
+       tidak menindih kolom terakhir. */
     .tabel-presensi-scroll { scrollbar-gutter: stable; }
     .tabel-presensi-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
-    .tabel-presensi-scroll::-webkit-scrollbar-track { background: #F5F4EF; }
+    .tabel-presensi-scroll::-webkit-scrollbar-track { background: var(--cr-100); }
     .tabel-presensi-scroll::-webkit-scrollbar-thumb {
-        background: #D6D3D1;
+        background: var(--cr-400);
         border-radius: 9999px;
-        border: 3px solid #F5F4EF;   /* jarak visual thumb ke tepi */
+        border: 3px solid var(--cr-100);
     }
-    .tabel-presensi-scroll::-webkit-scrollbar-thumb:hover { background: #B8B4B0; }
-    .tabel-presensi-scroll::-webkit-scrollbar-corner { background: #F5F4EF; }
+    .tabel-presensi-scroll::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--cr-400) 80%, #000); }
+    .tabel-presensi-scroll::-webkit-scrollbar-corner { background: var(--cr-100); }
 
     html.dark .tabel-presensi-scroll::-webkit-scrollbar-track,
-    html.dark .tabel-presensi-scroll::-webkit-scrollbar-corner { background: #262624; }
+    html.dark .tabel-presensi-scroll::-webkit-scrollbar-corner { background: var(--sf-700); }
     html.dark .tabel-presensi-scroll::-webkit-scrollbar-thumb {
-        background: #4A4845;
-        border-color: #262624;
+        background: var(--sf-500);
+        border-color: var(--sf-700);
     }
-    html.dark .tabel-presensi-scroll::-webkit-scrollbar-thumb:hover { background: #5C5A56; }
+    html.dark .tabel-presensi-scroll::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--sf-500) 75%, #fff); }
 
-    /* Firefox tidak mengenal ::-webkit-*, jadi diatur terpisah. */
-    .tabel-presensi-scroll { scrollbar-width: thin; scrollbar-color: #D6D3D1 #F5F4EF; }
-    html.dark .tabel-presensi-scroll { scrollbar-color: #4A4845 #262624; }
+    .tabel-presensi-scroll { scrollbar-width: thin; scrollbar-color: var(--cr-400) var(--cr-100); }
+    html.dark .tabel-presensi-scroll { scrollbar-color: var(--sf-500) var(--sf-700); }
 
     /* ===== Badge metode & bar progress di tabel presensi =====
        Warna WAJIB lewat CSS variable, bukan hex inline dari JS.
        Tabel ini dirender sekali oleh unified-input-page.js dan tidak
-       dirender ulang saat tema diganti — kalau warnanya ditanam inline,
-       light/dark baru ikut berubah setelah auto-refresh 30 detik. */
+       dirender ulang saat tema diganti. */
+    /* Sama dengan METODE_BADGE di Dashboard.jsx:
+       quran = claude (aksen tema), iqro = amber, aisar = sky. */
     #inputPage {
-        --pm-quran-bg: #FBEDE7; --pm-quran-fg: #BE5D3D;
-        --pm-iqro-bg:  #FDF3E3; --pm-iqro-fg:  #9A6B14;
-        --pm-aisar-bg: #EAF1EC; --pm-aisar-fg: #4A6B54;
-        --pm-track:    #E7E5E4; --pm-label:    #78716C;
+        --pm-quran-bg: var(--acc-100); --pm-quran-fg: var(--acc-700); --pm-quran-ring: var(--acc-200);
+        --pm-iqro-bg:  #FFFBEB;        --pm-iqro-fg:  #B45309;        --pm-iqro-ring:  #FEF3C7;
+        --pm-aisar-bg: #F0F9FF;        --pm-aisar-fg: #0369A1;        --pm-aisar-ring: #E0F2FE;
+        --pm-track:    var(--cr-300); --pm-label: #78716C;
         --pm-empty:    #A8A29E;
     }
     html.dark #inputPage {
-        --pm-quran-bg: rgba(217,119,87,.15);  --pm-quran-fg: #E8A183;
-        --pm-iqro-bg:  rgba(212,162,78,.15);  --pm-iqro-fg:  #D9B36A;
-        --pm-aisar-bg: rgba(124,152,133,.18); --pm-aisar-fg: #9DBAA6;
-        --pm-track:    #3E3D3A;               --pm-label:    #A8A29E;
+        --pm-quran-bg: color-mix(in srgb, var(--acc) 15%, transparent); --pm-quran-fg: var(--acc-400); --pm-quran-ring: color-mix(in srgb, var(--acc) 20%, transparent);
+        --pm-iqro-bg:  rgba(245,158,11,.10); --pm-iqro-fg:  #FBBF24; --pm-iqro-ring:  rgba(245,158,11,.20);
+        --pm-aisar-bg: rgba(14,165,233,.10); --pm-aisar-fg: #38BDF8; --pm-aisar-ring: rgba(14,165,233,.20);
+        --pm-track:    var(--sf-600); --pm-label: #A8A29E;
         --pm-empty:    #78716C;
     }
 
@@ -782,9 +809,9 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
         font-size: 10px; font-weight: 600;
         transition: background-color .2s, color .2s;
     }
-    .pm-badge[data-tone="quran"] { background: var(--pm-quran-bg); color: var(--pm-quran-fg); }
-    .pm-badge[data-tone="iqro"]  { background: var(--pm-iqro-bg);  color: var(--pm-iqro-fg); }
-    .pm-badge[data-tone="aisar"] { background: var(--pm-aisar-bg); color: var(--pm-aisar-fg); }
+    .pm-badge[data-tone="quran"] { background: var(--pm-quran-bg); color: var(--pm-quran-fg); box-shadow: inset 0 0 0 1px var(--pm-quran-ring); }
+    .pm-badge[data-tone="iqro"]  { background: var(--pm-iqro-bg);  color: var(--pm-iqro-fg);  box-shadow: inset 0 0 0 1px var(--pm-iqro-ring); }
+    .pm-badge[data-tone="aisar"] { background: var(--pm-aisar-bg); color: var(--pm-aisar-fg); box-shadow: inset 0 0 0 1px var(--pm-aisar-ring); }
     .pm-badge .pm-plus { opacity: .45; }
 
     .pm-empty { color: var(--pm-empty); font-size: 10px; }
@@ -797,16 +824,25 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
         transition: background-color .2s;
     }
     .pm-prog-fill { display: block; height: 100%; border-radius: 9999px; }
-    .pm-prog-fill[data-c="1"] { background: #D97757; }
+    .pm-prog-fill[data-c="1"] { background: var(--acc); }
     .pm-prog-fill[data-c="2"] { background: #10B981; }
     .pm-prog-val  {
         font-size: 10px; font-weight: 600; min-width: 26px;
         text-align: right; color: var(--pm-label);
         transition: color .2s;
     }
-    .form-input, .form-select, .form-select-sm, .form-textarea { background: #ffffff; border: 1px solid #d1d5db; color: #111827; border-radius: 0.5rem; font-size: 0.8125rem; padding: 0.5rem 0.625rem; transition: border-color 0.15s; }
-    html.dark .form-input, html.dark .form-select, html.dark .form-select-sm, html.dark .form-textarea { background: #1C1C1A; border: 1px solid #3E3D3A; color: #e5e7eb; }
-    .form-select-sm { padding: 0.4rem 0.5rem; font-size: 0.75rem; }
+
+    /* ===== Field form — palet hangat, sudut rounded-xl seperti Dashboard ===== */
+    .form-input, .form-select, .form-select-sm, .form-textarea {
+        background: #ffffff; border: 1px solid var(--cr-300); color: #292524;
+        border-radius: 0.75rem; font-size: 0.8125rem; padding: 0.5rem 0.75rem;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    html.dark .form-input, html.dark .form-select, html.dark .form-select-sm, html.dark .form-textarea {
+        background: var(--field-dk); border: 1px solid var(--sf-600); color: #E7E5E4; color-scheme: dark;
+    }
+    .form-select-sm { padding: 0.4rem 0.625rem; font-size: 0.75rem; border-radius: 0.625rem; }
+    .form-textarea::placeholder { color: #A8A29E; }
     .form-select.is-locked {
         pointer-events: none;
         opacity: 0.9;
@@ -814,13 +850,14 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
         -moz-appearance: none;
         appearance: none;
         padding-right: 2.25rem;
+        background-color: var(--cr-200);
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4.5' y='11' width='15' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right 0.85rem center;
         background-size: 15px;
     }
     html.dark .form-select.is-locked {
-        background-color: #232321;
+        background-color: var(--sf-700);
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a8a29e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4.5' y='11' width='15' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right 0.85rem center;
@@ -829,64 +866,76 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
 
     /* ===== Panah select METODE =====
        Select metode TIDAK didaftarkan di ALL_SELECTS (unified-input-page.js),
-       jadi ia tetap <select> native — beda sendiri dari field lain yang sudah
-       jadi widget kustom (.cs-btn dengan panah ▼).
-       Saat santri 1 metode, .is-locked menyembunyikan panah native (ganti gembok).
-       Saat santri 2 metode, .is-locked TIDAK dipasang → panah bawaan browser
-       muncul. Rule di bawah menggantinya dengan segitiga yang identik dengan
-       .cs-arr (8px, #6b7280) supaya konsisten di light & dark mode. */
+       jadi ia tetap <select> native. Saat santri 2 metode, .is-locked tidak
+       dipasang → panah bawaan diganti segitiga yang identik dengan .cs-arr. */
     #metodeCombined:not(.is-locked),
     #metodeSetoranOnly:not(.is-locked) {
         -webkit-appearance: none;
         -moz-appearance: none;
         appearance: none;
         padding-right: 2rem;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M1 3.2 L5 7.6 L9 3.2 Z' fill='%236b7280'/%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M1 3.2 L5 7.6 L9 3.2 Z' fill='%23a8a29e'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right 0.72rem center;
         background-size: 9px;
     }
-    /* Firefox: hilangkan garis fokus pada tombol dropdown bawaan */
     #metodeCombined:not(.is-locked)::-ms-expand,
     #metodeSetoranOnly:not(.is-locked)::-ms-expand { display: none; }
 
-    .form-input:focus, .form-select:focus, .form-select-sm:focus, .form-textarea:focus { outline: none; border-color: #D97757; box-shadow: 0 0 0 2px rgba(217,119,87,0.18); }
+    .form-input:focus, .form-select:focus, .form-select-sm:focus, .form-textarea:focus {
+        outline: none; border-color: var(--acc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--acc) 15%, transparent);
+    }
     .form-textarea { resize: vertical; }
-    input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; }
-    html.dark input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.7; }
+    input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.5; }
+    html.dark input[type="date"]::-webkit-calendar-picker-indicator { filter: none; opacity: 0.7; }
     input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
-    .mode-card input:checked ~ .mode-card-inner { border-color: #6366f1; background: rgba(99,102,241,0.1); }
-    .mode-card input[value="presensi_only"]:checked ~ .mode-card-inner { border-color: #3b82f6; background: rgba(59,130,246,0.08); }
-    .mode-card input[value="setoran_only"]:checked ~ .mode-card-inner { border-color: #10b981; background: rgba(16,185,129,0.08); }
-    .status-radio-label input:checked ~ .status-radio-inner { border-color: #6366f1; background: rgba(99,102,241,0.1); color: #4f46e5; }
-    html.dark .status-radio-label input:checked ~ .status-radio-inner { color: #a5b4fc; }
+
+    /* ===== Kartu mode & radio status: state terpilih = aksen terracotta ===== */
+    .mode-card input:checked ~ .mode-card-inner,
+    .status-radio-label input:checked ~ .status-radio-inner {
+        box-shadow: 0 0 0 2px var(--acc) !important;
+        background-color: var(--acc-50) !important;
+    }
+    html.dark .mode-card input:checked ~ .mode-card-inner,
+    html.dark .status-radio-label input:checked ~ .status-radio-inner {
+        background-color: color-mix(in srgb, var(--acc) 12%, transparent) !important;
+    }
+    .status-radio-label input:checked ~ .status-radio-inner { color: var(--acc-700); }
+    html.dark .status-radio-label input:checked ~ .status-radio-inner { color: var(--acc-400); }
+    .mode-card input:focus-visible ~ .mode-card-inner,
+    .status-radio-label input:focus-visible ~ .status-radio-inner { outline: 2px solid var(--acc); outline-offset: 2px; }
+
     @keyframes fade-in { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
     .animate-fade-in { animation: fade-in 0.25s ease-out; }
     .section-open .section-chevron { transform: rotate(180deg); }
     @media (max-width: 1023px) { .mobile-hide-audio { display: none !important; } .mobile-hide-bottom { display: none !important; } }
+
+    /* ===== Select kustom (.cs-*) — dibuat oleh unified-input-page.js ===== */
     .cs-wrap { position: relative; width: 100%; }
-    .cs-btn { width: 100%; text-align: left; padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 0.5rem; background: #ffffff; color: #111827; font-size: 0.8125rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; min-height: 36px; box-sizing: border-box; transition: border-color 0.15s; font-family: inherit; line-height: 1.25; }
-    html.dark .cs-btn { background: #1C1C1A; color: #e5e7eb; border-color: #3E3D3A; }
-    .cs-btn:hover, .cs-btn.open { border-color: #D97757; }
-    .cs-btn.cs-disabled { opacity: 0.4; cursor: not-allowed; }
+    .cs-btn { width: 100%; text-align: left; padding: 7px 12px; border: 1px solid var(--cr-300); border-radius: 0.75rem; background: #ffffff; color: #292524; font-size: 0.8125rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; min-height: 36px; box-sizing: border-box; transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; line-height: 1.25; }
+    html.dark .cs-btn { background: var(--field-dk); color: #E7E5E4; border-color: var(--sf-600); }
+    .cs-btn:hover { border-color: var(--acc); }
+    .cs-btn.open { border-color: var(--acc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--acc) 15%, transparent); }
+    .cs-btn.cs-disabled { opacity: 0.45; cursor: not-allowed; }
     .cs-btn .cs-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; font-size: 0.8125rem; }
-    .cs-btn .cs-txt.ph { color: #6b7280; font-style: italic; }
-    .cs-btn .cs-arr { font-size: 8px; color: #6b7280; flex-shrink: 0; margin-left: 6px; transition: transform 0.2s; }
+    .cs-btn .cs-txt.ph { color: #A8A29E; font-style: normal; }
+    .cs-btn .cs-arr { font-size: 8px; color: #A8A29E; flex-shrink: 0; margin-left: 6px; transition: transform 0.2s; }
     .cs-btn.open .cs-arr { transform: rotate(180deg); }
-    .cs-drop { display: none; position: absolute; top: calc(100% + 2px); left: 0; right: 0; z-index: 99999; background: #ffffff; border: 1px solid #d1d5db; border-radius: 0.5rem; box-shadow: 0 8px 24px rgba(0,0,0,0.18); overflow: hidden; }
-    html.dark .cs-drop { background: #262624; border-color: #3E3D3A; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+    .cs-drop { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 99999; background: #ffffff; border: 1px solid var(--cr-300); border-radius: 0.75rem; box-shadow: 0 10px 28px rgba(41,37,36,0.12); overflow: hidden; }
+    html.dark .cs-drop { background: var(--sf-700); border-color: var(--sf-600); box-shadow: 0 12px 32px rgba(0,0,0,0.45); }
     .cs-drop.open { display: block; }
-    .cs-search { width: 100%; padding: 7px 10px; border: none; border-bottom: 1px solid #e5e7eb; outline: none; font-size: 0.75rem; background: #ffffff; color: #111827; box-sizing: border-box; font-family: inherit; }
-    html.dark .cs-search { background: #1C1C1A; color: #f3f4f6; border-bottom-color: #3E3D3A; }
-    .cs-search::placeholder { color: #6b7280; }
-    .cs-list { max-height: 180px; overflow-y: auto; margin: 0; padding: 2px 0; list-style: none; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
-    html.dark .cs-list { scrollbar-color: #374151 transparent; }
-    .cs-list li { padding: 6px 10px; font-size: 0.75rem; cursor: pointer; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background 0.1s; }
-    html.dark .cs-list li { color: #e5e7eb; }
-    .cs-list li:hover, .cs-list li.cs-hi { background: #D97757 !important; color: white !important; }
-    .cs-list li.cs-ph { color: #6b7280; font-style: italic; }
+    .cs-search { width: 100%; padding: 8px 12px; border: none; border-bottom: 1px solid var(--cr-300); outline: none; font-size: 0.75rem; background: var(--cr-100); color: #292524; box-sizing: border-box; font-family: inherit; }
+    html.dark .cs-search { background: var(--field-dk); color: #E7E5E4; border-bottom-color: var(--sf-600); }
+    .cs-search::placeholder { color: #A8A29E; }
+    .cs-list { max-height: 180px; overflow-y: auto; margin: 0; padding: 4px; list-style: none; scrollbar-width: thin; scrollbar-color: var(--cr-400) transparent; }
+    html.dark .cs-list { scrollbar-color: var(--sf-500) transparent; }
+    .cs-list li { padding: 6px 10px; border-radius: 0.5rem; font-size: 0.75rem; cursor: pointer; color: #292524; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background 0.1s; }
+    html.dark .cs-list li { color: #E7E5E4; }
+    .cs-list li:hover, .cs-list li.cs-hi { background: var(--acc) !important; color: white !important; }
+    .cs-list li.cs-ph { color: #A8A29E; font-style: normal; }
     .cs-list li.cs-gone { display: none; }
-    .cs-nores { padding: 8px 10px; font-size: 0.75rem; color: #6b7280; text-align: center; display: none; font-style: italic; }
+    .cs-nores { padding: 8px 10px; font-size: 0.75rem; color: #A8A29E; text-align: center; display: none; }
+
     #mobileDrawer.open { transform: translateY(0) !important; }
     @media (max-width: 1023px) {
         #quranDisplayDrawer #quranText { font-size: 28px !important; line-height: 3.0 !important; word-spacing: -4px !important; }
@@ -899,42 +948,46 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
         #quranDisplayDrawer div[style*="border: 1.5px solid"] { padding: 14px !important; margin-top: 8px !important; margin-bottom: 12px !important; }
         #quranDisplayDrawer { min-height: 200px !important; max-height: 50vh !important; }
     }
-    #quranPanel, #quranPanelDrawer, #quranDisplay, #quranDisplayDrawer { --q-fg: #ffffff; --q-num: rgba(255,255,255,0.55); --q-box-border: rgba(255,255,255,0.85); --q-line: rgba(255,255,255,0.30); --q-nav-bg: rgba(17,24,39,0.96); --q-nav-btn: #374151; --q-nav-btn-fg: #e5e7eb; --q-nav-label: #cbd5e1; }
-    html:not(.dark) #quranPanel, html:not(.dark) #quranPanelDrawer, html:not(.dark) #quranDisplay, html:not(.dark) #quranDisplayDrawer { --q-fg: #1f2937; --q-num: rgba(31,41,55,0.55); --q-box-border: rgba(31,41,55,0.55); --q-line: rgba(31,41,55,0.22); --q-nav-bg: #eef2ff; --q-nav-btn: #e0e7ff; --q-nav-btn-fg: #3730a3; --q-nav-label: #4f46e5; }
+
+    /* Variabel warna Qur'an viewer — navigasi pakai palet hangat */
+    #quranPanel, #quranPanelDrawer, #quranDisplay, #quranDisplayDrawer { --q-fg: #F5F4EF; --q-num: rgba(245,244,239,0.55); --q-box-border: rgba(245,244,239,0.8); --q-line: rgba(245,244,239,0.28); --q-nav-bg: var(--sf-700); --q-nav-btn: var(--sf-600); --q-nav-btn-fg: #E7E5E4; --q-nav-label: var(--acc-400); }
+    html:not(.dark) #quranPanel, html:not(.dark) #quranPanelDrawer, html:not(.dark) #quranDisplay, html:not(.dark) #quranDisplayDrawer { --q-fg: #292524; --q-num: rgba(41,37,36,0.55); --q-box-border: rgba(41,37,36,0.5); --q-line: rgba(41,37,36,0.2); --q-nav-bg: var(--cr-200); --q-nav-btn: var(--cr-300); --q-nav-btn-fg: #44403C; --q-nav-label: var(--acc-700); }
     #quranDisplay .iqro-page, #quranDisplay .iqro-page *, #quranDisplayDrawer .iqro-page, #quranDisplayDrawer .iqro-page *, .iqro-cap .iqro-page, .iqro-cap .iqro-page * { font-family: 'Amiri', 'Amiri Quran', serif !important; }
+
+    /* Toast — garis hitung mundur berwarna sesuai jenis */
     .success-notification > div, .error-notification > div, .warning-notification > div { position: relative; overflow: hidden; }
-    .success-notification > div::after, .error-notification > div::after, .warning-notification > div::after { content: ''; position: absolute; bottom: 0; left: 0; height: 3px; width: 100%; background: rgba(255,255,255,0.5); animation: notifCountdown 10s linear forwards; }
+    .success-notification > div::after, .error-notification > div::after, .warning-notification > div::after { content: ''; position: absolute; bottom: 0; left: 0; height: 2px; width: 100%; animation: notifCountdown 10s linear forwards; }
+    .success-notification > div::after { background: #10B981; }
+    .error-notification > div::after   { background: #EF4444; }
+    .warning-notification > div::after { background: #F59E0B; }
     @keyframes notifCountdown { from { width: 100%; } to { width: 0%; } }
+
     .iqro-row-scroll::-webkit-scrollbar { height: 4px; }
     .iqro-row-scroll::-webkit-scrollbar-track { background: transparent; }
-    .iqro-row-scroll::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.4); border-radius: 4px; }
+    .iqro-row-scroll::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--acc) 40%, transparent); border-radius: 4px; }
 
-    /* ===== FIX: warna tombol "Tampilkan Halaman" mengikuti metode aktif =====
-       data-metode di-sync lewat syncJilidUI() di InputSetoran.jsx.
-       Selektor [data-metode] lebih spesifik dari .btn-jilid polos,
-       jadi rule warna lama (biru) otomatis kalah. */
-           /* ===== Riwayat Setoran ===== */
+    /* ===== Riwayat Setoran ===== */
     #inputPage {
-        --rs-card:  #FFFFFF;  --rs-line:  #E7E5E4;
+        --rs-card:  #FFFFFF;  --rs-line:  var(--cr-300);
         --rs-fg:    #292524;  --rs-sub:   #78716C;
-        --rs-chip:  #F5F4EF;  --rs-chip-fg: #57534E;
+        --rs-chip:  var(--cr-200);  --rs-chip-fg: #57534E;
     }
     html.dark #inputPage {
-        --rs-card:  #1C1C1A;  --rs-line:  #3E3D3A;
+        --rs-card:  var(--field-dk);  --rs-line:  var(--sf-600);
         --rs-fg:    #E7E5E4;  --rs-sub:   #A8A29E;
-        --rs-chip:  #2A2A28;  --rs-chip-fg: #A8A29E;
+        --rs-chip:  var(--sf-600);  --rs-chip-fg: #A8A29E;
     }
     .rs-chip {
         padding: 3px 10px; border-radius: 9999px; font-size: 10px; font-weight: 600;
         background: var(--rs-chip); color: var(--rs-chip-fg);
         border: 1px solid var(--rs-line); cursor: pointer; transition: all .15s;
     }
-    .rs-chip:hover { border-color: #D97757; }
-    .rs-chip.is-active { background: #D97757; color: #fff; border-color: #D97757; }
+    .rs-chip:hover { border-color: var(--acc); }
+    .rs-chip.is-active { background: var(--acc); color: #fff; border-color: var(--acc); }
 
     .rs-item {
         background: var(--rs-card); border: 1px solid var(--rs-line);
-        border-radius: 10px; padding: 8px 10px;
+        border-radius: 12px; padding: 8px 10px;
     }
     .rs-item-top, .rs-item-bot { display: flex; align-items: center; justify-content: space-between; }
     .rs-item-bot { margin-top: 4px; }
@@ -953,12 +1006,15 @@ function buildMarkup({ santriList, sesiList, daftarSurat, tanggalHariIni, kelasN
     .rs-nilai[data-n="hi"]  { color: #10B981; }
     .rs-nilai[data-n="mid"] { color: #D4A24E; }
     .rs-nilai[data-n="lo"]  { color: #EF4444; }
-    .rs-empty  { font-size: 11px; color: var(--rs-sub); font-style: italic; text-align: center; padding: 14px 0; }
-    .btn-jilid                            { background-image: none; background-color: #D4A24E; }
-    .btn-jilid[data-metode="iqro"]        { background-image: none; background-color: #D4A24E; }
-    .btn-jilid[data-metode="iqro"]:hover  { background-image: none; background-color: #BC8C3D; }
-    .btn-jilid[data-metode="aisar"]       { background-image: none; background-color: #7C9885; }
-    .btn-jilid[data-metode="aisar"]:hover { background-image: none; background-color: #67836F; }
+    .rs-empty  { font-size: 11px; color: var(--rs-sub); text-align: center; padding: 14px 0; }
+
+    /* Tombol "Tampilkan Halaman" mengikuti metode aktif (data-metode di-sync syncJilidUI) */
+    /* Warna = METODE_COLORS di Dashboard.jsx (iqro #FA902C, aisar #36A7DF) */
+    .btn-jilid                            { background-image: none; background-color: #FA902C; }
+    .btn-jilid[data-metode="iqro"]        { background-image: none; background-color: #FA902C; }
+    .btn-jilid[data-metode="iqro"]:hover  { background-image: none; background-color: #E57C17; }
+    .btn-jilid[data-metode="aisar"]       { background-image: none; background-color: #36A7DF; }
+    .btn-jilid[data-metode="aisar"]:hover { background-image: none; background-color: #2490C6; }
 </style>`;
 }
 
@@ -1004,7 +1060,7 @@ export default function InputSetoran(props) {
             })
         );
 
-         function applyMetodeForSantri(santriSelectId, metodeSelectId) {
+        function applyMetodeForSantri(santriSelectId, metodeSelectId) {
             const sSel = document.getElementById(santriSelectId);
             const mSel = document.getElementById(metodeSelectId);
             if (!sSel || !mSel) return;
@@ -1137,7 +1193,7 @@ export default function InputSetoran(props) {
 
         // ✅ Versi STABIL → browser boleh cache. Naikkan angka ini manual
         // setiap kali ada perubahan di file /public/js/*.js
-                const ASSET_VERSION = '2026-09-07-1';
+        const ASSET_VERSION = '2026-11-13-1';
         const all = [...ENGINE_SCRIPTS, PAGE_SCRIPT];
         let cancelled = false;
 

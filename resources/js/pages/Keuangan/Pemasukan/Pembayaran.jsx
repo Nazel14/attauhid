@@ -10,9 +10,10 @@ import InputError from '@/Components/InputError';
 import SearchableSelect from '@/Components/SearchableSelect';
 import { formatCurrency } from '@/Utils/formatCurrency';
 
-// Hanya tagihan yang memilih siswa terdaftar. Uang masuk (pendaftaran)
-// dibayar calon siswa yang belum tentu diterima → nama diisi manual.
-const PERLU_SISWA = ['tagihan'];
+// Tagihan (siswa TK) dan infaq Rumah Quran memilih siswa terdaftar. Uang masuk
+// (pendaftaran) dibayar calon siswa yang belum tentu diterima → nama
+// diisi manual. Daftar siswanya sudah disaring server per kategori.
+const PERLU_SISWA = ['tagihan', 'infaq_arahan'];
 
 // Label & placeholder isian nama manual per kategori.
 const NAMA_PIHAK = {
@@ -173,10 +174,10 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
     };
 
     const badgeStatus = (s) => ({
-        'draft':     'bg-stone-100 text-stone-600 ring-stone-200 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500',
+        'draft':     'bg-cream-200 text-stone-600 ring-cream-300 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500',
         'diperiksa': 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20',
         'disetujui': 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20',
-    }[s] || 'bg-stone-100 text-stone-600 ring-stone-200');
+    }[s] || 'bg-cream-200 text-stone-600 ring-cream-300');
 
     const langkahAktif = aktif ? LANGKAH.findIndex((s) => s.id === aktif.status_approval) : 0;
 
@@ -212,11 +213,11 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
     const thAksi = 'px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400';
 
     // Tinggi & radius seragam untuk semua kontrol filter.
-    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-600';
+    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600';
     // color-scheme ikut tema agar ikon kalender bawaan browser tidak silau di dark mode.
     const monthCls = `${fieldCls} pr-2 [color-scheme:light] dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60 hover:[&::-webkit-calendar-picker-indicator]:opacity-100`;
-    const selectCls = `${fieldCls} cursor-pointer appearance-none pr-9`;
-    const selectModal = 'mt-1.5 block w-full cursor-pointer appearance-none rounded-xl border-0 bg-white py-2.5 pl-4 pr-10 text-sm text-stone-800 shadow-sm ring-1 ring-stone-200 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-700';
+    const selectCls = `${fieldCls} cursor-pointer appearance-none pr-9 dark:[color-scheme:dark]`;
+    const selectModal = 'mt-1.5 block w-full cursor-pointer appearance-none rounded-xl border-0 bg-white py-2.5 pl-4 pr-10 text-sm text-stone-800 shadow-sm ring-1 ring-cream-300 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600 dark:[color-scheme:dark]';
 
     const ChevronBawah = ({ modal = false }) => (
         <svg className={`pointer-events-none absolute ${modal ? 'right-3.5 top-[calc(50%+3px)]' : 'right-3 top-1/2'} h-4 w-4 -translate-y-1/2 text-stone-400 dark:text-stone-500`}
@@ -246,7 +247,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
 
             {/* Hanya mobile: di desktop sidebar sudah menyediakan navigasi. */}
             <Link href={route('keuangan.dashboard')}
-                className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-stone-600 ring-1 ring-stone-200 transition hover:bg-cream-100 active:scale-95 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600 lg:hidden">
+                className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-stone-600 ring-1 ring-cream-300 transition hover:bg-cream-100 active:scale-95 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600 lg:hidden">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
@@ -255,7 +256,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
 
             <div className="mb-5 sm:mb-6">
                 <h1 className="text-lg font-bold text-stone-800 dark:text-cream-50 sm:text-xl">Pembayaran</h1>
-                <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Seluruh dana masuk — tagihan siswa, uang pangkal, koperasi, dan donasi.</p>
+                <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Seluruh dana masuk — tagihan siswa TK, infaq santri Rumah Quran, uang pangkal, koperasi, dan donasi.</p>
             </div>
 
             {/* Tab kategori: grid 2 kolom di mobile agar tidak terpotong. */}
@@ -265,14 +266,14 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                         className={`truncate rounded-xl px-3 py-2.5 text-xs font-medium transition sm:px-4 sm:text-sm ${
                             kategori === k
                                 ? 'bg-claude-500 text-white shadow-lg shadow-claude-500/25'
-                                : 'bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
+                                : 'bg-white text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
                         }`}>
                         {label}
                     </button>
                 ))}
             </div>
 
-            <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+            <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                 <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
                         <div className="relative sm:max-w-xs sm:flex-1">
@@ -316,7 +317,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                         const bisaUbah = item.status_approval === 'draft';
 
                         return (
-                            <div key={item.id} className={`overflow-hidden rounded-2xl ring-1 transition ${dipilih ? 'bg-claude-500/5 ring-claude-500/40' : 'ring-stone-200 dark:ring-coal-600'}`}>
+                            <div key={item.id} className={`overflow-hidden rounded-2xl ring-1 transition ${dipilih ? 'bg-claude-500/5 ring-claude-500/40' : 'ring-cream-300 dark:ring-coal-600'}`}>
                                 <div className="flex items-start justify-between gap-3 p-4">
                                     <div className="min-w-0">
                                         <p className="truncate text-sm font-semibold text-stone-800 dark:text-cream-100">
@@ -330,8 +331,8 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                                     <span className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-medium capitalize ring-1 ${badgeStatus(item.status_approval)}`}>{item.status_approval}</span>
                                 </div>
 
-                                <div className="grid grid-cols-2 border-t border-stone-100 dark:border-coal-600">
-                                    <div className="border-r border-stone-100 px-3 py-2.5 text-center dark:border-coal-600">
+                                <div className="grid grid-cols-2 border-t border-cream-200 dark:border-coal-600">
+                                    <div className="border-r border-cream-200 px-3 py-2.5 text-center dark:border-coal-600">
                                         <p className="mb-1 text-[10px] uppercase tracking-wider text-stone-400">Tanggal</p>
                                         <p className="text-xs font-medium text-stone-700 dark:text-stone-200">{tanggal(item.payment_date)}</p>
                                     </div>
@@ -341,7 +342,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                                     </div>
                                 </div>
 
-                                <div className="flex border-t border-stone-100 dark:border-coal-600">
+                                <div className="flex border-t border-cream-200 dark:border-coal-600">
                                     <button type="button" onClick={() => bukaDetail(item.id)}
                                         className={`flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition ${
                                             dipilih ? 'bg-claude-500 text-white' : 'text-claude-600 hover:bg-claude-500/10 dark:text-claude-300'
@@ -351,20 +352,20 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
 
                                     {bisaCetak && (
                                         <a href={route('keuangan.pemasukan.pembayaran.print', item.id)} target="_blank" rel="noreferrer"
-                                            className="flex flex-1 items-center justify-center gap-1.5 border-l border-stone-100 py-2.5 text-xs font-medium text-stone-600 transition hover:bg-cream-100 dark:border-coal-600 dark:text-stone-300 dark:hover:bg-coal-600">
+                                            className="flex flex-1 items-center justify-center gap-1.5 border-l border-cream-200 py-2.5 text-xs font-medium text-stone-600 transition hover:bg-cream-100 dark:border-coal-600 dark:text-stone-300 dark:hover:bg-coal-600">
                                             <IkonPrinter /> Kwitansi
                                         </a>
                                     )}
 
                                     {bisaUbah && can('pembayaran.edit') && (
                                         <button type="button" onClick={() => openEdit(item)}
-                                            className="flex flex-1 items-center justify-center border-l border-stone-100 py-2.5 text-xs font-medium text-stone-600 transition hover:bg-cream-100 dark:border-coal-600 dark:text-stone-300 dark:hover:bg-coal-600">
+                                            className="flex flex-1 items-center justify-center border-l border-cream-200 py-2.5 text-xs font-medium text-stone-600 transition hover:bg-cream-100 dark:border-coal-600 dark:text-stone-300 dark:hover:bg-coal-600">
                                             Ubah
                                         </button>
                                     )}
                                     {bisaUbah && can('pembayaran.hapus') && (
                                         <button type="button" onClick={() => { setPesanError(''); setDialog({ jenis: 'hapus', id: item.id }); }}
-                                            className="flex flex-1 items-center justify-center border-l border-stone-100 py-2.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-coal-600 dark:text-red-400 dark:hover:bg-red-500/10">
+                                            className="flex flex-1 items-center justify-center border-l border-cream-200 py-2.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-coal-600 dark:text-red-400 dark:hover:bg-red-500/10">
                                             Hapus
                                         </button>
                                     )}
@@ -372,26 +373,26 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                             </div>
                         );
                     }) : (
-                        <div className="rounded-2xl py-14 text-center text-sm text-stone-500 ring-1 ring-stone-200 dark:text-stone-400 dark:ring-coal-600">
+                        <div className="rounded-2xl py-14 text-center text-sm text-stone-500 ring-1 ring-cream-300 dark:text-stone-400 dark:ring-coal-600">
                             Belum ada data pada kategori ini.
                         </div>
                     )}
                 </div>
 
                 {/* ===== TABEL — DESKTOP ===== */}
-                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 lg:block">
-                    <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
-                        <thead className="bg-stone-50 dark:bg-coal-800">
+                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 lg:block">
+                    <table className="min-w-full divide-y divide-cream-300 dark:divide-coal-600">
+                        <thead className="bg-cream-100 dark:bg-coal-600/40">
                             <tr>
                                 <th onClick={() => handleSort('receipt_number')} className={thCls}><div className="flex items-center">No. Kwitansi <SortIcon field="receipt_number" /></div></th>
                                 <th onClick={() => handleSort('payment_date')} className={thCls}><div className="flex items-center">Tanggal <SortIcon field="payment_date" /></div></th>
-                                <th className={thPlain}>{PERLU_SISWA.includes(kategori) ? 'Siswa' : namaPihak(kategori).kolom}</th>
+                                <th className={thPlain}>{kategori === 'infaq_arahan' ? 'Santri' : PERLU_SISWA.includes(kategori) ? 'Siswa' : namaPihak(kategori).kolom}</th>
                                 <th onClick={() => handleSort('nominal')} className={thCls}><div className="flex items-center">Jumlah <SortIcon field="nominal" /></div></th>
                                 <th onClick={() => handleSort('status_approval')} className={thCls}><div className="flex items-center">Status <SortIcon field="status_approval" /></div></th>
                                 <th className={thAksi}>Aksi</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                        <tbody className="divide-y divide-cream-200 bg-white dark:divide-coal-600 dark:bg-coal-700">
                             {pembayaran?.data?.length > 0 ? pembayaran.data.map((item) => {
                                 const dipilih = terpilih === item.id;
                                 return (
@@ -425,7 +426,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                                                 {item.status_approval === 'disetujui' && can('pembayaran.cetak') && (
                                                     <a href={route('keuangan.pemasukan.pembayaran.print', item.id)} target="_blank" rel="noreferrer"
                                                         title={`Cetak kwitansi ${item.receipt_number}`}
-                                                        className={`${btnGhost} text-stone-600 ring-stone-200 hover:bg-cream-100 hover:text-stone-800 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
+                                                        className={`${btnGhost} text-stone-600 ring-cream-300 hover:bg-cream-100 hover:text-stone-800 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
                                                         <IkonPrinter /> Kwitansi
                                                     </a>
                                                 )}
@@ -434,7 +435,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                                                     <>
                                                         {can('pembayaran.edit') && (
                                                             <button type="button" onClick={() => openEdit(item)}
-                                                                className={`${btnGhost} text-stone-600 ring-stone-200 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
+                                                                className={`${btnGhost} text-stone-600 ring-cream-300 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
                                                                 Ubah
                                                             </button>
                                                         )}
@@ -462,7 +463,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                     <div className="flex flex-wrap justify-center gap-1">
                         {pembayaran.links.map((l, i) => (
                             <button key={i} onClick={() => l.url && router.get(l.url, {}, { preserveScroll: true })} disabled={!l.url}
-                                className={`rounded-lg px-3 py-1.5 text-sm transition ${l.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
+                                className={`rounded-lg px-3 py-1.5 text-sm transition ${l.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
                                 dangerouslySetInnerHTML={{ __html: l.label }} />
                         ))}
                     </div>
@@ -473,8 +474,8 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
 
             {aktif && (
                 <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
-                    <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
-                        <div className="mb-4 flex items-start justify-between gap-2 border-b border-stone-100 pb-3 dark:border-coal-600">
+                    <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
+                        <div className="mb-4 flex items-start justify-between gap-2 border-b border-cream-200 pb-3 dark:border-coal-600">
                             <h3 className="text-sm font-semibold text-stone-800 dark:text-cream-50">Detail Pembayaran</h3>
                             <button type="button" onClick={() => setTerpilih(null)} title="Tutup detail"
                                 className="-mt-1 flex h-7 w-7 items-center justify-center rounded-lg text-stone-400 transition hover:bg-cream-200 hover:text-stone-600 dark:hover:bg-coal-600 dark:hover:text-stone-300">
@@ -514,15 +515,15 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                             )}
                             {aktif.status_approval === 'disetujui' && can('pembayaran.cetak') && (
                                 <a href={route('keuangan.pemasukan.pembayaran.print', aktif.id)} target="_blank" rel="noreferrer"
-                                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-stone-700 ring-1 ring-stone-200 transition hover:bg-stone-50 dark:bg-coal-700 dark:text-cream-100 dark:ring-coal-600 dark:hover:bg-coal-600">
+                                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-stone-700 ring-1 ring-cream-300 transition hover:bg-cream-100 dark:bg-coal-700 dark:text-cream-100 dark:ring-coal-600 dark:hover:bg-coal-600">
                                     <IkonPrinter /> Cetak Kwitansi
                                 </a>
                             )}
                         </div>
                     </div>
 
-                    <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5 lg:col-span-2">
-                        <h3 className="mb-6 border-b border-stone-100 pb-3 text-sm font-semibold text-stone-800 dark:border-coal-600 dark:text-cream-50">Jalur Persetujuan</h3>
+                    <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5 lg:col-span-2">
+                        <h3 className="mb-6 border-b border-cream-200 pb-3 text-sm font-semibold text-stone-800 dark:border-coal-600 dark:text-cream-50">Jalur Persetujuan</h3>
 
                         {/* Lingkaran kini murni indikator — tidak bisa diklik.
                             Digulir horizontal di layar sempit, bukan dimampatkan. */}
@@ -538,7 +539,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                                                 <div className={`flex h-10 w-10 items-center justify-center rounded-full ring-2 ${
                                                     selesai ? 'bg-claude-500 text-white ring-claude-500'
                                                     : berikutnya ? 'bg-white text-claude-600 ring-claude-500 dark:bg-coal-700'
-                                                    : 'bg-stone-50 text-stone-400 ring-stone-200 dark:bg-coal-800 dark:ring-coal-600'
+                                                    : 'bg-cream-100 text-stone-400 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600'
                                                 }`}>
                                                     {selesai
                                                         ? <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -548,7 +549,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                                                 {selesai && pelaku(step.id)}
                                             </div>
                                             {i < LANGKAH.length - 1 && (
-                                                <div className={`mt-5 h-0.5 w-8 rounded sm:w-16 ${i < langkahAktif ? 'bg-claude-500' : 'bg-stone-200 dark:bg-coal-600'}`} />
+                                                <div className={`mt-5 h-0.5 w-8 rounded sm:w-16 ${i < langkahAktif ? 'bg-claude-500' : 'bg-cream-300 dark:bg-coal-600'}`} />
                                             )}
                                         </div>
                                     );
@@ -557,7 +558,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                         </div>
 
                         {/* Aksi persetujuan sebagai tombol eksplisit. */}
-                        <div className="mt-6 rounded-xl bg-cream-100 p-4 dark:bg-coal-900/50">
+                        <div className="mt-6 rounded-xl bg-cream-100 p-4 dark:bg-coal-600/40">
                             {!langkahBerikut ? (
                                 <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
                                     <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -619,16 +620,22 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                         </div>
 
                         {perluSiswa && (
-                            <div className={`grid grid-cols-1 gap-4 rounded-xl bg-stone-50 p-4 ring-1 ring-stone-200 dark:bg-coal-900/50 dark:ring-coal-600 ${data.kategori === 'tagihan' ? 'sm:grid-cols-2' : ''}`}>
+                            <div className={`grid grid-cols-1 gap-4 rounded-xl bg-cream-100 p-4 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600 ${data.kategori === 'tagihan' ? 'sm:grid-cols-2' : ''}`}>
                                 <div>
-                                    <InputLabel>Siswa <span className="text-red-500">*</span></InputLabel>
+                                    <InputLabel>{data.kategori === 'infaq_arahan' ? 'Santri Rumah Quran' : 'Siswa'} <span className="text-red-500">*</span></InputLabel>
                                     <div className="mt-1.5">
                                         <SearchableSelect placeholder="-- Cari nama atau NIS --" disabled={isEdit}
-                                            options={listSiswa?.map((s) => ({ id: s.id, label: `${s.nis} · ${s.name}` })) || []}
+                                            options={listSiswa?.map((s) => ({ id: s.id, label: s.nis ? `${s.nis} · ${s.name}` : s.name })) || []}
                                             value={data.student_id}
                                             onChange={(id) => { setData('student_id', id); setData('invoice_id', ''); setData('nominal', ''); }} />
                                     </div>
                                     <InputError message={errors.student_id} className="mt-1.5" />
+                                    {data.kategori === 'infaq_arahan' && (
+                                        <p className="mt-1.5 text-xs text-stone-400">
+                                            Infaq sukarela — nominal bebas, tidak terikat tagihan, dan tidak menimbulkan tunggakan.
+                                            {!isEdit && listSiswa?.length === 0 && ' Belum ada santri di kelas Rumah Quran; tandai kelasnya sebagai Rumah Quran di Data Kelas.'}
+                                        </p>
+                                    )}
                                 </div>
 
                                 {data.kategori === 'tagihan' && (
@@ -692,7 +699,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                         </div>
 
                         {data.payment_method === 'Transfer Bank' && (
-                            <div className="rounded-xl border-2 border-dashed border-stone-300 p-4 dark:border-coal-600">
+                            <div className="rounded-xl border-2 border-dashed border-cream-400 p-4 dark:border-coal-600">
                                 <InputLabel>Bukti Transfer <span className="text-red-500">*</span></InputLabel>
                                 <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf"
                                     onChange={(e) => setData('proof_of_payment', Array.from(e.target.files))}
@@ -718,8 +725,9 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                             <TextInput value={data.catatan} onChange={(e) => setData('catatan', e.target.value)}
                                 className="mt-1.5 block w-full"
                                 placeholder={{
-                                    koperasi:   'Contoh: Penjualan seragam olahraga',
-                                    uang_masuk: 'Contoh: Uang pendaftaran gelombang 1, TA 2027/2028',
+                                    koperasi:     'Contoh: Penjualan seragam olahraga',
+                                    infaq_arahan: 'Contoh: Infaq bulan November',
+                                    uang_masuk:   'Contoh: Uang pendaftaran gelombang 1, TA 2027/2028',
                                 }[data.kategori] || 'Keterangan tambahan…'} />
                             <InputError message={errors.catatan} className="mt-1.5" />
                         </div>
@@ -737,7 +745,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                     <h2 className="mb-4 text-base font-semibold text-stone-800 dark:text-cream-50">Bukti Pembayaran</h2>
                     <ul className="max-h-80 space-y-2 overflow-y-auto pr-1">
                         {aktif?.attachments?.map((f) => (
-                            <li key={f.id} className="flex items-center justify-between gap-3 rounded-xl bg-stone-50 p-3 dark:bg-coal-900/50">
+                            <li key={f.id} className="flex items-center justify-between gap-3 rounded-xl bg-cream-100 p-3 dark:bg-coal-600/40">
                                 <span className="truncate text-sm text-stone-700 dark:text-stone-200">{f.file_name}</span>
                                 <a href={f.url} target="_blank" rel="noreferrer"
                                     className="shrink-0 rounded-lg bg-claude-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-claude-600">Buka</a>

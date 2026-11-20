@@ -128,10 +128,10 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
     const thCls = 'cursor-pointer px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-stone-500 transition hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200';
     const thPlain = 'px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400';
 
-    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-600';
+    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600 dark:[color-scheme:dark]';
     const selectCls = `${fieldCls} cursor-pointer appearance-none pr-9`;
     // appearance-none + chevron sendiri: panah bawaan browser tidak mengikuti tema.
-    const selectModal = 'mt-1.5 block w-full cursor-pointer appearance-none rounded-xl border-0 bg-white py-2.5 pl-4 pr-10 text-sm text-stone-800 shadow-sm ring-1 ring-stone-200 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-700';
+    const selectModal = 'mt-1.5 block w-full cursor-pointer appearance-none rounded-xl border-0 bg-white py-2.5 pl-4 pr-10 text-sm text-stone-800 shadow-sm ring-1 ring-cream-300 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600 dark:[color-scheme:dark]';
 
     const ChevronBawah = ({ modal = false }) => (
         <svg className={`pointer-events-none absolute ${modal ? 'right-3.5 top-[calc(50%+3px)]' : 'right-3 top-1/2'} h-4 w-4 -translate-y-1/2 text-stone-400 dark:text-stone-500`}
@@ -160,7 +160,7 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
             {item.status === 'aktif' ? (
                 <span className="inline-flex shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20">Aktif</span>
             ) : (
-                <span className="inline-flex shrink-0 rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium capitalize text-stone-600 ring-1 ring-stone-200 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500">{item.status}</span>
+                <span className="inline-flex shrink-0 rounded-full bg-cream-200 px-2.5 py-1 text-xs font-medium capitalize text-stone-600 ring-1 ring-cream-300 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500">{item.status}</span>
             )}
             {item.is_raport_held && (
                 <span className="inline-flex shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20">Rapor Ditahan</span>
@@ -183,7 +183,7 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
             <Head title={judul} />
 
             <Link href={route('keuangan.master-data.siswa')}
-                className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-stone-600 ring-1 ring-stone-200 transition hover:bg-cream-100 active:scale-95 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600">
+                className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-stone-600 ring-1 ring-cream-300 transition hover:bg-cream-100 active:scale-95 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
@@ -208,7 +208,7 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
                 </p>
             </div>
 
-            <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+            <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                 <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
                         <div className="relative sm:max-w-xs sm:flex-1">
@@ -251,7 +251,7 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
                 {/* ===== KARTU — MOBILE & TABLET ===== */}
                 <div className="space-y-2.5 lg:hidden">
                     {siswa.data.length > 0 ? siswa.data.map((item) => (
-                        <div key={item.id} className="overflow-hidden rounded-2xl ring-1 ring-stone-200 dark:ring-coal-600">
+                        <div key={item.id} className="overflow-hidden rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600">
                             <div className="flex items-start justify-between gap-3 p-4">
                                 <div className="min-w-0">
                                     <p className="truncate text-sm font-semibold text-stone-800 dark:text-cream-100">{item.name}</p>
@@ -260,8 +260,8 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
                                 <BadgeStatus item={item} />
                             </div>
 
-                            <div className="grid grid-cols-2 border-t border-stone-100 dark:border-coal-600">
-                                <div className="border-r border-stone-100 px-3 py-2.5 text-center dark:border-coal-600">
+                            <div className="grid grid-cols-2 border-t border-cream-200 dark:border-coal-600">
+                                <div className="border-r border-cream-200 px-3 py-2.5 text-center dark:border-coal-600">
                                     <p className="mb-1 text-[10px] uppercase tracking-wider text-stone-400">Tipe</p>
                                     <p className="truncate text-xs font-medium text-claude-600 dark:text-claude-300">{item.student_type}</p>
                                 </div>
@@ -275,10 +275,10 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
                             </div>
 
                             {adaAksi && (
-                                <div className="grid grid-cols-2 border-t border-stone-100 dark:border-coal-600">
+                                <div className="grid grid-cols-2 border-t border-cream-200 dark:border-coal-600">
                                     {can('master.siswa.edit') && (
                                         <button onClick={() => openEditModal(item)}
-                                            className={`flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-claude-600 transition hover:bg-claude-500/10 dark:text-claude-300 ${can('master.siswa.hapus') ? 'border-r border-stone-100 dark:border-coal-600' : 'col-span-2'}`}>
+                                            className={`flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-claude-600 transition hover:bg-claude-500/10 dark:text-claude-300 ${can('master.siswa.hapus') ? 'border-r border-cream-200 dark:border-coal-600' : 'col-span-2'}`}>
                                             <IkonUbah />
                                             Ubah Data
                                         </button>
@@ -294,14 +294,14 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
                             )}
                         </div>
                     )) : (
-                        <div className="rounded-2xl py-14 text-center ring-1 ring-stone-200 dark:ring-coal-600">{kosong}</div>
+                        <div className="rounded-2xl py-14 text-center ring-1 ring-cream-300 dark:ring-coal-600">{kosong}</div>
                     )}
                 </div>
 
                 {/* ===== TABEL — DESKTOP ===== */}
-                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 lg:block">
-                    <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
-                        <thead className="bg-stone-50 dark:bg-coal-800">
+                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 lg:block">
+                    <table className="min-w-full divide-y divide-cream-300 dark:divide-coal-600">
+                        <thead className="bg-cream-100 dark:bg-coal-600/40">
                             <tr>
                                 <th onClick={() => handleSort('nis')} className={thCls}><div className="flex items-center">NIS <SortIcon field="nis" /></div></th>
                                 <th onClick={() => handleSort('name')} className={thCls}><div className="flex items-center">Nama Siswa <SortIcon field="name" /></div></th>
@@ -311,7 +311,7 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
                                 {adaAksi && <th className="px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Aksi</th>}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                        <tbody className="divide-y divide-cream-200 bg-white dark:divide-coal-600 dark:bg-coal-700">
                             {siswa.data.length > 0 ? siswa.data.map((item) => (
                                 <tr key={item.id} className="transition hover:bg-cream-50 dark:hover:bg-coal-600/40">
                                     <td className="whitespace-nowrap px-5 py-4 text-sm font-semibold text-stone-800 dark:text-cream-100">{item.nis}</td>
@@ -362,7 +362,7 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
                             <button key={i} onClick={() => link.url && router.get(link.url, {}, { preserveScroll: true })} disabled={!link.url}
                                 className={`rounded-lg px-3 py-1.5 text-sm transition ${
                                     link.active ? 'bg-claude-500 font-medium text-white'
-                                        : 'text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
+                                        : 'text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
                                 }`}
                                 dangerouslySetInnerHTML={{ __html: link.label }} />
                         ))}
@@ -425,7 +425,7 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
                                 <InputError message={errors.gender} className="mt-1.5" />
                             </div>
                             <div>
-                                <InputLabel htmlFor="status">Status Santri <span className="text-red-500">*</span></InputLabel>
+                                <InputLabel htmlFor="status">Status Siswa <span className="text-red-500">*</span></InputLabel>
                                 <div className="relative">
                                     <select id="status" value={data.status} onChange={(e) => setData('status', e.target.value)} className={selectModal}>
                                         <option value="aktif">Aktif</option>
@@ -474,10 +474,10 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
                             </div>
                         </div>
 
-                        <div className="border-t border-stone-100 pt-4 dark:border-coal-600">
+                        <div className="border-t border-cream-200 pt-4 dark:border-coal-600">
                             <label className="flex cursor-pointer items-center gap-2">
                                 <input type="checkbox" checked={data.is_raport_held} onChange={(e) => setData('is_raport_held', e.target.checked)}
-                                    className="h-4 w-4 rounded border-stone-300 text-amber-500 focus:ring-amber-500 dark:border-coal-600 dark:bg-coal-900" />
+                                    className="h-4 w-4 rounded border-cream-400 text-amber-500 focus:ring-amber-500 dark:border-coal-600 dark:bg-coal-600/40" />
                                 <span className="text-sm text-stone-600 dark:text-stone-300">Rapor Ditahan (ada tunggakan)</span>
                             </label>
                         </div>
@@ -490,9 +490,9 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
                 </form>
             </Modal>
 
-            {/* maxWidth md, bukan sm: pesan penolakan dari server panjang karena
-                menyebutkan jejak apa saja yang ditemukan dan menunjuk ke jalur
-                yang benar (ubah status, bukan hapus). */}
+            {/* maxWidth md, bukan sm: penjelasan di bawah menyebutkan dua
+                kemungkinan hasil sekaligus — arsip atau hapus permanen —
+                dan tidak muat di lebar sm. */}
             <Modal show={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} maxWidth="md">
                 <div className="p-6 text-center">
                     <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400">
@@ -511,11 +511,24 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
                             : 'Yakin menghapus siswa ini?'}
                     </p>
 
-                    <p className="mt-2 text-xs text-stone-400">
-                        Hanya untuk data yang salah diinput. Siswa yang sudah punya tagihan,
-                        pembayaran, setoran, atau presensi tidak bisa dihapus.
+                    {/* Dua kemungkinan hasil disebutkan dua-duanya, karena
+                        halaman ini tidak tahu siswa mana yang punya jejak —
+                        servernya yang memutuskan setelah tombol ditekan. */}
+                    <p className="mt-2 text-left text-xs leading-relaxed text-stone-400">
+                        Kalau siswa ini sudah punya tagihan, pembayaran, setoran, atau presensi,
+                        datanya <span className="font-medium text-stone-500 dark:text-stone-300">diarsipkan</span>:
+                        hilang dari daftar, tapi kwitansi dan laporan bulan-bulan sebelumnya tetap
+                        menampilkan namanya.
+                        <br /><br />
+                        Kalau belum punya jejak apa pun — biasanya karena salah input — datanya
+                        <span className="font-medium text-stone-500 dark:text-stone-300"> dihapus permanen</span> beserta
+                        akun loginnya, dan tidak bisa dikembalikan.
                     </p>
 
+                    {/* Dipertahankan meski destroy() yang baru tidak lagi menolak
+                        karena riwayat: penolakan lain tetap mungkin, misalnya
+                        permission yang dicabut di tengah sesi. Menghapusnya
+                        membuat kegagalan jadi senyap. */}
                     {deleteError && (
                         <div className="mt-4 rounded-xl bg-red-50 p-3 text-left text-sm text-red-600 ring-1 ring-red-200 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/20">
                             {deleteError}
@@ -526,6 +539,9 @@ export default function DetailSiswa({ kelas, kelasParam, siswa, listKelas, filte
                         <SecondaryButton onClick={() => setIsDeleteModalOpen(false)}>
                             {deleteError ? 'Tutup' : 'Batal'}
                         </SecondaryButton>
+                        {/* Tetap "Ya, Hapus", bukan "Ya, Arsipkan": halaman ini
+                            tidak tahu mana yang akan terjadi — servernya yang
+                            memutuskan setelah tombol ditekan. */}
                         {!deleteError && (
                             <button onClick={executeDelete}
                                 className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500">

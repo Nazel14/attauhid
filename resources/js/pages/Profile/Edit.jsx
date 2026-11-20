@@ -6,7 +6,7 @@ import SantriAuthenticatedLayout from '@/Layouts/SantriAuthenticatedLayout';
 import KeuanganLayout from '@/Layouts/KeuanganLayout';
 import LaporanModal from '@/Components/LaporanModal';
 
-const CARD = 'rounded-2xl bg-white dark:bg-[#262624] ring-1 ring-black/5 dark:ring-white/10 p-5 sm:p-6';
+const CARD = 'rounded-2xl bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 p-5 sm:p-6';
 const BTN_PRIMARY = 'inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-claude-500 to-claude-600 ' +
     'px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed';
 
@@ -34,7 +34,7 @@ const FlagBtn = ({ label, onClick }) => (
         type="button"
         onClick={onClick}
         title={`Laporkan kesalahan pada ${label}`}
-        className="flex-shrink-0 rounded-lg p-1.5 text-gray-400 transition hover:bg-claude-500/10 hover:text-claude-500 active:scale-90"
+        className="flex-shrink-0 rounded-lg p-1.5 text-stone-400 transition hover:bg-claude-500/10 hover:text-claude-500 active:scale-90"
     >
         <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v18M3 4.5h12.75l-2.25 3 2.25 3H3" />
@@ -60,7 +60,7 @@ function Toast({ notif, onClose, duration = 5000 }) {
         <>
             <div
                 key={notif.id}
-                className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-[300] overflow-hidden rounded-2xl border border-stone-200 dark:border-coal-700 bg-white/95 dark:bg-coal-800/95 shadow-2xl backdrop-blur-md"
+                className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-[300] overflow-hidden rounded-2xl border border-cream-300 dark:border-coal-600 bg-white/95 dark:bg-coal-700/95 shadow-2xl backdrop-blur-md"
                 style={{ animation: 'toastIn .3s cubic-bezier(.21,1.02,.73,1)' }}
                 role="alert"
             >
@@ -74,11 +74,11 @@ function Toast({ notif, onClose, duration = 5000 }) {
                         </p>
                         <p className="mt-0.5 break-words text-sm text-stone-600 dark:text-stone-300">{notif.message}</p>
                     </div>
-                    <button onClick={onClose} className="flex-shrink-0 rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-coal-700 dark:hover:text-stone-200 transition">
+                    <button onClick={onClose} className="flex-shrink-0 rounded-lg p-1 text-stone-400 hover:bg-cream-200 hover:text-stone-600 dark:hover:bg-coal-600 dark:hover:text-stone-200 transition">
                         <XIcon className="w-4 h-4" />
                     </button>
                 </div>
-                <div className="h-1 w-full bg-stone-200 dark:bg-coal-700">
+                <div className="h-1 w-full bg-cream-300 dark:bg-coal-700">
                     <div className={`h-full ${success ? 'bg-emerald-500' : 'bg-red-500'}`}
                         style={{ animation: `toastBar ${duration}ms linear forwards` }} />
                 </div>
@@ -96,10 +96,10 @@ function Toast({ notif, onClose, duration = 5000 }) {
 // jadi tak ada gunanya dikomplain.
 function InfoRow({ label, value, onLapor }) {
     return (
-        <div className="flex flex-col gap-1 border-b border-black/5 py-3 last:border-0 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">{label}</span>
+        <div className="flex flex-col gap-1 border-b border-cream-200 py-3 last:border-0 dark:border-coal-600 sm:flex-row sm:items-center sm:justify-between">
+            <span className="text-sm font-semibold text-stone-500 dark:text-stone-400">{label}</span>
             <div className="flex min-w-0 items-center gap-1.5">
-                <span className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">{value || '—'}</span>
+                <span className="truncate text-sm font-medium text-stone-900 dark:text-stone-100">{value || '—'}</span>
                 {onLapor && <FlagBtn label={label} onClick={onLapor} />}
             </div>
         </div>
@@ -192,7 +192,7 @@ export default function Edit({
                     </svg>
                 </div>
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Profil Saya</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100">Profil Saya</h1>
                     <span className="inline-flex rounded-full bg-claude-500/10 px-2.5 py-0.5 text-xs font-semibold text-claude-500">{roleLabel}</span>
                 </div>
             </div>
@@ -200,14 +200,14 @@ export default function Edit({
             {/* Foto Profil */}
             <div className={CARD}>
                 <div className="mb-4 flex items-center gap-1.5">
-                    <h2 className="text-base font-bold tracking-tight text-gray-900 dark:text-gray-100">Foto Profil</h2>
+                    <h2 className="text-base font-bold tracking-tight text-stone-900 dark:text-stone-100">Foto Profil</h2>
                     {bisaLapor && fotoLapor && (
                         <FlagBtn label="Foto Profil" onClick={() => setLapor(fotoLapor)} />
                     )}
                 </div>
                 <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
                     {photoSrc ? (
-                        <img src={photoSrc} alt={user.name} className="h-28 w-28 flex-shrink-0 rounded-full object-cover object-top ring-1 ring-black/10 dark:ring-white/10" />
+                        <img src={photoSrc} alt={user.name} className="h-28 w-28 flex-shrink-0 rounded-full object-cover object-top ring-1 ring-cream-300 dark:ring-coal-600" />
                     ) : (
                         <div className="flex h-28 w-28 flex-shrink-0 items-center justify-center rounded-full bg-claude-500/10 text-3xl font-bold text-claude-500">
                             {initials(user.name)}
@@ -215,8 +215,8 @@ export default function Edit({
                     )}
 
                     {!canManagePhoto ? (
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Foto profil santri diatur oleh admin atau guru pembimbing dan tidak dapat diubah sendiri.
+                        <p className="text-sm text-stone-500 dark:text-stone-400">
+                            Foto profil siswa diatur oleh admin atau guru pembimbing dan tidak dapat diubah sendiri.
                             Klik ikon bendera di atas bila fotonya keliru.
                         </p>
                     ) : !canUpdatePhoto ? (
@@ -231,7 +231,7 @@ export default function Edit({
                                 type="file"
                                 accept="image/jpeg,image/png,image/jpg"
                                 onChange={onPickFile}
-                                className="block w-full text-sm text-gray-600 dark:text-gray-300 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-claude-500/10 file:px-3.5 file:py-2 file:text-sm file:font-semibold file:text-claude-500 hover:file:bg-claude-500/20"
+                                className="block w-full text-sm text-stone-600 dark:text-stone-300 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-claude-500/10 file:px-3.5 file:py-2 file:text-sm file:font-semibold file:text-claude-500 hover:file:bg-claude-500/20"
                             />
                             {err(photoForm.errors.profile_photo)}
                             <div className="flex flex-wrap gap-2">
@@ -245,7 +245,7 @@ export default function Edit({
                                     </button>
                                 )}
                             </div>
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs text-stone-400">
                                 JPG/PNG, maks 2MB.{photoCooldownDays > 0 && ` Dapat diubah 1x per ${photoCooldownDays} hari.`}
                             </p>
                         </form>
@@ -256,8 +256,8 @@ export default function Edit({
             {/* Informasi Profil — read-only untuk semua role */}
             <div className={CARD}>
                 <div className="mb-2 flex items-center justify-between">
-                    <h2 className="text-base font-bold tracking-tight text-gray-900 dark:text-gray-100">Informasi Profil</h2>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-500/10 px-2.5 py-0.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    <h2 className="text-base font-bold tracking-tight text-stone-900 dark:text-stone-100">Informasi Profil</h2>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-stone-500/10 px-2.5 py-0.5 text-xs font-semibold text-stone-500 dark:text-stone-400">
                         <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
@@ -276,7 +276,7 @@ export default function Edit({
                     ))}
                 </div>
 
-                <p className="mt-3 text-xs text-gray-400">
+                <p className="mt-3 text-xs text-stone-400">
                     {isKeuangan
                         ? 'Data pegawai & hak akses dikelola melalui menu Master Data dan Pengaturan Sistem. Hubungi Super Admin bila ada kekeliruan.'
                         : isAdmin

@@ -46,7 +46,7 @@ export default function IndexRole({ roles, filters }) {
     const thPlain = 'px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400';
     const thAksi = 'px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400';
 
-    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-600';
+    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600';
     const btnGhost = 'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium ring-1 transition';
 
     const IkonEdit = () => (
@@ -72,7 +72,7 @@ export default function IndexRole({ roles, filters }) {
                 <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Kelompok peran pengguna beserta izin fitur yang dimilikinya.</p>
             </div>
 
-            <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+            <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="relative sm:max-w-sm sm:flex-1">
                         <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
@@ -95,13 +95,13 @@ export default function IndexRole({ roles, filters }) {
                 {/* Mobile: kartu — nama role bisa panjang dan terpotong di tabel. */}
                 <div className="space-y-3 sm:hidden">
                     {roles.data.length > 0 ? roles.data.map((item) => (
-                        <div key={item.id} className="rounded-xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-800/40 dark:ring-coal-600">
+                        <div key={item.id} className="rounded-xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600">
                             <div className="flex flex-wrap items-center gap-2">
                                 <span className="break-all text-sm font-semibold text-stone-800 dark:text-cream-100">{item.name}</span>
                                 {/* is_locked & is_super ditentukan backend lewat config
                                     modules.roles_terkunci — frontend tidak hardcode nama role. */}
                                 {item.is_locked && (
-                                    <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-stone-500 ring-1 ring-stone-200 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500">
+                                    <span className="rounded-full bg-cream-200 px-2 py-0.5 text-[10px] font-semibold text-stone-500 ring-1 ring-cream-300 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500">
                                         Bawaan sistem
                                     </span>
                                 )}
@@ -109,7 +109,7 @@ export default function IndexRole({ roles, filters }) {
 
                             <p className="mt-1.5 text-xs text-stone-400">{item.users_count} akun memakai role ini</p>
 
-                            <div className="mt-3 flex gap-2 border-t border-stone-100 pt-3 dark:border-coal-600">
+                            <div className="mt-3 flex gap-2 border-t border-cream-200 pt-3 dark:border-coal-600">
                                 {item.is_super ? (
                                     <span className="inline-flex flex-1 items-center justify-center gap-1.5 text-xs italic text-stone-400">
                                         <IkonGembok />
@@ -132,37 +132,37 @@ export default function IndexRole({ roles, filters }) {
                             </div>
                         </div>
                     )) : (
-                        <p className="rounded-xl bg-stone-50 py-10 text-center text-sm text-stone-500 dark:bg-coal-800 dark:text-stone-400">
+                        <p className="rounded-xl bg-cream-100 py-10 text-center text-sm text-stone-500 dark:bg-coal-600/40 dark:text-stone-400">
                             Tidak ada data role ditemukan.
                         </p>
                     )}
                 </div>
 
                 {/* Desktop: tabel. */}
-                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 sm:block">
-                    <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
-                        <thead className="bg-stone-50 dark:bg-coal-800">
+                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 sm:block">
+                    <table className="min-w-full divide-y divide-cream-300 dark:divide-coal-600">
+                        <thead className="bg-cream-100 dark:bg-coal-600/40">
                             <tr>
                                 <th className={thPlain}>Nama Peran</th>
                                 <th className={thPlain}>Total Pengguna</th>
                                 <th className={thAksi}>Aksi</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                        <tbody className="divide-y divide-cream-200 bg-white dark:divide-coal-600 dark:bg-coal-700">
                             {roles.data.length > 0 ? roles.data.map((item) => (
                                 <tr key={item.id} className="transition hover:bg-cream-50 dark:hover:bg-coal-600/40">
                                     <td className="px-5 py-4 text-sm">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <span className="font-semibold text-stone-800 dark:text-cream-100">{item.name}</span>
                                             {item.is_locked && (
-                                                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-stone-500 ring-1 ring-stone-200 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500">
+                                                <span className="rounded-full bg-cream-200 px-2 py-0.5 text-[10px] font-semibold text-stone-500 ring-1 ring-cream-300 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500">
                                                     Bawaan sistem
                                                 </span>
                                             )}
                                         </div>
                                     </td>
                                     <td className="whitespace-nowrap px-5 py-4 text-sm">
-                                        <span className="inline-flex rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600 ring-1 ring-stone-200 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500">
+                                        <span className="inline-flex rounded-full bg-cream-200 px-2.5 py-1 text-xs font-medium text-stone-600 ring-1 ring-cream-300 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500">
                                             {item.users_count} akun
                                         </span>
                                     </td>
@@ -202,7 +202,7 @@ export default function IndexRole({ roles, filters }) {
                     <div className="flex flex-wrap justify-center gap-1">
                         {roles.links.map((link, i) => (
                             <button key={i} onClick={() => link.url && router.get(link.url, {}, { preserveScroll: true })} disabled={!link.url}
-                                className={`rounded-lg px-3 py-1.5 text-sm transition ${link.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
+                                className={`rounded-lg px-3 py-1.5 text-sm transition ${link.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
                                 dangerouslySetInnerHTML={{ __html: link.label }} />
                         ))}
                     </div>

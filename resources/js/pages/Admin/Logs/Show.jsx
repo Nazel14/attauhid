@@ -17,12 +17,18 @@ const DocIcon = (p) => <I {...p} d={<path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5
 /* ============================================================
  * SHARED CLASSES
  * ============================================================ */
-const CARD = "bg-white dark:bg-coal-800 border border-stone-200 dark:border-coal-700 rounded-2xl p-4 shadow-sm dark:shadow-none";
+const CARD = "bg-white dark:bg-coal-700 border border-cream-300 dark:border-coal-600 rounded-2xl p-4 shadow-sm dark:shadow-none";
 const CARD_LABEL = "text-[10px] font-bold text-stone-500 dark:text-stone-600 uppercase tracking-wider mb-3";
 const CHIP = "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border";
-const DEFAULT_CHIP = "bg-stone-100 text-stone-600 border-stone-300 dark:bg-coal-700 dark:text-stone-500 dark:border-coal-600";
+const DEFAULT_CHIP = "bg-cream-200 text-stone-600 border-cream-400 dark:bg-coal-600 dark:text-stone-500 dark:border-coal-500";
 
 const ROLE_COLORS = {
+    'super-admin': 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800/30',
+    bendahara: 'bg-teal-100 text-teal-700 border-teal-300 dark:bg-teal-950/50 dark:text-teal-400 dark:border-teal-800/30',
+    'kepala-sekolah': 'bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-800/30',
+    'ketua-yayasan': 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-300 dark:bg-fuchsia-950/50 dark:text-fuchsia-400 dark:border-fuchsia-800/30',
+    'pihak-yayasan': 'bg-violet-100 text-violet-700 border-violet-300 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-800/30',
+    hrd: 'bg-sky-100 text-sky-700 border-sky-300 dark:bg-sky-950/50 dark:text-sky-400 dark:border-sky-800/30',
     admin: 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-950/50 dark:text-purple-400 dark:border-purple-800/30',
     guru: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800/30',
     santri: 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800/30',
@@ -37,7 +43,7 @@ const ACTIVITY_COLORS = {
     import: 'bg-cyan-100 text-cyan-700 border-cyan-300 dark:bg-cyan-950/50 dark:text-cyan-400 dark:border-cyan-800/30',
 };
 
-const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+const capitalize = (s) => (s ? String(s).split('-').map((k) => k.charAt(0).toUpperCase() + k.slice(1)).join(' ') : s);
 
 export default function Show({ log, canManage = false }) {
     const deleteLog = () => {
@@ -50,14 +56,9 @@ export default function Show({ log, canManage = false }) {
         <AuthenticatedLayout>
             <Head title="Detail Log Activity" />
 
-            <div className="max-w-5xl mx-auto px-3 sm:px-5 lg:px-8 py-6">
-                {/* Kembali — mobile saja */}
+            <div className="max-w-5xl mx-auto">
                 <Link href={route('admin.logs.index')}
-                    className="mb-4 sm:hidden inline-flex items-center gap-1.5 rounded-xl border border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-stone-100 dark:hover:bg-coal-700 active:scale-95">
-                    <ArrowLeftIcon className="w-4 h-4" /> Kembali ke Log Activity
-                </Link>
-                <Link href={route('admin.logs.index')}
-                    className="mb-4 hidden sm:inline-flex flex-shrink-0 items-center gap-1.5 rounded-xl border border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-stone-100 dark:hover:bg-coal-700 active:scale-95">
+                    className="mb-4 inline-flex items-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-semibold text-stone-600 shadow-sm transition hover:bg-cream-100 active:scale-95 dark:border-coal-600 dark:bg-coal-700 dark:text-stone-300 dark:hover:bg-coal-600">
                     <ArrowLeftIcon className="w-4 h-4" /> Kembali ke Log Activity
                 </Link>
 
@@ -104,14 +105,14 @@ export default function Show({ log, canManage = false }) {
                     <div className={CARD}>
                         <p className={CARD_LABEL}>Informasi Jaringan</p>
                         <p className="text-[11px] text-stone-500 mb-1.5">IP Address</p>
-                        <code className="text-sm font-mono font-bold text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-coal-900 border border-stone-200 dark:border-coal-700 px-3 py-1.5 rounded-lg inline-block">{log.ip_address ?? 'N/A'}</code>
+                        <code className="text-sm font-mono font-bold text-stone-700 dark:text-stone-300 bg-cream-200 dark:bg-coal-800 border border-cream-300 dark:border-coal-600 px-3 py-1.5 rounded-lg inline-block">{log.ip_address ?? 'N/A'}</code>
                     </div>
                 </div>
 
                 {/* ===== DESCRIPTION ===== */}
                 <div className={`${CARD} mb-4`}>
                     <p className={CARD_LABEL}>Deskripsi Aktivitas</p>
-                    <div className="bg-stone-50 dark:bg-coal-900/50 border border-stone-200 dark:border-coal-700/50 rounded-xl px-4 py-3">
+                    <div className="bg-cream-100 dark:bg-coal-800/50 border border-cream-300 dark:border-coal-600/50 rounded-xl px-4 py-3">
                         <p className="text-sm text-stone-700 dark:text-stone-300 leading-relaxed">{log.description}</p>
                     </div>
                 </div>
@@ -120,7 +121,7 @@ export default function Show({ log, canManage = false }) {
                 {log.user_agent && (
                     <div className={`${CARD} mb-4`}>
                         <p className={CARD_LABEL}>Device & Browser</p>
-                        <div className="bg-stone-50 dark:bg-coal-900/50 border border-stone-200 dark:border-coal-700/50 rounded-xl px-4 py-3">
+                        <div className="bg-cream-100 dark:bg-coal-800/50 border border-cream-300 dark:border-coal-600/50 rounded-xl px-4 py-3">
                             <p className="text-xs font-mono text-stone-500 dark:text-stone-400 break-all">{log.user_agent}</p>
                         </div>
                     </div>
@@ -153,11 +154,11 @@ export default function Show({ log, canManage = false }) {
                     <div className={CARD}>
                         <p className={CARD_LABEL}>Informasi Database</p>
                         <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-stone-50 dark:bg-coal-900/50 border border-stone-200 dark:border-coal-700/50 rounded-xl px-4 py-3">
+                            <div className="bg-cream-100 dark:bg-coal-800/50 border border-cream-300 dark:border-coal-600/50 rounded-xl px-4 py-3">
                                 <p className="text-[10px] text-stone-500 dark:text-stone-600 mb-1">Model Type</p>
                                 <p className="text-sm font-mono font-bold text-stone-700 dark:text-stone-300">{log.model_type_short}</p>
                             </div>
-                            <div className="bg-stone-50 dark:bg-coal-900/50 border border-stone-200 dark:border-coal-700/50 rounded-xl px-4 py-3">
+                            <div className="bg-cream-100 dark:bg-coal-800/50 border border-cream-300 dark:border-coal-600/50 rounded-xl px-4 py-3">
                                 <p className="text-[10px] text-stone-500 dark:text-stone-600 mb-1">Model ID</p>
                                 <p className="text-sm font-mono font-bold text-stone-700 dark:text-stone-300">{log.model_id}</p>
                             </div>

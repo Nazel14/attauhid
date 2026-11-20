@@ -52,22 +52,18 @@ export default function KelasSantri({ kelas, santriList = [], tanggalMulai, tang
     const query = `?tanggal_mulai=${tanggalMulai}&tanggal_akhir=${tanggalAkhir}&period=${period}`;
 
     const total = santriList.length;
-    const ikhwan = santriList.filter((s) => s.gender === 'Laki-laki').length;
-    const akhwat = santriList.filter((s) => s.gender === 'Perempuan').length;
+    const lakiLaki = santriList.filter((s) => s.gender === 'Laki-laki').length;
+    const perempuan = santriList.filter((s) => s.gender === 'Perempuan').length;
 
     return (
         <AuthenticatedLayout>
             <Head title={`Monitoring - ${kelas.name}`} />
 
-            <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 py-6">
+            <div>
 
-                {/* Kembali — mobile & desktop */}
+                {/* Satu tombol untuk semua ukuran layar. */}
                 <Link href={route('admin.monitoring.index')}
-                    className="mb-4 sm:hidden inline-flex items-center gap-1.5 rounded-xl border border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-stone-100 dark:hover:bg-coal-700 active:scale-95">
-                    <ArrowLeftIcon className="w-4 h-4" /> Kembali ke Monitoring
-                </Link>
-                <Link href={route('admin.monitoring.index')}
-                    className="mb-4 hidden sm:inline-flex flex-shrink-0 items-center gap-1.5 rounded-xl border border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-stone-100 dark:hover:bg-coal-700 active:scale-95">
+                    className="mb-4 inline-flex items-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-semibold text-stone-600 shadow-sm transition hover:bg-cream-100 active:scale-95 dark:border-coal-600 dark:bg-coal-700 dark:text-stone-300 dark:hover:bg-coal-600">
                     <ArrowLeftIcon className="w-4 h-4" /> Kembali ke Monitoring
                 </Link>
 
@@ -89,17 +85,17 @@ export default function KelasSantri({ kelas, santriList = [], tanggalMulai, tang
 
                 {/* ===== SUMMARY STATS ===== */}
                 <div className="grid grid-cols-3 gap-3 mb-5">
-                    <div className="bg-white dark:bg-coal-800 border border-stone-200 dark:border-coal-700 rounded-2xl px-4 py-4 text-center shadow-sm dark:shadow-none">
-                        <p className="text-[11px] text-stone-500 mb-1">Total Santri</p>
+                    <div className="bg-white dark:bg-coal-700 border border-cream-300 dark:border-coal-600 rounded-2xl px-4 py-4 text-center shadow-sm dark:shadow-none">
+                        <p className="text-[11px] text-stone-500 mb-1">Total Siswa</p>
                         <p className="text-2xl font-black text-stone-900 dark:text-stone-100">{total}</p>
                     </div>
-                    <div className="bg-white dark:bg-coal-800 border border-blue-200 dark:border-blue-800/30 rounded-2xl px-4 py-4 text-center shadow-sm dark:shadow-none">
-                        <p className="text-[11px] text-stone-500 mb-1">Ikhwan</p>
-                        <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{ikhwan}</p>
+                    <div className="bg-white dark:bg-coal-700 border border-blue-200 dark:border-blue-800/30 rounded-2xl px-4 py-4 text-center shadow-sm dark:shadow-none">
+                        <p className="text-[11px] text-stone-500 mb-1">Laki-laki</p>
+                        <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{lakiLaki}</p>
                     </div>
-                    <div className="bg-white dark:bg-coal-800 border border-pink-200 dark:border-pink-800/30 rounded-2xl px-4 py-4 text-center shadow-sm dark:shadow-none">
-                        <p className="text-[11px] text-stone-500 mb-1">Akhwat</p>
-                        <p className="text-2xl font-black text-pink-600 dark:text-pink-400">{akhwat}</p>
+                    <div className="bg-white dark:bg-coal-700 border border-pink-200 dark:border-pink-800/30 rounded-2xl px-4 py-4 text-center shadow-sm dark:shadow-none">
+                        <p className="text-[11px] text-stone-500 mb-1">Perempuan</p>
+                        <p className="text-2xl font-black text-pink-600 dark:text-pink-400">{perempuan}</p>
                     </div>
                 </div>
 
@@ -136,7 +132,7 @@ export default function KelasSantri({ kelas, santriList = [], tanggalMulai, tang
                                             className="flex-shrink-0 px-2.5 py-1.5 bg-claude-600 hover:bg-claude-500 text-white text-xs font-bold rounded-lg transition">Detail</Link>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <div className="flex-1 bg-stone-200 dark:bg-coal-700 rounded-full h-1.5">
+                                        <div className="flex-1 bg-cream-300 dark:bg-coal-600 rounded-full h-1.5">
                                             <div className={`h-1.5 rounded-full transition-all ${progressBarColor(pct)}`} style={{ width: `${pct}%` }} />
                                         </div>
                                         <span className={`text-[11px] font-bold flex-shrink-0 ${progressTextColor(pct)}`}>{pct.toFixed(0)}%</span>
@@ -183,15 +179,15 @@ export default function KelasSantri({ kelas, santriList = [], tanggalMulai, tang
                                         </td>
                                         <td className="px-5 py-3.5 text-center">
                                             {isPerempuan ? (
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border bg-pink-100 text-pink-700 border-pink-300 dark:bg-pink-950/50 dark:text-pink-400 dark:border-pink-800/30">Akhwat</span>
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border bg-pink-100 text-pink-700 border-pink-300 dark:bg-pink-950/50 dark:text-pink-400 dark:border-pink-800/30">Perempuan</span>
                                             ) : (
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800/30">Ikhwan</span>
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800/30">Laki-laki</span>
                                             )}
                                         </td>
                                         <td className="px-5 py-3.5 text-center"><TargetChip s={s} /></td>
                                         <td className="px-5 py-3.5">
                                             <div className="flex items-center gap-2 justify-center">
-                                                <div className="w-20 bg-stone-200 dark:bg-coal-700 rounded-full h-1.5">
+                                                <div className="w-20 bg-cream-300 dark:bg-coal-600 rounded-full h-1.5">
                                                     <div className={`h-1.5 rounded-full ${progressBarColor(pct)}`} style={{ width: `${pct}%` }} />
                                                 </div>
                                                 <span className={`text-xs font-bold ${progressTextColor(pct)}`}>{pct.toFixed(0)}%</span>

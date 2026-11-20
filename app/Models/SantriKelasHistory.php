@@ -30,9 +30,14 @@ class SantriKelasHistory extends Model
     // RELASI
     // =====================================================
 
+    /**
+     * withTrashed: riwayat kelas dipakai saat mencetak rapor tahun-tahun
+     * sebelumnya. Santri yang sudah diarsipkan tetap harus terbaca namanya
+     * di sana, karena rapornya adalah dokumen historis.
+     */
     public function santri(): BelongsTo
     {
-        return $this->belongsTo(Santri::class);
+        return $this->belongsTo(Santri::class)->withTrashed();
     }
 
     public function kelas(): BelongsTo

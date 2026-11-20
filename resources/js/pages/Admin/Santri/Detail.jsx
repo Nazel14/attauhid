@@ -359,7 +359,7 @@ export default function Detail({
             <Head title={`Santri ${kelas.name}`} />
             <Toast notif={notif} onClose={() => setNotif(null)} duration={NOTIF_DURATION} />
 
-            <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 py-6">
+            <div>
 
                 {/* ===== KEMBALI ===== */}
                 <Link href={route('admin.santris.index')}
@@ -378,8 +378,12 @@ export default function Detail({
                             Guru: <span className="text-claude-600 dark:text-claude-400 font-semibold">{kelas.guru?.name ?? 'Belum ada guru'}</span>
                             {' · '}
                             Total: <span className="text-claude-600 dark:text-claude-400 font-semibold">{santris?.total ?? list.length} santri</span>
-                            {kelas.gender_restriction && kelas.gender_restriction !== 'campur' && (
-                                <> · Khusus {kelas.gender_restriction === 'ikhwan' ? 'Ikhwan' : 'Akhwat'}</>
+                            {/* 'campuran', bukan 'campur'. Salah satu huruf saja
+                                membuat kelas campuran ikut diberi label "Khusus
+                                Akhwat", karena nilainya lolos syarat lalu jatuh
+                                ke cabang terakhir. */}
+                            {kelas.gender_restriction && kelas.gender_restriction !== 'campuran' && (
+                                <> · Khusus {kelas.gender_restriction === 'ikhwan' ? 'Laki-laki' : 'Perempuan'}</>
                             )}
                         </p>
                     </div>
@@ -475,7 +479,7 @@ export default function Detail({
                                 <div className="grid grid-cols-2 border-t border-stone-100 dark:border-coal-700">
                                     <div className="px-3 py-2.5 text-center border-r border-stone-100 dark:border-coal-700">
                                         <p className="text-[10px] text-stone-400 mb-1">Gender</p>
-                                        <p className={`text-xs font-bold ${isPerempuan ? 'text-pink-500 dark:text-pink-400' : 'text-blue-500 dark:text-blue-400'}`}>{isPerempuan ? 'Akhwat' : 'Ikhwan'}</p>
+                                        <p className={`text-xs font-bold ${isPerempuan ? 'text-pink-500 dark:text-pink-400' : 'text-blue-500 dark:text-blue-400'}`}>{isPerempuan ? 'Perempuan' : 'Laki-laki'}</p>
                                     </div>
                                     <div className="px-3 py-2.5 text-center">
                                         <p className="text-[10px] text-stone-400 mb-1">Target</p>
@@ -551,7 +555,7 @@ export default function Detail({
                                         </td>
                                         <td className="px-4 py-3">
                                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${isPerempuan ? 'bg-pink-50 text-pink-700 border-pink-200/70 dark:bg-pink-500/10 dark:text-pink-400 dark:border-pink-500/20' : 'bg-blue-50 text-blue-700 border-blue-200/70 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20'}`}>
-                                                {isPerempuan ? 'Akhwat' : 'Ikhwan'}
+                                                {isPerempuan ? 'Perempuan' : 'Laki-laki'}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3">
@@ -616,8 +620,8 @@ export default function Detail({
                         <div>
                             <label className={LBL}>Jenis Kelamin <span className="text-red-500">*</span></label>
                             <select value={santriForm.data.gender} onChange={(e) => santriForm.setData('gender', e.target.value)} required className={INP}>
-                                <option value="L">Laki-laki (Ikhwan)</option>
-                                <option value="P">Perempuan (Akhwat)</option>
+                                <option value="L">Laki-laki</option>
+                                <option value="P">Perempuan</option>
                             </select>
                             {err(santriForm.errors.gender)}
                         </div>
@@ -691,7 +695,7 @@ export default function Detail({
                         <div>
                             <label className={LBL}>Kelas</label>
                             <input type="text" value={kelas.name} readOnly
-                                className={`${INP} bg-stone-100 dark:bg-coal-800 text-stone-500 dark:text-stone-400 cursor-not-allowed`} />
+                                className={`${INP} bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400 cursor-not-allowed`} />
                             <p className="text-[10px] text-stone-400 dark:text-stone-600 mt-1">
                                 Terisi {kelas.santris_count ?? 0} dari {kelas.kapasitas ?? '-'} santri.
                             </p>
@@ -876,8 +880,8 @@ export default function Detail({
                     padding-right:2.25rem;
                 }
                 html.dark select{color-scheme:dark}
-                html.dark select option{background:#292623;color:#f5f5f4}
-                input[type="checkbox"]{accent-color:#D97757}
+                html.dark select option{background:#323730;color:#F6F7F2}
+                input[type="checkbox"]{accent-color:#7EB842}
                 @keyframes slideUp{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
                 @media(min-width:640px){@keyframes slideUp{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}}
             `}</style>

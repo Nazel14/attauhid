@@ -70,7 +70,7 @@ export default function FormRole({ role, rolePermissions, groupedPermissions }) 
 
     const totalDipilih = data.permissions.length;
 
-    const checkboxCls = 'h-4 w-4 rounded border-stone-300 bg-white text-claude-500 transition focus:ring-2 focus:ring-claude-500 focus:ring-offset-0 disabled:opacity-40 dark:border-coal-500 dark:bg-coal-900';
+    const checkboxCls = 'h-4 w-4 rounded border-cream-400 bg-white text-claude-500 transition focus:ring-2 focus:ring-claude-500 focus:ring-offset-0 disabled:opacity-40 dark:border-coal-500 dark:bg-coal-600/40';
 
     return (
         <KeuanganLayout>
@@ -87,7 +87,7 @@ export default function FormRole({ role, rolePermissions, groupedPermissions }) 
                 </div>
 
                 <Link href={route('keuangan.pengaturan.role.index')}
-                    className="hidden h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-medium text-stone-700 ring-1 ring-stone-200 transition hover:bg-stone-50 sm:inline-flex dark:bg-coal-700 dark:text-cream-100 dark:ring-coal-600 dark:hover:bg-coal-600">
+                    className="hidden h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-medium text-stone-700 ring-1 ring-cream-300 transition hover:bg-cream-100 sm:inline-flex dark:bg-coal-700 dark:text-cream-100 dark:ring-coal-600 dark:hover:bg-coal-600">
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                     </svg>
@@ -96,7 +96,7 @@ export default function FormRole({ role, rolePermissions, groupedPermissions }) 
             </div>
 
             <form onSubmit={submit} className="space-y-5">
-                <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+                <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                     <h2 className="text-base font-semibold text-stone-800 dark:text-cream-50">Informasi Peran</h2>
                     <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Tanda <span className="text-red-500">*</span> berarti wajib diisi.</p>
 
@@ -116,8 +116,8 @@ export default function FormRole({ role, rolePermissions, groupedPermissions }) 
                     </div>
                 </div>
 
-                <div className="rounded-2xl bg-white p-5 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
-                    <div className="flex flex-col gap-2 border-b border-stone-100 pb-5 dark:border-coal-600 sm:flex-row sm:items-start sm:justify-between">
+                <div className="rounded-2xl bg-white p-5 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+                    <div className="flex flex-col gap-2 border-b border-cream-200 pb-5 dark:border-coal-600 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                             <h2 className="text-base font-semibold text-stone-800 dark:text-cream-50">Konfigurasi Hak Akses</h2>
                             <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Centang izin fitur yang boleh diakses peran ini.</p>
@@ -135,8 +135,8 @@ export default function FormRole({ role, rolePermissions, groupedPermissions }) 
                             const jumlahAktif = perms.filter((p) => data.permissions.includes(p.name)).length;
 
                             return (
-                                <div key={groupName} className="flex flex-col overflow-hidden rounded-xl ring-1 ring-stone-200 transition hover:ring-claude-500/30 dark:ring-coal-600">
-                                    <div className="flex items-center justify-between gap-2 border-b border-stone-100 bg-stone-50 px-4 py-3 dark:border-coal-600 dark:bg-coal-800">
+                                <div key={groupName} className="flex flex-col overflow-hidden rounded-xl ring-1 ring-cream-300 transition hover:ring-claude-500/30 dark:ring-coal-600">
+                                    <div className="flex items-center justify-between gap-2 border-b border-cream-200 bg-cream-100 px-4 py-3 dark:border-coal-600 dark:bg-coal-600/40">
                                         <div className="min-w-0">
                                             <h3 className="truncate text-sm font-semibold text-stone-800 dark:text-cream-100">{groupName}</h3>
                                             <p className="text-[10px] text-stone-400">{jumlahAktif} dari {perms.length}</p>
@@ -175,9 +175,9 @@ export default function FormRole({ role, rolePermissions, groupedPermissions }) 
 
                     {/* flex-col-reverse: di mobile tombol simpan naik ke atas
                         dan melebar penuh agar mudah dijangkau ibu jari. */}
-                    <div className="mt-6 flex flex-col-reverse gap-2 border-t border-stone-100 pt-5 dark:border-coal-600 sm:flex-row sm:items-center sm:justify-end">
+                    <div className="mt-6 flex flex-col-reverse gap-2 border-t border-cream-200 pt-5 dark:border-coal-600 sm:flex-row sm:items-center sm:justify-end">
                         <Link href={route('keuangan.pengaturan.role.index')}
-                            className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-stone-700 ring-1 ring-stone-200 transition hover:bg-stone-50 dark:bg-coal-700 dark:text-cream-100 dark:ring-coal-600 dark:hover:bg-coal-600">
+                            className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-stone-700 ring-1 ring-cream-300 transition hover:bg-cream-100 dark:bg-coal-700 dark:text-cream-100 dark:ring-coal-600 dark:hover:bg-coal-600">
                             Batal
                         </Link>
                         <PrimaryButton type="submit" disabled={processing || isSuper} className="justify-center">

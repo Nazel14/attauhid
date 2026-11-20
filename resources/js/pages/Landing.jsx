@@ -1,19 +1,39 @@
 import { useEffect, useRef, useState } from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 
 /* =====================================================================
- * KONTAK — ganti satu tempat ini saja, dipakai di dua tombol.
+ * LANDING TK ATTAUHID
+ * ---------------------------------------------------------------------
+ * ATURAN ISI: seluruh teks di halaman ini berasal dari dokumen
+ * "Profil TK Attauhid". Tidak ada kalimat karangan, tidak ada ayat
+ * tambahan, tidak ada tanya jawab rekaan. Yang membacanya orang tua
+ * calon murid, dan mereka akan menganggap setiap kalimat di sini sebagai
+ * pernyataan resmi sekolah.
+ *
+ * Kalau menambah bagian baru, pastikan sumbernya ada di profil. Kalau
+ * tidak ada, minta teksnya ke sekolah — jangan ditulis sendiri.
+ *
+ * WARNA diambil dari piksel berkas logo asli, didefinisikan sekali di
+ * blok :root pada <style> di bawah.
+ *
+ * CATATAN TEKNIS: warna TIDAK ditulis sebagai kelas Tailwind dinamis
+ * (bg-[${warna}]) karena Tailwind memindai kelas sebagai teks statis;
+ * kelas yang dirakit saat runtime tidak akan pernah ikut ter-build.
  * ===================================================================== */
-const KONTAK_WA = 'https://wa.me/6281220497013';
-const KONTAK_LABEL = 'Hubungi via WhatsApp';
 
-/* =====================================================================
- * IKON
- * Semua komponen ikon WAJIB dideklarasikan di atas array data di bawah.
- * Kalau dipindah ke bawah, FITUR_* yang mereferensikannya kena
- * ReferenceError (temporal dead zone) saat modul dimuat.
- * ===================================================================== */
-const Svg = ({ children, className = 'h-4 w-4' }) => (
+/* Semua dari halaman "Identitas" di profil. */
+const KONTAK_WA = 'https://wa.me/6285117199886';
+const KONTAK_WA_TAMPIL = '0851-1719-9886';
+const KONTAK_EMAIL = 'sekolahattauhid@gmail.com';
+const NIB = '0811240021433';
+const YAYASAN = 'Yayasan Islam Lembang At-Tauhid';
+const ALAMAT = 'Jalan Sukamaju Barat, RT 03/13, Kampung Sukamaju, Desa Kayuambon, Kecamatan Lembang, Kabupaten Bandung Barat';
+const ALAMAT_MAPS = 'https://www.google.com/maps/search/?api=1&query=Sekolah+Attauhid+Kayuambon+Lembang+Bandung+Barat';
+
+/* ===================== IKON =====================
+   Dideklarasikan di atas array data. Kalau dipindah ke bawah, array
+   yang mereferensikannya kena ReferenceError saat modul dimuat. */
+const Svg = ({ children, className = 'h-5 w-5' }) => (
     <svg className={className} fill="none" stroke="currentColor" strokeWidth="1.75" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
         {children}
     </svg>
@@ -34,55 +54,54 @@ const ArrowIcon = (p) => (
         <path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
     </Svg>
 );
-const MicIcon = (p) => (
-    <Svg {...p}>
-        <path d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" />
-        <path d="M19 11a7 7 0 01-14 0M12 18v3" />
-    </Svg>
-);
-const CalendarCheckIcon = (p) => (
-    <Svg {...p}>
-        <rect x="3.5" y="5" width="17" height="16" rx="2" />
-        <path d="M8 3v4M16 3v4M3.5 10h17M9 15l2 2 4-4" />
-    </Svg>
-);
-const FileTextIcon = (p) => (
-    <Svg {...p}>
-        <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" />
-        <path d="M14 3v5h5M9 13h6M9 17h6" />
-    </Svg>
-);
-const ChartIcon = (p) => (
-    <Svg {...p}>
-        <path d="M4 20V10M10 20V4M16 20v-7M4 20h16" />
-    </Svg>
-);
 const BookOpenIcon = (p) => (
     <Svg {...p}>
         <path d="M12 6.5a5.2 5.2 0 00-3.5-1.3c-1.2 0-2.4.4-3.3 1.1a.75.75 0 00-.2.5v10.6c0 .6.6 1 1.1.7a4.5 4.5 0 012.4-.6c1.4 0 2.6.5 3.5 1.4m0-12.4a5.2 5.2 0 013.5-1.3c1.2 0 2.4.4 3.3 1.1a.75.75 0 01.2.5v10.6c0 .6-.6 1-1.1.7a4.5 4.5 0 00-2.4-.6c-1.4 0-2.6.5-3.5 1.4m0-12.4v12.4" />
     </Svg>
 );
-const CoinsIcon = (p) => (
+const HeartIcon = (p) => (
     <Svg {...p}>
-        <ellipse cx="12" cy="6" rx="7" ry="3" />
-        <path d="M5 6v12c0 1.66 3.13 3 7 3s7-1.34 7-3V6M5 12c0 1.66 3.13 3 7 3s7-1.34 7-3" />
+        <path d="M12 20s-7-4.4-7-9.2A4.2 4.2 0 0112 8a4.2 4.2 0 017 2.8c0 4.8-7 9.2-7 9.2z" />
     </Svg>
 );
-const ReceiptIcon = (p) => (
+const QuranIcon = (p) => (
     <Svg {...p}>
-        <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z" />
-        <path d="M9 8h6M9 12h6" />
+        <path d="M5 4.5h11a2 2 0 012 2V20a2 2 0 00-2-2H5V4.5z" />
+        <path d="M5 4.5A1.5 1.5 0 003.5 6v13A1.5 1.5 0 005 20.5" />
+        <path d="M9 9h5M9 12.5h5" />
     </Svg>
 );
-const UsersIcon = (p) => (
+const LeafIcon = (p) => (
     <Svg {...p}>
-        <circle cx="9" cy="8" r="3.25" />
-        <path d="M2.5 20a6.5 6.5 0 0113 0M15.5 6.5a3.25 3.25 0 010 6.3M18 20a6.5 6.5 0 00-4-5.98" />
+        <path d="M4 20c0-7 5-12 16-12 0 8-5 12-11 12H4z" />
+        <path d="M4 20c3-5 7-7 11-8" />
     </Svg>
 );
-const TrendingUpIcon = (p) => (
+const BusIcon = (p) => (
     <Svg {...p}>
-        <path d="M3 17l6-6 4 4 8-8M15 7h6v6" />
+        <rect x="3.5" y="4.5" width="17" height="12" rx="2" />
+        <path d="M3.5 11h17M7 20v-3M17 20v-3M7.5 14h.01M16.5 14h.01" />
+    </Svg>
+);
+const StarIcon = (p) => (
+    <Svg {...p}>
+        <path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.9 6.7 19.7l1.1-5.9L3.5 9.7l5.9-.8L12 3.5z" />
+    </Svg>
+);
+const AbcIcon = (p) => (
+    <Svg {...p}>
+        <path d="M3 17l3-9 3 9M4 14h4M13 8h2.5a2 2 0 010 4H13V8zm0 4h3a2 2 0 010 4h-3v-4zM21 9.5A2.5 2.5 0 0019 8.5a2.5 2.5 0 000 7 2.5 2.5 0 002-1" />
+    </Svg>
+);
+const NumberIcon = (p) => (
+    <Svg {...p}>
+        <path d="M9 4L7 20M17 4l-2 16M4 9h16M3 15h16" />
+    </Svg>
+);
+const FlaskIcon = (p) => (
+    <Svg {...p}>
+        <path d="M9.5 3v6.2L4.8 17a2 2 0 001.7 3h11a2 2 0 001.7-3l-4.7-7.8V3" />
+        <path d="M8.5 3h7M7.4 14h9.2" />
     </Svg>
 );
 const CheckIcon = (p) => (
@@ -90,159 +109,131 @@ const CheckIcon = (p) => (
         <path d="M5 12.5l5 5L19 6.5" />
     </Svg>
 );
-const ShieldIcon = (p) => (
+const PinIcon = (p) => (
     <Svg {...p}>
-        <path d="M12 3l7.5 3v5.5c0 4.4-3 8.4-7.5 9.5-4.5-1.1-7.5-5.1-7.5-9.5V6L12 3z" />
-        <path d="M9.25 12l1.9 1.9 3.6-3.8" />
+        <path d="M12 21s7-5.6 7-11a7 7 0 10-14 0c0 5.4 7 11 7 11z" />
+        <circle cx="12" cy="10" r="2.5" />
+    </Svg>
+);
+const WaIcon = (p) => (
+    <Svg {...p}>
+        <path d="M21 11.5a8.5 8.5 0 01-12.6 7.4L3.5 20.5l1.7-4.8A8.5 8.5 0 1121 11.5z" />
+        <path d="M8.8 9.2c.3 2.6 3.4 5.7 6 6l1-1.6-2-1.1-1 .9c-.9-.5-1.6-1.2-2.1-2.1l.9-1-1.1-2-1.7 1z" />
+    </Svg>
+);
+const MailIcon = (p) => (
+    <Svg {...p}>
+        <rect x="3" y="5.5" width="18" height="13" rx="2" />
+        <path d="M3.5 7l8.5 6 8.5-6" />
+    </Svg>
+);
+const IdIcon = (p) => (
+    <Svg {...p}>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <circle cx="9" cy="11" r="2" />
+        <path d="M5.5 16.5c.6-1.5 2-2.3 3.5-2.3s2.9.8 3.5 2.3M15 10h4M15 13.5h4" />
     </Svg>
 );
 
-/* =====================================================================
- * DATA TAMPILAN
- * ===================================================================== */
+/* ===================== DATA =====================
+   Urutan dan rumusan mengikuti halaman "Program Sekolah" di profil. */
 
-/* Angka Arab-Timur untuk nomor juz di kartu mutaba'ah — huruf yang
-   dipakai santri sehari-hari di mushaf, bukan angka Latin. */
-const ANGKA_ARAB = '٠١٢٣٤٥٦٧٨٩';
-const keArab = (n) => String(n).replace(/\d/g, (d) => ANGKA_ARAB[Number(d)]);
-
-/* Contoh santri yang berputar di kartu hero. Data karangan untuk
-   ilustrasi — struktur field-nya sengaja sama dengan data asli. */
-const CONTOH_SANTRI = [
-    { nama: 'Ahmad Fauzi', kelas: 'Kelas 8B', juz: 12, halaman: 7, potongan: 'Al-Baqarah 141–145', jenis: 'Hafalan' },
-    { nama: 'Siti Aisyah', kelas: 'Kelas 7A', juz: 5, halaman: 3, potongan: 'An-Nisa 12–15', jenis: "Muroja'ah" },
-    { nama: 'Muhammad Rizki', kelas: 'Kelas 9A', juz: 23, halaman: 15, potongan: 'Yasin 1–12', jenis: 'Hafalan' },
-    { nama: 'Fatimah Zahra', kelas: 'Kelas 7C', juz: 2, halaman: 11, potongan: 'Al-Baqarah 80–84', jenis: 'Tilawah' },
-];
-
-/* Warna status = kosakata yang sama dengan di dalam aplikasi. */
-const WARNA_JENIS = {
-    Hafalan: 'bg-emerald-500/10 text-emerald-700 ring-emerald-500/20 dark:text-emerald-300',
-    "Muroja'ah": 'bg-blue-500/10 text-blue-700 ring-blue-500/20 dark:text-blue-300',
-    Tilawah: 'bg-purple-500/10 text-purple-700 ring-purple-500/20 dark:text-purple-300',
-};
-
-/* Alur ini urutan sungguhan di dalam sistem, bukan penomoran hiasan. */
-const ALUR_TAHFIZH = [
-    { judul: 'Guru buka kelas', teks: 'Presensi hari itu dicatat lebih dulu, jadi setoran selalu menempel pada kehadiran.' },
-    { judul: 'Santri setor', teks: 'Guru menilai per halaman: hafalan baru, muroja\u2019ah, atau tilawah, plus catatan tajwid.' },
-    { judul: 'Progres terakumulasi', teks: 'Setoran otomatis menambah peta juz santri — tanpa rekap ulang di buku.' },
-    { judul: 'Rapor keluar', teks: 'Akhir semester, rekap hafalan dan presensi tersusun jadi rapor PDF siap cetak.' },
-];
-
-const ALUR_KEUANGAN = [
-    { judul: 'Diajukan', teks: 'Bendahara membuat tagihan santri atau mengajukan pengeluaran dari pos RKAS.' },
-    { judul: 'Diperiksa', teks: 'Kepala sekolah memeriksa kesesuaian pengajuan dengan anggaran yang sudah disahkan.' },
-    { judul: 'Disetujui', teks: 'Ketua yayasan memberi persetujuan akhir. Setiap tahap tercatat siapa dan kapan.' },
-    { judul: 'Dilaporkan', teks: 'Dana cair, LPJ masuk, dan angkanya langsung muncul di buku kas dan realisasi RKAS.' },
-];
-
-const FITUR_TAHFIZH = [
-    {
-        icon: MicIcon,
-        judul: 'Setoran hafalan',
-        teks: 'Catat setoran per halaman langsung dari kelas, lengkap dengan jenis setoran dan catatan tajwid.',
-    },
-    {
-        icon: CalendarCheckIcon,
-        judul: 'Presensi harian',
-        teks: 'Kehadiran tercatat per kelas per hari, siap dipakai wali kelas maupun laporan ke orang tua.',
-    },
-    {
-        icon: FileTextIcon,
-        judul: 'Rapor PDF',
-        teks: 'Rekap satu semester tersusun otomatis jadi rapor siap cetak, tanpa menyalin ulang dari buku.',
-    },
-    {
-        icon: ChartIcon,
-        judul: 'Pantau semua kelas',
-        teks: 'Kepala sekolah melihat progres tiap kelas dari satu layar, tanpa menanyai wali kelas satu per satu.',
-    },
+const PROGRAM = [
     {
         icon: BookOpenIcon,
-        judul: 'Kurikulum Aisar',
-        teks: 'Lima jilid metode Aisar tersedia dalam bentuk halaman digital, dari pengenalan huruf sampai tajwid dan waqaf.',
+        warna: 'hijau',
+        judul: 'Kurikulum',
+        teks: 'Kurikulum TK Attauhid disusun melalui integrasi Kurikulum Merdeka dengan kurikulum khas TK At-Tauhid, sehingga pembelajaran tetap mengacu pada capaian perkembangan anak usia dini sekaligus menguatkan pembiasaan tauhid, adab, tahsin, tahfizh, dan karakter Islami.',
     },
     {
-        icon: UsersIcon,
-        judul: 'Panel untuk santri',
-        teks: 'Santri punya akun sendiri untuk melihat riwayat setoran dan capaian juznya.',
+        icon: HeartIcon,
+        warna: 'oranye',
+        judul: 'Tauhid Value',
+        teks: 'Implementasi tauhid di setiap pembelajaran.',
+    },
+    {
+        icon: LeafIcon,
+        warna: 'hijau',
+        judul: 'Petualang Cilik',
+        teks: 'Menjelajahi alam sekitar sekolah.',
+    },
+    {
+        icon: BusIcon,
+        warna: 'oranye',
+        judul: 'Kunjungan Edukasi',
+        teks: 'Mengunjungi suatu tempat untuk memberikan edukasi secara langsung.',
+    },
+    {
+        icon: QuranIcon,
+        warna: 'biru',
+        judul: 'QURBA',
+        /* Kepanjangan akronim persis seperti di profil. Dirender sebagai
+           chip supaya kartunya tidak jauh lebih tinggi dari tetangganya. */
+        rincian: [
+            ['Q', 'Quran (belajar baca)'],
+            ['U', 'Untaian do’a'],
+            ['R', 'Rutinitas ibadah'],
+            ['B', 'Biasakan adab'],
+            ['A', 'Akrab dengan Al-Qur’an (hafalan)'],
+        ],
     },
 ];
 
-const FITUR_KEUANGAN = [
+const CAPAIAN = [
     {
-        icon: CoinsIcon,
-        judul: 'RKAS & realisasi',
-        teks: 'Susun anggaran per pos, lalu pantau serapannya berjalan — bukan baru ketahuan selisih di akhir tahun.',
+        icon: StarIcon,
+        warna: 'oranye',
+        judul: 'Nilai Agama dan Budi Pekerti',
+        teks: 'Anak mengenal Allah sebagai Rabb, Al-Khaliq, dan Ar-Raziq; hafal rukun Islam, rukun iman, doa harian, dan juz ’amma sesuai jenjang; serta terbiasa dengan adab Islami dalam keseharian.',
     },
     {
-        icon: ReceiptIcon,
-        judul: 'Tagihan & pembayaran',
-        teks: 'SPP, uang masuk, koperasi, dan donatur masuk satu alur. Kwitansi bisa dicetak satuan atau massal.',
+        icon: AbcIcon,
+        warna: 'biru',
+        judul: 'Dasar-Dasar Literasi',
+        teks: 'Anak mengenal huruf hijaiyah dan mulai membaca Iqra’ sesuai tingkatan individual, serta mengenal huruf latin sebagai jalur literasi yang berjalan beriringan.',
     },
     {
-        icon: UsersIcon,
-        judul: 'Penggajian',
-        teks: 'Gaji dihitung dari kehadiran plus komponen tunjangan dan potongan. Slip gaji tinggal cetak.',
+        icon: NumberIcon,
+        warna: 'hijau',
+        judul: 'Dasar-Dasar Matematika',
+        teks: 'Anak mengenal bilangan, berhitung, bentuk, dan pola sederhana dalam konteks kegiatan sehari-hari.',
     },
     {
-        icon: TrendingUpIcon,
-        judul: 'Laporan siap audit',
-        teks: 'Buku kas umum, daftar tunggakan, dan realisasi RKAS tersedia kapan saja, bukan hanya saat diminta yayasan.',
-    },
-    {
-        icon: ShieldIcon,
-        judul: 'Persetujuan berjenjang',
-        teks: 'Pengeluaran melewati pemeriksaan dan persetujuan. Riwayat siapa menyetujui apa tersimpan permanen.',
-    },
-    {
-        icon: FileTextIcon,
-        judul: 'Dokumen resmi',
-        teks: 'Kwitansi, slip gaji, dan buku kas keluar sebagai PDF berkop pesantren, siap diarsipkan.',
+        icon: FlaskIcon,
+        warna: 'biru',
+        judul: 'Dasar-Dasar Sains dan Teknologi',
+        teks: 'Anak mengamati gejala alam sebagai bentuk tafakur terhadap ciptaan Allah, serta mengenal teknologi sederhana di lingkungan sekitarnya.',
     },
 ];
 
-const PERAN = [
-    { nama: 'Admin', teks: 'Kelola santri, guru, kelas, dan tahun ajaran.' },
-    { nama: 'Guru', teks: 'Catat setoran dan presensi kelas binaannya.' },
-    { nama: 'Santri', teks: 'Lihat riwayat setoran dan capaian hafalan.' },
-    { nama: 'Bendahara', teks: 'Buat tagihan, catat pembayaran, ajukan pengeluaran.' },
-    { nama: 'Kepala sekolah', teks: 'Pantau progres kelas dan periksa pengajuan dana.' },
-    { nama: 'Ketua yayasan', teks: 'Beri persetujuan akhir dan baca laporan keuangan.' },
-    { nama: 'Pihak yayasan', teks: 'Memantau laporan keuangan dan realisasi anggaran yayasan.' },
-    { nama: 'HRD', teks: 'Mengelola data pegawai dan proses penggajian.' },
+const VISI = 'Terwujudnya pendidikan anak usia dini yang Berkarakter Islami, Mandiri, dan Peduli terhadap lingkungan.';
+
+const MISI = [
+    'Memfasilitasi kegiatan belajar mengajar untuk mengembangkan karakter islami sesuai dengan manhaj salaf, melalui kegiatan pembiasaan.',
+    'Menanamkan pembentukan perilaku kemandirian, kepemimpinan, rasa tanggung jawab, kerjasama dan adaptabilitas melalui kegiatan pembiasaan dan kegiatan bermain yang menyenangkan.',
+    'Menanamkan jiwa peduli lingkungan, melalui kegiatan pembelajaran menyenangkan dan bermakna bagi anak.',
 ];
 
-const TANYA_JAWAB = [
-    {
-        tanya: 'Data santri kami sudah ada di Excel. Perlu diketik ulang?',
-        jawab: 'Tidak. Data santri, guru, dan kelas bisa diimpor dari file Excel. Formatnya kami siapkan mengikuti kolom yang sudah Anda punya.',
-    },
-    {
-        tanya: 'Apakah harus beli dua modul sekaligus?',
-        jawab: 'Tidak. Modul Tahfizh dan modul Keuangan bisa dibeli terpisah. Modul yang tidak dibeli tidak akan muncul sama sekali di sistem, termasuk di halaman login.',
-    },
-    {
-        tanya: 'Guru kami belum terbiasa dengan aplikasi.',
-        jawab: 'Tampilan guru sengaja dibuat sesederhana mungkin: pilih kelas, pilih santri, catat setoran. Bisa dibuka dari HP, dan kami dampingi saat pelatihan awal.',
-    },
-    {
-        tanya: 'Data pesantren kami disimpan di mana?',
-        jawab: 'Di server dan domain milik pesantren Anda sendiri. Anda memegang penuh basis datanya, termasuk kalau suatu saat ingin memindahkannya.',
-    },
+const FASILITAS = [
+    'Ruang kelas A dan B',
+    'Kantor guru laki-laki dan perempuan terpisah',
+    'Ruang tamu',
+    'Lapangan',
+    'Arena bermain',
+    'Mini aviary',
+    'Kamar mandi laki-laki dan perempuan terpisah',
 ];
 
-/* =====================================================================
- * HALAMAN
- * ===================================================================== */
+const PENDIDIK = [
+    { nama: 'Arel Hibatullah Ridwan, A.Md., S.Pd.', peran: 'Direktur Pendidikan' },
+    { nama: 'Martha Amelia Gaha, S.Pd., Gr.', peran: 'Kepala Sekolah' },
+    { nama: 'Lya Nurannisa, S.Pd.', peran: 'Tenaga Pendidik' },
+    { nama: 'Octaviany Diyarizky, SKM.', peran: 'Tenaga Pendidik' },
+    { nama: 'Nida Latifah', peran: 'Tenaga Kependidikan' },
+];
+
+/* ===================== HALAMAN ===================== */
 export default function Landing() {
-    const { modules = {} } = usePage().props;
-    const tampilTahfizh = modules.raport !== false;
-    const tampilKeuangan = !!modules.keuangan;
-    const duaModul = tampilTahfizh && tampilKeuangan;
-
-    /* ===== Hormati prefers-reduced-motion ===== */
     const [reduced, setReduced] = useState(false);
     useEffect(() => {
         const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -252,7 +243,8 @@ export default function Landing() {
         return () => mq.removeEventListener('change', handler);
     }, []);
 
-    /* ===== Dark mode — pola sama dengan Login.jsx ===== */
+    /* Pola dark mode sama dengan Login.jsx supaya pilihan tema ikut
+       terbawa saat pengunjung masuk ke sistem. */
     const [dark, setDark] = useState(() => {
         if (typeof window === 'undefined') return false;
         return localStorage.getItem('theme') === 'dark';
@@ -270,82 +262,124 @@ export default function Landing() {
         });
     };
 
-    /* ===== Kartu mutaba'ah berputar ===== */
-    const [idx, setIdx] = useState(0);
-    useEffect(() => {
-        if (reduced) return;
-        const t = setInterval(() => setIdx((i) => (i + 1) % CONTOH_SANTRI.length), 5200);
-        return () => clearInterval(t);
-    }, [reduced]);
-    const santri = CONTOH_SANTRI[idx];
-
-    const judulHero = duaModul ? (
-        <>
-            Hafalan santri dan kas pesantren,
-            <br className="hidden sm:block" /> tercatat di satu tempat.
-        </>
-    ) : tampilKeuangan ? (
-        <>Setiap rupiah pesantren, tercatat sampai jadi laporan.</>
-    ) : (
-        <>Setiap setoran santri, tercatat sampai jadi rapor.</>
-    );
-
-    const subHero = duaModul
-        ? 'Guru mencatat setoran dan presensi dari kelas. Bendahara mengurus tagihan, pengeluaran, dan gaji. Keduanya berjalan di satu sistem, dengan panel yang terpisah untuk tiap peran.'
-        : tampilKeuangan
-          ? 'RKAS, tagihan santri, penggajian, dan laporan kas berjalan dalam satu alur persetujuan yang jelas — dari pengajuan sampai dana cair.'
-          : 'Guru mencatat setoran dan presensi langsung dari kelas. Progres juz terkumpul sendiri, dan rapor semester keluar sebagai PDF siap cetak.';
-
     return (
         <>
-            <Head title="Beranda">
+            <Head title="TK Attauhid — Mendidik dengan Tauhid">
+                <meta
+                    name="description"
+                    content="TK Attauhid — lembaga pendidikan anak usia dini di Lembang, Bandung Barat, di bawah Yayasan Islam Lembang At-Tauhid."
+                />
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
                 <link
-                    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Amiri:wght@400;700&display=swap"
+                    href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap"
                     rel="stylesheet"
                 />
             </Head>
 
-            <div className="relative min-h-screen overflow-x-hidden bg-[#ece5db] text-stone-800 dark:bg-[#242019] dark:text-stone-200">
-                {/* Ambient — mengikuti pola Login.jsx */}
+            <style>{`
+                :root {
+                    /* Diambil langsung dari piksel berkas logo asli. */
+                    --tq-hijau: #7EB842;
+                    --tq-oranye: #FA902C;
+                    --tq-biru: #36A7DF;
+
+                    --tq-hijau-gelap: #6EA039;
+                    --tq-oranye-gelap: #DA7D26;
+                }
+
+                /* ---------------------------------------------------------
+                   PALET MODE GELAP — empat nilai ini dipakai berulang lewat
+                   kelas dark:bg-[...] dan dark:border-[...] di bawah. Kalau
+                   masih terasa terlalu gelap atau terlalu terang, cari-ganti
+                   keempatnya; jangan ubah satu-satu, karena yang membuat
+                   kartu terbaca bukan terangnya melainkan SELISIH antara
+                   latar halaman dan permukaan kartu.
+
+                     #282C25  latar halaman, dan panel cekung di dalam kartu
+                     #353B31  permukaan kartu   (selisih ~13 dari latar)
+                     #3B4235  garis antar bagian
+                     #474E40  garis tepi kartu
+                   --------------------------------------------------------- */
+                .tq-judul { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
+                .tq-teks  { font-family: 'Nunito', system-ui, sans-serif; }
+
+                .tq-btn-oranye {
+                    background: var(--tq-oranye);
+                    color: #fff;
+                    transition: background-color .18s ease, transform .18s ease;
+                }
+                .tq-btn-oranye:hover { background: var(--tq-oranye-gelap); }
+                .tq-btn-oranye:active { transform: scale(.985); }
+
+                .tq-btn-hijau {
+                    background: var(--tq-hijau);
+                    color: #fff;
+                    transition: background-color .18s ease, transform .18s ease;
+                }
+                .tq-btn-hijau:hover { background: var(--tq-hijau-gelap); }
+                .tq-btn-hijau:active { transform: scale(.985); }
+
+                .tq-link-nav { transition: color .18s ease; }
+                .tq-link-nav:hover { color: var(--tq-hijau); }
+
+                .tq-kartu { transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease; }
+                .tq-kartu:hover { transform: translateY(-3px); box-shadow: 0 18px 38px -22px rgba(60,80,40,.45); }
+
+                .tq-ikon-hijau  { background: rgba(126,184,66,.14); color: var(--tq-hijau); }
+                .tq-ikon-oranye { background: rgba(250,144,44,.14); color: var(--tq-oranye); }
+                .tq-ikon-biru   { background: rgba(54,167,223,.14); color: var(--tq-biru); }
+
+                .tq-garis-hijau  { background: var(--tq-hijau); }
+                .tq-garis-oranye { background: var(--tq-oranye); }
+                .tq-garis-biru   { background: var(--tq-biru); }
+            `}</style>
+
+            <div className="tq-teks relative min-h-screen overflow-x-hidden bg-[#F6F7F2] text-stone-700 dark:bg-[#282C25] dark:text-stone-300">
+                {/* Latar lembut — tiga warna logo, sangat tipis */}
                 <div
                     className="pointer-events-none absolute inset-0 z-0 dark:hidden"
                     style={{
                         background:
-                            'radial-gradient(circle at 15% 4%, rgba(120,113,108,0.08), transparent 40%), radial-gradient(circle at 88% 22%, rgba(217,119,87,0.07), transparent 44%)',
+                            'radial-gradient(circle at 12% 2%, rgba(126,184,66,.16), transparent 42%), radial-gradient(circle at 92% 14%, rgba(54,167,223,.14), transparent 44%), radial-gradient(circle at 70% 92%, rgba(250,144,44,.12), transparent 46%)',
                     }}
                 />
                 <div
                     className="pointer-events-none absolute inset-0 z-0 hidden dark:block"
-                    style={{ background: 'linear-gradient(180deg, #2b2723 0%, #262220 45%, #211d19 100%)' }}
+                    style={{
+                        background:
+                            'radial-gradient(circle at 12% 2%, rgba(126,184,66,.14), transparent 42%), radial-gradient(circle at 92% 14%, rgba(54,167,223,.12), transparent 44%)',
+                    }}
                 />
 
                 {/* ============ NAV ============ */}
-                <header className="sticky top-0 z-30 border-b border-stone-200/60 bg-[#ece5db]/85 backdrop-blur-md dark:border-[#3a352f] dark:bg-[#242019]/85">
+                <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-[#F6F7F2]/90 backdrop-blur-md dark:border-[#3B4235] dark:bg-[#282C25]/90">
                     <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5 sm:px-6">
                         <div className="flex min-w-0 items-center gap-2.5">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white p-1.5 shadow-sm ring-1 ring-stone-200 dark:bg-[#3d3833] dark:ring-white/10">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-stone-200 dark:bg-[#353B31] dark:ring-white/10">
+                                {/* Ganti ke /logo-attauhid.svg setelah berkasnya
+                                    disalin ke public/. */}
                                 <img src="/favicon.ico" alt="" className="h-full w-full" style={{ objectFit: 'contain' }} />
                             </div>
-                            <span className="truncate text-[13px] font-bold tracking-tight text-stone-800 dark:text-stone-100">
-                                Sistem Management Tahfizh
-                            </span>
+                            <div className="min-w-0 leading-tight">
+                                <p className="tq-judul truncate text-[15px] font-bold text-stone-800 dark:text-stone-100">TK Attauhid</p>
+                                <p className="truncate text-[11px] text-stone-500 dark:text-stone-400">Mendidik dengan Tauhid</p>
+                            </div>
                         </div>
 
                         <nav className="hidden items-center gap-6 md:flex">
-                            <a href="#modul" className="text-[13px] font-medium text-stone-600 transition hover:text-claude-600 dark:text-stone-400 dark:hover:text-claude-300">
-                                Modul
-                            </a>
-                            <a href="#peran" className="text-[13px] font-medium text-stone-600 transition hover:text-claude-600 dark:text-stone-400 dark:hover:text-claude-300">
-                                Peran
-                            </a>
-                            <a href="#paket" className="text-[13px] font-medium text-stone-600 transition hover:text-claude-600 dark:text-stone-400 dark:hover:text-claude-300">
-                                Paket
-                            </a>
-                            <a href="#tanya" className="text-[13px] font-medium text-stone-600 transition hover:text-claude-600 dark:text-stone-400 dark:hover:text-claude-300">
-                                Tanya jawab
-                            </a>
+                            {[
+                                ['#program', 'Program'],
+                                ['#capaian', 'Capaian'],
+                                ['#visi', 'Visi & Misi'],
+                                ['#pendidik', 'Pendidik'],
+                                ['#fasilitas', 'Fasilitas'],
+                                ['#kontak', 'Kontak'],
+                            ].map(([href, label]) => (
+                                <a key={href} href={href} className="tq-link-nav text-[13px] font-semibold text-stone-600 dark:text-stone-400">
+                                    {label}
+                                </a>
+                            ))}
                         </nav>
 
                         <div className="flex shrink-0 items-center gap-2">
@@ -353,110 +387,154 @@ export default function Landing() {
                                 type="button"
                                 onClick={toggleTheme}
                                 aria-label={dark ? 'Aktifkan mode terang' : 'Aktifkan mode gelap'}
-                                className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-200 bg-white/80 text-stone-500 shadow-sm transition hover:border-claude-400/50 hover:text-claude-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-claude-500 dark:border-[#413b35] dark:bg-[#34302b]/90 dark:text-stone-300"
+                                className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-200 bg-white/80 text-stone-500 shadow-sm transition hover:text-stone-700 focus:outline-none focus-visible:ring-2 dark:border-[#474E40] dark:bg-[#353B31]/90 dark:text-stone-300"
                             >
                                 {dark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
                             </button>
-                            <Link
-                                href={route('login')}
-                                className="rounded-xl bg-gradient-to-b from-claude-500 to-claude-600 px-4 py-2 text-[13px] font-bold text-white shadow-md shadow-claude-500/25 transition hover:from-claude-500 hover:to-claude-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-claude-500 focus-visible:ring-offset-2 active:scale-[0.99] dark:focus-visible:ring-offset-[#242019]"
+                            <a
+                                href={KONTAK_WA}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="tq-btn-oranye tq-judul rounded-xl px-4 py-2 text-[13px] font-bold shadow-md focus:outline-none focus-visible:ring-2"
                             >
-                                Masuk
-                            </Link>
+                                Hubungi
+                            </a>
                         </div>
                     </div>
                 </header>
 
-                {/* ============ HERO ============ */}
-                <section className="relative z-10 mx-auto grid max-w-6xl gap-12 px-5 pb-20 pt-12 sm:px-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-center lg:gap-16 lg:pt-20">
+                {/* ============ HERO — dari halaman "Pengantar" ============ */}
+                <section className="relative z-10 mx-auto grid max-w-6xl gap-12 px-5 pb-16 pt-12 sm:px-6 lg:grid-cols-[1.05fr,0.95fr] lg:items-center lg:gap-14 lg:pt-20">
                     <div>
-                        <Eyebrow arab="التحفيظ" latin={duaModul ? 'Tahfizh & keuangan pesantren' : tampilKeuangan ? 'Keuangan pesantren' : 'Tahfizh pesantren'} />
+                        <Eyebrow latin="Lembaga pendidikan anak usia dini · Lembang, Bandung Barat" />
 
-                        <h1
-                            className="mt-5 text-[2.1rem] font-semibold leading-[1.12] tracking-tight text-stone-900 dark:text-stone-50 sm:text-[2.9rem]"
-                            style={{ fontFamily: "'Fraunces', serif" }}
-                        >
-                            {judulHero}
+                        <h1 className="tq-judul mt-5 text-[2.2rem] font-bold leading-[1.1] text-stone-800 dark:text-stone-50 sm:text-[3rem]">
+                            TK Attauhid
+                            <br className="hidden sm:block" />{' '}
+                            <span style={{ color: 'var(--tq-hijau)' }}>Mendidik dengan Tauhid</span>
                         </h1>
 
-                        <p className="mt-5 max-w-lg text-[15px] leading-[1.75] text-stone-600 dark:text-stone-400">{subHero}</p>
+                        <p className="mt-5 max-w-lg text-[15px] leading-[1.8] text-stone-600 dark:text-stone-400">
+                            Berlandaskan nilai-nilai Al-Qur&rsquo;an dan Sunnah sesuai pemahaman yang lurus, TK Attauhid
+                            berkomitmen membangun lingkungan pendidikan yang Islami, nyaman, dan mendukung perkembangan
+                            anak secara optimal.
+                        </p>
+
+                        <p className="mt-4 max-w-lg text-[15px] leading-[1.8] text-stone-600 dark:text-stone-400">
+                            TK Attauhid memandang bahwa masa kanak-kanak merupakan fase penting dalam pembentukan
+                            karakter, adab, serta dasar keilmuan anak. Proses pembelajaran dirancang tidak hanya untuk
+                            mengembangkan kemampuan akademik dasar, tetapi juga menanamkan nilai-nilai keislaman,
+                            kemandirian, kedisiplinan, dan kecintaan terhadap lingkungan sekitar.
+                        </p>
 
                         <div className="mt-8 flex flex-wrap items-center gap-3">
                             <a
                                 href={KONTAK_WA}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-2 rounded-xl bg-gradient-to-b from-claude-500 to-claude-600 px-5 py-3 text-[13px] font-bold text-white shadow-lg shadow-claude-500/25 transition hover:from-claude-500 hover:to-claude-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-claude-500 focus-visible:ring-offset-2 active:scale-[0.99] dark:focus-visible:ring-offset-[#242019]"
+                                className="tq-btn-oranye tq-judul flex items-center gap-2 rounded-2xl px-6 py-3.5 text-[14px] font-bold shadow-lg focus:outline-none focus-visible:ring-2"
                             >
-                                Minta demo
+                                Hubungi sekolah
                                 <ArrowIcon className="h-4 w-4" />
                             </a>
                             <a
-                                href="#modul"
-                                className="rounded-xl border border-stone-300 bg-white/70 px-5 py-3 text-[13px] font-semibold text-stone-700 backdrop-blur transition hover:border-claude-400/60 hover:text-claude-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-claude-500 dark:border-[#443e37] dark:bg-[#34302b]/70 dark:text-stone-300"
+                                href="#program"
+                                className="tq-judul rounded-2xl border-2 px-6 py-3.5 text-[14px] font-bold transition hover:bg-white/60 focus:outline-none focus-visible:ring-2 dark:hover:bg-[#353B31]/60"
+                                style={{ borderColor: 'var(--tq-biru)', color: 'var(--tq-biru)' }}
                             >
-                                Lihat isi sistemnya
+                                Lihat program sekolah
                             </a>
                         </div>
-
-                        <p className="mt-6 max-w-md text-[12px] leading-relaxed text-stone-500 dark:text-stone-500">
-                            Dipasang di domain pesantren Anda sendiri. Modul bisa dibeli terpisah.
-                        </p>
                     </div>
 
-                    {/* Signature: kartu mutaba'ah dengan peta 30 juz */}
-                    <KartuMutabaah santri={santri} reduced={reduced} idx={idx} />
+                    <KartuIdentitas />
                 </section>
 
-                {/* ============ MODUL ============ */}
-                <div id="modul" className="scroll-mt-20" />
-
-                {tampilTahfizh && (
-                    <SeksiModul
-                        arab="التحفيظ"
-                        label="Modul Tahfizh"
-                        judul="Dari setoran di kelas sampai rapor siap cetak"
-                        alurJudul="Alur setoran harian"
-                        alur={ALUR_TAHFIZH}
-                        fitur={FITUR_TAHFIZH}
-                        reduced={reduced}
-                    />
-                )}
-
-                {tampilKeuangan && (
-                    <SeksiModul
-                        arab="المالية"
-                        label="Modul Keuangan"
-                        judul="Setiap pengeluaran punya jejak persetujuan"
-                        alurJudul="Alur pengeluaran"
-                        alur={ALUR_KEUANGAN}
-                        fitur={FITUR_KEUANGAN}
-                        reduced={reduced}
-                        garisAtas
-                    />
-                )}
-
-                {/* ============ PERAN ============ */}
-                <section id="peran" className="relative z-10 scroll-mt-20 border-t border-stone-200/70 dark:border-[#3a352f]">
+                {/* ============ PROGRAM SEKOLAH ============ */}
+                <section id="program" className="relative z-10 scroll-mt-20 border-t border-stone-200/70 dark:border-[#3B4235]">
                     <div className="mx-auto max-w-6xl px-5 py-20 sm:px-6">
-                        <Eyebrow arab="الصلاحيات" latin="Hak akses" />
-                        <h2
-                            className="mt-3 max-w-xl text-[1.7rem] font-semibold leading-tight text-stone-900 dark:text-stone-50 sm:text-[2rem]"
-                            style={{ fontFamily: "'Fraunces', serif" }}
-                        >
-                            Setiap orang hanya melihat yang menjadi tanggung jawabnya
+                        <Eyebrow latin="Program sekolah" />
+                        <h2 className="tq-judul mt-3 max-w-2xl text-[1.8rem] font-bold leading-tight text-stone-800 dark:text-stone-50 sm:text-[2.2rem]">
+                            Program sekolah
                         </h2>
-                        <p className="mt-3 max-w-lg text-[14px] leading-relaxed text-stone-600 dark:text-stone-400">
-                            Guru tidak melihat data keuangan. Bendahara tidak mengubah nilai setoran. Satu akun bisa memegang lebih
-                            dari satu peran bila memang dirangkap.
-                        </p>
 
-                        <div className="mt-10 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
-                            {PERAN.map((p, i) => (
-                                <Reveal key={p.nama} delay={i * 60} reduced={reduced}>
-                                    <div className="border-t border-stone-300/70 pt-4 dark:border-[#443e37]">
-                                        <p className="text-[13px] font-bold text-stone-800 dark:text-stone-100">{p.nama}</p>
-                                        <p className="mt-1.5 text-[13px] leading-relaxed text-stone-600 dark:text-stone-400">{p.teks}</p>
+                        {/*
+                            Grid 6 kolom, bukan 3. Lima kartu di grid 3 kolom
+                            menyisakan satu petak kosong di kanan bawah; di sini
+                            tiga kartu pertama mengambil 2 kolom (baris atas) dan
+                            dua terakhir 3 kolom penuh (baris bawah).
+
+                            items-start penting: tanpa itu semua kartu sebaris
+                            dipaksa setinggi yang tertinggi, dan sisa tingginya
+                            jadi ruang kosong di dalam kartu yang isinya pendek.
+                        */}
+                        <div className="mt-10 grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-6">
+                            {PROGRAM.map((p, i) => {
+                                const lebar = i < 3 ? 'lg:col-span-2' : 'lg:col-span-3';
+                                // Di layar sedang (2 kolom) kartu terakhir juga
+                                // sendirian, jadi dilebarkan penuh.
+                                const lebarSm = i === PROGRAM.length - 1 ? 'sm:col-span-2' : '';
+
+                                return (
+                                    <Reveal key={p.judul} delay={i * 70} reduced={reduced} className={`${lebar} ${lebarSm}`}>
+                                        <article className="tq-kartu flex h-full flex-col overflow-hidden rounded-3xl border border-stone-200/80 bg-white/80 dark:border-[#474E40] dark:bg-[#353B31]/80">
+                                            <div className={`h-1.5 w-full tq-garis-${p.warna}`} />
+                                            <div className="flex flex-1 flex-col p-6">
+                                                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl tq-ikon-${p.warna}`}>
+                                                    <p.icon className="h-6 w-6" />
+                                                </div>
+                                                <h3 className="tq-judul mt-4 text-[17px] font-bold text-stone-800 dark:text-stone-100">{p.judul}</h3>
+
+                                                {p.teks && (
+                                                    <p className="mt-2 text-[13.5px] leading-relaxed text-stone-600 dark:text-stone-400">{p.teks}</p>
+                                                )}
+
+                                                {p.rincian && (
+                                                    <div className="mt-3 flex flex-wrap gap-2">
+                                                        {p.rincian.map(([huruf, arti]) => (
+                                                            <span
+                                                                key={huruf}
+                                                                className="flex items-center gap-1.5 rounded-full bg-stone-100 py-1 pl-1 pr-3 text-[12px] font-semibold text-stone-600 dark:bg-[#282C25] dark:text-stone-300"
+                                                            >
+                                                                <span
+                                                                    className="tq-judul flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                                                                    style={{ background: 'var(--tq-biru)' }}
+                                                                >
+                                                                    {huruf}
+                                                                </span>
+                                                                {arti}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </article>
+                                    </Reveal>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </section>
+
+                {/* ============ CAPAIAN PEMBELAJARAN ============ */}
+                <section id="capaian" className="relative z-10 scroll-mt-20 border-t border-stone-200/70 dark:border-[#3B4235]">
+                    <div className="mx-auto max-w-6xl px-5 py-20 sm:px-6">
+                        <Eyebrow latin="Capaian pembelajaran" />
+                        <h2 className="tq-judul mt-3 max-w-2xl text-[1.8rem] font-bold leading-tight text-stone-800 dark:text-stone-50 sm:text-[2.2rem]">
+                            Capaian pembelajaran
+                        </h2>
+
+                        <div className="mt-10 grid items-start gap-4 sm:grid-cols-2">
+                            {CAPAIAN.map((c, i) => (
+                                <Reveal key={c.judul} delay={i * 70} reduced={reduced}>
+                                    <div className="flex h-full gap-4 rounded-3xl border border-stone-200/80 bg-white/70 p-6 dark:border-[#474E40] dark:bg-[#353B31]/70">
+                                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl tq-ikon-${c.warna}`}>
+                                            <c.icon className="h-5 w-5" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h3 className="tq-judul text-[16px] font-bold text-stone-800 dark:text-stone-100">{c.judul}</h3>
+                                            <p className="mt-1.5 text-[13.5px] leading-relaxed text-stone-600 dark:text-stone-400">{c.teks}</p>
+                                        </div>
                                     </div>
                                 </Reveal>
                             ))}
@@ -464,135 +542,179 @@ export default function Landing() {
                     </div>
                 </section>
 
-                {/* ============ PAKET ============ */}
-                <section id="paket" className="relative z-10 scroll-mt-20 border-t border-stone-200/70 dark:border-[#3a352f]">
+                {/* ============ VISI & MISI ============ */}
+                <section id="visi" className="relative z-10 scroll-mt-20 border-t border-stone-200/70 dark:border-[#3B4235]">
                     <div className="mx-auto max-w-6xl px-5 py-20 sm:px-6">
-                        <Eyebrow arab="الباقات" latin="Paket" />
-                        <h2
-                            className="mt-3 max-w-xl text-[1.7rem] font-semibold leading-tight text-stone-900 dark:text-stone-50 sm:text-[2rem]"
-                            style={{ fontFamily: "'Fraunces', serif" }}
-                        >
-                            Ambil modul yang memang dibutuhkan
+                        <Eyebrow latin="Visi & misi sekolah" />
+                        <h2 className="tq-judul mt-3 max-w-2xl text-[1.8rem] font-bold leading-tight text-stone-800 dark:text-stone-50 sm:text-[2.2rem]">
+                            Visi &amp; misi sekolah
                         </h2>
 
-                        <div className={`mt-10 grid gap-5 ${duaModul ? 'lg:grid-cols-3' : 'sm:grid-cols-2'}`}>
-                            {tampilTahfizh && (
-                                <KartuPaket
-                                    nama="Modul Tahfizh"
-                                    ringkas="Untuk pesantren yang lebih dulu ingin merapikan pencatatan hafalan."
-                                    isi={[
-                                        'Setoran, presensi, dan rapor PDF',
-                                        'Panel admin, guru, dan santri',
-                                        'Kurikulum digital Aisar 5 jilid',
-                                        'Impor data santri dari Excel',
-                                    ]}
-                                />
-                            )}
-                            {tampilKeuangan && (
-                                <KartuPaket
-                                    nama="Modul Keuangan"
-                                    ringkas="Untuk yayasan yang butuh jejak dana yang bisa dipertanggungjawabkan."
-                                    isi={[
-                                        'RKAS, tagihan, dan pembayaran',
-                                        'Penggajian dan slip gaji',
-                                        'Persetujuan berjenjang',
-                                        'Buku kas dan laporan tunggakan',
-                                    ]}
-                                />
-                            )}
-                            {duaModul && (
-                                <KartuPaket
-                                    nama="Paket lengkap"
-                                    ringkas="Dua modul dalam satu sistem, satu akun bisa berpindah panel tanpa logout."
-                                    isi={[
-                                        'Seluruh isi kedua modul',
-                                        'Perpindahan panel tanpa logout',
-                                        'Data guru dan santri dipakai bersama',
-                                        'Pendampingan pemasangan awal',
-                                    ]}
-                                    utama
-                                />
-                            )}
+                        <div className="mt-10 grid gap-5 lg:grid-cols-[0.9fr,1.1fr]">
+                            <div
+                                className="rounded-3xl p-7 text-white shadow-lg"
+                                style={{ background: 'linear-gradient(140deg, var(--tq-hijau) 0%, var(--tq-hijau-gelap) 100%)' }}
+                            >
+                                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/75">Visi</p>
+                                <p className="tq-judul mt-3 text-[20px] font-semibold leading-snug sm:text-[22px]">{VISI}</p>
+                            </div>
+
+                            <div className="rounded-3xl border border-stone-200/80 bg-white/70 p-7 dark:border-[#474E40] dark:bg-[#353B31]/70">
+                                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-stone-400 dark:text-stone-400">Misi</p>
+                                <ol className="mt-4 space-y-4">
+                                    {MISI.map((m, i) => (
+                                        <li key={i} className="flex gap-3.5">
+                                            <span
+                                                className="tq-judul flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white"
+                                                style={{ background: i === 0 ? 'var(--tq-hijau)' : i === 1 ? 'var(--tq-oranye)' : 'var(--tq-biru)' }}
+                                            >
+                                                {i + 1}
+                                            </span>
+                                            <p className="text-[13.5px] leading-relaxed text-stone-600 dark:text-stone-300">{m}</p>
+                                        </li>
+                                    ))}
+                                </ol>
+                            </div>
                         </div>
 
-                        <p className="mt-6 text-[12px] text-stone-500 dark:text-stone-500">
-                            Harga menyesuaikan jumlah santri dan kebutuhan penyesuaian. Hubungi kami untuk penawaran.
-                        </p>
+                        {/* Keterangan di bawah halaman Visi pada profil. */}
+                        <div
+                            className="mt-5 rounded-2xl border-l-4 bg-white/70 p-5 dark:bg-[#353B31]/70"
+                            style={{ borderLeftColor: 'var(--tq-hijau)' }}
+                        >
+                            <p className="text-[13.5px] leading-relaxed text-stone-600 dark:text-stone-300">
+                                Sekolah At-Tauhid merupakan lembaga pendidikan Islam yang berfokus pada pembinaan generasi
+                                muslim berkarakter Islami dengan berpegang teguh kepada ajaran Tauhid serta nilai-nilai
+                                Al-Qur&rsquo;an dan Sunnah. Seluruh proses pendidikan dan kegiatan sekolah dijalankan
+                                berdasarkan pemahaman generasi awal Islam{' '}
+                                <span className="font-bold text-stone-800 dark:text-stone-100">(Salafush Shalih)</span> yang lurus
+                                dan sesuai tuntunan syariat.
+                            </p>
+                        </div>
                     </div>
                 </section>
 
-                {/* ============ TANYA JAWAB ============ */}
-                <section id="tanya" className="relative z-10 scroll-mt-20 border-t border-stone-200/70 dark:border-[#3a352f]">
-                    <div className="mx-auto max-w-3xl px-5 py-20 sm:px-6">
-                        <Eyebrow arab="أسئلة" latin="Tanya jawab" />
-                        <h2
-                            className="mt-3 text-[1.7rem] font-semibold leading-tight text-stone-900 dark:text-stone-50 sm:text-[2rem]"
-                            style={{ fontFamily: "'Fraunces', serif" }}
-                        >
-                            Yang biasanya ditanyakan pengurus
+                {/* ============ PENDIDIK & STRUKTUR ============ */}
+                <section id="pendidik" className="relative z-10 scroll-mt-20 border-t border-stone-200/70 dark:border-[#3B4235]">
+                    <div className="mx-auto max-w-6xl px-5 py-20 sm:px-6">
+                        <Eyebrow latin="Profil pendidik" />
+                        <h2 className="tq-judul mt-3 max-w-2xl text-[1.8rem] font-bold leading-tight text-stone-800 dark:text-stone-50 sm:text-[2.2rem]">
+                            Profil pendidik
+                        </h2>
+                        <p className="mt-4 max-w-2xl text-[14.5px] leading-[1.8] text-stone-600 dark:text-stone-400">
+                            Didukung oleh kepala sekolah yang berpengalaman dalam bidang pendidikan Islam dan teknologi
+                            pendidikan, serta para pengajar yang kompeten, sabar, dan mencintai dunia anak, TK At-Tauhid
+                            berkomitmen membentuk anak-anak yang berkarakter Islami, cinta Al-Qur&rsquo;an, beradab, dan siap
+                            tumbuh menjadi generasi yang shalih dan shalihah.
+                        </p>
+
+                        <div className="mt-10">
+                            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-stone-400 dark:text-stone-400">
+                                Struktur organisasi
+                            </p>
+
+                            <div className="mt-6 grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+                                {PENDIDIK.map((p, i) => (
+                                    <Reveal key={p.nama} delay={i * 60} reduced={reduced}>
+                                        <div
+                                            className="border-t-2 pt-4"
+                                            style={{ borderTopColor: i % 3 === 0 ? 'var(--tq-hijau)' : i % 3 === 1 ? 'var(--tq-oranye)' : 'var(--tq-biru)' }}
+                                        >
+                                            <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-400">{p.peran}</p>
+                                            <p className="tq-judul mt-1 text-[15px] font-bold text-stone-800 dark:text-stone-100">{p.nama}</p>
+                                        </div>
+                                    </Reveal>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ============ FASILITAS ============ */}
+                <section id="fasilitas" className="relative z-10 scroll-mt-20 border-t border-stone-200/70 dark:border-[#3B4235]">
+                    <div className="mx-auto max-w-6xl px-5 py-20 sm:px-6">
+                        <Eyebrow latin="Fasilitas" />
+                        <h2 className="tq-judul mt-3 max-w-2xl text-[1.8rem] font-bold leading-tight text-stone-800 dark:text-stone-50 sm:text-[2.2rem]">
+                            Fasilitas
                         </h2>
 
-                        <div className="mt-8 divide-y divide-stone-300/70 border-y border-stone-300/70 dark:divide-[#443e37] dark:border-[#443e37]">
-                            {TANYA_JAWAB.map((t) => (
-                                <details key={t.tanya} className="group py-4">
-                                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[14px] font-semibold text-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-claude-500 dark:text-stone-100">
-                                        {t.tanya}
-                                        <span className="shrink-0 text-claude-600 transition-transform duration-300 group-open:rotate-45 dark:text-claude-300">
-                                            <Svg className="h-4 w-4">
-                                                <path d="M12 5v14M5 12h14" />
-                                            </Svg>
+                        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            {FASILITAS.map((f, i) => (
+                                <Reveal key={f} delay={i * 50} reduced={reduced}>
+                                    <div className="flex items-center gap-3 rounded-2xl border border-stone-200/80 bg-white/70 px-5 py-4 dark:border-[#474E40] dark:bg-[#353B31]/70">
+                                        <span style={{ color: 'var(--tq-hijau)' }}>
+                                            <CheckIcon className="h-5 w-5" />
                                         </span>
-                                    </summary>
-                                    <p className="mt-3 pr-8 text-[13px] leading-relaxed text-stone-600 dark:text-stone-400">{t.jawab}</p>
-                                </details>
+                                        <span className="text-[13.5px] font-semibold text-stone-700 dark:text-stone-300">{f}</span>
+                                    </div>
+                                </Reveal>
                             ))}
                         </div>
                     </div>
                 </section>
 
-                {/* ============ CTA ============ */}
-                <section className="relative z-10 mx-auto max-w-4xl px-5 pb-20 sm:px-6">
-                    <div className="overflow-hidden rounded-3xl border border-stone-200/80 bg-white/80 px-7 py-12 text-center shadow-[0_24px_60px_-30px_rgba(120,80,60,0.3)] backdrop-blur-sm dark:border-[#443e37] dark:bg-[#34302b]/85 sm:px-10">
-                        <p className="text-[22px] leading-none text-claude-600/70 dark:text-claude-300/60" style={{ fontFamily: "'Amiri', serif" }} lang="ar" dir="rtl">
-                            وَقُل رَّبِّ زِدْنِى عِلْمًا
-                        </p>
-                        <h2
-                            className="mt-5 text-[1.7rem] font-semibold leading-tight text-stone-900 dark:text-stone-50 sm:text-[2rem]"
-                            style={{ fontFamily: "'Fraunces', serif" }}
-                        >
-                            Coba dulu dengan data pesantren Anda
-                        </h2>
-                        <p className="mx-auto mt-3 max-w-md text-[14px] leading-relaxed text-stone-600 dark:text-stone-400">
-                            Kirim satu kelas contoh, kami siapkan demo yang sudah terisi data Anda sendiri — bukan data karangan.
-                        </p>
-                        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                {/* ============ KONTAK — dari halaman "Identitas" ============ */}
+                <section id="kontak" className="relative z-10 mx-auto max-w-5xl scroll-mt-20 px-5 pb-20 sm:px-6">
+                    <div className="overflow-hidden rounded-[2rem] border border-stone-200/80 bg-white/85 shadow-[0_24px_60px_-32px_rgba(60,80,40,.4)] dark:border-[#474E40] dark:bg-[#353B31]/90">
+                        <div className="h-2 w-full" style={{ background: 'linear-gradient(90deg, var(--tq-hijau) 0%, var(--tq-oranye) 50%, var(--tq-biru) 100%)' }} />
+
+                        <div className="px-7 py-12 text-center sm:px-10">
+                            <h2 className="tq-judul text-[1.8rem] font-bold leading-tight text-stone-800 dark:text-stone-50 sm:text-[2.2rem]">
+                                Kontak
+                            </h2>
+
+                            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                                <a
+                                    href={KONTAK_WA}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="tq-btn-hijau tq-judul flex items-center gap-2 rounded-2xl px-6 py-3.5 text-[14px] font-bold shadow-lg focus:outline-none focus-visible:ring-2"
+                                >
+                                    <WaIcon className="h-5 w-5" />
+                                    {KONTAK_WA_TAMPIL}
+                                </a>
+                                <a
+                                    href={`mailto:${KONTAK_EMAIL}`}
+                                    className="tq-judul flex items-center gap-2 rounded-2xl border-2 px-6 py-3.5 text-[14px] font-bold transition hover:bg-stone-50 focus:outline-none dark:hover:bg-[#3B4235]"
+                                    style={{ borderColor: 'var(--tq-biru)', color: 'var(--tq-biru)' }}
+                                >
+                                    <MailIcon className="h-5 w-5" />
+                                    {KONTAK_EMAIL}
+                                </a>
+                            </div>
+
                             <a
-                                href={KONTAK_WA}
+                                href={ALAMAT_MAPS}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="rounded-xl bg-gradient-to-b from-claude-500 to-claude-600 px-5 py-3 text-[13px] font-bold text-white shadow-lg shadow-claude-500/25 transition hover:from-claude-500 hover:to-claude-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-claude-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#34302b]"
+                                className="mx-auto mt-8 flex max-w-md items-start gap-3 rounded-2xl bg-stone-50 p-4 text-left transition hover:bg-stone-100 dark:bg-[#282C25] dark:hover:bg-[#313629]"
                             >
-                                {KONTAK_LABEL}
+                                <span className="mt-0.5 shrink-0" style={{ color: 'var(--tq-oranye)' }}>
+                                    <PinIcon className="h-5 w-5" />
+                                </span>
+                                <span className="text-[13px] leading-relaxed text-stone-600 dark:text-stone-400">{ALAMAT}</span>
                             </a>
-                            <Link
-                                href={route('login')}
-                                className="rounded-xl border border-stone-300 px-5 py-3 text-[13px] font-semibold text-stone-700 transition hover:border-claude-400/60 hover:text-claude-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-claude-500 dark:border-[#443e37] dark:text-stone-300"
-                            >
-                                Masuk ke sistem
-                            </Link>
                         </div>
                     </div>
                 </section>
 
                 {/* ============ FOOTER ============ */}
-                <footer className="relative z-10 border-t border-stone-200/70 dark:border-[#3a352f]">
+                <footer className="relative z-10 border-t border-stone-200/70 dark:border-[#3B4235]">
                     <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-5 py-8 text-center sm:flex-row sm:px-6 sm:text-left">
-                        <p className="text-[11px] uppercase tracking-wide text-stone-400 dark:text-stone-500">
-                            © {new Date().getFullYear()} Sistem Management Tahfizh
-                        </p>
-                        <p className="text-[11px] text-stone-400 dark:text-stone-500">
-                            Dibangun untuk pesantren, dipasang di server Anda sendiri.
-                        </p>
+                        <div>
+                            <p className="tq-judul text-[13px] font-bold text-stone-700 dark:text-stone-300">
+                                TK Attauhid · {YAYASAN}
+                            </p>
+                            <p className="mt-0.5 text-[11px] text-stone-400 dark:text-stone-400">
+                                Nomor Izin Berusaha {NIB} · © {new Date().getFullYear()}
+                            </p>
+                        </div>
+                        <Link
+                            href={route('login')}
+                            className="text-[12px] font-semibold text-stone-400 underline-offset-4 transition hover:underline dark:text-stone-400"
+                        >
+                            Masuk sistem sekolah
+                        </Link>
                     </div>
                 </footer>
             </div>
@@ -600,239 +722,66 @@ export default function Landing() {
     );
 }
 
-/* =====================================================================
- * SIGNATURE — Kartu Mutaba'ah
- * Peta 30 juz disusun RTL (juz 1 di kanan atas) meniru arah baca mushaf,
- * dan nomornya memakai angka Arab-Timur seperti di kartu setoran fisik.
- * ===================================================================== */
-function KartuMutabaah({ santri, reduced, idx }) {
-    const juzSelesai = santri.juz;
+/* ===================== KOMPONEN ===================== */
+
+function Eyebrow({ latin }) {
+    return (
+        <div className="flex items-center gap-2.5">
+            <span className="h-1 w-8 rounded-full" style={{ background: 'var(--tq-hijau)' }} />
+            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">{latin}</span>
+        </div>
+    );
+}
+
+/* Kartu hero berisi halaman "Identitas" apa adanya — nama, nomor izin,
+   yayasan, alamat, kontak. Sebelumnya kartu ini berisi tiga kalimat
+   karangan; diganti data yang memang tertulis di profil. */
+function KartuIdentitas() {
+    const BARIS = [
+        { label: 'Nama', nilai: 'TK Attauhid' },
+        { label: 'Nomor Izin Berusaha', nilai: `${NIB} — di bawah ${YAYASAN}` },
+        { label: 'Alamat', nilai: ALAMAT },
+        { label: 'Kontak', nilai: `WhatsApp ${KONTAK_WA_TAMPIL} · ${KONTAK_EMAIL}` },
+    ];
 
     return (
         <div className="relative mx-auto w-full max-w-md">
-            <div className="pointer-events-none absolute -inset-5 rounded-[2.25rem] bg-gradient-to-br from-emerald-400/10 via-transparent to-claude-400/12 blur-2xl" />
+            <div
+                className="pointer-events-none absolute -inset-5 rounded-[2.5rem] blur-2xl"
+                style={{ background: 'linear-gradient(140deg, rgba(126,184,66,.18), rgba(54,167,223,.14) 60%, rgba(250,144,44,.16))' }}
+            />
 
-            <div className="relative overflow-hidden rounded-3xl border border-stone-200/80 bg-white/92 shadow-[0_28px_70px_-28px_rgba(120,80,60,0.32)] backdrop-blur-sm dark:border-[#443e37] dark:bg-[#34302b]/95">
-                {/* Kepala kartu */}
-                <div className="flex items-center justify-between gap-3 border-b border-stone-200/80 px-6 py-4 dark:border-[#443e37]">
-                    <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400 dark:text-stone-500">
-                            Kartu Mutaba&rsquo;ah
-                        </p>
-                        <p
-                            className="mt-1.5 truncate text-[15px] font-bold text-stone-800 dark:text-stone-100"
-                            style={{ transition: reduced ? 'none' : 'opacity .4s ease' }}
-                            key={`n-${idx}`}
-                        >
-                            {santri.nama}
-                        </p>
-                    </div>
-                    <span className="shrink-0 rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-semibold text-stone-500 dark:bg-[#3d3833] dark:text-stone-300">
-                        {santri.kelas}
-                    </span>
-                </div>
+            <div className="relative overflow-hidden rounded-[2rem] border border-stone-200/80 bg-white/92 shadow-[0_28px_70px_-30px_rgba(60,80,40,.4)] dark:border-[#474E40] dark:bg-[#353B31]/95">
+                <div className="h-2 w-full" style={{ background: 'linear-gradient(90deg, var(--tq-hijau) 0%, var(--tq-oranye) 50%, var(--tq-biru) 100%)' }} />
 
-                {/* Peta 30 juz */}
-                <div className="px-6 py-5">
-                    <div className="flex items-baseline justify-between">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400 dark:text-stone-500">
-                            Peta 30 Juz
-                        </p>
-                        <p className="text-[12px] font-semibold text-stone-600 dark:text-stone-300" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
-                            {juzSelesai}/30 juz
+                <div className="px-7 py-7">
+                    <div className="flex items-center gap-2.5">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl tq-ikon-biru">
+                            <IdIcon className="h-5 w-5" />
+                        </span>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-400 dark:text-stone-400">
+                            Identitas sekolah
                         </p>
                     </div>
 
-                    <div dir="rtl" className="mt-3 grid grid-cols-10 gap-1.5">
-                        {Array.from({ length: 30 }, (_, i) => i + 1).map((juz) => {
-                            const selesai = juz <= juzSelesai;
-                            const berjalan = juz === juzSelesai + 1;
-                            return (
-                                <div
-                                    key={juz}
-                                    title={`Juz ${juz}`}
-                                    className={`flex aspect-square items-center justify-center rounded-[5px] text-[10px] leading-none ${
-                                        selesai
-                                            ? 'bg-gradient-to-br from-emerald-500 to-teal-500 text-white/95 shadow-sm'
-                                            : berjalan
-                                              ? 'bg-emerald-500/12 text-emerald-700 ring-1 ring-inset ring-emerald-500/45 dark:text-emerald-300'
-                                              : 'bg-stone-100 text-stone-400 dark:bg-[#3d3833] dark:text-stone-600'
-                                    }`}
-                                    style={{
-                                        fontFamily: "'Amiri', serif",
-                                        transition: reduced ? 'none' : 'background-color .5s ease, color .5s ease',
-                                        transitionDelay: reduced ? '0ms' : `${juz * 16}ms`,
-                                    }}
-                                >
-                                    {keArab(juz)}
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] text-stone-500 dark:text-stone-500">
-                        <span className="flex items-center gap-1.5">
-                            <i className="h-2.5 w-2.5 rounded-[3px] bg-gradient-to-br from-emerald-500 to-teal-500" />
-                            Selesai
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                            <i className="h-2.5 w-2.5 rounded-[3px] ring-1 ring-inset ring-emerald-500/45" />
-                            Sedang dihafal
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                            <i className="h-2.5 w-2.5 rounded-[3px] bg-stone-200 dark:bg-[#3d3833]" />
-                            Belum
-                        </span>
-                    </div>
-                </div>
-
-                {/* Setoran terakhir */}
-                <div className="border-t border-stone-200/80 bg-stone-50/70 px-6 py-4 dark:border-[#443e37] dark:bg-[#2f2b27]/60">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400 dark:text-stone-500">
-                                Setoran terakhir
-                            </p>
-                            <p
-                                className="mt-1.5 truncate text-[13px] font-semibold text-stone-700 dark:text-stone-200"
-                                style={{ fontFamily: "'IBM Plex Mono', monospace" }}
-                                key={`s-${idx}`}
-                            >
-                                {santri.potongan}
-                            </p>
-                            <p className="mt-0.5 text-[11px] text-stone-500 dark:text-stone-500">
-                                Juz {santri.juz} · halaman {santri.halaman}
-                            </p>
-                        </div>
-                        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${WARNA_JENIS[santri.jenis]}`}>
-                            {santri.jenis}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <p className="mt-3 text-center text-[11px] text-stone-400 dark:text-stone-500">
-                Tampilan contoh — datanya akan mengikuti santri di pesantren Anda.
-            </p>
-        </div>
-    );
-}
-
-/* =====================================================================
- * BAGIAN MODUL — alur (urutan sungguhan) + daftar fitur
- * ===================================================================== */
-function SeksiModul({ arab, label, judul, alurJudul, alur, fitur, reduced, garisAtas = false }) {
-    return (
-        <section className={`relative z-10 ${garisAtas ? 'border-t border-stone-200/70 dark:border-[#3a352f]' : ''}`}>
-            <div className="mx-auto max-w-6xl px-5 py-20 sm:px-6">
-                <Eyebrow arab={arab} latin={label} />
-                <h2
-                    className="mt-3 max-w-xl text-[1.7rem] font-semibold leading-tight text-stone-900 dark:text-stone-50 sm:text-[2rem]"
-                    style={{ fontFamily: "'Fraunces', serif" }}
-                >
-                    {judul}
-                </h2>
-
-                {/* Alur: penomoran dipakai karena isinya memang berurutan */}
-                <div className="mt-10">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400 dark:text-stone-500">{alurJudul}</p>
-                    <ol className="mt-4 grid gap-px overflow-hidden rounded-2xl bg-stone-200/70 sm:grid-cols-2 lg:grid-cols-4 dark:bg-[#443e37]">
-                        {alur.map((a, i) => (
-                            <li key={a.judul} className="bg-[#f3eee6] p-5 dark:bg-[#302c27]">
-                                <span
-                                    className="text-[12px] font-semibold text-claude-600 dark:text-claude-300"
-                                    style={{ fontFamily: "'IBM Plex Mono', monospace" }}
-                                >
-                                    {String(i + 1).padStart(2, '0')}
-                                </span>
-                                <p className="mt-2 text-[13px] font-bold text-stone-800 dark:text-stone-100">{a.judul}</p>
-                                <p className="mt-1.5 text-[12.5px] leading-relaxed text-stone-600 dark:text-stone-400">{a.teks}</p>
-                            </li>
-                        ))}
-                    </ol>
-                </div>
-
-                {/* Fitur */}
-                <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {fitur.map((f, i) => (
-                        <Reveal key={f.judul} delay={i * 60} reduced={reduced}>
-                            <div className="group h-full rounded-2xl border border-stone-200/80 bg-white/70 p-5 backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-claude-400/50 hover:shadow-[0_14px_30px_-18px_rgba(120,80,60,0.35)] dark:border-[#443e37] dark:bg-[#34302b]/70">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-100 text-stone-600 transition group-hover:bg-claude-500/12 group-hover:text-claude-600 dark:bg-[#3d3833] dark:text-stone-300 dark:group-hover:text-claude-300">
-                                    <f.icon className="h-5 w-5" />
-                                </div>
-                                <p className="mt-4 text-[14px] font-bold text-stone-800 dark:text-stone-100">{f.judul}</p>
-                                <p className="mt-1.5 text-[13px] leading-relaxed text-stone-600 dark:text-stone-400">{f.teks}</p>
+                    <dl className="mt-6 space-y-5">
+                        {BARIS.map((b) => (
+                            <div key={b.label}>
+                                <dt className="text-[10px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-400">{b.label}</dt>
+                                <dd className="tq-judul mt-1 text-[14px] font-semibold leading-snug text-stone-800 dark:text-stone-100">{b.nilai}</dd>
                             </div>
-                        </Reveal>
-                    ))}
+                        ))}
+                    </dl>
                 </div>
             </div>
-        </section>
-    );
-}
-
-/* =====================================================================
- * KOMPONEN KECIL
- * ===================================================================== */
-function Eyebrow({ arab, latin }) {
-    return (
-        <div className="flex items-center gap-2.5">
-            <span className="text-[17px] leading-none text-claude-600/75 dark:text-claude-300/70" style={{ fontFamily: "'Amiri', serif" }} lang="ar" dir="rtl">
-                {arab}
-            </span>
-            <span className="h-3 w-px bg-stone-300 dark:bg-[#4d463e]" />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-500 dark:text-stone-400">{latin}</span>
         </div>
     );
 }
 
-function KartuPaket({ nama, ringkas, isi, utama = false }) {
-    return (
-        <div
-            className={`flex h-full flex-col rounded-2xl border p-6 ${
-                utama
-                    ? 'border-claude-500/40 bg-white/90 shadow-[0_20px_50px_-28px_rgba(217,119,87,0.55)] dark:border-claude-500/35 dark:bg-[#34302b]/90'
-                    : 'border-stone-200/80 bg-white/70 dark:border-[#443e37] dark:bg-[#34302b]/70'
-            }`}
-        >
-            <div className="flex items-center justify-between gap-2">
-                <p className="text-[15px] font-bold text-stone-800 dark:text-stone-100">{nama}</p>
-                {utama && (
-                    <span className="rounded-full bg-claude-500/12 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-claude-600 dark:text-claude-300">
-                        Paling lengkap
-                    </span>
-                )}
-            </div>
-            <p className="mt-2 text-[13px] leading-relaxed text-stone-600 dark:text-stone-400">{ringkas}</p>
-
-            <ul className="mt-5 flex-1 space-y-2.5">
-                {isi.map((b) => (
-                    <li key={b} className="flex items-start gap-2.5 text-[13px] leading-relaxed text-stone-700 dark:text-stone-300">
-                        <span className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400">
-                            <CheckIcon className="h-4 w-4" />
-                        </span>
-                        {b}
-                    </li>
-                ))}
-            </ul>
-
-            <a
-                href={KONTAK_WA}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`mt-6 block rounded-xl px-4 py-2.5 text-center text-[13px] font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-claude-500 ${
-                    utama
-                        ? 'bg-gradient-to-b from-claude-500 to-claude-600 text-white shadow-md shadow-claude-500/25 hover:from-claude-500 hover:to-claude-700'
-                        : 'border border-stone-300 text-stone-700 hover:border-claude-400/60 hover:text-claude-600 dark:border-[#443e37] dark:text-stone-300'
-                }`}
-            >
-                Tanya harga
-            </a>
-        </div>
-    );
-}
-
-function Reveal({ children, delay = 0, reduced }) {
+/* className diteruskan supaya pemanggil bisa menentukan lebar kolom grid
+   (lg:col-span-*) — tanpa itu span-nya tidak akan pernah sampai ke elemen
+   yang benar-benar jadi anak grid. */
+function Reveal({ children, delay = 0, reduced, className = '' }) {
     const ref = useRef(null);
     const [visible, setVisible] = useState(reduced);
 
@@ -859,7 +808,7 @@ function Reveal({ children, delay = 0, reduced }) {
     return (
         <div
             ref={ref}
-            className="h-full"
+            className={`h-full ${className}`}
             style={{
                 transitionDelay: `${delay}ms`,
                 transitionProperty: 'opacity, transform',

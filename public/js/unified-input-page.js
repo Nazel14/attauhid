@@ -246,7 +246,7 @@ function openDrawer(type) {
                 }
             } else {
                 // Belum siap — tampilkan loading dan polling
-                clonedQuranDisplay.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:40px 20px;font-family:system-ui;">Memuat Al-Qur\'an...</p>';
+                clonedQuranDisplay.innerHTML = '<p style="color:#A8A29E;text-align:center;padding:40px 20px;font-family:system-ui;font-size:13px;">Memuat Al-Qur\'an...</p>';
 
                 console.log('Drawer: waiting for #quranDisplay to be populated...');
                 let attempts = 0;
@@ -266,7 +266,7 @@ function openDrawer(type) {
                         clearInterval(pollTimer);
                         if (drawerEl) drawerEl._pollTimer = null;
                         console.warn('Drawer: timeout waiting for Quran content');
-                        clonedQuranDisplay.innerHTML = '<p style="color:#ef4444;text-align:center;padding:20px;font-family:system-ui;">Gagal memuat Al-Qur\'an. Tutup drawer dan coba lagi.</p>';
+                        clonedQuranDisplay.innerHTML = '<p style="color:#EF4444;text-align:center;padding:20px;font-family:system-ui;font-size:13px;">Gagal memuat Al-Qur\'an. Tutup drawer dan coba lagi.</p>';
                     }
                 }, 500);
 
@@ -290,9 +290,15 @@ function openDrawer(type) {
         const desktopHeader = quranClone.querySelector('.hidden.md\\:flex');
         if (desktopHeader) desktopHeader.remove();
 
-        // FIX: Hapus blok Statistik Setoran dari clone agar tidak double
-        // Yang dipakai adalah blok Statistik Setoran di audioWrapper (sudah punya nilai langsung)
-        const statBlockInClone = quranClone.querySelector('#displayTotalKataDrawer')?.closest('.rounded-xl');
+        // Padding panel desktop (p-5) dibuang — #drawerContent sudah ber-padding.
+        quranClone.classList.remove('p-5');
+
+        // FIX: Hapus blok Statistik Setoran dari clone agar tidak double.
+        // Ditandai [data-stat-block] di InputSetoran.jsx. JANGAN pakai
+        // closest('.rounded-xl') — kartu kecil "Total Kata" juga rounded-xl,
+        // jadi yang terhapus hanya kartu itu dan statistik tampil dobel.
+        const statBlockInClone = quranClone.querySelector('[data-stat-block]')
+            || quranClone.querySelector('#displayTotalKataDrawer')?.closest('[data-stat-block]');
         if (statBlockInClone) statBlockInClone.remove();
 
         // Tentukan mode aktif
@@ -316,130 +322,100 @@ function openDrawer(type) {
         // Ambil nilai catatan guru yang sudah ada
         const valCatatan = document.getElementById('catatanGuru' + activeMode)?.value || '';
 
-        // Tentukan warna dan label tombol submit berdasarkan mode
         const isSetoranOnly = activeMode === 'SetoranOnly';
-        const submitColor   = isSetoranOnly
-            ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/30'
-            : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-900/30';
-        const submitLabel   = isSetoranOnly ? 'Simpan Setoran Tambahan' : 'Simpan Presensi & Setoran';
+        const submitLabel   = isSetoranOnly ? 'Simpan Setoran Tambahan' : 'Simpan Presensi &amp; Setoran';
+
+        // ------------------------------------------------------------
+        // Markup drawer — SAMA dengan kartu di InputSetoran.jsx.
+        // PENTING: file ini tidak dipindai Tailwind. Setiap class di
+        // bawah sengaja disalin persis dari InputSetoran.jsx supaya
+        // pasti ikut ter-generate saat build. Jangan menambah class
+        // Tailwind baru di sini tanpa memakainya juga di JSX.
+        // ------------------------------------------------------------
+        const CARD = 'bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl';
+        const SUB  = 'bg-cream-100 dark:bg-coal-600/40 ring-1 ring-cream-300 dark:ring-coal-600 rounded-xl';
+        const TILE = 'w-6 h-6 rounded-lg bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-stone-500 dark:text-stone-400 flex items-center justify-center flex-shrink-0';
+        const BTN_SOFT = 'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 hover:bg-cream-300 dark:hover:bg-coal-500 text-stone-600 dark:text-stone-300 text-xs font-semibold transition active:scale-95';
+        const ico = (d, cls) => `<svg class="${cls || 'w-3.5 h-3.5'}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+        const P_MIC    = '<path d="M19 11a7 7 0 01-14 0m7 7v3m-4 0h8m-4-6a3 3 0 01-3-3V5a3 3 0 016 0v4a3 3 0 01-3 3z"/>';
+        const P_TRASH  = '<path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M4 7h16m-3 0V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"/>';
+        const P_CHART  = '<path d="M3 3v18h18M9 17V9m4 8V5m4 12v-6"/>';
+        const P_DOC    = '<path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>';
+        const P_PENCIL = '<path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828z"/>';
+        const P_SAVE   = '<path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-8 0V4a1 1 0 011-1h6a1 1 0 011 1v3m-8 0h8M9 21v-6h6v6"/>';
+        const P_INFO   = '<path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>';
+        const skorRow = (dot, label, id, val, valCls, span2) => `
+                        <div class="${SUB} p-2.5 flex items-center justify-between ${span2 ? 'col-span-2' : ''}">
+                            <span class="flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-400"><span class="w-2 h-2 rounded-full ${dot}"></span>${label}</span>
+                            <strong id="${id}" class="text-base font-bold tabular-nums ${valCls}">${val}</strong>
+                        </div>`;
 
         // Buat section Audio & Penilaian + Statistik Setoran + Catatan Guru + Submit untuk drawer mobile
         const audioWrapper = document.createElement('div');
         audioWrapper.className = 'space-y-3 mt-3';
         audioWrapper.innerHTML = `
-            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
-                <div class="flex items-center justify-between px-4 py-3 bg-gray-100 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700/50">
-                    <span class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                        <span class="w-5 h-5 bg-blue-600 rounded flex items-center justify-center text-[10px]">Mic</span>
-                        Audio & Penilaian
-                    </span>
-                    <button type="button" onclick="clearMarking()"
-                            class="px-2.5 py-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded-lg transition flex items-center gap-1">
-                        Reset Marking
-                    </button>
+            <div class="${CARD} p-4 sm:p-5">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="${TILE}">${ico(P_MIC)}</span>
+                    <h3 class="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">Audio &amp; Penilaian</h3>
+                    <button type="button" onclick="clearMarking()" class="ml-auto ${BTN_SOFT}">${ico(P_TRASH)} Reset Marking</button>
                 </div>
-                <div class="px-4 pb-4 pt-3 space-y-3">
+                <div class="space-y-3">
                     <div class="flex gap-2">
-                        <button type="button" id="startRecording${activeMode}"
-                                onclick="startRecording('${activeMode}')"
-                                class="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition flex items-center justify-center gap-1.5">
-                            Rekam
-                        </button>
-                        <button type="button" id="pauseRecording${activeMode}"
-                                onclick="pauseRecording('${activeMode}')"
-                                class="hidden flex-1 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white text-xs font-medium rounded-lg transition items-center justify-center gap-1.5">
-                            Jeda
-                        </button>
-                        <button type="button" id="stopRecording${activeMode}"
-                                onclick="stopRecording('${activeMode}')"
-                                class="hidden flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition items-center justify-center gap-1.5">
-                            Stop
-                        </button>
+                        <button type="button" id="startRecording${activeMode}" onclick="startRecording('${activeMode}')" class="inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-xl transition active:scale-95"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></svg> Rekam</button>
+                        <button type="button" id="pauseRecording${activeMode}" onclick="pauseRecording('${activeMode}')" class="hidden inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-800 ring-1 ring-amber-200 text-xs font-semibold rounded-xl transition active:scale-95 dark:bg-amber-500/15 dark:hover:bg-amber-500/25 dark:text-amber-300 dark:ring-amber-500/25"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="8" y="6" width="3.2" height="12" rx="1"/><rect x="12.8" y="6" width="3.2" height="12" rx="1"/></svg> Jeda</button>
+                        <button type="button" id="stopRecording${activeMode}" onclick="stopRecording('${activeMode}')" class="hidden inline-flex flex-1 items-center justify-center gap-1.5 py-2.5 bg-stone-700 hover:bg-stone-600 text-white text-xs font-semibold rounded-xl transition active:scale-95 dark:bg-coal-600 dark:hover:bg-coal-500 dark:ring-1 dark:ring-coal-500"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></svg> Stop</button>
                     </div>
-                    <div id="recordingTimer${activeMode}"
-                         class="hidden text-xs font-bold text-blue-600 dark:text-blue-400 text-center py-2 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800/50">
-                        Durasi: 0:00
-                    </div>
+                    <div id="recordingTimer${activeMode}" class="hidden text-xs font-semibold tabular-nums text-red-600 dark:text-red-400 text-center py-2 bg-red-50 dark:bg-red-500/10 ring-1 ring-red-100 dark:ring-red-500/20 rounded-xl">Durasi: 0:00</div>
                     <audio id="audioPlayback${activeMode}" controls class="w-full hidden rounded-lg"></audio>
-                    <button type="button" id="clearRecording${activeMode}"
-                            onclick="clearRecording('${activeMode}')"
-                            class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg transition hidden flex items-center justify-center gap-1">
-                        Hapus & Rekam Ulang
-                    </button>
+                    <button type="button" id="clearRecording${activeMode}" onclick="clearRecording('${activeMode}')" class="w-full py-2 ${BTN_SOFT} justify-center hidden">${ico(P_TRASH)} Hapus &amp; Rekam Ulang</button>
                     <input type="hidden" id="audioData${activeMode}">
-                    <p class="text-[10px] text-gray-500 dark:text-gray-600 italic">Gunakan Jeda untuk berhenti sementara. Marking kata di atas untuk catat kesalahan.</p>
+                    <p class="mt-1.5 flex items-start gap-1 text-[11px] leading-snug text-stone-400 dark:text-stone-500">${ico(P_INFO, 'w-3 h-3 mt-px flex-shrink-0')}<span>Gunakan Jeda untuk berhenti sementara. Marking kata di atas untuk catat kesalahan.</span></p>
 
-                    <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700/50 p-3 rounded-xl mt-2">
-                        <h4 class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">Statistik Setoran</h4>
-                        <div class="grid grid-cols-3 gap-2 mb-3">
-                            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-transparent p-2.5 rounded-lg">
-                                <div class="text-[10px] text-gray-500 mb-0.5">Total Kata</div>
-                                <div class="text-xl font-bold text-blue-600 dark:text-blue-400" id="displayTotalKataDrawer">${valTotalKataDisplay}</div>
-                            </div>
-                            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-transparent p-2.5 rounded-lg">
-                                <div class="text-[10px] text-gray-500 mb-0.5">Juz Range</div>
-                                <div class="text-lg font-bold text-purple-600 dark:text-purple-400" id="displayJuzRangeDrawer">${valJuzRange}</div>
-                            </div>
-                            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-transparent p-2.5 rounded-lg">
-                                <div class="text-[10px] text-gray-500 mb-0.5">Total Juz</div>
-                                <div class="text-xl font-bold text-gray-900 dark:text-white" id="displayTotalJuzDrawer">${valTotalJuz}</div>
-                            </div>
+                    <div class="${SUB} p-3">
+                        <p class="text-xs font-semibold text-stone-600 dark:text-stone-300 mb-2.5 flex items-center gap-1.5">${ico(P_CHART, 'w-3.5 h-3.5 text-stone-400')} Statistik Setoran</p>
+                        <div class="grid grid-cols-3 gap-2 mb-2">
+                            <div class="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 p-2.5 rounded-xl"><p class="text-[11px] text-stone-500 dark:text-stone-400">Total Kata</p><p class="text-lg font-bold tracking-tight text-stone-900 dark:text-stone-100 tabular-nums" id="displayTotalKataDrawer">${valTotalKataDisplay}</p></div>
+                            <div class="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 p-2.5 rounded-xl"><p class="text-[11px] text-stone-500 dark:text-stone-400">Juz Range</p><p class="text-lg font-bold tracking-tight text-claude-600 dark:text-claude-400" id="displayJuzRangeDrawer">${valJuzRange}</p></div>
+                            <div class="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 p-2.5 rounded-xl"><p class="text-[11px] text-stone-500 dark:text-stone-400">Total Juz</p><p class="text-lg font-bold tracking-tight text-stone-900 dark:text-stone-100 tabular-nums" id="displayTotalJuzDrawer">${valTotalJuz}</p></div>
                         </div>
-                        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-transparent p-2.5 rounded-lg">
+                        <div class="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 p-2.5 rounded-xl">
                             <div class="flex items-center justify-between mb-2">
-                                <span class="text-[10px] text-gray-500 font-medium">Halaman Mushaf Madinah</span>
-                                <span class="text-[10px] text-gray-500 dark:text-gray-600">Otomatis</span>
+                                <span class="text-[11px] text-stone-500 dark:text-stone-400 font-medium flex items-center gap-1">${ico(P_DOC, 'w-3 h-3 text-stone-400')} Halaman Mushaf Madinah</span>
+                                <span class="text-[10px] text-stone-400">Otomatis</span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <div class="flex-1 bg-gray-100 dark:bg-gray-800 px-2.5 py-2 rounded-lg border border-gray-200 dark:border-gray-700">
-                                    <div class="text-[10px] text-gray-500">Mulai</div>
-                                    <div class="text-base font-bold text-orange-600 dark:text-orange-400" id="displayPageStartDrawer">${valPageStart}</div>
-                                </div>
-                                <div class="text-gray-400 dark:text-gray-600">-></div>
-                                <div class="flex-1 bg-gray-100 dark:bg-gray-800 px-2.5 py-2 rounded-lg border border-gray-200 dark:border-gray-700">
-                                    <div class="text-[10px] text-gray-500">Selesai</div>
-                                    <div class="text-base font-bold text-orange-600 dark:text-orange-400" id="displayPageEndDrawer">${valPageEnd}</div>
-                                </div>
-                                <div class="flex-1 bg-orange-50 dark:bg-orange-950/50 px-2.5 py-2 rounded-lg border border-orange-200 dark:border-orange-900/30">
-                                    <div class="text-[10px] text-gray-500">Total</div>
-                                    <div class="text-base font-bold text-orange-600 dark:text-orange-400" id="displayTotalPageDrawer">${valTotalPage}</div>
-                                </div>
+                                <div class="flex-1 ${SUB} px-2.5 py-2"><p class="text-[10px] text-stone-500">Mulai</p><p class="text-base font-bold text-stone-800 dark:text-stone-100 tabular-nums" id="displayPageStartDrawer">${valPageStart}</p></div>
+                                <span class="text-claude-500">→</span>
+                                <div class="flex-1 ${SUB} px-2.5 py-2"><p class="text-[10px] text-stone-500">Selesai</p><p class="text-base font-bold text-stone-800 dark:text-stone-100 tabular-nums" id="displayPageEndDrawer">${valPageEnd}</p></div>
+                                <div class="flex-1 rounded-xl ring-1 ring-claude-200 dark:ring-claude-500/20 bg-claude-50 dark:bg-claude-500/10 px-2.5 py-2"><p class="text-[10px] text-stone-500">Total</p><p class="text-base font-bold text-claude-600 dark:text-claude-400 tabular-nums" id="displayTotalPageDrawer">${valTotalPage}</p></div>
                             </div>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2 pt-1">
-                        <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between col-span-2">
-                            <span class="text-xs text-gray-600 dark:text-gray-400">Kelancaran</span>
-                            <strong id="displayKelancaran${activeMode}" class="text-base text-emerald-600 dark:text-emerald-400">${valKelancaran}</strong>
-                        </div>
-                        <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between">
-                            <span class="text-xs text-gray-600 dark:text-gray-400">Tajwid</span>
-                            <strong id="displayTajwid${activeMode}" class="text-base text-amber-600 dark:text-amber-400">${valTajwid}</strong>
-                        </div>
-                        <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-between">
-                            <span class="text-xs text-gray-600 dark:text-gray-400">Pelafalan</span>
-                            <strong id="displayPelafalan${activeMode}" class="text-base text-red-600 dark:text-red-400">${valPelafalan}</strong>
-                        </div>
-                        <div class="bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800/50 rounded-lg p-2.5 flex items-center justify-between col-span-2">
-                            <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Nilai</span>
-                            <strong id="displayNilai${activeMode}" class="text-2xl text-indigo-600 dark:text-indigo-400">${valNilai}</strong>
+                        ${skorRow('bg-emerald-500', 'Kelancaran', 'displayKelancaran' + activeMode, valKelancaran, 'text-emerald-600 dark:text-emerald-400', true)}
+                        ${skorRow('bg-amber-500', 'Tajwid', 'displayTajwid' + activeMode, valTajwid, 'text-amber-600 dark:text-amber-400', false)}
+                        ${skorRow('bg-red-500', 'Pelafalan', 'displayPelafalan' + activeMode, valPelafalan, 'text-red-600 dark:text-red-400', false)}
+                        <div class="col-span-2 rounded-xl ring-1 ring-claude-200 dark:ring-claude-500/20 bg-claude-50 dark:bg-claude-500/10 px-3 py-2.5 flex items-center justify-between">
+                            <span class="text-xs font-bold text-stone-700 dark:text-stone-300">Nilai</span>
+                            <strong id="displayNilai${activeMode}" class="text-2xl font-bold tracking-tight tabular-nums text-claude-600 dark:text-claude-400">${valNilai}</strong>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
-                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Catatan Guru</label>
-                <textarea id="drawerCatatanGuru${activeMode}" rows="3"
-                          class="form-textarea w-full"
-                          placeholder="Tambahkan catatan...">${valCatatan}</textarea>
+            <div class="${CARD} p-4 sm:p-5">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="${TILE}">${ico(P_PENCIL)}</span>
+                    <h3 class="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">Catatan Guru</h3>
+                </div>
+                <textarea id="drawerCatatanGuru${activeMode}" rows="3" class="form-textarea w-full" placeholder="Tambahkan catatan...">${valCatatan}</textarea>
             </div>
 
-            <button type="button"
-                    onclick="submitFromDrawer('${activeMode}')"
-                    class="w-full py-3 ${submitColor} text-white font-semibold text-sm rounded-xl shadow-lg transition active:scale-95">
-                ${submitLabel}
+            <button type="button" onclick="submitFromDrawer('${activeMode}')"
+                    class="w-full py-3 bg-claude-500 hover:bg-claude-600 text-white font-semibold text-sm rounded-xl transition active:scale-[.98] flex items-center justify-center gap-2">
+                ${ico(P_SAVE, 'w-4 h-4')} ${submitLabel}
             </button>`;
 
         content.innerHTML = '';
@@ -610,22 +586,22 @@ function showSubmitLoadingOverlay() {
         position: fixed;
         inset: 0;
         z-index: 9999;
-        background: rgba(0, 0, 0, 0.85);
+        background: rgba(28, 28, 26, 0.88);
         backdrop-filter: blur(4px);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 16px;
-        color: white;
+        color: #F5F4EF;
         font-family: system-ui, -apple-system, sans-serif;
     `;
     overlay.innerHTML = `
-        <div style="width:56px;height:56px;border:4px solid rgba(99,102,241,0.3);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+        <div style="width:56px;height:56px;border:4px solid rgba(217,119,87,0.25);border-top-color:#D97757;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
         <div id="submitLoadingText" style="font-size:14px;font-weight:500;text-align:center;max-width:280px;padding:0 20px;">
             Memproses...
         </div>
-        <div style="font-size:11px;color:#9ca3af;text-align:center;padding:0 20px;">
+        <div style="font-size:11px;color:#A8A29E;text-align:center;padding:0 20px;">
             Mohon tunggu, jangan tutup halaman
         </div>
         <style>
@@ -823,14 +799,14 @@ async function loadPresensiHariIniToTarget(target) {
         while (tableHeaderRow.children.length > 4) tableHeaderRow.removeChild(tableHeaderRow.lastChild);
         sesiHeaders.forEach(sesi => {
             const th = document.createElement('th');
-            th.className = 'px-2 py-2 text-center text-gray-400 font-medium w-14';
+            th.className = 'pt-th-sesi';
             th.textContent = sesi;
             tableHeaderRow.appendChild(th);
         });
         const tableBody = getEl('tableBodyPresensi');
-        const isDark = document.documentElement.classList.contains('dark');
-        const setoranBg  = isDark ? '#312e81' : '#e0e7ff';
-        const setoranFg  = isDark ? '#a5b4fc' : '#4338ca';
+        // Ikon buku untuk badge setoran (sama dengan Dashboard) — inline SVG,
+        // bukan emoji. Warna badge diatur CSS .setoran-badge di InputSetoran.jsx.
+        const bookSvg = '<svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>';
         if (data.santri_list && data.santri_list.length > 0) {
             tableBody.innerHTML = data.santri_list.map((santri, index) => {
                 const sesiCells = sesiHeaders.map(sesi => {
@@ -841,23 +817,23 @@ async function loadPresensiHariIniToTarget(target) {
                         const dotColor = colorMap[p.status] || '#6b7280';
                         const jumlahSetoran = p.jumlah_setoran || 0;
                         const waktu = p.waktu || '';
-                        return `<td class="px-1 py-2"><div class="flex flex-col items-center gap-0.5"><div class="flex items-center gap-1"><div class="w-4 h-4 rounded-full" style="background-color:${dotColor};" title="${p.status}${waktu ? ' - ' + waktu : ''}"></div>${jumlahSetoran > 0 ? `<span class="setoran-badge text-[9px] rounded px-0.5">📖${jumlahSetoran}</span>` : ''}</div>${waktu ? `<span class="text-[8px] text-gray-500 font-mono">${waktu}</span>` : ''}</div></td>`;
+                        return `<td class="pt-cell"><div class="pt-stack"><div class="pt-line"><span class="pt-dot" style="background-color:${dotColor};" title="${p.status}${waktu ? ' - ' + waktu : ''}"></span>${jumlahSetoran > 0 ? `<span class="setoran-badge">${bookSvg}${jumlahSetoran}</span>` : ''}</div>${waktu ? `<span class="pt-waktu">${waktu}</span>` : ''}</div></td>`;
                     }
-                    return `<td class="px-1 py-2"><div class="flex justify-center"><div class="w-4 h-4 rounded-full" style="border:1px solid #9ca3af;"></div></div></td>`;
+                    return `<td class="pt-cell"><div class="pt-stack"><span class="pt-dot pt-dot-empty" title="Belum presensi"></span></div></td>`;
                 }).join('');
                 const meta = metaSantri(santri.id);
                 // Nama dibungkus <div> ber-max-width: pada table-layout auto,
                 // max-width di <td> sering diabaikan browser, tapi di elemen
                 // blok di dalamnya tetap dihormati.
-                return `<tr class="hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors align-top"><td class="px-2 py-2 text-gray-500 dark:text-gray-400 text-center">${index + 1}</td><td class="px-2 py-2"><div class="max-w-[180px] break-words leading-snug text-gray-800 dark:text-gray-200 font-medium">${santri.name}</div></td><td class="px-2 py-2 whitespace-nowrap">${htmlBadgeMetode(meta)}</td><td class="px-2 py-2">${htmlProgress(meta)}</td>${sesiCells}</tr>`;
+                return `<tr class="pt-row"><td class="pt-no">${index + 1}</td><td class="pt-td"><div class="pt-name">${santri.name}</div></td><td class="pt-td pt-nowrap">${htmlBadgeMetode(meta)}</td><td class="pt-td">${htmlProgress(meta)}</td>${sesiCells}</tr>`;
             }).join('');
         } else {
-            tableBody.innerHTML = `<tr><td colspan="${4 + sesiHeaders.length}" class="text-center py-6 text-gray-600 italic">Tidak ada santri di kelas ini.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="${4 + sesiHeaders.length}" class="pt-empty">Tidak ada santri di kelas ini.</td></tr>`;
         }
     } catch (error) {
         console.error('Error loading presensi:', error);
         const el = target ? target.querySelector('#tableBodyPresensi') : document.getElementById('tableBodyPresensi');
-        if (el) el.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-red-400 text-xs">Error memuat data presensi</td></tr>`;
+        if (el) el.innerHTML = `<tr><td colspan="7" class="pt-empty pt-error">Gagal memuat data presensi</td></tr>`;
     }
 }
 
@@ -947,7 +923,7 @@ function toggleColorGuide(triggerBtn) {
 
     if (triggerBtn) {
         // Cari di container yang sama dengan tombol (drawer ATAU desktop)
-        const container = triggerBtn.closest('.border.border-gray-800.rounded-lg.overflow-hidden')
+        const container = triggerBtn.closest('[data-color-guide]')
                        || triggerBtn.parentElement;
         if (container) {
             content = container.querySelector('[id^="colorGuideContent"]');

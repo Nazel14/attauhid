@@ -34,7 +34,7 @@ export default function BukuKasUmum({ listRekening, mutasi, saldoAwal, ringkas, 
         : saldoAwal;
 
     // Tinggi & radius seragam untuk semua kontrol filter.
-    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-600';
+    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600';
     // color-scheme ikut tema agar ikon kalender bawaan browser tidak silau di dark mode.
     const dateCls = `${fieldCls} pr-2 [color-scheme:light] dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60 hover:[&::-webkit-calendar-picker-indicator]:opacity-100`;
 
@@ -61,14 +61,14 @@ export default function BukuKasUmum({ listRekening, mutasi, saldoAwal, ringkas, 
                 {accountId && mutasi && (
                     <a href={route('keuangan.laporan.buku_kas_umum.cetak', { account_id: accountId, from_date: dari, to_date: sampai })}
                         target="_blank" rel="noreferrer"
-                        className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-medium text-stone-700 ring-1 ring-stone-200 transition hover:bg-stone-50 dark:bg-coal-700 dark:text-cream-100 dark:ring-coal-600 dark:hover:bg-coal-600">
+                        className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-medium text-stone-700 ring-1 ring-cream-300 transition hover:bg-cream-100 dark:bg-coal-700 dark:text-cream-100 dark:ring-coal-600 dark:hover:bg-coal-600">
                         <IkonPrinter />
                         Cetak PDF
                     </a>
                 )}
             </div>
 
-            <div className="mb-5 rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
+            <div className="mb-5 rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <div className="sm:col-span-2">
                         <label className={labelCls}>Rekening</label>
@@ -92,7 +92,7 @@ export default function BukuKasUmum({ listRekening, mutasi, saldoAwal, ringkas, 
             </div>
 
             {!accountId ? (
-                <div className="rounded-2xl bg-white p-8 text-center ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-12">
+                <div className="rounded-2xl bg-white p-8 text-center ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-12">
                     <svg className="mx-auto mb-3 h-12 w-12 text-stone-300 dark:text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
@@ -109,7 +109,7 @@ export default function BukuKasUmum({ listRekening, mutasi, saldoAwal, ringkas, 
                             ['Total Keluar', ringkas?.kredit, 'text-red-600 dark:text-red-400'],
                             ['Saldo Akhir', saldoAkhir, 'text-claude-600 dark:text-claude-300'],
                         ].map(([label, nilai, warna]) => (
-                            <div key={label} className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
+                            <div key={label} className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
                                 <p className="truncate text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 sm:text-[11px]">{label}</p>
                                 {/* break-words: "Rp 15.500.000" meluber kalau
                                     dipaksa text-lg di layar 360px dua kolom. */}
@@ -118,7 +118,7 @@ export default function BukuKasUmum({ listRekening, mutasi, saldoAwal, ringkas, 
                         ))}
                     </div>
 
-                    <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+                    <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                         <div className="mb-4">
                             <h2 className="break-words text-base font-semibold text-stone-800 dark:text-cream-50">{rekening?.account_name}</h2>
                             <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">{tanggal(dari)} — {tanggal(sampai)}</p>
@@ -127,7 +127,7 @@ export default function BukuKasUmum({ listRekening, mutasi, saldoAwal, ringkas, 
                         {/* Mobile: daftar mutasi sebagai kartu. Tabel 5 kolom
                             dengan tiga kolom nominal tidak terbaca di 360px. */}
                         <div className="space-y-2.5 sm:hidden">
-                            <div className="flex items-center justify-between gap-3 rounded-xl bg-cream-50 px-4 py-3 dark:bg-coal-900/40">
+                            <div className="flex items-center justify-between gap-3 rounded-xl bg-cream-50 px-4 py-3 dark:bg-coal-600/40">
                                 <span className="text-xs font-semibold text-stone-700 dark:text-stone-200">Saldo awal periode</span>
                                 <span className="shrink-0 text-sm font-bold text-stone-800 dark:text-cream-100">{formatCurrency(saldoAwal)}</span>
                             </div>
@@ -136,7 +136,7 @@ export default function BukuKasUmum({ listRekening, mutasi, saldoAwal, ringkas, 
                                 const debit = m.jenis === 'Debit';
 
                                 return (
-                                    <div key={m.id} className="rounded-xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-800/40 dark:ring-coal-600">
+                                    <div key={m.id} className="rounded-xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600">
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
                                                 <p className="break-words text-sm text-stone-800 dark:text-cream-100">{m.keterangan}</p>
@@ -149,19 +149,19 @@ export default function BukuKasUmum({ listRekening, mutasi, saldoAwal, ringkas, 
                                                 {debit ? '+' : '−'} {formatCurrency(m.nominal)}
                                             </span>
                                         </div>
-                                        <div className="mt-2 flex items-center justify-between gap-3 border-t border-stone-100 pt-2 dark:border-coal-600">
+                                        <div className="mt-2 flex items-center justify-between gap-3 border-t border-cream-200 pt-2 dark:border-coal-600">
                                             <span className="text-[10px] uppercase tracking-wider text-stone-400">Saldo</span>
                                             <span className="text-xs font-medium text-stone-700 dark:text-stone-200">{formatCurrency(m.saldo_setelah_transaksi)}</span>
                                         </div>
                                     </div>
                                 );
                             }) : (
-                                <p className="rounded-xl bg-stone-50 py-10 text-center text-sm text-stone-500 dark:bg-coal-800 dark:text-stone-400">
+                                <p className="rounded-xl bg-cream-100 py-10 text-center text-sm text-stone-500 dark:bg-coal-600/40 dark:text-stone-400">
                                     Tidak ada mutasi pada rentang tanggal ini.
                                 </p>
                             )}
 
-                            <div className="rounded-xl bg-stone-800 p-4 dark:bg-coal-900">
+                            <div className="rounded-xl bg-coal-800 p-4 dark:bg-coal-900">
                                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/70">Total periode</p>
                                 <div className="space-y-1.5 text-xs">
                                     <div className="flex justify-between gap-3">
@@ -181,9 +181,9 @@ export default function BukuKasUmum({ listRekening, mutasi, saldoAwal, ringkas, 
                         </div>
 
                         {/* Desktop: tabel buku kas. */}
-                        <div className="hidden overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 sm:block">
-                            <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
-                                <thead className="bg-stone-50 dark:bg-coal-800">
+                        <div className="hidden overflow-x-auto rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 sm:block">
+                            <table className="min-w-full divide-y divide-cream-300 dark:divide-coal-600">
+                                <thead className="bg-cream-100 dark:bg-coal-600/40">
                                     <tr>
                                         <th className={thCls}>Tanggal</th>
                                         <th className={thCls}>Keterangan</th>
@@ -192,8 +192,8 @@ export default function BukuKasUmum({ listRekening, mutasi, saldoAwal, ringkas, 
                                         <th className={`${thCls} text-right`}>Saldo</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
-                                    <tr className="bg-cream-50 dark:bg-coal-900/40">
+                                <tbody className="divide-y divide-cream-200 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                                    <tr className="bg-cream-50 dark:bg-coal-600/40">
                                         <td colSpan="4" className="px-4 py-3 text-sm font-semibold text-stone-700 dark:text-stone-200">Saldo awal periode</td>
                                         <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-stone-800 dark:text-cream-100">{formatCurrency(saldoAwal)}</td>
                                     </tr>
@@ -217,7 +217,7 @@ export default function BukuKasUmum({ listRekening, mutasi, saldoAwal, ringkas, 
                                         <tr><td colSpan="5" className="px-6 py-12 text-center text-sm text-stone-500 dark:text-stone-400">Tidak ada mutasi pada rentang tanggal ini.</td></tr>
                                     )}
                                 </tbody>
-                                <tfoot className="bg-stone-800 text-white dark:bg-coal-900">
+                                <tfoot className="bg-coal-800 text-white dark:bg-coal-900">
                                     <tr>
                                         <td colSpan="2" className="px-4 py-3.5 text-right text-xs font-semibold uppercase tracking-wider">Total periode</td>
                                         <td className="whitespace-nowrap px-4 py-3.5 text-right text-sm font-bold text-emerald-400">{formatCurrency(ringkas?.debit || 0)}</td>
@@ -234,7 +234,7 @@ export default function BukuKasUmum({ listRekening, mutasi, saldoAwal, ringkas, 
                                 <div className="flex flex-wrap justify-center gap-1">
                                     {mutasi.links.map((l, i) => (
                                         <button key={i} onClick={() => l.url && router.get(l.url, {}, { preserveScroll: true })} disabled={!l.url}
-                                            className={`rounded-lg px-3 py-1.5 text-sm transition ${l.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
+                                            className={`rounded-lg px-3 py-1.5 text-sm transition ${l.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
                                             dangerouslySetInnerHTML={{ __html: l.label }} />
                                     ))}
                                 </div>

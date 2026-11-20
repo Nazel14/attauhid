@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Head, router } from '@inertiajs/react';
 import SantriAuthenticatedLayout from '@/Layouts/SantriAuthenticatedLayout';
 import LaporanModal from '@/Components/LaporanModal';
@@ -52,7 +52,8 @@ function formatRange(s) {
 }
 function nilaiTone(n) {
     if (n >= 90) return 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-100 dark:ring-emerald-500/20';
-    if (n >= 75) return 'bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 ring-1 ring-claude-200 dark:ring-claude-500/20';
+    // ≥75 netral — sama dengan Rapot & Setoran guru
+    if (n >= 75) return 'bg-cream-200 dark:bg-coal-600 text-stone-700 dark:text-stone-200 ring-1 ring-cream-300 dark:ring-coal-500';
     return 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-1 ring-amber-100 dark:ring-amber-500/20';
 }
 function usePaged(rows, perPage) {
@@ -64,16 +65,17 @@ function usePaged(rows, perPage) {
 }
 
 const Card = ({ className = '', children }) => (
-    <div className={`bg-white dark:bg-coal-800 rounded-2xl ring-1 ring-stone-200 dark:ring-coal-700 ${className}`}>{children}</div>
+    <div className={`bg-white dark:bg-coal-700 rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600 ${className}`}>{children}</div>
 );
 const inputCls =
-    'w-full px-3 py-2.5 text-sm rounded-xl bg-stone-50 dark:bg-coal-700 text-stone-900 dark:text-stone-100 ring-1 ring-stone-200 dark:ring-coal-600 focus:outline-none focus:ring-2 focus:ring-claude-500 transition [color-scheme:light] dark:[color-scheme:dark]';
+    // Field sama dengan halaman guru: coal-600/40 di dark (tidak hitam pekat).
+    'w-full px-3 py-2.5 text-sm rounded-xl bg-white dark:bg-coal-600/40 text-stone-900 dark:text-stone-100 border border-cream-300 dark:border-coal-600 focus:outline-none focus:border-claude-500 focus:ring-2 focus:ring-claude-500/20 transition [color-scheme:light] dark:[color-scheme:dark]';
 
 /* header card kecil — icon tile w-6 h-6 rounded-lg persis guru */
 function CardHead({ icon, title, hint, right }) {
     return (
         <div className="flex items-center gap-2 mb-4">
-            <span className="w-6 h-6 bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400 flex-shrink-0">
+            <span className="w-6 h-6 bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400 flex-shrink-0">
                 {icon}
             </span>
             <h2 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">{title}</h2>
@@ -116,7 +118,7 @@ export default function Detail({
 
                 {/* ===== HEADER ===== */}
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="w-11 h-11 rounded-2xl bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 flex items-center justify-center flex-shrink-0">
+                    <div className="w-11 h-11 rounded-2xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center flex-shrink-0">
                         <Icon path={P.book} className="w-6 h-6 text-stone-600 dark:text-stone-300" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -136,9 +138,9 @@ export default function Detail({
                     <Card className="p-4 sm:p-5">
                         <div className="flex items-center gap-4">
                             {photo ? (
-                                <img src={`/storage/${photo}`} alt="Foto" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover object-top ring-1 ring-stone-200 dark:ring-coal-700 flex-shrink-0" />
+                                <img src={`/storage/${photo}`} alt="Foto" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover object-top ring-1 ring-cream-300 dark:ring-coal-600 flex-shrink-0" />
                             ) : (
-                                <span className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ring-1 flex items-center justify-center text-lg font-bold flex-shrink-0 ${isPr ? 'bg-pink-100 dark:bg-pink-950/60 ring-pink-200 dark:ring-pink-800/60 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950/60 ring-blue-200 dark:ring-blue-800/60 text-blue-600 dark:text-blue-400'}`}>
+                                <span className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ring-1 flex items-center justify-center text-lg font-bold flex-shrink-0 ${isPr ? 'bg-pink-50 dark:bg-pink-500/10 ring-pink-100 dark:ring-pink-500/20 text-pink-600 dark:text-pink-400' : 'bg-sky-50 dark:bg-sky-500/10 ring-sky-100 dark:ring-sky-500/20 text-sky-600 dark:text-sky-400'}`}>
                                     {(santri?.name ?? '?').charAt(0).toUpperCase()}
                                 </span>
                             )}
@@ -147,7 +149,7 @@ export default function Detail({
                                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
                                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 font-semibold">{santri?.kelas?.name ?? '-'}</span>
                                     {isIqro && (
-                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-coal-700 text-stone-600 dark:text-stone-300 font-semibold ring-1 ring-stone-200 dark:ring-coal-600">
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-cream-200 dark:bg-coal-600 text-stone-600 dark:text-stone-300 font-semibold ring-1 ring-cream-300 dark:ring-coal-500">
                                             {metodeLabel} · Jilid {santri?.target_jilid ?? 1}
                                             {hasQuranSecondary && <span className="opacity-40 mx-1">+</span>}
                                             {hasQuranSecondary && "Al-Qur'an"}
@@ -236,16 +238,16 @@ export default function Detail({
 
                     {/* Mobile tab switcher */}
                     <div className="flex gap-1.5 lg:hidden overflow-x-auto pb-1">
-                        <TabBtn active={mobileTab === 'hafalan'} onClick={() => setMobileTab('hafalan')} tone="claude" label="Hafalan" count={setoranHafalan.length} />
+                        <TabBtn active={mobileTab === 'hafalan'} onClick={() => setMobileTab('hafalan')} tone="emerald" label="Hafalan" count={setoranHafalan.length} />
                         <TabBtn active={mobileTab === 'murajaah'} onClick={() => setMobileTab('murajaah')} tone="amber" label="Murajaah" count={setoranMurajaah.length} />
-                        <TabBtn active={mobileTab === 'tilawah'} onClick={() => setMobileTab('tilawah')} tone="teal" label="Tilawah" count={setoranTilawah.length} />
+                        <TabBtn active={mobileTab === 'tilawah'} onClick={() => setMobileTab('tilawah')} tone="orange" label="Tilawah" count={setoranTilawah.length} />
                     </div>
 
                     {/* Panels */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-                         <SetoranPanel className={`lg:row-span-2 ${showOn('hafalan')}`} tone="claude" title="Hafalan" rows={setoranHafalan} perPage={15} onFile={setModal} isIqro={isIqro} isDual={hasQuranSecondary} />
+                         <SetoranPanel className={`lg:row-span-2 ${showOn('hafalan')}`} tone="emerald" title="Hafalan" rows={setoranHafalan} perPage={15} onFile={setModal} isIqro={isIqro} isDual={hasQuranSecondary} />
                         <SetoranPanel className={showOn('murajaah')} tone="amber" title="Murajaah" rows={setoranMurajaah} perPage={6} onFile={setModal} isIqro={isIqro} isDual={hasQuranSecondary} />
-                        <SetoranPanel className={showOn('tilawah')} tone="teal" title="Tilawah" rows={setoranTilawah} perPage={6} onFile={setModal} isIqro={isIqro} isDual={hasQuranSecondary} />
+                        <SetoranPanel className={showOn('tilawah')} tone="orange" title="Tilawah" rows={setoranTilawah} perPage={6} onFile={setModal} isIqro={isIqro} isDual={hasQuranSecondary} />
                     </div>
                 </div>
             </div>
@@ -259,13 +261,13 @@ export default function Detail({
                 </Modal>
             )}
             {modal?.type === 'pdf' && (
-                <Modal onClose={() => setModal(null)} title="Preview PDF Koreksi" tone="red" icon={P.pdf} wide
+                <Modal onClose={() => setModal(null)} title="Preview PDF Koreksi" tone="stone" icon={P.pdf} wide
                     action={
-                        <a href={`/santri/setorans/${modal.id}/pdf`} download className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-100 dark:ring-emerald-500/20 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition">
+                        <a href={`/santri/setorans/${modal.id}/pdf`} download className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-claude-500 hover:bg-claude-600 text-white text-xs font-semibold transition active:scale-95">
                             <Icon path={P.download} className="w-3.5 h-3.5" /> Download
                         </a>
                     }>
-                    <iframe src={`/santri/setorans/${modal.id}/pdf`} title="PDF" className="w-full rounded-lg bg-white ring-1 ring-stone-200" style={{ height: 'calc(100vh - 220px)', minHeight: 320 }} />
+                    <iframe src={`/santri/setorans/${modal.id}/pdf`} title="PDF" className="w-full rounded-lg bg-white ring-1 ring-cream-300 dark:ring-coal-600" style={{ height: 'calc(100vh - 220px)', minHeight: 320 }} />
                 </Modal>
             )}
             {modal?.type === 'note' && (
@@ -293,13 +295,13 @@ export default function Detail({
 // ── Stat card — pola guru ──
 function StatCard({ icon, label, value, sub, tone = 'stone' }) {
     const toneMap = {
-        stone: 'bg-stone-100 dark:bg-coal-700 text-stone-500 dark:text-stone-400',
+        stone: 'bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400',
         claude: 'bg-claude-100 dark:bg-claude-500/15 text-claude-600 dark:text-claude-400',
         emerald: 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
         amber: 'bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400',
     };
     return (
-        <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-4 flex items-center gap-3">
+        <div className="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl p-4 flex items-center gap-3">
             <span className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${toneMap[tone]}`}>{icon}</span>
             <div className="min-w-0">
                 <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">{label}</p>
@@ -310,28 +312,29 @@ function StatCard({ icon, label, value, sub, tone = 'stone' }) {
     );
 }
 
+// Kategori — SAMA dengan halaman guru: Hafalan emerald, Murajaah amber, Tilawah oranye
 const TONE = {
-    claude: { dot: 'bg-claude-500', text: 'text-claude-600 dark:text-claude-400', chip: 'bg-claude-100 dark:bg-claude-500/15 ring-claude-200 dark:ring-claude-500/20' },
-    amber:  { dot: 'bg-amber-500',  text: 'text-amber-600 dark:text-amber-400',   chip: 'bg-amber-50 dark:bg-amber-500/10 ring-amber-100 dark:ring-amber-500/20' },
-    teal:   { dot: 'bg-teal-500',   text: 'text-teal-600 dark:text-teal-400',     chip: 'bg-teal-50 dark:bg-teal-500/10 ring-teal-100 dark:ring-teal-500/20' },
+    emerald: { dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400', chip: 'bg-emerald-50 dark:bg-emerald-500/10 ring-emerald-100 dark:ring-emerald-500/20' },
+    amber:   { dot: 'bg-amber-500',   text: 'text-amber-700 dark:text-amber-400',     chip: 'bg-amber-50 dark:bg-amber-500/10 ring-amber-100 dark:ring-amber-500/20' },
+    orange:  { dot: 'bg-orange-500',  text: 'text-orange-700 dark:text-orange-400',   chip: 'bg-orange-50 dark:bg-orange-500/10 ring-orange-100 dark:ring-orange-500/20' },
 };
 
 function TabBtn({ active, onClick, tone, label, count }) {
-    const t = TONE[tone] ?? TONE.claude;
+    const t = TONE[tone] ?? TONE.emerald;
     return (
-        <button onClick={onClick} className={`shrink-0 px-3 py-2 text-xs font-semibold rounded-xl transition-colors ring-1 ${active ? `${t.chip} ${t.text}` : 'bg-white dark:bg-coal-800 text-stone-500 dark:text-stone-400 ring-stone-200 dark:ring-coal-700'}`}>
+        <button onClick={onClick} className={`shrink-0 px-3 py-2 text-xs font-semibold rounded-xl transition-colors ring-1 ${active ? `${t.chip} ${t.text}` : 'bg-white dark:bg-coal-700 text-stone-500 dark:text-stone-400 ring-cream-300 dark:ring-coal-600'}`}>
             {label} <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums bg-black/5 dark:bg-white/10">{count}</span>
         </button>
     );
 }
 
 // ── Panel per kategori ──
-function SetoranPanel({ tone, title, rows, perPage, onFile, className = '', isIqro = false, isDual = false }) {    const t = TONE[tone] ?? TONE.claude;
+function SetoranPanel({ tone, title, rows, perPage, onFile, className = '', isIqro = false, isDual = false }) {    const t = TONE[tone] ?? TONE.emerald;
     const pg = usePaged(rows, perPage);
 
     return (
-        <div className={`bg-white dark:bg-coal-800 rounded-2xl ring-1 ring-stone-200 dark:ring-coal-700 overflow-hidden flex flex-col ${className}`}>
-            <div className="px-4 py-3 flex items-center justify-between border-b border-stone-100 dark:border-coal-700">
+        <div className={`bg-white dark:bg-coal-700 rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600 overflow-hidden flex flex-col ${className}`}>
+            <div className="px-4 py-3 flex items-center justify-between border-b border-cream-300 dark:border-coal-600">
                 <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${t.dot}`} />
                     <h4 className="font-bold tracking-tight text-sm text-stone-800 dark:text-stone-200">{title}</h4>
@@ -351,19 +354,19 @@ function SetoranPanel({ tone, title, rows, perPage, onFile, className = '', isIq
                     <div className="overflow-x-auto flex-1">
                         <table className="min-w-full">
                             <thead>
-                                <tr className="bg-stone-50 dark:bg-coal-700/40">
+                                <tr className="bg-cream-100 dark:bg-coal-600/40">
                                     <Th className="w-8">No</Th>
                                     <Th className="w-24">Tanggal</Th>
                                     <Th>{isDual ? 'Materi Setoran' : (isIqro ? 'Jilid & Halaman' : 'Surah & Ayat')}</Th>                                    <Th className="w-16 text-center">Nilai</Th>
                                     <Th className="w-20 text-center">Aksi</Th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-stone-100 dark:divide-coal-700/60">
+                            <tbody className="divide-y divide-cream-200 dark:divide-coal-600/60">
                                 {pg.slice.map((s, i) => {
                                     const fmt = formatRange(s);
                                     const idx = (pg.page - 1) * perPage + i + 1;
                                     return (
-                                        <tr key={s.id} className="hover:bg-stone-50 dark:hover:bg-coal-700/40 transition-colors">
+                                        <tr key={s.id} className="hover:bg-cream-100 dark:hover:bg-coal-600/30 transition-colors">
                                             <Td className="text-stone-400 dark:text-stone-500 tabular-nums">{idx}</Td>
                                             <Td className="text-stone-500 dark:text-stone-400 whitespace-nowrap tabular-nums">{fmtDate(s.tanggal)}</Td>
                                             <Td>
@@ -395,7 +398,7 @@ function SetoranPanel({ tone, title, rows, perPage, onFile, className = '', isIq
 }
 
 const Th = ({ children, className = '' }) => (
-    <th className={`px-3 py-2.5 text-left text-[10px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider ${className}`}>{children}</th>
+    <th className={`px-3 py-2.5 text-left text-[11px] font-semibold text-stone-500 dark:text-stone-400 ${className}`}>{children}</th>
 );
 const Td = ({ children, className = '' }) => (
     <td className={`px-3 py-2.5 text-xs ${className}`}>{children}</td>
@@ -428,12 +431,12 @@ function Pagination({ pg }) {
     for (let i = sp; i <= ep; i++) nums.push(i);
 
     const btn = 'px-2.5 py-1 text-xs rounded-md font-medium transition';
-    const normal = `${btn} text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-coal-700 hover:text-stone-900 dark:hover:text-stone-100`;
+    const normal = `${btn} text-stone-500 dark:text-stone-400 hover:bg-cream-200 dark:hover:bg-coal-600 hover:text-stone-900 dark:hover:text-stone-100`;
     const active = `${btn} font-semibold bg-claude-500 text-white`;
     const disabled = `${btn} text-stone-300 dark:text-stone-600 cursor-not-allowed`;
 
     return (
-        <div className="px-3 py-2.5 border-t border-stone-100 dark:border-coal-700 bg-stone-50 dark:bg-coal-700/30">
+        <div className="px-3 py-2.5 border-t border-cream-300 dark:border-coal-600 bg-cream-100 dark:bg-coal-600/40">
             <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="text-[11px] text-stone-400 dark:text-stone-500 tabular-nums">{from}–{to} dari {total}</span>
                 <div className="flex items-center gap-1 flex-wrap">
@@ -453,21 +456,25 @@ function Pagination({ pg }) {
 // ── Modal ──
 const MODAL_TONE = {
     claude: 'bg-claude-100 dark:bg-claude-500/15 text-claude-600 dark:text-claude-400',
-    red: 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400',
+    stone: 'bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-stone-500 dark:text-stone-400',
     amber: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400',
 };
 function Modal({ onClose, title, tone = 'claude', icon, iconFill, wide, action, children }) {
+    // onClose disimpan di ref: kalau jadi dependency, listener Escape & kunci
+    // scroll dilepas-pasang setiap parent render (onClose = arrow function baru).
+    const closeRef = useRef(onClose);
+    closeRef.current = onClose;
     useEffect(() => {
-        const onKey = (e) => e.key === 'Escape' && onClose();
+        const onKey = (e) => e.key === 'Escape' && closeRef.current();
         document.addEventListener('keydown', onKey);
         document.body.style.overflow = 'hidden';
         return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
-    }, [onClose]);
+    }, []);
 
     return (
         <div className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
-            <div onClick={(e) => e.stopPropagation()} className={`w-full ${wide ? 'sm:max-w-5xl' : 'sm:max-w-lg'} bg-white dark:bg-coal-800 rounded-t-2xl sm:rounded-2xl ring-1 ring-stone-200 dark:ring-coal-700 shadow-2xl overflow-hidden`}>
-                <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100 dark:border-coal-700">
+            <div onClick={(e) => e.stopPropagation()} className={`w-full ${wide ? 'sm:max-w-5xl' : 'sm:max-w-lg'} bg-white dark:bg-coal-700 rounded-t-2xl sm:rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600 shadow-2xl overflow-hidden`}>
+                <div className="flex items-center justify-between px-5 py-4 border-b border-cream-300 dark:border-coal-600">
                     <h3 className="text-sm sm:text-base font-bold tracking-tight text-stone-900 dark:text-stone-100 flex items-center gap-2">
                         <span className={`w-7 h-7 rounded-lg grid place-items-center ${MODAL_TONE[tone]}`}>
                             <Icon path={icon} className="w-3.5 h-3.5" fill={iconFill} />
@@ -476,8 +483,8 @@ function Modal({ onClose, title, tone = 'claude', icon, iconFill, wide, action, 
                     </h3>
                     <div className="flex items-center gap-2">
                         {action}
-                        <button onClick={onClose} className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-100 dark:hover:bg-coal-700 transition">
-                            <Icon path={P.close} className="w-5 h-5" />
+                        <button onClick={onClose} className="w-8 h-8 rounded-lg grid place-items-center bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-stone-500 dark:text-stone-300 hover:bg-cream-300 dark:hover:bg-coal-500 transition">
+                            <Icon path={P.close} className="w-4 h-4" />
                         </button>
                     </div>
                 </div>

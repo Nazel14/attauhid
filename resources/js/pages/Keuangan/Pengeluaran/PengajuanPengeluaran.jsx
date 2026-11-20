@@ -159,11 +159,11 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
     };
 
     const badgeStatus = (s) => ({
-        'draft':     'bg-stone-100 text-stone-600 ring-stone-200 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500',
+        'draft':     'bg-cream-200 text-stone-600 ring-cream-300 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500',
         'diperiksa': 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20',
         'disetujui': 'bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-500/20',
         'selesai':   'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20',
-    }[s] || 'bg-stone-100 text-stone-600 ring-stone-200');
+    }[s] || 'bg-cream-200 text-stone-600 ring-cream-300');
 
     const langkahAktif = aktif ? LANGKAH.findIndex((s) => s.id === aktif.status_approval) : 0;
 
@@ -202,7 +202,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
     const thAksi = 'px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400';
 
     // Tinggi & radius seragam untuk semua kontrol filter.
-    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-600';
+    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600';
     // color-scheme ikut tema agar ikon kalender bawaan browser tidak silau di dark mode.
     const monthCls = `${fieldCls} pr-2 [color-scheme:light] dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60 hover:[&::-webkit-calendar-picker-indicator]:opacity-100`;
 
@@ -237,7 +237,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                             className={`shrink-0 rounded-xl px-3.5 py-2 text-sm font-medium capitalize transition sm:px-4 sm:py-2.5 ${
                                 statusFilter === t
                                     ? 'bg-claude-500 text-white shadow-lg shadow-claude-500/25'
-                                    : 'bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
+                                    : 'bg-white text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
                             }`}>
                             {labelStatus(t)}
                         </button>
@@ -245,7 +245,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                 </div>
             </div>
 
-            <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+            <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                 <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
                         <div className="relative sm:max-w-sm sm:flex-1">
@@ -277,7 +277,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                             <div key={i.id}
                                 className={`rounded-xl p-4 ring-1 ${dipilih
                                     ? 'bg-claude-500/10 ring-claude-500/30'
-                                    : 'bg-white ring-stone-200 dark:bg-coal-800/40 dark:ring-coal-600'}`}>
+                                    : 'bg-white ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600'}`}>
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="min-w-0">
                                         <p className="break-words text-sm font-semibold text-stone-800 dark:text-cream-100">
@@ -304,7 +304,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                                     <span className="shrink-0 text-sm font-bold text-red-600 dark:text-red-400">{formatCurrency(i.nominal_pengajuan)}</span>
                                 </div>
 
-                                <div className="mt-3 flex flex-wrap gap-2 border-t border-stone-100 pt-3 dark:border-coal-600">
+                                <div className="mt-3 flex flex-wrap gap-2 border-t border-cream-200 pt-3 dark:border-coal-600">
                                     <button type="button" onClick={() => bukaDetail(i.id)}
                                         className={`${btnGhost} flex-1 justify-center ${
                                             dipilih
@@ -319,7 +319,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                                         <>
                                             {can('pengeluaran.edit') && (
                                                 <button type="button" onClick={() => openEdit(i)}
-                                                    className={`${btnGhost} flex-1 justify-center text-stone-600 ring-stone-200 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
+                                                    className={`${btnGhost} flex-1 justify-center text-stone-600 ring-cream-300 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
                                                     Edit
                                                 </button>
                                             )}
@@ -335,14 +335,14 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                             </div>
                         );
                     }) : (
-                        <p className="rounded-xl bg-stone-50 py-10 text-center text-sm text-stone-500 dark:bg-coal-800 dark:text-stone-400">Belum ada pengajuan.</p>
+                        <p className="rounded-xl bg-cream-100 py-10 text-center text-sm text-stone-500 dark:bg-coal-600/40 dark:text-stone-400">Belum ada pengajuan.</p>
                     )}
                 </div>
 
                 {/* Desktop: tabel penuh dengan sorting. */}
-                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 sm:block">
-                    <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
-                        <thead className="bg-stone-50 dark:bg-coal-800">
+                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 sm:block">
+                    <table className="min-w-full divide-y divide-cream-300 dark:divide-coal-600">
+                        <thead className="bg-cream-100 dark:bg-coal-600/40">
                             <tr>
                                 <th onClick={() => handleSort('tanggal_pengajuan')} className={thCls}><div className="flex items-center">Tanggal <SortIcon field="tanggal_pengajuan" /></div></th>
                                 <th className={thPlain}>Pemohon</th>
@@ -352,7 +352,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                                 <th className={thAksi}>Aksi</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                        <tbody className="divide-y divide-cream-200 bg-white dark:divide-coal-600 dark:bg-coal-700">
                             {pengeluaran?.data?.length > 0 ? pengeluaran.data.map((i) => {
                                 const dipilih = terpilih === i.id;
                                 return (
@@ -391,7 +391,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                                                     <>
                                                         {can('pengeluaran.edit') && (
                                                             <button type="button" onClick={() => openEdit(i)}
-                                                                className={`${btnGhost} text-stone-600 ring-stone-200 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
+                                                                className={`${btnGhost} text-stone-600 ring-cream-300 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
                                                                 Edit
                                                             </button>
                                                         )}
@@ -419,7 +419,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                     <div className="flex flex-wrap justify-center gap-1">
                         {pengeluaran.links.map((l, i) => (
                             <button key={i} onClick={() => l.url && router.get(l.url, {}, { preserveScroll: true })} disabled={!l.url}
-                                className={`rounded-lg px-3 py-1.5 text-sm transition ${l.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
+                                className={`rounded-lg px-3 py-1.5 text-sm transition ${l.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
                                 dangerouslySetInnerHTML={{ __html: l.label }} />
                         ))}
                     </div>
@@ -431,8 +431,8 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
             {aktif && (
                 <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
                     <div className="space-y-4">
-                        <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
-                            <div className="mb-4 flex items-start justify-between gap-2 border-b border-stone-100 pb-3 dark:border-coal-600">
+                        <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
+                            <div className="mb-4 flex items-start justify-between gap-2 border-b border-cream-200 pb-3 dark:border-coal-600">
                                 <h3 className="text-sm font-semibold text-stone-800 dark:text-cream-50">Informasi Pengajuan</h3>
                                 <button type="button" onClick={() => setTerpilih(null)} title="Tutup detail"
                                     className="-mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-stone-400 transition hover:bg-cream-200 hover:text-stone-600 dark:hover:bg-coal-600 dark:hover:text-stone-300">
@@ -470,8 +470,8 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                         </div>
 
                         {(aktif.status_approval === 'disetujui' || aktif.status_approval === 'selesai') && (
-                            <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
-                                <h3 className="mb-4 border-b border-stone-100 pb-3 text-sm font-semibold text-stone-800 dark:border-coal-600 dark:text-cream-50">Pertanggungjawaban</h3>
+                            <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
+                                <h3 className="mb-4 border-b border-cream-200 pb-3 text-sm font-semibold text-stone-800 dark:border-coal-600 dark:text-cream-50">Pertanggungjawaban</h3>
 
                                 {aktif.status_approval === 'disetujui' ? (
                                     <>
@@ -484,11 +484,11 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                                     </>
                                 ) : (
                                     <div className="space-y-2.5 text-sm">
-                                        <div className="flex justify-between gap-3 border-b border-stone-100 pb-2 dark:border-coal-600">
+                                        <div className="flex justify-between gap-3 border-b border-cream-200 pb-2 dark:border-coal-600">
                                             <span className="text-stone-500 dark:text-stone-400">Realisasi</span>
                                             <span className="text-right font-medium text-stone-800 dark:text-cream-100">{formatCurrency(aktif.nominal_realisasi)}</span>
                                         </div>
-                                        <div className="flex justify-between gap-3 border-b border-stone-100 pb-2 dark:border-coal-600">
+                                        <div className="flex justify-between gap-3 border-b border-cream-200 pb-2 dark:border-coal-600">
                                             <span className="text-stone-500 dark:text-stone-400">Sisa dana</span>
                                             <span className="text-right font-semibold text-emerald-600 dark:text-emerald-400">{formatCurrency(aktif.nominal_refund)}</span>
                                         </div>
@@ -512,8 +512,8 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                         )}
                     </div>
 
-                    <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5 lg:col-span-2">
-                        <h3 className="mb-6 border-b border-stone-100 pb-3 text-sm font-semibold text-stone-800 dark:border-coal-600 dark:text-cream-50">Jalur Persetujuan</h3>
+                    <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5 lg:col-span-2">
+                        <h3 className="mb-6 border-b border-cream-200 pb-3 text-sm font-semibold text-stone-800 dark:border-coal-600 dark:text-cream-50">Jalur Persetujuan</h3>
 
                         {/* Lingkaran murni indikator. Digeser horizontal di mobile. */}
                         <div className="-mx-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:overflow-visible sm:px-0">
@@ -528,7 +528,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                                                 <div className={`flex h-10 w-10 items-center justify-center rounded-full ring-2 ${
                                                     selesai ? 'bg-claude-500 text-white ring-claude-500'
                                                     : berikutnya ? 'bg-white text-claude-600 ring-claude-500 dark:bg-coal-700'
-                                                    : 'bg-stone-50 text-stone-400 ring-stone-200 dark:bg-coal-800 dark:ring-coal-600'
+                                                    : 'bg-cream-100 text-stone-400 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600'
                                                 }`}>
                                                     {selesai
                                                         ? <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -538,7 +538,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                                                 {selesai && pelaku(step.id)}
                                             </div>
                                             {i < LANGKAH.length - 1 && (
-                                                <div className={`mt-5 h-0.5 w-6 rounded sm:w-12 ${i < langkahAktif ? 'bg-claude-500' : 'bg-stone-200 dark:bg-coal-600'}`} />
+                                                <div className={`mt-5 h-0.5 w-6 rounded sm:w-12 ${i < langkahAktif ? 'bg-claude-500' : 'bg-cream-300 dark:bg-coal-600'}`} />
                                             )}
                                         </div>
                                     );
@@ -547,7 +547,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                         </div>
 
                         {/* Aksi persetujuan sebagai tombol eksplisit. */}
-                        <div className="mt-6 rounded-xl bg-cream-100 p-4 dark:bg-coal-900/50">
+                        <div className="mt-6 rounded-xl bg-cream-100 p-4 dark:bg-coal-600/40">
                             {!langkahBerikut ? (
                                 <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
                                     <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -632,7 +632,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                         <div>
                             <InputLabel>Deskripsi Keperluan <span className="text-red-500">*</span></InputLabel>
                             <textarea value={data.deskripsi} onChange={(e) => setData('deskripsi', e.target.value)} rows="3"
-                                className="mt-1.5 block w-full rounded-xl border-0 bg-white px-4 py-2.5 text-sm text-stone-800 shadow-sm ring-1 ring-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-700"
+                                className="mt-1.5 block w-full rounded-xl border-0 bg-white px-4 py-2.5 text-sm text-stone-800 shadow-sm ring-1 ring-cream-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600"
                                 placeholder="Jelaskan rincian keperluan dana ini…" />
                             <InputError message={errors.deskripsi} className="mt-1.5" />
                         </div>
@@ -650,7 +650,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                     <h2 className="text-base font-semibold text-stone-800 dark:text-cream-50">Setujui &amp; Cairkan Dana</h2>
                     <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Saldo rekening akan berkurang dan tercatat permanen di buku kas.</p>
 
-                    <div className="mt-5 rounded-xl bg-stone-50 p-4 dark:bg-coal-900/50">
+                    <div className="mt-5 rounded-xl bg-cream-100 p-4 dark:bg-coal-600/40">
                         <p className="text-[11px] uppercase tracking-wider text-stone-400">Nominal dicairkan</p>
                         <p className="mt-1 break-words text-lg font-bold text-stone-800 dark:text-cream-100">{formatCurrency(aktif?.nominal_pengajuan)}</p>
                     </div>
@@ -678,7 +678,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                     <h2 className="text-base font-semibold text-stone-800 dark:text-cream-50">Laporan Pertanggungjawaban</h2>
                     <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Sisa dana dihitung otomatis dari selisihnya.</p>
 
-                    <div className="mt-5 rounded-xl bg-stone-50 p-4 dark:bg-coal-900/50">
+                    <div className="mt-5 rounded-xl bg-cream-100 p-4 dark:bg-coal-600/40">
                         <p className="text-[11px] uppercase tracking-wider text-stone-400">Dana dicairkan</p>
                         <p className="mt-1 break-words text-lg font-bold text-stone-800 dark:text-cream-100">{formatCurrency(aktif?.nominal_pengajuan)}</p>
                     </div>
@@ -730,7 +730,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
                     <h2 className="mb-4 text-base font-semibold text-stone-800 dark:text-cream-50">Lampiran</h2>
                     <ul className="max-h-80 space-y-2 overflow-y-auto pr-1">
                         {aktif?.attachments?.map((f) => (
-                            <li key={f.id} className="flex items-center justify-between gap-3 rounded-xl bg-stone-50 p-3 dark:bg-coal-900/50">
+                            <li key={f.id} className="flex items-center justify-between gap-3 rounded-xl bg-cream-100 p-3 dark:bg-coal-600/40">
                                 <span className="truncate text-sm text-stone-700 dark:text-stone-200">{f.file_name}</span>
                                 <a href={f.url} target="_blank" rel="noreferrer"
                                     className="shrink-0 rounded-lg bg-claude-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-claude-600">Buka</a>

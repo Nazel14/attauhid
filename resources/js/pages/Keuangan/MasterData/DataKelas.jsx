@@ -8,12 +8,27 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import InputError from '@/Components/InputError';
 
-export default function DataKelas({ kelas, listTahun, filters }) {
+// Rumah Quran diberi biru At-Tauhid supaya terbedakan sekilas dari TK (hijau).
+const BADGE_LEMBAGA = {
+    tk:     'bg-claude-50 text-claude-700 ring-claude-200 dark:bg-claude-500/10 dark:text-claude-300 dark:ring-claude-500/20',
+    arahan: 'bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-500/20',
+};
+
+function BadgeLembaga({ lembaga, label }) {
+    return (
+        <span className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${BADGE_LEMBAGA[lembaga] || BADGE_LEMBAGA.tk}`}>
+            {label}
+        </span>
+    );
+}
+
+export default function DataKelas({ kelas, listTahun, listLembaga = { tk: 'TK At-Tauhid', arahan: 'Rumah Quran' }, filters }) {
     const { auth } = usePage().props;
     const can = (p) => (auth.permissions || []).includes(p);
 
     const [search, setSearch] = useState(filters?.search || '');
     const [tahunFilter, setTahunFilter] = useState(filters?.tahunFilter || '');
+    const [lembagaFilter, setLembagaFilter] = useState(filters?.lembagaFilter || '');
     const [sortField, setSortField] = useState(filters?.sort_field || 'name');
     const [sortDirection, setSortDirection] = useState(filters?.sort_direction || 'asc');
 
@@ -28,6 +43,7 @@ export default function DataKelas({ kelas, listTahun, filters }) {
         name: '',
         tahun_ajaran: '',
         tingkat: '',
+        lembaga: 'tk',
         kapasitas: 20,
         is_active: true,
     });
@@ -38,12 +54,12 @@ export default function DataKelas({ kelas, listTahun, filters }) {
 
         const t = setTimeout(() => {
             router.get(route('keuangan.master-data.kelas.index'),
-                { search, tahunFilter, sort_field: sortField, sort_direction: sortDirection },
+                { search, tahunFilter, lembagaFilter, sort_field: sortField, sort_direction: sortDirection },
                 { preserveState: true, preserveScroll: true, replace: true });
         }, 300);
 
         return () => clearTimeout(t);
-    }, [search, tahunFilter, sortField, sortDirection]);
+    }, [search, tahunFilter, lembagaFilter, sortField, sortDirection]);
 
     const handleSort = (field) => {
         if (sortField === field) setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -67,6 +83,7 @@ export default function DataKelas({ kelas, listTahun, filters }) {
             name: item.name,
             tahun_ajaran: item.tahun_ajaran || '',
             tingkat: item.tingkat || '',
+            lembaga: item.lembaga || 'tk',
             kapasitas: item.kapasitas,
             is_active: Boolean(item.is_active),
         });
@@ -96,7 +113,7 @@ export default function DataKelas({ kelas, listTahun, filters }) {
     const thPlain = 'px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400';
 
     // Tinggi & radius seragam untuk semua kontrol filter.
-    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-600';
+    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600 dark:[color-scheme:dark]';
     const selectCls = `${fieldCls} cursor-pointer appearance-none pr-9`;
 
     const ChevronBawah = () => (
@@ -141,7 +158,7 @@ export default function DataKelas({ kelas, listTahun, filters }) {
 
             {/* Hanya mobile: di desktop sidebar sudah menyediakan navigasi. */}
             <Link href={route('keuangan.dashboard')}
-                className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-stone-600 ring-1 ring-stone-200 transition hover:bg-cream-100 active:scale-95 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600 lg:hidden">
+                className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-stone-600 ring-1 ring-cream-300 transition hover:bg-cream-100 active:scale-95 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600 lg:hidden">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
@@ -151,11 +168,11 @@ export default function DataKelas({ kelas, listTahun, filters }) {
             <div className="mb-6">
                 <h1 className="text-lg font-bold text-stone-800 dark:text-cream-50 sm:text-xl">Master Data Kelas</h1>
                 <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-                    Satu kelas berlaku untuk satu tahun ajaran. Data ini sama dengan yang dipakai modul raport.
+                    Satu kelas berlaku untuk satu tahun ajaran. Lembaga menentukan cara bayar: kelas TK ditagih, kelas Rumah Quran membayar infaq sukarela.
                 </p>
             </div>
 
-            <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+            <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
                         <div className="relative sm:max-w-sm sm:flex-1">
@@ -174,6 +191,14 @@ export default function DataKelas({ kelas, listTahun, filters }) {
                             </select>
                             <ChevronBawah />
                         </div>
+
+                        <div className="relative sm:w-44">
+                            <select value={lembagaFilter} onChange={(e) => setLembagaFilter(e.target.value)} className={selectCls}>
+                                <option value="">Semua Lembaga</option>
+                                {Object.entries(listLembaga).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+                            </select>
+                            <ChevronBawah />
+                        </div>
                     </div>
 
                     {can('master.kelas.buat') && (
@@ -184,7 +209,7 @@ export default function DataKelas({ kelas, listTahun, filters }) {
                 {/* ===== KARTU — MOBILE & TABLET ===== */}
                 <div className="space-y-2.5 lg:hidden">
                     {kelas.data.length > 0 ? kelas.data.map((item) => (
-                        <div key={item.id} className="overflow-hidden rounded-2xl ring-1 ring-stone-200 dark:ring-coal-600">
+                        <div key={item.id} className="overflow-hidden rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600">
                             <div className="flex items-start justify-between gap-3 p-4">
                                 <div className="min-w-0">
                                     <p className="truncate text-sm font-semibold text-stone-800 dark:text-cream-100">
@@ -193,27 +218,30 @@ export default function DataKelas({ kelas, listTahun, filters }) {
                                     </p>
                                     <p className="mt-0.5 text-xs text-stone-400">{item.tahun_ajaran || 'Tanpa tahun ajaran'}</p>
                                 </div>
-                                <BadgeStatus aktif={item.is_active} />
+                                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                                    <BadgeLembaga lembaga={item.lembaga} label={listLembaga[item.lembaga] || listLembaga.tk} />
+                                    <BadgeStatus aktif={item.is_active} />
+                                </div>
                             </div>
 
-                            <div className="grid grid-cols-2 border-t border-stone-100 dark:border-coal-600">
-                                <div className="border-r border-stone-100 px-3 py-2.5 text-center dark:border-coal-600">
+                            <div className="grid grid-cols-2 border-t border-cream-200 dark:border-coal-600">
+                                <div className="border-r border-cream-200 px-3 py-2.5 text-center dark:border-coal-600">
                                     <p className="mb-1 text-[10px] uppercase tracking-wider text-stone-400">Wali Kelas</p>
                                     <p className="truncate text-xs font-medium text-stone-700 dark:text-stone-200">
                                         {item.guru?.name || <span className="italic text-stone-400">Belum ada</span>}
                                     </p>
                                 </div>
                                 <div className="px-3 py-2.5 text-center">
-                                    <p className="mb-1 text-[10px] uppercase tracking-wider text-stone-400">Santri / Kapasitas</p>
+                                    <p className="mb-1 text-[10px] uppercase tracking-wider text-stone-400">Siswa / Kapasitas</p>
                                     <p className="text-xs"><Terisi item={item} /></p>
                                 </div>
                             </div>
 
                             {adaAksi && (
-                                <div className="grid grid-cols-2 border-t border-stone-100 dark:border-coal-600">
+                                <div className="grid grid-cols-2 border-t border-cream-200 dark:border-coal-600">
                                     {can('master.kelas.edit') && (
                                         <button onClick={() => openEditModal(item)}
-                                            className="flex items-center justify-center gap-1.5 border-r border-stone-100 py-2.5 text-xs font-medium text-claude-600 transition hover:bg-claude-500/10 dark:border-coal-600 dark:text-claude-300">
+                                            className="flex items-center justify-center gap-1.5 border-r border-cream-200 py-2.5 text-xs font-medium text-claude-600 transition hover:bg-claude-500/10 dark:border-coal-600 dark:text-claude-300">
                                             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
@@ -233,24 +261,25 @@ export default function DataKelas({ kelas, listTahun, filters }) {
                             )}
                         </div>
                     )) : (
-                        <div className="rounded-2xl py-14 text-center ring-1 ring-stone-200 dark:ring-coal-600">{kosong}</div>
+                        <div className="rounded-2xl py-14 text-center ring-1 ring-cream-300 dark:ring-coal-600">{kosong}</div>
                     )}
                 </div>
 
                 {/* ===== TABEL — DESKTOP ===== */}
-                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 lg:block">
-                    <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
-                        <thead className="bg-stone-50 dark:bg-coal-800">
+                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 lg:block">
+                    <table className="min-w-full divide-y divide-cream-300 dark:divide-coal-600">
+                        <thead className="bg-cream-100 dark:bg-coal-600/40">
                             <tr>
                                 <th onClick={() => handleSort('name')} className={thCls}><div className="flex items-center">Nama Kelas <SortIcon field="name" /></div></th>
                                 <th onClick={() => handleSort('tahun_ajaran')} className={thCls}><div className="flex items-center">Tahun Ajaran <SortIcon field="tahun_ajaran" /></div></th>
+                                <th onClick={() => handleSort('lembaga')} className={thCls}><div className="flex items-center">Lembaga <SortIcon field="lembaga" /></div></th>
                                 <th className={thPlain}>Wali Kelas</th>
-                                <th className={`${thPlain} text-center`}>Santri / Kapasitas</th>
+                                <th className={`${thPlain} text-center`}>Siswa / Kapasitas</th>
                                 <th onClick={() => handleSort('is_active')} className={`${thCls} text-center`}><div className="flex items-center justify-center">Status <SortIcon field="is_active" /></div></th>
                                 {adaAksi && <th className="px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Aksi</th>}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                        <tbody className="divide-y divide-cream-200 bg-white dark:divide-coal-600 dark:bg-coal-700">
                             {kelas.data.length > 0 ? kelas.data.map((item) => (
                                 <tr key={item.id} className="transition hover:bg-cream-50 dark:hover:bg-coal-600/40">
                                     <td className="whitespace-nowrap px-5 py-4 text-sm font-semibold text-stone-800 dark:text-cream-100">
@@ -258,6 +287,7 @@ export default function DataKelas({ kelas, listTahun, filters }) {
                                         {item.tingkat && <span className="ml-1.5 text-xs font-normal text-stone-400">({item.tingkat})</span>}
                                     </td>
                                     <td className="whitespace-nowrap px-5 py-4 text-sm text-stone-600 dark:text-stone-300">{item.tahun_ajaran || '-'}</td>
+                                    <td className="whitespace-nowrap px-5 py-4"><BadgeLembaga lembaga={item.lembaga} label={listLembaga[item.lembaga] || listLembaga.tk} /></td>
                                     <td className="whitespace-nowrap px-5 py-4 text-sm">
                                         {item.guru
                                             ? <span className="text-stone-700 dark:text-stone-200">{item.guru.name}</span>
@@ -288,7 +318,7 @@ export default function DataKelas({ kelas, listTahun, filters }) {
                                     )}
                                 </tr>
                             )) : (
-                                <tr><td colSpan={adaAksi ? 6 : 5} className="px-6 py-14 text-center">{kosong}</td></tr>
+                                <tr><td colSpan={adaAksi ? 7 : 6} className="px-6 py-14 text-center">{kosong}</td></tr>
                             )}
                         </tbody>
                     </table>
@@ -301,7 +331,7 @@ export default function DataKelas({ kelas, listTahun, filters }) {
                             <button key={i} onClick={() => link.url && router.get(link.url, {}, { preserveScroll: true })} disabled={!link.url}
                                 className={`rounded-lg px-3 py-1.5 text-sm transition ${
                                     link.active ? 'bg-claude-500 font-medium text-white'
-                                        : 'text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
+                                        : 'text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
                                 }`}
                                 dangerouslySetInnerHTML={{ __html: link.label }} />
                         ))}
@@ -330,6 +360,26 @@ export default function DataKelas({ kelas, listTahun, filters }) {
                             </div>
                         </div>
 
+                        <div>
+                            <InputLabel>Lembaga <span className="text-red-500">*</span></InputLabel>
+                            <div className="mt-1.5 grid grid-cols-2 gap-2">
+                                {Object.entries(listLembaga).map(([k, label]) => (
+                                    <button key={k} type="button" onClick={() => setData('lembaga', k)}
+                                        className={`rounded-xl px-3 py-2.5 text-left text-sm transition ring-1 ${
+                                            data.lembaga === k
+                                                ? 'bg-claude-500/10 font-semibold text-claude-700 ring-2 ring-claude-500 dark:text-claude-300'
+                                                : 'text-stone-600 ring-cream-300 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
+                                        }`}>
+                                        {label}
+                                        <span className="mt-0.5 block text-xs font-normal text-stone-400">
+                                            {k === 'arahan' ? 'Infaq sukarela, tanpa tagihan' : 'Ditagih lewat gelombang tagihan'}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                            <InputError message={errors.lembaga} className="mt-1.5" />
+                        </div>
+
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
                                 <InputLabel htmlFor="tingkat">Tingkat Kelas</InputLabel>
@@ -345,14 +395,14 @@ export default function DataKelas({ kelas, listTahun, filters }) {
                             </div>
                         </div>
 
-                        <div className="border-t border-stone-100 pt-4 dark:border-coal-600">
+                        <div className="border-t border-cream-200 pt-4 dark:border-coal-600">
                             <label className="flex cursor-pointer items-center gap-2">
                                 <input type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)}
-                                    className="h-4 w-4 rounded border-stone-300 text-claude-500 focus:ring-claude-500 dark:border-coal-600 dark:bg-coal-900" />
+                                    className="h-4 w-4 rounded border-cream-400 text-claude-500 focus:ring-claude-500 dark:border-coal-600 dark:bg-coal-600/40" />
                                 <span className="text-sm text-stone-600 dark:text-stone-300">Kelas Sedang Aktif</span>
                             </label>
                             <p className="mt-2 text-xs text-stone-400">
-                                Wali kelas dan pembagian santri diatur dari panel raport.
+                                Wali kelas dan pembagian siswa diatur dari panel raport.
                             </p>
                         </div>
                     </div>

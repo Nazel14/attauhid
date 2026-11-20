@@ -31,9 +31,13 @@ class PimpinanController extends Controller
         $tahun = now()->year;
 
         $data = Cache::remember(
-            "keuangan.pimpinan.$tahun",
+            // v2: bentuk datanya berubah (ada pemasukanLembaga). Kunci lama
+            // bisa masih tersimpan hingga 10 menit sesudah deploy dan
+            // tidak punya kunci itu — halaman jadi error.
+            "keuangan.pimpinan.v2.$tahun",
             now()->addMinutes(self::CACHE_MENIT),
             fn () => [
+                'pemasukan'      => $this->pemasukanPerLembaga($tahun),
                 'tunggakanKelas' => $this->tunggakanPerKelas(),
                 'keringanan'     => $this->keringananPerAlasan($tahun),
                 'bebanGaji'      => $this->bebanGaji($tahun),
@@ -44,12 +48,49 @@ class PimpinanController extends Controller
 
         return Inertia::render('Keuangan/Pimpinan', [
             'tahun'          => $tahun,
+            'pemasukan'      => $data['pemasukan'],
             'tunggakanKelas' => $data['tunggakanKelas'],
             'keringanan'     => $data['keringanan'],
             'bebanGaji'      => $data['bebanGaji'],
             'rkas'           => $data['rkas'],
             'tahfizh'        => $data['tahfizh'],
         ]);
+    }
+
+    /**
+     * Uang masuk tahun berjalan, dipisah menurut sumbernya: tagihan TK,
+     * infaq Rumah Quran, dan sisanya (uang masuk, koperasi, donatur).
+     *
+     * Dipisah menurut KATEGORI pembayaran, bukan kelas siswanya. Kategori
+     * terkunci saat kwitansi dibuat, sedangkan kelas siswa bisa berubah —
+     * angka tahun lalu tidak boleh ikut bergeser karena seorang santri
+     * pindah rombel.
+     */
+    private function pemasukanPerLembaga(int $tahun): array
+    {
+        $perKategori = Pembayaran::where('status_approval', 'disetujui')
+            ->whereYear('payment_date', $tahun)
+            ->groupBy('kategori')
+            ->selectRaw('kategori, COUNT(*) AS jumlah, COALESCE(SUM(nominal), 0) AS nominal')
+            ->get()
+            ->keyBy('kategori');
+
+        // Kategori yang belum pernah ada transaksinya tidak punya baris.
+        $ambil = fn (string $k) => [
+            'jumlah'  => (int) ($perKategori->get($k)?->jumlah ?? 0),
+            'nominal' => (float) ($perKategori->get($k)?->nominal ?? 0),
+        ];
+
+        $lainnya = $perKategori->except(['tagihan', 'infaq_arahan']);
+
+        return [
+            'tk'      => $ambil('tagihan'),
+            'arahan'  => $ambil('infaq_arahan'),
+            'lainnya' => [
+                'jumlah'  => (int) $lainnya->sum('jumlah'),
+                'nominal' => (float) $lainnya->sum('nominal'),
+            ],
+        ];
     }
 
     /**
@@ -81,8 +122,11 @@ class PimpinanController extends Controller
             ->get()
             ->keyBy('kelas_id');
 
+        // Hanya kelas TK. Kelas Rumah Quran tidak punya tagihan, jadi barisnya
+        // hanya akan berisi nol dan menenggelamkan kelas yang perlu dilihat.
         $baris = Kelas::query()
             ->where('is_active', true)
+            ->where('lembaga', Kelas::LEMBAGA_TK)
             ->withCount(['siswas as total_siswa' => fn ($q) => $q->where('status', 'aktif')])
             ->orderBy('name')
             ->get()

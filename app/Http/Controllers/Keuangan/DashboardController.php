@@ -47,7 +47,11 @@ class DashboardController extends Controller
 
                 // santris tidak punya is_active; statusnya enum aktif/lulus/keluar.
                 // scopeAktif() sudah didefinisikan di model Santri.
-                $totalSiswa = Siswa::aktif()->count();
+                //
+                // Penyebut persentase tunggakan hanya siswa TK. Santri Rumah Quran
+                // tidak pernah ditagih, jadi memasukkan mereka membuat
+                // persentasenya tampak lebih baik dari kenyataan.
+                $totalSiswa = Siswa::aktif()->tk()->count();
 
                 // Dua syarat, keduanya mengikuti LaporanController::tunggakan()
                 // supaya angka di dashboard dan di laporan tidak pernah berbeda:
@@ -56,6 +60,7 @@ class DashboardController extends Controller
                 // Draft belum pernah sampai ke wali murid, jadi belum piutang.
                 $siswaNunggak = Tagihan::whereIn('status', ['Unpaid', 'Installment'])
                     ->whereHas('header', fn ($q) => $q->where('status', 'Published'))
+                    ->whereHas('siswa', fn ($q) => $q->tk())
                     ->distinct('student_id')
                     ->count('student_id');
 
@@ -154,6 +159,7 @@ class DashboardController extends Controller
 
             $nunggak = Tagihan::query()
                 ->whereHas('header', fn ($q) => $q->where('status', 'Published'))
+                ->whereHas('siswa', fn ($q) => $q->tk())
                 ->where('created_at', '<=', $batas)
                 ->where(function ($q) use ($batas) {
                     $q->whereNull('cancelled_at')
@@ -189,7 +195,7 @@ class DashboardController extends Controller
             ->map(fn ($p) => [
                 'id'          => $p->id,
                 'description' => $p->siswa?->name
-                    ? 'Pembayaran · ' . $p->siswa->name
+                    ? ($p->kategori === 'infaq_arahan' ? 'Infaq RQ · ' : 'Pembayaran · ') . $p->siswa->name
                     : 'Dana luar · ' . mb_strimwidth((string) $p->catatan, 0, 28, '…'),
                 'date'        => $p->payment_date?->translatedFormat('d M Y') ?? '-',
                 'method'      => $p->payment_method ?: 'Tunai',

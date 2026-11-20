@@ -4,6 +4,17 @@ import LogoutButton from '@/Components/LogoutButton';
 import AppLogo from '@/Components/AppLogo';
 import LaporanNotifier from '@/Components/LaporanNotifier';
 
+// Nama aplikasi untuk sidebar dan header mobile.
+//
+// Dibaca dari VITE_APP_NAME, bukan ditulis langsung, supaya salinan TK dan
+// salinan pesantren cukup berbeda di .env dan tidak perlu berbeda berkas JSX
+// — kalau namanya ditanam di sini, setiap penggabungan perubahan antar kedua
+// salinan akan bentrok di baris ini terus-menerus.
+//
+// Perlu diingat: variabel VITE_ DIBAKAR ke dalam bundel saat build. Mengubah
+// .env tidak berpengaruh apa-apa sampai `npm run build` dijalankan ulang
+// (atau `npm run dev` dihentikan lalu dinyalakan lagi).
+const NAMA_APP = import.meta.env.VITE_APP_NAME || 'TK Attauhid';
 
 // ---- Toggle tema ----
 function ThemeToggle({ dark, onToggle }) {
@@ -99,7 +110,7 @@ function SidebarBody({
                     </div>
                     {!isMini && (
                         <div className="leading-tight">
-                            <p className="text-sm font-bold text-stone-800 dark:text-cream-50">Laporan Tahfizh</p>
+                            <p className="text-sm font-bold text-stone-800 dark:text-cream-50">{NAMA_APP}</p>
                             <p className="text-[10px] text-stone-400 dark:text-stone-500">Panel Admin</p>
                         </div>
                     )}
@@ -218,7 +229,7 @@ function SidebarBody({
                         <div className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-stone-500 dark:text-stone-400">
                             <span className="flex items-center gap-2 font-medium">
                                 {dark ? (
-                                    <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>  
+                                    <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>
                                 ) : (
                                      <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path strokeLinecap="round" d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
                                 )}
@@ -326,7 +337,10 @@ export default function AuthenticatedLayout({ children }) {
                     <button onClick={() => setOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-600 hover:bg-cream-200 dark:text-stone-400 dark:hover:bg-coal-600">
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
                     </button>
-                    <span className="text-sm font-bold">Laporan Tahfizh</span>
+                    {/* Judul ini dan judul di sidebar harus selalu sama. Dulu keduanya
+                        ditulis terpisah, jadi mengganti salah satu saja menyisakan
+                        nama lama di tampilan HP. */}
+                    <span className="truncate text-sm font-bold">{NAMA_APP}</span>
 
                     {/* Toggle tema mobile */}
                     <div className="ml-auto flex items-center">
@@ -338,7 +352,7 @@ export default function AuthenticatedLayout({ children }) {
             </div>
 
             <LaporanNotifier href={route('admin.laporan.index')} />
-            
+
         </div>
     );
 }

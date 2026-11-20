@@ -28,17 +28,45 @@ const ArrowIcon = (p) => <I {...p} d={<path d="M13 7l5 5m0 0l-5 5m5-5H6" />} />;
 /* ============================================================
  * KONSTANTA
  * ============================================================ */
+// Warna SEMANTIK (status presensi & kategori) — sama di semua panel.
+// Recharts menerima warna sebagai nilai JS, bukan kelas Tailwind.
 const C = {
-    claude: '#D97757',
-    amber: '#F59E0B',
-    teal: '#14B8A6',
-    emerald: '#10B981',
-    blue: '#3B82F6',
-    red: '#EF4444',
-    trackLight: '#F5F4EF',
-    trackDark: '#3E3D3A',
+    emerald: '#10B981',   // Hadir · Hafalan · Al-Qur'an
+    amber: '#F59E0B',     // Izin · Murajaah
+    orange: '#F97316',    // Sakit · Tilawah
+    red: '#EF4444',       // Alpha
     muted: '#A8A29E',
 };
+
+/* Warna TEMA (aksen & permukaan) dibaca langsung dari CSS hasil
+   tailwind.config.js, BUKAN ditulis manual. Dulu aksen ditulis '#D97757'
+   (terracotta lama) dan tidak ikut saat palet claude diganti hijau.
+   Class di PROBE harus tertulis utuh supaya dipindai Tailwind. */
+const PROBE = {
+    accent: 'bg-claude-500',
+    trackLight: 'bg-cream-300',
+    trackDark: 'bg-coal-600',
+    surfaceDark: 'bg-coal-700',
+};
+const THEME_FALLBACK = { accent: '#7EB842', trackLight: '#E1E4D8', trackDark: '#353B33', surfaceDark: '#262B25' };
+
+function useThemeColors() {
+    const [colors, setColors] = useState(THEME_FALLBACK);
+    useEffect(() => {
+        const out = {};
+        Object.entries(PROBE).forEach(([key, cls]) => {
+            const el = document.createElement('span');
+            el.className = cls;
+            el.style.display = 'none';
+            document.body.appendChild(el);
+            const v = getComputedStyle(el).backgroundColor;
+            el.remove();
+            out[key] = v && v !== 'rgba(0, 0, 0, 0)' && v !== 'transparent' ? v : THEME_FALLBACK[key];
+        });
+        setColors(out);
+    }, []);
+    return colors;
+}
 
 const num = (v, d = 0) => Number(v ?? 0).toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d });
 
@@ -65,13 +93,13 @@ function useDark() {
  * ============================================================ */
 function StatCard({ icon, label, value, sub, tone = 'stone' }) {
     const toneMap = {
-        stone: 'bg-stone-100 dark:bg-coal-700 text-stone-500 dark:text-stone-400',
+        stone: 'bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400',
         claude: 'bg-claude-100 dark:bg-claude-500/15 text-claude-600 dark:text-claude-400',
         emerald: 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
         amber: 'bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400',
     };
     return (
-        <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-4 flex items-center gap-3">
+        <div className="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl p-4 flex items-center gap-3">
             <span className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${toneMap[tone]}`}>{icon}</span>
             <div className="min-w-0">
                 <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">{label}</p>
@@ -85,11 +113,11 @@ function StatCard({ icon, label, value, sub, tone = 'stone' }) {
 function MiniStat({ tone, value, label }) {
     const map = {
         emerald: 'bg-emerald-50 dark:bg-emerald-500/10 ring-emerald-100 dark:ring-emerald-500/20 text-emerald-600 dark:text-emerald-400',
-        blue: 'bg-blue-50 dark:bg-blue-500/10 ring-blue-100 dark:ring-blue-500/20 text-blue-600 dark:text-blue-400',
+        orange: 'bg-orange-50 dark:bg-orange-500/10 ring-orange-100 dark:ring-orange-500/20 text-orange-600 dark:text-orange-400',
         amber: 'bg-amber-50 dark:bg-amber-500/10 ring-amber-100 dark:ring-amber-500/20 text-amber-600 dark:text-amber-400',
         red: 'bg-red-50 dark:bg-red-500/10 ring-red-100 dark:ring-red-500/20 text-red-600 dark:text-red-400',
     };
-    const dot = { emerald: 'bg-emerald-500', blue: 'bg-blue-500', amber: 'bg-amber-500', red: 'bg-red-500' };
+    const dot = { emerald: 'bg-emerald-500', orange: 'bg-orange-500', amber: 'bg-amber-500', red: 'bg-red-500' };
     return (
         <div className={`rounded-xl ring-1 p-3 text-center ${map[tone]}`}>
             <p className="text-2xl font-bold tracking-tight leading-none">{value}</p>
@@ -146,7 +174,7 @@ function GaugeProgress({ persen, warna, track, label, nilai, satuan, padat = fal
 function CardHead({ icon, title, hint }) {
     return (
         <div className="flex items-center gap-2 mb-4">
-            <span className="w-6 h-6 bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400">
+            <span className="w-6 h-6 bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400">
                 {icon}
             </span>
             <h2 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">{title}</h2>
@@ -191,7 +219,7 @@ function KartuTagihan({ data }) {
                 {href && (
                     <Link
                         href={href}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 text-xs font-semibold text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-coal-700 transition active:scale-95"
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 text-xs font-semibold text-stone-700 dark:text-stone-200 hover:bg-cream-100 dark:hover:bg-coal-600 transition active:scale-95"
                     >
                         Lihat Detail <ArrowIcon className="w-3.5 h-3.5" />
                     </Link>
@@ -216,7 +244,7 @@ export default function Dashboard({ santris = [], tahunAjaranAktif = null, tagih
 
                 {/* ===== HEADER ===== */}
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="w-11 h-11 rounded-2xl bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 flex items-center justify-center flex-shrink-0">
+                    <div className="w-11 h-11 rounded-2xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center flex-shrink-0">
                         <DashboardIcon className="w-6 h-6 text-stone-600 dark:text-stone-300" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -236,8 +264,8 @@ export default function Dashboard({ santris = [], tahunAjaranAktif = null, tagih
                 <KartuTagihan data={tagihan} />
 
                 {list.length === 0 ? (
-                    <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl py-16 text-center">
-                        <span className="inline-flex w-12 h-12 rounded-2xl bg-stone-100 dark:bg-coal-700 items-center justify-center text-stone-400 mb-3">
+                    <div className="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl py-16 text-center">
+                        <span className="inline-flex w-12 h-12 rounded-2xl bg-cream-200 dark:bg-coal-600 items-center justify-center text-stone-400 mb-3">
                             <InfoIcon className="w-6 h-6" />
                         </span>
                         <p className="text-sm font-semibold text-stone-600 dark:text-stone-300">Data Tidak Ditemukan</p>
@@ -261,6 +289,7 @@ export default function Dashboard({ santris = [], tahunAjaranAktif = null, tagih
 
 function SantriBoard({ santri }) {
     const dark = useDark();
+    const theme = useThemeColors();
     const s = santri.stats_setoran ?? {};
     const p = santri.stats_presensi ?? {};
 
@@ -293,36 +322,36 @@ function SantriBoard({ santri }) {
 
     const presData = [
         { name: 'Hadir', value: totHadir, color: C.emerald },
-        { name: 'Izin', value: totIzin, color: C.blue },
-        { name: 'Sakit', value: totSakit, color: C.amber },
+        { name: 'Izin', value: totIzin, color: C.amber },
+        { name: 'Sakit', value: totSakit, color: C.orange },
         { name: 'Alpha', value: totAlpha, color: C.red },
     ].filter((d) => d.value > 0);
 
     const catData = [
-        { name: 'Hafalan', nilai: s.rata_nilai_hafalan ?? 0, color: C.claude },
+        { name: 'Hafalan', nilai: s.rata_nilai_hafalan ?? 0, color: C.emerald },
         { name: 'Murajaah', nilai: s.rata_nilai_murajaah ?? 0, color: C.amber },
-        { name: 'Tilawah', nilai: s.rata_nilai_tilawah ?? 0, color: C.teal },
+        { name: 'Tilawah', nilai: s.rata_nilai_tilawah ?? 0, color: C.orange },
     ];
 
     const photo = santri.user?.profile_photo;
     const isP = santri.gender === 'P' || santri.gender === 'Perempuan';
-    const track = dark ? C.trackDark : C.trackLight;
+    const track = dark ? theme.trackDark : theme.trackLight;
     const tip = {
-        background: dark ? '#30302E' : '#ffffff',
-        border: `1px solid ${dark ? 'rgba(255,255,255,0.1)' : '#e7e5e4'}`,
+        background: dark ? theme.surfaceDark : '#ffffff',
+        border: `1px solid ${dark ? theme.trackDark : theme.trackLight}`,
         borderRadius: 12, fontSize: 12, padding: '6px 10px',
-        color: dark ? '#FAF9F5' : '#3E3D3A',
+        color: dark ? '#E7E5E4' : '#292524',
     };
 
     return (
         <>
             {/* ===== PROFIL ===== */}
-            <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-4 sm:p-5 mb-5">
+            <div className="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl p-4 sm:p-5 mb-5">
                 <div className="flex items-center gap-4">
                     {photo ? (
-                        <img src={`/storage/${photo}`} alt="Foto" className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover object-top ring-1 ring-stone-200 dark:ring-coal-700 flex-shrink-0" />
+                        <img src={`/storage/${photo}`} alt="Foto" className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover object-top ring-1 ring-cream-300 dark:ring-coal-600 flex-shrink-0" />
                     ) : (
-                        <span className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full ring-1 flex items-center justify-center text-xl font-bold flex-shrink-0 ${isP ? 'bg-pink-100 dark:bg-pink-950/60 ring-pink-200 dark:ring-pink-800/60 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950/60 ring-blue-200 dark:ring-blue-800/60 text-blue-600 dark:text-blue-400'}`}>
+                        <span className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full ring-1 flex items-center justify-center text-xl font-bold flex-shrink-0 ${isP ? 'bg-pink-50 dark:bg-pink-500/10 ring-pink-100 dark:ring-pink-500/20 text-pink-600 dark:text-pink-400' : 'bg-sky-50 dark:bg-sky-500/10 ring-sky-100 dark:ring-sky-500/20 text-sky-600 dark:text-sky-400'}`}>
                             {(santri.name ?? '?').charAt(0).toUpperCase()}
                         </span>
                     )}
@@ -331,7 +360,7 @@ function SantriBoard({ santri }) {
                         <p className="text-[11px] text-stone-400 dark:text-stone-500 font-mono">{santri.nis ?? '-'}</p>
                         <div className="flex flex-wrap items-center gap-1.5 mt-1">
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 font-semibold">{santri.kelas?.name ?? '-'}</span>
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 text-stone-600 dark:text-stone-300 font-semibold">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-stone-600 dark:text-stone-300 font-semibold">
                                 {isIqro ? `${metodeLabel} · Jilid ${jilidAktif}` : 'Al-Quran'}
                                 {hasQuran2 && <span className="opacity-40 mx-1">+</span>}
                                 {hasQuran2 && 'Al-Quran'}
@@ -373,7 +402,7 @@ function SantriBoard({ santri }) {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
 
                 {/* ---- GAUGE PROGRESS ---- */}
-                <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-5">
+                <div className="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl p-5">
                     <CardHead
                         icon={<TrendIcon className="w-3.5 h-3.5" />}
                         title="Progress Hafalan"
@@ -392,7 +421,7 @@ function SantriBoard({ santri }) {
                             {/* Gauge Al-Qur'an tetap tampil meski persentase jilid
                                 belum bisa dihitung — datanya tidak saling bergantung. */}
                             {hasQuran2 && (
-                                <div className="mt-4 pt-4 border-t border-stone-100 dark:border-coal-700">
+                                <div className="mt-4 pt-4 border-t border-cream-300 dark:border-coal-600">
                                     <GaugeProgress
                                         persen={progressJuz}
                                         warna={C.emerald}
@@ -409,7 +438,7 @@ function SantriBoard({ santri }) {
                             <GaugeProgress
                                 padat
                                 persen={progressPct}
-                                warna={C.claude}
+                                warna={theme.accent}
                                 track={track}
                                 label={metodeLabel}
                                 nilai={`${jilidHal}/${jilidHalTotal}`}
@@ -428,7 +457,7 @@ function SantriBoard({ santri }) {
                     ) : (
                         <GaugeProgress
                             persen={progressPct}
-                            warna={C.claude}
+                            warna={theme.accent}
                             track={track}
                             label={isIqro ? 'Halaman' : 'Juz'}
                             nilai={isIqro ? `${jilidHal}/${jilidHalTotal}` : `${num(totalHafalan, 2)}/${num(targetJuz, 2)}`}
@@ -438,13 +467,13 @@ function SantriBoard({ santri }) {
                 </div>
 
                 {/* ---- PRESENSI ---- */}
-                <div className="lg:col-span-2 bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-5">
+                <div className="lg:col-span-2 bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl p-5">
                     <CardHead icon={<CheckIcon className="w-3.5 h-3.5" />} title="Presensi" hint={`${totHari} hari tercatat`} />
 
                     <div className="grid grid-cols-4 gap-2 mb-4">
                         <MiniStat tone="emerald" value={totHadir} label="Hadir" />
-                        <MiniStat tone="blue" value={totIzin} label="Izin" />
-                        <MiniStat tone="amber" value={totSakit} label="Sakit" />
+                        <MiniStat tone="amber" value={totIzin} label="Izin" />
+                        <MiniStat tone="orange" value={totSakit} label="Sakit" />
                         <MiniStat tone="red" value={totAlpha} label="Alpha" />
                     </div>
 
@@ -469,8 +498,8 @@ function SantriBoard({ santri }) {
                             <div className="flex-shrink-0 space-y-2 pr-1">
                                 {[
                                     { label: 'Hadir', value: totHadir, dot: 'bg-emerald-500' },
-                                    { label: 'Izin', value: totIzin, dot: 'bg-blue-500' },
-                                    { label: 'Sakit', value: totSakit, dot: 'bg-amber-500' },
+                                    { label: 'Izin', value: totIzin, dot: 'bg-amber-500' },
+                                    { label: 'Sakit', value: totSakit, dot: 'bg-orange-500' },
                                     { label: 'Alpha', value: totAlpha, dot: 'bg-red-500' },
                                 ].map((l) => (
                                     <div key={l.label} className="flex items-center justify-between gap-4 text-xs">
@@ -487,7 +516,7 @@ function SantriBoard({ santri }) {
             </div>
 
             {/* ===== BAR NILAI PER KATEGORI ===== */}
-            <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-5">
+            <div className="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl p-5">
                 <CardHead icon={<ChartIcon className="w-3.5 h-3.5" />} title="Rata-rata Nilai per Kategori" hint="Hafalan · Murajaah · Tilawah" />
                 <div className="h-56">
                     <ResponsiveContainer width="100%" height="100%">

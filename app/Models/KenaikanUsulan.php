@@ -16,9 +16,14 @@ class KenaikanUsulan extends Model
         'catatan',
     ];
 
+    /**
+     * withTrashed: usulan kenaikan yang belum diproses tetap menampilkan
+     * nama santrinya walau santri itu sudah diarsipkan — tanpa ini barisnya
+     * muncul kosong di daftar usulan dan tidak bisa ditutup.
+     */
     public function santri()
     {
-        return $this->belongsTo(Santri::class);
+        return $this->belongsTo(Santri::class)->withTrashed();
     }
 
     public function tahunAjaran()

@@ -11,7 +11,7 @@ class Setoran extends Model
     use HasFactory;
 
     protected $fillable = [
-        'tahun_ajaran_id', 
+        'tahun_ajaran_id',
         'santri_id',
         'kelas_id',
         'guru_id',
@@ -50,9 +50,12 @@ class Setoran extends Model
     // RELASI LAMA (tidak berubah)
     // =====================================================
 
+    // withTrashed: sama alasannya dengan guru() di bawah — santri yang sudah
+    // diarsipkan tetap muncul namanya di riwayat setoran dan rapor
+    // tahun-tahun sebelumnya.
     public function santri(): BelongsTo
     {
-        return $this->belongsTo(Santri::class);
+        return $this->belongsTo(Santri::class)->withTrashed();
     }
 
     // withTrashed: guru yang sudah diarsipkan tetap muncul sebagai penyimak

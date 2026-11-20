@@ -205,7 +205,7 @@ export default function Index({ logs, users = [], roles = [], modules = {}, acti
         { key: 'crud', label: 'CRUD' },
         { key: 'admin', label: 'Admin Only' },
         { key: 'guru', label: 'Guru Only' },
-        { key: 'santri', label: 'Santri Only' },
+        { key: 'santri', label: 'Siswa Only' },
     ];
 
     /* ---- Form Filter (GET) ---- */
@@ -253,13 +253,13 @@ export default function Index({ logs, users = [], roles = [], modules = {}, acti
             <Head title="Log Activity" />
             <Toast notif={notif} onClose={() => setNotif(null)} duration={NOTIF_DURATION} />
 
-            <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 py-6">
+        <div>
             {/* Tombol kembali — mobile saja */}
             <Link
                 href={route('admin.dashboard')}
                 className="mb-4 inline-flex items-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-semibold text-stone-600 shadow-sm transition hover:bg-cream-100 active:scale-95 sm:hidden dark:border-coal-600 dark:bg-coal-700 dark:text-stone-300 dark:hover:bg-coal-600"
             >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                <ArrowLeftIcon className="h-4 w-4" />
                 Kembali ke Dashboard
             </Link>
                 {/* ===== HEADER ===== */}
@@ -375,7 +375,7 @@ export default function Index({ logs, users = [], roles = [], modules = {}, acti
                             <Link key={t.key} href={route('admin.logs.index', buildQuery({ tab: t.key }))}
                                 className={`px-3 py-1.5 text-xs rounded-lg transition ${isActive
                                     ? 'font-bold bg-claude-600 text-white'
-                                    : 'font-semibold bg-stone-100 hover:bg-stone-200 text-stone-600 dark:bg-coal-800 dark:hover:bg-coal-700 dark:text-stone-400'}`}>
+                                    : 'font-semibold bg-cream-200 hover:bg-cream-300 text-stone-600 dark:bg-coal-600 dark:hover:bg-coal-500 dark:text-stone-400'}`}>
                                 {t.label}
                                 {isActive && (
                                     <span className="ml-1 bg-white/25 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
@@ -455,7 +455,7 @@ export default function Index({ logs, users = [], roles = [], modules = {}, acti
                                         <p className="text-xs text-stone-400 dark:text-stone-600 mt-1">Coba ubah filter atau lakukan aktivitas terlebih dahulu</p>
                                     </td></tr>
                                 ) : list.map((log, idx) => (
-                                    <tr key={log.id} className="hover:bg-stone-50 dark:hover:bg-coal-700/25 transition-colors">
+                                    <tr key={log.id} className="hover:bg-cream-100 dark:hover:bg-coal-600/40 transition-colors">
                                         <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-600 text-center">{(logs?.from ?? 1) + idx}</td>
                                         <td className="px-4 py-3 text-xs text-stone-500 dark:text-stone-400 whitespace-nowrap">{log.created_at_full}</td>
                                         <td className="px-4 py-3 text-sm font-medium text-stone-700 dark:text-stone-300 whitespace-nowrap">{log.user?.name ?? 'N/A'}</td>
@@ -519,7 +519,7 @@ export default function Index({ logs, users = [], roles = [], modules = {}, acti
                 input[type="date"]{color-scheme:light}
                 html.dark input[type="date"]{color-scheme:dark}
                 html.dark select{color-scheme:dark}
-                html.dark select option{background:#34302b;color:#f5f5f4}
+                html.dark select option{background:#323730;color:#F6F7F2}
                 select{
                     -webkit-appearance:none;-moz-appearance:none;appearance:none;
                     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2378716c' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");

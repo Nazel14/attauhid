@@ -135,9 +135,9 @@ export default function IndexUser({ users, roles, rolesRaport = [], filters }) {
     const thAksi = 'px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400';
 
     // Tinggi & radius seragam untuk semua kontrol filter.
-    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-600';
+    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600';
     // appearance-none + chevron sendiri: panah bawaan browser tidak mengikuti tema.
-    const selectCls = `${fieldCls} cursor-pointer appearance-none pr-9`;
+    const selectCls = `${fieldCls} cursor-pointer appearance-none pr-9 dark:[color-scheme:dark]`;
 
     const ChevronBawah = () => (
         <svg className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400 dark:text-stone-500"
@@ -166,7 +166,7 @@ export default function IndexUser({ users, roles, rolesRaport = [], filters }) {
         <>
             {isSelf && <span className={`${chipCls} bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20`}>Anda</span>}
             {item.guru && <span className={`${chipCls} bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20`}>Data Guru</span>}
-            {item.santri && <span className={`${chipCls} bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-500/20`}>Data Santri</span>}
+            {item.santri && <span className={`${chipCls} bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-500/20`}>Data Siswa</span>}
         </>
     );
 
@@ -183,7 +183,7 @@ export default function IndexUser({ users, roles, rolesRaport = [], filters }) {
                                     ? 'bg-purple-50 text-purple-700 ring-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:ring-purple-500/20'
                                     : r.name === roleName
                                         ? 'bg-claude-500/10 text-claude-600 ring-claude-500/20 dark:text-claude-300'
-                                        : 'bg-stone-100 text-stone-600 ring-stone-200 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500'
+                                        : 'bg-cream-200 text-stone-600 ring-cream-300 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500'
                             }`}>
                             {r.name}
                             {/* Tanda role utama — yang tersimpan di kolom users.role */}
@@ -222,13 +222,13 @@ export default function IndexUser({ users, roles, rolesRaport = [], filters }) {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p>
-                    Daftar ini memakai tabel pengguna yang sama dengan panel raport. Akun yang terhubung ke data guru atau santri
+                    Daftar ini memakai tabel pengguna yang sama dengan panel raport. Akun yang terhubung ke data guru atau siswa
                     hanya bisa diganti role dan dihapus dari panel admin raport, agar data kelas, setoran, dan presensinya ikut terjaga.
                 </p>
             </div>
 
             {/* p-4 di mobile: p-5 menyisakan lebar isi <300px di layar 360px. */}
-            <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+            <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                 <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
                         <div className="relative sm:max-w-sm sm:flex-1">
@@ -262,7 +262,7 @@ export default function IndexUser({ users, roles, rolesRaport = [], filters }) {
                             <div key={item.id}
                                 className={`rounded-xl p-4 ring-1 ${isSelf
                                     ? 'bg-amber-50/60 ring-amber-200 dark:bg-amber-500/5 dark:ring-amber-500/20'
-                                    : 'bg-white ring-stone-200 dark:bg-coal-800/40 dark:ring-coal-600'}`}>
+                                    : 'bg-white ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600'}`}>
                                 <div className="flex items-start gap-3">
                                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-claude-100 text-sm font-bold text-claude-700 dark:bg-claude-500/20 dark:text-claude-300">
                                         {item.name.charAt(0).toUpperCase()}
@@ -282,7 +282,7 @@ export default function IndexUser({ users, roles, rolesRaport = [], filters }) {
                                     <DaftarRole item={item} roleName={roleName} spatieCocok={spatieCocok} />
                                 </div>
 
-                                <div className="mt-3 flex gap-2 border-t border-stone-100 pt-3 dark:border-coal-600">
+                                <div className="mt-3 flex gap-2 border-t border-cream-200 pt-3 dark:border-coal-600">
                                     <button type="button" onClick={() => openEditModal(item)}
                                         className={`${btnGhost} flex-1 justify-center text-claude-600 ring-claude-200 hover:bg-claude-500/10 dark:text-claude-300 dark:ring-claude-500/30`}>
                                         <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -300,16 +300,16 @@ export default function IndexUser({ users, roles, rolesRaport = [], filters }) {
                             </div>
                         );
                     }) : (
-                        <p className="rounded-xl bg-stone-50 py-10 text-center text-sm text-stone-500 dark:bg-coal-800 dark:text-stone-400">
+                        <p className="rounded-xl bg-cream-100 py-10 text-center text-sm text-stone-500 dark:bg-coal-600/40 dark:text-stone-400">
                             Tidak ada data pengguna ditemukan.
                         </p>
                     )}
                 </div>
 
                 {/* Desktop: tabel penuh dengan sorting. */}
-                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 sm:block">
-                    <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
-                        <thead className="bg-stone-50 dark:bg-coal-800">
+                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 sm:block">
+                    <table className="min-w-full divide-y divide-cream-300 dark:divide-coal-600">
+                        <thead className="bg-cream-100 dark:bg-coal-600/40">
                             <tr>
                                 <th onClick={() => handleSort('name')} className={thCls}><div className="flex items-center">Info Akun <SortIcon field="name" /></div></th>
                                 <th onClick={() => handleSort('role')} className={thCls}><div className="flex items-center">Hak Akses <SortIcon field="role" /></div></th>
@@ -317,7 +317,7 @@ export default function IndexUser({ users, roles, rolesRaport = [], filters }) {
                                 <th className={thAksi}>Aksi</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                        <tbody className="divide-y divide-cream-200 bg-white dark:divide-coal-600 dark:bg-coal-700">
                             {users.data.length > 0 ? users.data.map((item) => {
                                 const { roleName, isSelf, namaFormal, punyaProfil, spatieCocok } = infoBaris(item);
 
@@ -373,7 +373,7 @@ export default function IndexUser({ users, roles, rolesRaport = [], filters }) {
                     <div className="flex flex-wrap justify-center gap-1">
                         {users.links.map((link, index) => (
                             <button key={index} onClick={() => link.url && router.get(link.url, {}, { preserveScroll: true })} disabled={!link.url}
-                                className={`rounded-lg px-3 py-1.5 text-sm transition ${link.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
+                                className={`rounded-lg px-3 py-1.5 text-sm transition ${link.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
                                 dangerouslySetInnerHTML={{ __html: link.label }} />
                         ))}
                     </div>

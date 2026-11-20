@@ -23,8 +23,11 @@ class PembayaranController extends Controller
      * 'uang_masuk' sengaja TIDAK di sini: uang pendaftaran dibayar calon
      * siswa yang masih ikut seleksi dan belum tentu diterima, jadi belum
      * ada di master siswa. Namanya diisi manual lewat `nama_pihak`.
+     *
+     * 'infaq_arahan' memilih santri terdaftar tapi TANPA tagihan:
+     * nominalnya bebas dan tidak pernah menyisakan tunggakan.
      */
-    private const PERLU_SISWA = ['tagihan'];
+    private const PERLU_SISWA = ['tagihan', 'infaq_arahan'];
 
     /** Kategori yang mewajibkan nama pihak diisi manual. */
     private const PERLU_NAMA = ['uang_masuk', 'donatur'];
@@ -87,7 +90,7 @@ class PembayaranController extends Controller
             'pembayaran'   => $pembayaran,
             'kategoriAktif'=> $kategori,
             'daftarKategori' => Pembayaran::KATEGORI,
-            'listSiswa'    => Siswa::aktif()->orderBy('name')->get(['id', 'nis', 'name']),
+            'listSiswa'    => $this->daftarSiswa($kategori),
             'listRekening' => Rekening::orderBy('account_name')->get(['id', 'account_name', 'type']),
             'listTagihan'  => $kategori === 'tagihan'
                 ? Tagihan::whereHas('header', fn ($q) => $q->where('status', 'Published'))
@@ -312,12 +315,22 @@ class PembayaranController extends Controller
             $aturan['invoice_id'] = 'required|exists:invoices,id';
         }
 
+        // Infaq hanya untuk santri Rumah Quran. Daftar di layar memang sudah
+        // tersaring, tapi id-nya datang dari browser.
+        if ($kategori === 'infaq_arahan' && ! $existing) {
+            $aturan['student_id'] = ['required', 'exists:santris,id', function ($attr, $value, $fail) {
+                if (! Siswa::whereKey($value)->arahan()->exists()) {
+                    $fail('Santri ini bukan santri Rumah Quran. Siswa TK membayar lewat Pembayaran Tagihan.');
+                }
+            }];
+        }
+
         $aturan['nama_pihak'] = in_array($kategori, self::PERLU_NAMA, true)
             ? 'required|string|max:255'
             : 'nullable|string|max:255';
 
         return $request->validate($aturan, [
-            'student_id.required'       => 'Siswa wajib dipilih.',
+            'student_id.required'       => $kategori === 'infaq_arahan' ? 'Santri wajib dipilih.' : 'Siswa wajib dipilih.',
             'invoice_id.required'       => 'Tagihan wajib dipilih.',
             'nama_pihak.required'       => $kategori === 'uang_masuk'
                                             ? 'Nama calon siswa wajib diisi.'
@@ -325,6 +338,22 @@ class PembayaranController extends Controller
             'account_id.required'       => 'Rekening tujuan wajib dipilih.',
             'proof_of_payment.required' => 'Bukti transfer wajib diunggah.',
         ]);
+    }
+
+    /**
+     * Siswa yang boleh dipilih di form, sesuai kategori yang sedang dibuka.
+     * Tagihan hanya untuk TK, infaq hanya untuk Rumah Quran — memisahkannya di
+     * sini membuat salah pilih lembaga tidak mungkin terjadi dari layar.
+     */
+    private function daftarSiswa(string $kategori)
+    {
+        $query = Siswa::aktif()->orderBy('name');
+
+        return match ($kategori) {
+            'tagihan'      => $query->tk()->get(['id', 'nis', 'name']),
+            'infaq_arahan' => $query->arahan()->get(['id', 'nis', 'name']),
+            default        => [],
+        };
     }
 
     private function simpanBukti(Request $request, Pembayaran $pembayaran): void

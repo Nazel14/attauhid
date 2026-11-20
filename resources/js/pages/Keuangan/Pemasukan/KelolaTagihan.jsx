@@ -14,7 +14,7 @@ import { formatCurrency } from '@/Utils/formatCurrency';
 // validasi server menolak nilai di luar daftar itu.
 const ALASAN_BATAL = [
     ['salah_input',   'Salah input'],
-    ['santri_keluar', 'Santri keluar atau pindah'],
+    ['santri_keluar', 'Siswa keluar atau pindah'],
     ['keringanan',    'Keringanan / dibebaskan'],
     ['lainnya',       'Lainnya'],
 ];
@@ -243,16 +243,16 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
         'Installment': 'bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-500/20',
         'Unpaid':      'bg-red-50 text-red-700 ring-red-200 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/20',
         // Netral, bukan merah: dibatalkan itu keputusan, bukan kesalahan.
-        'Cancelled':   'bg-stone-100 text-stone-500 ring-stone-300 dark:bg-coal-600 dark:text-stone-400 dark:ring-coal-500',
-    }[s] || 'bg-stone-100 text-stone-600 ring-stone-200');
+        'Cancelled':   'bg-cream-200 text-stone-500 ring-cream-400 dark:bg-coal-600 dark:text-stone-400 dark:ring-coal-500',
+    }[s] || 'bg-cream-200 text-stone-600 ring-cream-300');
 
     const labelInvoice = (s) => ({ Paid: 'Lunas', Installment: 'Dicicil', Unpaid: 'Belum Bayar', Cancelled: 'Dibatalkan' }[s] || s);
 
     const badgeBatch = (s) => ({
-        'Draft':     'bg-stone-100 text-stone-600 ring-stone-200 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500',
+        'Draft':     'bg-cream-200 text-stone-600 ring-cream-300 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500',
         'Published': 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20',
-        'Closed':    'bg-stone-800 text-white ring-stone-800 dark:bg-coal-900 dark:ring-coal-600',
-    }[s] || 'bg-stone-100 text-stone-600 ring-stone-200');
+        'Closed':    'bg-coal-800 text-white ring-coal-800 dark:bg-coal-900 dark:ring-coal-600',
+    }[s] || 'bg-cream-200 text-stone-600 ring-cream-300');
 
     // Kolom Aksi header selalu tampil: tombol "Rincian" tersedia untuk semua role.
     const adaAksiDetail = can('tagihan.edit_rincian') || can('tagihan.hapus_rincian');
@@ -284,7 +284,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
         .filter((d) => terpilihBatal.includes(d.id))
         .reduce((total, d) => total + Number(d.total_amount), 0);
 
-    const cbCls = 'h-4 w-4 cursor-pointer rounded border-stone-300 text-claude-600 focus:ring-claude-500 dark:border-coal-600';
+    const cbCls = 'h-4 w-4 cursor-pointer rounded border-cream-400 text-claude-600 focus:ring-claude-500 dark:border-coal-600';
 
     const bisaCetakSatuan =
         can('tagihan.cetak_massal') &&
@@ -296,13 +296,13 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
     const thAksi = 'px-4 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400';
 
     // Tinggi & radius seragam untuk semua kontrol filter (input, month, select).
-    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-600';
+    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600';
     // color-scheme mengikuti tema agar ikon kalender bawaan browser tidak silau di dark mode.
     const monthCls = `${fieldCls} pr-2 [color-scheme:light] dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60 hover:[&::-webkit-calendar-picker-indicator]:opacity-100`;
-    const selectCls = `${fieldCls} cursor-pointer appearance-none pr-9`;
+    const selectCls = `${fieldCls} cursor-pointer appearance-none pr-9 dark:[color-scheme:dark]`;
 
     // Badge target — dipakai di panel rincian dan kartu batch.
-    const badgeTarget = 'inline-flex rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600 ring-1 ring-stone-200 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500';
+    const badgeTarget = 'inline-flex rounded-full bg-cream-200 px-2.5 py-1 text-xs font-medium text-stone-600 ring-1 ring-cream-300 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500';
 
     const ChevronBawah = () => (
         <svg className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400 dark:text-stone-500"
@@ -332,7 +332,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
 
             {/* Hanya mobile: di desktop sidebar sudah menyediakan navigasi. */}
             <Link href={route('keuangan.dashboard')}
-                className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-stone-600 ring-1 ring-stone-200 transition hover:bg-cream-100 active:scale-95 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600 lg:hidden">
+                className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-stone-600 ring-1 ring-cream-300 transition hover:bg-cream-100 active:scale-95 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600 lg:hidden">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
@@ -353,14 +353,14 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                     ['Sisa Piutang', summary?.totalBelum, 'text-amber-600 dark:text-amber-400'],
                 ].map(([label, nilai, warna], i) => (
                     <div key={label}
-                        className={`rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5 ${i === 2 ? 'col-span-2 lg:col-span-1' : ''}`}>
+                        className={`rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5 ${i === 2 ? 'col-span-2 lg:col-span-1' : ''}`}>
                         <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 sm:text-[11px]">{label}</p>
                         <p className={`mt-1.5 break-words text-base font-bold leading-tight sm:mt-2 sm:text-xl ${warna}`}>{formatCurrency(nilai || 0)}</p>
                     </div>
                 ))}
             </div>
 
-            <div className="mb-5 rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+            <div className="mb-5 rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                 <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <h2 className="text-base font-semibold text-stone-800 dark:text-cream-50">Gelombang Penagihan</h2>
 
@@ -390,7 +390,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                     {headers?.data?.length > 0 ? headers.data.map((h) => {
                         const aktif = selectedHeaderId == h.id;
                         return (
-                            <div key={h.id} className={`overflow-hidden rounded-2xl ring-1 transition ${aktif ? 'bg-claude-500/5 ring-claude-500/40' : 'ring-stone-200 dark:ring-coal-600'}`}>
+                            <div key={h.id} className={`overflow-hidden rounded-2xl ring-1 transition ${aktif ? 'bg-claude-500/5 ring-claude-500/40' : 'ring-cream-300 dark:ring-coal-600'}`}>
                                 <div className="flex items-start justify-between gap-3 p-4">
                                     <div className="min-w-0">
                                         <p className="truncate text-sm font-semibold text-stone-800 dark:text-cream-100">{h.title}</p>
@@ -402,12 +402,12 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                     <span className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${badgeBatch(h.status)}`}>{h.status}</span>
                                 </div>
 
-                                <div className="grid grid-cols-3 border-t border-stone-100 dark:border-coal-600">
-                                    <div className="border-r border-stone-100 px-2 py-2.5 text-center dark:border-coal-600">
+                                <div className="grid grid-cols-3 border-t border-cream-200 dark:border-coal-600">
+                                    <div className="border-r border-cream-200 px-2 py-2.5 text-center dark:border-coal-600">
                                         <p className="mb-1 text-[10px] uppercase tracking-wider text-stone-400">Tarif</p>
                                         <p className="truncate text-xs font-medium text-stone-700 dark:text-stone-200">{h.tarif?.billing_name || '-'}</p>
                                     </div>
-                                    <div className="border-r border-stone-100 px-2 py-2.5 text-center dark:border-coal-600">
+                                    <div className="border-r border-cream-200 px-2 py-2.5 text-center dark:border-coal-600">
                                         <p className="mb-1 text-[10px] uppercase tracking-wider text-stone-400">Tempo</p>
                                         <p className="truncate text-xs font-medium text-red-500 dark:text-red-400">{tanggal(h.due_date)}</p>
                                     </div>
@@ -417,7 +417,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                     </div>
                                 </div>
 
-                                <div className="flex border-t border-stone-100 dark:border-coal-600">
+                                <div className="flex border-t border-cream-200 dark:border-coal-600">
                                     <button type="button" onClick={() => pilihHeader(h.id)}
                                         className={`flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition ${
                                             aktif ? 'bg-claude-500 text-white' : 'text-claude-600 hover:bg-claude-500/10 dark:text-claude-300'
@@ -427,7 +427,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
 
                                     {can('tagihan.edit_batch') && h.status !== 'Closed' && (
                                         <button type="button" onClick={() => openEditHeader(h)}
-                                            className="flex flex-1 items-center justify-center gap-1.5 border-l border-stone-100 py-2.5 text-xs font-medium text-stone-600 transition hover:bg-cream-100 dark:border-coal-600 dark:text-stone-300 dark:hover:bg-coal-600">
+                                            className="flex flex-1 items-center justify-center gap-1.5 border-l border-cream-200 py-2.5 text-xs font-medium text-stone-600 transition hover:bg-cream-100 dark:border-coal-600 dark:text-stone-300 dark:hover:bg-coal-600">
                                             Edit
                                         </button>
                                     )}
@@ -440,7 +440,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                         menolak sambil menyebutkan berapa. */}
                                     {can('tagihan.hapus_batch') && (
                                         <button type="button" onClick={() => { setPesanError(''); setDialog({ jenis: 'hapus-header', id: h.id }); }}
-                                            className="flex flex-1 items-center justify-center gap-1.5 border-l border-stone-100 py-2.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-coal-600 dark:text-red-400 dark:hover:bg-red-500/10">
+                                            className="flex flex-1 items-center justify-center gap-1.5 border-l border-cream-200 py-2.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-coal-600 dark:text-red-400 dark:hover:bg-red-500/10">
                                             Hapus
                                         </button>
                                     )}
@@ -448,16 +448,16 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                             </div>
                         );
                     }) : (
-                        <div className="rounded-2xl py-14 text-center text-sm text-stone-500 ring-1 ring-stone-200 dark:text-stone-400 dark:ring-coal-600">
+                        <div className="rounded-2xl py-14 text-center text-sm text-stone-500 ring-1 ring-cream-300 dark:text-stone-400 dark:ring-coal-600">
                             Belum ada gelombang penagihan.
                         </div>
                     )}
                 </div>
 
                 {/* ===== TABEL BATCH — DESKTOP ===== */}
-                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 lg:block">
-                    <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
-                        <thead className="bg-stone-50 dark:bg-coal-800">
+                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 lg:block">
+                    <table className="min-w-full divide-y divide-cream-300 dark:divide-coal-600">
+                        <thead className="bg-cream-100 dark:bg-coal-600/40">
                             <tr>
                                 <th className={thPlain}>Batch &amp; Judul</th>
                                 <th className={thPlain}>Tarif Dasar</th>
@@ -467,7 +467,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                 <th className={thAksi}>Aksi</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                        <tbody className="divide-y divide-cream-200 bg-white dark:divide-coal-600 dark:bg-coal-700">
                             {headers?.data?.length > 0 ? headers.data.map((h) => {
                                 const aktif = selectedHeaderId == h.id;
                                 return (
@@ -505,7 +505,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
 
                                                 {can('tagihan.edit_batch') && h.status !== 'Closed' && (
                                                     <button type="button" onClick={() => openEditHeader(h)}
-                                                        className={`${btnGhost} text-stone-600 ring-stone-200 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
+                                                        className={`${btnGhost} text-stone-600 ring-cream-300 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
                                                         Edit
                                                     </button>
                                                 )}
@@ -531,7 +531,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                     <div className="flex flex-wrap justify-center gap-1">
                         {headers.links.map((l, i) => (
                             <button key={i} onClick={() => l.url && router.get(l.url, {}, { preserveScroll: true })} disabled={!l.url}
-                                className={`rounded-lg px-3 py-1.5 text-sm transition ${l.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
+                                className={`rounded-lg px-3 py-1.5 text-sm transition ${l.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
                                 dangerouslySetInnerHTML={{ __html: l.label }} />
                         ))}
                     </div>
@@ -541,7 +541,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
             <div ref={rincianRef} className="scroll-mt-20" />
 
             {header && details && (
-                <div className="mb-5 rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+                <div className="mb-5 rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                     <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0">
                             <h2 className="text-base font-semibold text-stone-800 dark:text-cream-50">Rincian Siswa · {header.title}</h2>
@@ -572,7 +572,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                 <>
                                     {can('tagihan.cetak_massal') && (
                                         <a href={route('keuangan.pemasukan.tagihan.print_bulk', header.id)} target="_blank" rel="noreferrer"
-                                            className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-stone-700 ring-1 ring-stone-200 transition hover:bg-stone-50 dark:bg-coal-700 dark:text-cream-100 dark:ring-coal-600 dark:hover:bg-coal-600">
+                                            className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-stone-700 ring-1 ring-cream-300 transition hover:bg-cream-100 dark:bg-coal-700 dark:text-cream-100 dark:ring-coal-600 dark:hover:bg-coal-600">
                                             Cetak Massal
                                         </a>
                                     )}
@@ -638,7 +638,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                             const bisaUbah = adaAksiDetail && header.status === 'Draft';
 
                             return (
-                                <div key={d.id} className={`overflow-hidden rounded-2xl ring-1 transition ${aktif ? 'bg-claude-500/5 ring-claude-500/40' : 'ring-stone-200 dark:ring-coal-600'}`}>
+                                <div key={d.id} className={`overflow-hidden rounded-2xl ring-1 transition ${aktif ? 'bg-claude-500/5 ring-claude-500/40' : 'ring-cream-300 dark:ring-coal-600'}`}>
                                     <div className="flex items-start justify-between gap-3 p-4">
                                         {bisaBatal(d) && (
                                             <input type="checkbox" checked={terpilihBatal.includes(d.id)}
@@ -658,8 +658,8 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                         <span className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${badgeInvoice(d.status)}`}>{labelInvoice(d.status)}</span>
                                     </div>
 
-                                    <div className="grid grid-cols-2 border-t border-stone-100 dark:border-coal-600">
-                                        <div className="border-r border-stone-100 px-3 py-2.5 text-center dark:border-coal-600">
+                                    <div className="grid grid-cols-2 border-t border-cream-200 dark:border-coal-600">
+                                        <div className="border-r border-cream-200 px-3 py-2.5 text-center dark:border-coal-600">
                                             <p className="mb-1 text-[10px] uppercase tracking-wider text-stone-400">Tagihan</p>
                                             <p className="text-xs font-medium text-stone-700 dark:text-stone-200">{formatCurrency(d.total_amount)}</p>
                                         </div>
@@ -669,7 +669,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                         </div>
                                     </div>
 
-                                    <div className="flex border-t border-stone-100 dark:border-coal-600">
+                                    <div className="flex border-t border-cream-200 dark:border-coal-600">
                                         <button type="button" onClick={() => bukaInvoice(d.id)}
                                             className={`flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition ${
                                                 aktif ? 'bg-claude-500 text-white' : 'text-claude-600 hover:bg-claude-500/10 dark:text-claude-300'
@@ -679,27 +679,27 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
 
                                         {bisaCetak && (
                                             <a href={route('keuangan.pemasukan.tagihan.print', d.id)} target="_blank" rel="noreferrer"
-                                                className="flex flex-1 items-center justify-center gap-1.5 border-l border-stone-100 py-2.5 text-xs font-medium text-stone-600 transition hover:bg-cream-100 dark:border-coal-600 dark:text-stone-300 dark:hover:bg-coal-600">
+                                                className="flex flex-1 items-center justify-center gap-1.5 border-l border-cream-200 py-2.5 text-xs font-medium text-stone-600 transition hover:bg-cream-100 dark:border-coal-600 dark:text-stone-300 dark:hover:bg-coal-600">
                                                 <IkonPrinter /> Cetak
                                             </a>
                                         )}
 
                                         {bisaUbah && can('tagihan.edit_rincian') && (
                                             <button type="button" onClick={() => openEditDetail(d)}
-                                                className="flex flex-1 items-center justify-center border-l border-stone-100 py-2.5 text-xs font-medium text-stone-600 transition hover:bg-cream-100 dark:border-coal-600 dark:text-stone-300 dark:hover:bg-coal-600">
+                                                className="flex flex-1 items-center justify-center border-l border-cream-200 py-2.5 text-xs font-medium text-stone-600 transition hover:bg-cream-100 dark:border-coal-600 dark:text-stone-300 dark:hover:bg-coal-600">
                                                 Edit
                                             </button>
                                         )}
                                         {bisaUbah && can('tagihan.hapus_rincian') && (
                                             <button type="button" onClick={() => { setPesanError(''); setDialog({ jenis: 'hapus-detail', id: d.id }); }}
-                                                className="flex flex-1 items-center justify-center border-l border-stone-100 py-2.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-coal-600 dark:text-red-400 dark:hover:bg-red-500/10">
+                                                className="flex flex-1 items-center justify-center border-l border-cream-200 py-2.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-coal-600 dark:text-red-400 dark:hover:bg-red-500/10">
                                                 Hapus
                                             </button>
                                         )}
 
                                         {bisaBatal(d) && (
                                             <button type="button" onClick={() => bukaBatal(d)}
-                                                className="flex flex-1 items-center justify-center border-l border-stone-100 py-2.5 text-xs font-medium text-amber-700 transition hover:bg-amber-50 dark:border-coal-600 dark:text-amber-400 dark:hover:bg-amber-500/10">
+                                                className="flex flex-1 items-center justify-center border-l border-cream-200 py-2.5 text-xs font-medium text-amber-700 transition hover:bg-amber-50 dark:border-coal-600 dark:text-amber-400 dark:hover:bg-amber-500/10">
                                                 Batalkan
                                             </button>
                                         )}
@@ -707,16 +707,16 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                 </div>
                             );
                         }) : (
-                            <div className="rounded-2xl py-14 text-center text-sm text-stone-500 ring-1 ring-stone-200 dark:text-stone-400 dark:ring-coal-600">
+                            <div className="rounded-2xl py-14 text-center text-sm text-stone-500 ring-1 ring-cream-300 dark:text-stone-400 dark:ring-coal-600">
                                 Belum ada rincian siswa di gelombang ini.
                             </div>
                         )}
                     </div>
 
                     {/* ===== TABEL INVOICE — DESKTOP ===== */}
-                    <div className="hidden overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 lg:block">
-                        <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
-                            <thead className="bg-stone-50 dark:bg-coal-800">
+                    <div className="hidden overflow-x-auto rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 lg:block">
+                        <table className="min-w-full divide-y divide-cream-300 dark:divide-coal-600">
+                            <thead className="bg-cream-100 dark:bg-coal-600/40">
                                 <tr>
                                     <th className="w-10 px-4 py-3.5">
                                         {idBisaBatal.length > 0 && (
@@ -734,7 +734,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                     <th className={thAksi}>Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                            <tbody className="divide-y divide-cream-200 bg-white dark:divide-coal-600 dark:bg-coal-700">
                                 {details.data.length > 0 ? details.data.map((d) => {
                                     const aktif = selectedInvoiceId === d.id;
                                     return (
@@ -774,7 +774,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                                     {bisaCetakSatuan && Number(d.remaining_balance) > 0 && (
                                                         <a href={route('keuangan.pemasukan.tagihan.print', d.id)} target="_blank" rel="noreferrer"
                                                             title={`Cetak tagihan ${d.siswa?.name || ''}`}
-                                                            className={`${btnGhost} text-stone-600 ring-stone-200 hover:bg-cream-100 hover:text-stone-800 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
+                                                            className={`${btnGhost} text-stone-600 ring-cream-300 hover:bg-cream-100 hover:text-stone-800 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
                                                             <IkonPrinter /> Cetak
                                                         </a>
                                                     )}
@@ -783,7 +783,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                                         <>
                                                             {can('tagihan.edit_rincian') && (
                                                                 <button type="button" onClick={() => openEditDetail(d)}
-                                                                    className={`${btnGhost} text-stone-600 ring-stone-200 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
+                                                                    className={`${btnGhost} text-stone-600 ring-cream-300 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
                                                                     Edit
                                                                 </button>
                                                             )}
@@ -820,7 +820,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                             <div className="flex flex-wrap justify-center gap-1">
                                 {details.links.map((l, i) => (
                                     <button key={i} onClick={() => l.url && router.get(l.url, {}, { preserveScroll: true })} disabled={!l.url}
-                                        className={`rounded-lg px-3 py-1.5 text-sm transition ${l.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
+                                        className={`rounded-lg px-3 py-1.5 text-sm transition ${l.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
                                         dangerouslySetInnerHTML={{ __html: l.label }} />
                                 ))}
                             </div>
@@ -833,24 +833,24 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
 
             {invoice && (
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                    <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
-                        <div className="mb-4 flex items-start justify-between gap-2 border-b border-stone-100 pb-3 dark:border-coal-600">
+                    <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
+                        <div className="mb-4 flex items-start justify-between gap-2 border-b border-cream-200 pb-3 dark:border-coal-600">
                             <h3 className="text-sm font-semibold text-stone-800 dark:text-cream-50">Informasi Tagihan</h3>
                             <button type="button" onClick={() => setSelectedInvoiceId(null)} title="Tutup detail"
                                 className="-mt-1 flex h-7 w-7 items-center justify-center rounded-lg text-stone-400 transition hover:bg-cream-200 hover:text-stone-600 dark:hover:bg-coal-600 dark:hover:text-stone-300">
                                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
-                        <div className="rounded-xl bg-stone-50 p-4 text-center dark:bg-coal-900/50">
+                        <div className="rounded-xl bg-cream-100 p-4 text-center dark:bg-coal-600/40">
                             <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-400">{invoice.invoice_number}</p>
                             <p className="mt-1 font-semibold text-stone-800 dark:text-cream-100">{invoice.siswa?.name}</p>
                         </div>
                         <div className="mt-4 space-y-2.5 text-sm">
-                            <div className="flex justify-between gap-3 border-b border-stone-100 pb-2 dark:border-coal-600">
+                            <div className="flex justify-between gap-3 border-b border-cream-200 pb-2 dark:border-coal-600">
                                 <span className="text-stone-500 dark:text-stone-400">Tagihan awal</span>
                                 <span className="font-medium text-stone-700 dark:text-stone-200">{formatCurrency(invoice.total_amount)}</span>
                             </div>
-                            <div className="flex justify-between gap-3 border-b border-stone-100 pb-2 dark:border-coal-600">
+                            <div className="flex justify-between gap-3 border-b border-cream-200 pb-2 dark:border-coal-600">
                                 <span className="text-stone-500 dark:text-stone-400">Sisa</span>
                                 <span className="font-semibold text-red-600 dark:text-red-400">{formatCurrency(invoice.remaining_balance)}</span>
                             </div>
@@ -864,7 +864,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                             kalau keterangannya tidak terlihat di sini, tidak ada
                             gunanya menyimpannya. */}
                         {invoice.status === 'Cancelled' && (
-                            <div className="mt-4 rounded-xl bg-stone-50 p-3 ring-1 ring-stone-200 dark:bg-coal-900/50 dark:ring-coal-600">
+                            <div className="mt-4 rounded-xl bg-cream-100 p-3 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600">
                                 <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-400">Dibatalkan</p>
                                 <p className="mt-1 text-sm font-medium text-stone-800 dark:text-cream-100">
                                     {ALASAN_BATAL.find(([k]) => k === invoice.cancel_reason)?.[1] || invoice.cancel_reason || '—'}
@@ -879,11 +879,11 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                         )}
                     </div>
 
-                    <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
-                        <h3 className="mb-4 border-b border-stone-100 pb-3 text-sm font-semibold text-stone-800 dark:border-coal-600 dark:text-cream-50">Riwayat Pembayaran</h3>
+                    <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
+                        <h3 className="mb-4 border-b border-cream-200 pb-3 text-sm font-semibold text-stone-800 dark:border-coal-600 dark:text-cream-50">Riwayat Pembayaran</h3>
                         <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
                             {invoice.pembayarans?.length > 0 ? invoice.pembayarans.map((p) => (
-                                <div key={p.id} className="rounded-xl p-3 ring-1 ring-stone-200 dark:ring-coal-600">
+                                <div key={p.id} className="rounded-xl p-3 ring-1 ring-cream-300 dark:ring-coal-600">
                                     <div className="mb-1 flex items-start justify-between gap-2">
                                         <span className="text-xs text-stone-400">{tanggal(p.payment_date)}</span>
                                         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${p.status_approval === 'disetujui' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300'}`}>
@@ -899,16 +899,16 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                     <p className="mt-1 truncate text-[10px] text-stone-400">{p.payment_method} · {p.dibuat_oleh?.name || 'Sistem'}</p>
                                 </div>
                             )) : (
-                                <p className="rounded-xl border-2 border-dashed border-stone-200 py-6 text-center text-sm text-stone-400 dark:border-coal-600">Belum ada pembayaran masuk.</p>
+                                <p className="rounded-xl border-2 border-dashed border-cream-300 py-6 text-center text-sm text-stone-400 dark:border-coal-600">Belum ada pembayaran masuk.</p>
                             )}
                         </div>
                     </div>
 
-                    <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
-                        <h3 className="mb-4 border-b border-stone-100 pb-3 text-sm font-semibold text-stone-800 dark:border-coal-600 dark:text-cream-50">Riwayat Penagihan</h3>
+                    <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
+                        <h3 className="mb-4 border-b border-cream-200 pb-3 text-sm font-semibold text-stone-800 dark:border-coal-600 dark:text-cream-50">Riwayat Penagihan</h3>
                         <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
                             {invoice.riwayat_penagihans?.length > 0 ? invoice.riwayat_penagihans.map((log) => (
-                                <div key={log.id} className="rounded-xl bg-stone-50 p-3 dark:bg-coal-900/50">
+                                <div key={log.id} className="rounded-xl bg-cream-100 p-3 dark:bg-coal-600/40">
                                     <div className="mb-1 flex items-start justify-between gap-2">
                                         <span className="text-xs font-medium text-stone-700 dark:text-stone-200">{log.metode}</span>
                                         <span className="shrink-0 text-[10px] text-stone-400">{tanggal(log.tanggal_penagihan)}</span>
@@ -917,7 +917,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                     <p className="mt-1.5 text-right text-[10px] italic text-stone-400">{log.petugas?.name}</p>
                                 </div>
                             )) : (
-                                <p className="rounded-xl border-2 border-dashed border-stone-200 py-6 text-center text-sm text-stone-400 dark:border-coal-600">Belum pernah ditagih.</p>
+                                <p className="rounded-xl border-2 border-dashed border-cream-300 py-6 text-center text-sm text-stone-400 dark:border-coal-600">Belum pernah ditagih.</p>
                             )}
                         </div>
                     </div>
@@ -1040,7 +1040,7 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                             </>
                         ) : (
                             <>
-                                Santri ini tidak perlu membayar tagihan tersebut, dan nominalnya keluar dari total piutang.
+                                Siswa ini tidak perlu membayar tagihan tersebut, dan nominalnya keluar dari total piutang.
                                 Barisnya tetap tersimpan beserta alasan dan nama Anda.
                             </>
                         )}
@@ -1055,12 +1055,12 @@ export default function KelolaTagihan({ headers, details, selectedHeaderId, summ
                                         className={`flex cursor-pointer items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm ring-1 transition ${
                                             formBatal.data.cancel_reason === nilai
                                                 ? 'bg-claude-500/10 text-stone-800 ring-claude-500/40 dark:text-cream-100'
-                                                : 'text-stone-600 ring-stone-200 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600/40'
+                                                : 'text-stone-600 ring-cream-300 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600/40'
                                         }`}>
                                         <input type="radio" name="cancel_reason" value={nilai}
                                             checked={formBatal.data.cancel_reason === nilai}
                                             onChange={(e) => formBatal.setData('cancel_reason', e.target.value)}
-                                            className="h-4 w-4 border-stone-300 text-claude-500 focus:ring-claude-500" />
+                                            className="h-4 w-4 border-cream-400 text-claude-500 focus:ring-claude-500" />
                                         {label}
                                     </label>
                                 ))}

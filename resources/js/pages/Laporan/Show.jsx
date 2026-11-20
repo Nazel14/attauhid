@@ -22,7 +22,7 @@ function Toast({ notif, onClose, duration = 5000 }) {
         <>
             <div
                 key={notif.id}
-                className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-[300] overflow-hidden rounded-2xl border border-stone-200 dark:border-coal-700 bg-white/95 dark:bg-coal-800/95 shadow-2xl backdrop-blur-md"
+                className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-[300] overflow-hidden rounded-2xl border border-cream-300 dark:border-coal-600 bg-white/95 dark:bg-coal-700/95 shadow-2xl backdrop-blur-md"
                 style={{ animation: 'toastIn .3s cubic-bezier(.21,1.02,.73,1)' }}
                 role="alert"
             >
@@ -36,11 +36,11 @@ function Toast({ notif, onClose, duration = 5000 }) {
                         </p>
                         <p className="mt-0.5 break-words text-sm text-stone-600 dark:text-stone-300">{notif.message}</p>
                     </div>
-                    <button onClick={onClose} className="flex-shrink-0 rounded-lg p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-coal-700 dark:hover:text-stone-200 transition">
+                    <button onClick={onClose} className="flex-shrink-0 rounded-lg p-1 text-stone-400 hover:bg-cream-200 hover:text-stone-600 dark:hover:bg-coal-600 dark:hover:text-stone-200 transition">
                         <XIcon className="w-4 h-4" />
                     </button>
                 </div>
-                <div className="h-1 w-full bg-stone-200 dark:bg-coal-700">
+                <div className="h-1 w-full bg-cream-300 dark:bg-coal-700">
                     <div className={`h-full ${success ? 'bg-emerald-500' : 'bg-red-500'}`}
                         style={{ animation: `toastBar ${duration}ms linear forwards` }} />
                 </div>
@@ -157,12 +157,12 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
             <div className="mx-auto flex h-[calc(100dvh-2.5rem)] max-w-6xl flex-col px-3 sm:px-4 py-5">
                 {/* Kembali — mobile saja */}
                 <Link href={rp('index')}
-                    className="mb-4 self-start shrink-0 sm:hidden inline-flex items-center gap-1.5 rounded-xl border border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-stone-100 dark:hover:bg-coal-700 active:scale-95">
+                    className="mb-4 self-start shrink-0 sm:hidden inline-flex items-center gap-1.5 rounded-xl border border-cream-300 dark:border-coal-600 bg-white dark:bg-coal-600/40 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-cream-200 dark:hover:bg-coal-600 active:scale-95">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                     Kembali
                 </Link>
                 <Link href={rp('index')}
-                    className="mb-4 self-start hidden sm:inline-flex flex-shrink-0 items-center gap-1.5 rounded-xl border border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-stone-100 dark:hover:bg-coal-700 active:scale-95">
+                    className="mb-4 self-start hidden sm:inline-flex flex-shrink-0 items-center gap-1.5 rounded-xl border border-cream-300 dark:border-coal-600 bg-white dark:bg-coal-600/40 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-cream-200 dark:hover:bg-coal-600 active:scale-95">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                     Daftar Laporan
                 </Link>
@@ -174,7 +174,7 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
                             <p className="text-sm font-medium text-stone-800 dark:text-cream-100">
                                 {laporan.pelapor.name} → {laporan.penerima.name}
                             </p>
-                            <p className="mt-0.5 text-xs text-stone-500 dark:text-coal-300">
+                            <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
                                 Status:{' '}
                                 <span className="font-medium capitalize">{laporan.status}</span>
                                 {laporan.selesai_at &&
@@ -188,8 +188,8 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
                                     title={laporan.dibisukan_at ? 'Buka percakapan' : 'Bisukan percakapan ini'}
                                     className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
                                         laporan.dibisukan_at
-                                            ? 'bg-stone-600 text-white hover:bg-stone-700'
-                                            : 'bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-100 dark:bg-coal-800 dark:text-coal-200 dark:ring-coal-700 dark:hover:bg-coal-700'
+                                            ? 'bg-coal-500 text-white hover:bg-coal-600'
+                                            : 'bg-white text-stone-600 ring-1 ring-cream-300 hover:bg-cream-200 dark:bg-coal-600/40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
                                     }`}
                                 >
                                     {laporan.dibisukan_at ? 'Buka Percakapan' : 'Bisukan'}
@@ -207,16 +207,16 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
                     </div>
 
                     {laporan.dibisukan_at && (
-                        <p className="mt-2 text-xs font-medium text-stone-500 dark:text-coal-300">
+                        <p className="mt-2 text-xs font-medium text-stone-500 dark:text-stone-400">
                             Percakapan ini dibisukan — terkunci dan tidak muncul di notifikasi.
                         </p>
                     )}
 
                     {laporan.snapshot && (
-                        <div className="mt-3 grid grid-cols-2 gap-2 border-t border-stone-100 pt-3 dark:border-coal-700 sm:grid-cols-3">
+                        <div className="mt-3 grid grid-cols-2 gap-2 border-t border-cream-200 pt-3 dark:border-coal-600 sm:grid-cols-3">
                             {Object.entries(laporan.snapshot).map(([k, v]) => (
                                 <div key={k}>
-                                    <p className="text-[11px] uppercase tracking-wide text-stone-400 dark:text-coal-400">
+                                    <p className="text-[11px] uppercase tracking-wide text-stone-400 dark:text-stone-500">
                                         {SNAPSHOT_LABEL[k] ?? k}
                                     </p>
                                     <p className="text-sm text-stone-700 dark:text-cream-100">{String(v)}</p>
@@ -238,8 +238,8 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
                         if (dihapus) {
                             return (
                                 <div key={p.id} className={`flex ${milikku ? 'justify-end' : 'justify-start'}`}>
-                                    <div className="max-w-[80%] rounded-2xl bg-stone-100 px-4 py-2.5 ring-1 ring-stone-200 dark:bg-coal-700/70 dark:ring-coal-600">
-                                        <p className="flex items-center gap-1.5 text-sm italic text-stone-400 dark:text-coal-400">
+                                    <div className="max-w-[80%] rounded-2xl bg-cream-200 px-4 py-2.5 ring-1 ring-cream-300 dark:bg-coal-700/70 dark:ring-coal-600">
+                                        <p className="flex items-center gap-1.5 text-sm italic text-stone-400 dark:text-stone-500">
                                             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                                             </svg>
@@ -259,7 +259,7 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
                                             <button
                                                 onClick={() => mulaiEdit(p)}
                                                 title="Edit pesan"
-                                                className="rounded-lg p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-coal-700"
+                                                className="rounded-lg p-1.5 text-stone-400 transition hover:bg-cream-200 hover:text-stone-600 dark:hover:bg-coal-600"
                                             >
                                                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -282,7 +282,7 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
                                     className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-sm ring-1 ${
                                         milikku
                                             ? 'bg-claude-500 text-white ring-claude-500'
-                                            : 'bg-white text-stone-800 ring-stone-200 dark:bg-coal-700 dark:text-cream-100 dark:ring-coal-600'
+                                            : 'bg-white text-stone-800 ring-cream-300 dark:bg-coal-700 dark:text-cream-100 dark:ring-coal-600'
                                     }`}
                                 >
                                     {!milikku && (
@@ -323,7 +323,7 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
                                         <p className="whitespace-pre-wrap text-sm">{p.isi}</p>
                                     )}
 
-                                    <p className={`mt-1 text-[11px] ${milikku ? 'text-white/70' : 'text-stone-400 dark:text-coal-400'}`}>
+                                    <p className={`mt-1 text-[11px] ${milikku ? 'text-white/70' : 'text-stone-400 dark:text-stone-500'}`}>
                                         {new Date(p.created_at).toLocaleString('id-ID', {
                                             day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
                                         })}
@@ -351,7 +351,7 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
                             rows={2}
                             maxLength={2000}
                             placeholder="Tulis balasan… (Enter kirim, Shift+Enter baris baru)"
-                            className="flex-1 resize-none rounded-2xl border-0 bg-white px-4 py-3 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:ring-2 focus:ring-claude-500 dark:bg-coal-700 dark:text-cream-100 dark:ring-coal-600"
+                            className="flex-1 resize-none rounded-2xl border-0 bg-white px-4 py-3 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:ring-2 focus:ring-claude-500 dark:bg-coal-700 dark:text-cream-100 dark:ring-coal-600"
                         />
                         <button
                             type="submit"
@@ -362,7 +362,7 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
                         </button>
                     </form>
                 ) : (
-                    <div className="shrink-0 rounded-2xl bg-stone-100 p-4 text-center text-sm text-stone-500 ring-1 ring-stone-200 dark:bg-coal-700/70 dark:text-coal-300 dark:ring-coal-600">
+                    <div className="shrink-0 rounded-2xl bg-cream-200 p-4 text-center text-sm text-stone-500 ring-1 ring-cream-300 dark:bg-coal-700/70 dark:text-stone-400 dark:ring-coal-600">
                         {laporan.dibisukan_at
                             ? 'Percakapan ini dibisukan sehingga tidak dapat menerima pesan baru.'
                             : laporan.status === 'selesai'

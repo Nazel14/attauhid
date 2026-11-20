@@ -80,7 +80,7 @@ export default function DataRkasTemplate({ templates }) {
 
             {/* Hanya mobile: di desktop sidebar sudah menyediakan navigasi. */}
             <Link href={route('keuangan.dashboard')}
-                className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-stone-600 ring-1 ring-stone-200 transition hover:bg-cream-100 active:scale-95 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600 lg:hidden">
+                className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-stone-600 ring-1 ring-cream-300 transition hover:bg-cream-100 active:scale-95 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600 lg:hidden">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
@@ -92,7 +92,7 @@ export default function DataRkasTemplate({ templates }) {
                 <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Kerangka ini disalin otomatis saat pembuatan RKAS tahunan baru.</p>
             </div>
 
-            <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+            <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm text-stone-500 dark:text-stone-400">Struktur standar, disusun bertingkat induk → sub-judul.</p>
                     {can('master.rkas.buat') && (
@@ -104,12 +104,12 @@ export default function DataRkasTemplate({ templates }) {
                 <div className="space-y-2 lg:hidden">
                     {templates?.length > 0 ? templates.map((item) => (
                         <div key={item.id}
-                            className={`overflow-hidden rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 ${item.level === 1 ? 'bg-claude-500/10' : item.level === 2 ? 'bg-cream-100 dark:bg-coal-600/40' : ''}`}
+                            className={`overflow-hidden rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 ${item.level === 1 ? 'bg-claude-500/10' : item.level === 2 ? 'bg-cream-100 dark:bg-coal-600/40' : ''}`}
                             // Indentasi hierarki tetap terlihat di mobile, tapi
                             // lebih rapat supaya kartu tidak menyempit berlebihan.
                             style={{ marginLeft: `${(item.level - 1) * 12}px` }}>
                             <div className="flex items-start gap-2 p-3">
-                                <span className="shrink-0 rounded bg-white px-1.5 py-0.5 text-[11px] font-semibold text-stone-500 ring-1 ring-stone-200 dark:bg-coal-800 dark:text-stone-400 dark:ring-coal-600">
+                                <span className="shrink-0 rounded bg-white px-1.5 py-0.5 text-[11px] font-semibold text-stone-500 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:text-stone-400 dark:ring-coal-600">
                                     {item.kode_judul}
                                 </span>
                                 <span className={`min-w-0 text-sm text-stone-800 dark:text-cream-100 ${item.level <= 2 ? 'font-semibold' : ''}`}>
@@ -118,17 +118,17 @@ export default function DataRkasTemplate({ templates }) {
                             </div>
 
                             {adaAksi && (
-                                <div className="flex border-t border-stone-200/70 dark:border-coal-600">
+                                <div className="flex border-t border-cream-300 dark:border-coal-600">
                                     {can('master.rkas.buat') && (
                                         <button onClick={() => openAddSub(item)}
-                                            className="flex flex-1 items-center justify-center gap-1 border-r border-stone-200/70 py-2 text-[11px] font-medium text-blue-600 transition hover:bg-blue-50 dark:border-coal-600 dark:text-blue-400 dark:hover:bg-blue-500/10">
+                                            className="flex flex-1 items-center justify-center gap-1 border-r border-cream-300 py-2 text-[11px] font-medium text-blue-600 transition hover:bg-blue-50 dark:border-coal-600 dark:text-blue-400 dark:hover:bg-blue-500/10">
                                             <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                                             Sub
                                         </button>
                                     )}
                                     {can('master.rkas.edit') && (
                                         <button onClick={() => openEdit(item)}
-                                            className="flex flex-1 items-center justify-center gap-1 border-r border-stone-200/70 py-2 text-[11px] font-medium text-claude-600 transition hover:bg-claude-500/10 dark:border-coal-600 dark:text-claude-300">
+                                            className="flex flex-1 items-center justify-center gap-1 border-r border-cream-300 py-2 text-[11px] font-medium text-claude-600 transition hover:bg-claude-500/10 dark:border-coal-600 dark:text-claude-300">
                                             Edit
                                         </button>
                                     )}
@@ -142,20 +142,20 @@ export default function DataRkasTemplate({ templates }) {
                             )}
                         </div>
                     )) : (
-                        <div className="rounded-2xl py-14 text-center ring-1 ring-stone-200 dark:ring-coal-600">{kosong}</div>
+                        <div className="rounded-2xl py-14 text-center ring-1 ring-cream-300 dark:ring-coal-600">{kosong}</div>
                     )}
                 </div>
 
                 {/* ===== TABEL — DESKTOP ===== */}
-                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 lg:block">
-                    <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
-                        <thead className="bg-stone-50 dark:bg-coal-800">
+                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 lg:block">
+                    <table className="min-w-full divide-y divide-cream-300 dark:divide-coal-600">
+                        <thead className="bg-cream-100 dark:bg-coal-600/40">
                             <tr>
                                 <th className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Kode &amp; Uraian Judul</th>
                                 {adaAksi && <th className="px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">Aksi</th>}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                        <tbody className="divide-y divide-cream-200 bg-white dark:divide-coal-600 dark:bg-coal-700">
                             {templates?.length > 0 ? templates.map((item) => (
                                 <tr key={item.id} className={`transition ${barisCls(item.level)}`}>
                                     <td className="px-5 py-3 text-sm text-stone-800 dark:text-cream-100">
@@ -211,7 +211,7 @@ export default function DataRkasTemplate({ templates }) {
                     <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Tanda <span className="text-red-500">*</span> berarti wajib diisi.</p>
 
                     {!isEditing && parentObj && (
-                        <div className="mt-4 rounded-xl bg-stone-50 p-3 text-sm ring-1 ring-stone-200 dark:bg-coal-900/50 dark:ring-coal-600">
+                        <div className="mt-4 rounded-xl bg-cream-100 p-3 text-sm ring-1 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600">
                             <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-wider text-stone-400">Induk</span>
                             <span className="font-medium text-stone-800 dark:text-cream-100">{parentObj.kode_judul} · {parentObj.nama_judul}</span>
                         </div>

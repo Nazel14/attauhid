@@ -35,16 +35,17 @@ function usePaged(rows, perPage) {
 }
 
 const Card = ({ className = '', children }) => (
-    <div className={`bg-white dark:bg-coal-800 rounded-2xl ring-1 ring-stone-200 dark:ring-coal-700 ${className}`}>{children}</div>
+    <div className={`bg-white dark:bg-coal-700 rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600 ${className}`}>{children}</div>
 );
 const inputCls =
-    'w-full px-3 py-2.5 text-sm rounded-xl bg-stone-50 dark:bg-coal-700 text-stone-900 dark:text-stone-100 ring-1 ring-stone-200 dark:ring-coal-600 focus:outline-none focus:ring-2 focus:ring-claude-500 transition [color-scheme:light] dark:[color-scheme:dark]';
+    // Field sama dengan halaman guru: coal-600/40 di dark (tidak hitam pekat).
+    'w-full px-3 py-2.5 text-sm rounded-xl bg-white dark:bg-coal-600/40 text-stone-900 dark:text-stone-100 border border-cream-300 dark:border-coal-600 focus:outline-none focus:border-claude-500 focus:ring-2 focus:ring-claude-500/20 transition [color-scheme:light] dark:[color-scheme:dark]';
 
-// Status → warna semantik (dipertahankan)
+// Status → warna semantik, SAMA dengan Dashboard guru (Izin amber, Sakit oranye)
 const STATUS = {
     Hadir: { chip: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-500/20', dot: 'bg-emerald-500', bar: 'bg-emerald-500' },
-    Izin:  { chip: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 ring-blue-100 dark:ring-blue-500/20',                    dot: 'bg-blue-500',    bar: 'bg-blue-500' },
-    Sakit: { chip: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-amber-100 dark:ring-amber-500/20',              dot: 'bg-amber-500',   bar: 'bg-amber-500' },
+    Izin:  { chip: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-amber-100 dark:ring-amber-500/20',              dot: 'bg-amber-500',   bar: 'bg-amber-500' },
+    Sakit: { chip: 'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 ring-orange-100 dark:ring-orange-500/20',        dot: 'bg-orange-500',  bar: 'bg-orange-500' },
     Alpha: { chip: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 ring-red-100 dark:ring-red-500/20',                          dot: 'bg-red-500',     bar: 'bg-red-500' },
 };
 
@@ -52,11 +53,11 @@ const STATUS = {
 function MiniStat({ tone, value, label, sub }) {
     const map = {
         emerald: 'bg-emerald-50 dark:bg-emerald-500/10 ring-emerald-100 dark:ring-emerald-500/20 text-emerald-600 dark:text-emerald-400',
-        blue: 'bg-blue-50 dark:bg-blue-500/10 ring-blue-100 dark:ring-blue-500/20 text-blue-600 dark:text-blue-400',
+        orange: 'bg-orange-50 dark:bg-orange-500/10 ring-orange-100 dark:ring-orange-500/20 text-orange-600 dark:text-orange-400',
         amber: 'bg-amber-50 dark:bg-amber-500/10 ring-amber-100 dark:ring-amber-500/20 text-amber-600 dark:text-amber-400',
         red: 'bg-red-50 dark:bg-red-500/10 ring-red-100 dark:ring-red-500/20 text-red-600 dark:text-red-400',
     };
-    const dot = { emerald: 'bg-emerald-500', blue: 'bg-blue-500', amber: 'bg-amber-500', red: 'bg-red-500' };
+    const dot = { emerald: 'bg-emerald-500', orange: 'bg-orange-500', amber: 'bg-amber-500', red: 'bg-red-500' };
     return (
         <div className={`rounded-2xl ring-1 p-3.5 sm:p-4 text-center ${map[tone]}`}>
             <p className="text-2xl sm:text-3xl font-bold tracking-tight leading-none tabular-nums">{value}</p>
@@ -72,7 +73,7 @@ function MiniStat({ tone, value, label, sub }) {
 function CardHead({ icon, title, hint }) {
     return (
         <div className="flex items-center gap-2 mb-4">
-            <span className="w-6 h-6 bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400 flex-shrink-0">
+            <span className="w-6 h-6 bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400 flex-shrink-0">
                 {icon}
             </span>
             <h2 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">{title}</h2>
@@ -122,7 +123,7 @@ export default function Detail({
 
                 {/* ===== HEADER ===== */}
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="w-11 h-11 rounded-2xl bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 flex items-center justify-center flex-shrink-0">
+                    <div className="w-11 h-11 rounded-2xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center flex-shrink-0">
                         <Icon path={P.clock} className="w-6 h-6 text-stone-600 dark:text-stone-300" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -142,9 +143,9 @@ export default function Detail({
                     <Card className="p-4 sm:p-5">
                         <div className="flex items-center gap-4">
                             {photo ? (
-                                <img src={`/storage/${photo}`} alt="Foto" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover object-top ring-1 ring-stone-200 dark:ring-coal-700 flex-shrink-0" />
+                                <img src={`/storage/${photo}`} alt="Foto" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover object-top ring-1 ring-cream-300 dark:ring-coal-600 flex-shrink-0" />
                             ) : (
-                                <span className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ring-1 flex items-center justify-center text-lg font-bold flex-shrink-0 ${isPr ? 'bg-pink-100 dark:bg-pink-950/60 ring-pink-200 dark:ring-pink-800/60 text-pink-600 dark:text-pink-400' : 'bg-blue-100 dark:bg-blue-950/60 ring-blue-200 dark:ring-blue-800/60 text-blue-600 dark:text-blue-400'}`}>
+                                <span className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ring-1 flex items-center justify-center text-lg font-bold flex-shrink-0 ${isPr ? 'bg-pink-50 dark:bg-pink-500/10 ring-pink-100 dark:ring-pink-500/20 text-pink-600 dark:text-pink-400' : 'bg-sky-50 dark:bg-sky-500/10 ring-sky-100 dark:ring-sky-500/20 text-sky-600 dark:text-sky-400'}`}>
                                     {(santri?.name ?? '?').charAt(0).toUpperCase()}
                                 </span>
                             )}
@@ -195,7 +196,7 @@ export default function Detail({
                                     <Icon path={P.search} className="w-4 h-4" /> Terapkan
                                 </button>
                                 {status && (
-                                    <button onClick={reset} className="px-4 py-2.5 rounded-xl bg-white dark:bg-coal-800 text-stone-700 dark:text-stone-200 ring-1 ring-stone-200 dark:ring-coal-700 text-sm font-medium hover:bg-stone-100 dark:hover:bg-coal-700 transition whitespace-nowrap">Reset</button>
+                                    <button onClick={reset} className="px-4 py-2.5 rounded-xl bg-white dark:bg-coal-700 text-stone-700 dark:text-stone-200 ring-1 ring-cream-300 dark:ring-coal-600 text-sm font-medium hover:bg-cream-200 dark:hover:bg-coal-600 transition whitespace-nowrap">Reset</button>
                                 )}
                             </div>
                         </div>
@@ -212,8 +213,8 @@ export default function Detail({
                     {/* Mini stats — pola guru */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <MiniStat tone="emerald" value={statistik.hadir ?? 0} label="Hadir" sub="hari hadir" />
-                        <MiniStat tone="blue" value={statistik.izin ?? 0} label="Izin" sub="hari izin" />
-                        <MiniStat tone="amber" value={statistik.sakit ?? 0} label="Sakit" sub="hari sakit" />
+                        <MiniStat tone="amber" value={statistik.izin ?? 0} label="Izin" sub="hari izin" />
+                        <MiniStat tone="orange" value={statistik.sakit ?? 0} label="Sakit" sub="hari sakit" />
                         <MiniStat tone="red" value={statistik.alpha ?? 0} label="Alpha" sub="hari alpha" />
                     </div>
 
@@ -221,7 +222,7 @@ export default function Detail({
                     <Card className="p-4 sm:p-5">
                         <div className="flex justify-between items-start mb-3">
                             <div className="flex items-center gap-2">
-                                <span className="w-6 h-6 bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400 flex-shrink-0">
+                                <span className="w-6 h-6 bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400 flex-shrink-0">
                                     <Icon path={P.trend} className="w-3.5 h-3.5" />
                                 </span>
                                 <div>
@@ -236,7 +237,7 @@ export default function Detail({
                                 <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-1">kehadiran</p>
                             </div>
                         </div>
-                        <div className="w-full h-3 rounded-full bg-stone-100 dark:bg-coal-700 flex overflow-hidden ring-1 ring-stone-200 dark:ring-coal-600">
+                        <div className="w-full h-3 rounded-full bg-cream-300 dark:bg-coal-600 flex overflow-hidden">
                             {['Hadir', 'Izin', 'Sakit', 'Alpha'].map((k) => {
                                 const v = seg(statistik[k.toLowerCase()] ?? 0);
                                 return v > 0 ? <div key={k} className={`h-full ${STATUS[k].bar} transition-all duration-700`} style={{ width: `${v}%` }} /> : null;
@@ -257,10 +258,10 @@ export default function Detail({
 
                     {/* Mobile tabs */}
                     <div className="flex gap-2 lg:hidden">
-                        <button onClick={() => setMobileTab('hadir')} className={`flex-1 py-2.5 text-xs font-semibold rounded-xl transition-colors ring-1 ${mobileTab === 'hadir' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-500/20' : 'bg-white dark:bg-coal-800 text-stone-500 dark:text-stone-400 ring-stone-200 dark:ring-coal-700'}`}>
+                        <button onClick={() => setMobileTab('hadir')} className={`flex-1 py-2.5 text-xs font-semibold rounded-xl transition-colors ring-1 ${mobileTab === 'hadir' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-500/20' : 'bg-white dark:bg-coal-700 text-stone-500 dark:text-stone-400 ring-cream-300 dark:ring-coal-600'}`}>
                             Kehadiran <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums bg-black/5 dark:bg-white/10">{presensisHadir.length}</span>
                         </button>
-                        <button onClick={() => setMobileTab('absen')} className={`flex-1 py-2.5 text-xs font-semibold rounded-xl transition-colors ring-1 ${mobileTab === 'absen' ? 'bg-stone-100 dark:bg-coal-700 text-stone-700 dark:text-stone-300 ring-stone-200 dark:ring-coal-600' : 'bg-white dark:bg-coal-800 text-stone-500 dark:text-stone-400 ring-stone-200 dark:ring-coal-700'}`}>
+                        <button onClick={() => setMobileTab('absen')} className={`flex-1 py-2.5 text-xs font-semibold rounded-xl transition-colors ring-1 ${mobileTab === 'absen' ? 'bg-cream-200 dark:bg-coal-600 text-stone-700 dark:text-stone-300 ring-cream-300 dark:ring-coal-500' : 'bg-white dark:bg-coal-700 text-stone-500 dark:text-stone-400 ring-cream-300 dark:ring-coal-600'}`}>
                             Ketidakhadiran <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums bg-black/5 dark:bg-white/10">{presensisAbsen.length}</span>
                         </button>
                     </div>
@@ -288,7 +289,7 @@ export default function Detail({
 }
 
 const Th = ({ children, className = '' }) => (
-    <th className={`px-3 sm:px-4 py-3 text-left text-[10px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider ${className}`}>{children}</th>
+    <th className={`px-3 sm:px-4 py-3 text-left text-[11px] font-semibold text-stone-500 dark:text-stone-400 ${className}`}>{children}</th>
 );
 const Td = ({ children, className = '' }) => <td className={`px-3 sm:px-4 py-3 ${className}`}>{children}</td>;
 
@@ -296,8 +297,8 @@ const Td = ({ children, className = '' }) => <td className={`px-3 sm:px-4 py-3 $
 function HadirPanel({ rows, className = '', onLapor }) {
     const pg = usePaged(rows, 15);
     return (
-        <div className={`bg-white dark:bg-coal-800 rounded-2xl ring-1 ring-stone-200 dark:ring-coal-700 overflow-hidden flex flex-col ${className}`}>
-            <div className="px-4 sm:px-5 py-3.5 flex items-center justify-between border-b border-stone-100 dark:border-coal-700">
+        <div className={`bg-white dark:bg-coal-700 rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600 overflow-hidden flex flex-col ${className}`}>
+            <div className="px-4 sm:px-5 py-3.5 flex items-center justify-between border-b border-cream-300 dark:border-coal-600">
                 <div className="flex items-center gap-2.5">
                     <span className="w-8 h-8 rounded-lg grid place-items-center bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100 dark:ring-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                         <Icon path={P.check} className="w-4 h-4" />
@@ -316,10 +317,10 @@ function HadirPanel({ rows, className = '', onLapor }) {
                 <>
                     <div className="overflow-x-auto flex-1">
                         <table className="min-w-full">
-                            <thead><tr className="bg-stone-50 dark:bg-coal-700/40"><Th className="w-8">#</Th><Th>Tanggal</Th><Th className="hidden sm:table-cell">Hari</Th><Th>Sesi</Th><Th className="w-12 text-center">Aksi</Th></tr></thead>
-                            <tbody className="divide-y divide-stone-100 dark:divide-coal-700/60">
+                            <thead><tr className="bg-cream-100 dark:bg-coal-600/40"><Th className="w-8">#</Th><Th>Tanggal</Th><Th className="hidden sm:table-cell">Hari</Th><Th>Sesi</Th><Th className="w-12 text-center">Aksi</Th></tr></thead>
+                            <tbody className="divide-y divide-cream-200 dark:divide-coal-600/60">
                                 {pg.slice.map((p, i) => (
-                                    <tr key={p.id ?? i} className="hover:bg-stone-50 dark:hover:bg-coal-700/40 transition-colors">
+                                    <tr key={p.id ?? i} className="hover:bg-cream-100 dark:hover:bg-coal-600/30 transition-colors">
                                         <Td className="text-[11px] text-stone-400 dark:text-stone-500 tabular-nums">{(pg.page - 1) * pg.perPage + i + 1}</Td>
                                         <Td>
                                             <p className="text-xs sm:text-sm font-medium text-stone-900 dark:text-stone-100 whitespace-nowrap tabular-nums">{fmtDate(p.tanggal)}</p>
@@ -351,10 +352,10 @@ function HadirPanel({ rows, className = '', onLapor }) {
 function AbsenPanel({ rows, className = '', onLapor }) {
     const pg = usePaged(rows, 10);
     return (
-        <div className={`bg-white dark:bg-coal-800 rounded-2xl ring-1 ring-stone-200 dark:ring-coal-700 overflow-hidden flex flex-col ${className}`}>
-            <div className="px-4 sm:px-5 py-3.5 flex items-center justify-between border-b border-stone-100 dark:border-coal-700">
+        <div className={`bg-white dark:bg-coal-700 rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600 overflow-hidden flex flex-col ${className}`}>
+            <div className="px-4 sm:px-5 py-3.5 flex items-center justify-between border-b border-cream-300 dark:border-coal-600">
                 <div className="flex items-center gap-2.5">
-                    <span className="w-8 h-8 rounded-lg grid place-items-center bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 text-stone-500 dark:text-stone-300">
+                    <span className="w-8 h-8 rounded-lg grid place-items-center bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-stone-500 dark:text-stone-300">
                         <Icon path={P.alert} className="w-4 h-4" />
                     </span>
                     <div>
@@ -362,7 +363,7 @@ function AbsenPanel({ rows, className = '', onLapor }) {
                         <p className="text-[10px] text-stone-400 dark:text-stone-500 leading-tight">Izin · Sakit · Alpha</p>
                     </div>
                 </div>
-                <span className="text-[10px] px-2.5 py-1 rounded-full font-semibold tabular-nums bg-stone-100 dark:bg-coal-700 text-stone-600 dark:text-stone-300 ring-1 ring-stone-200 dark:ring-coal-600">{rows.length} hari</span>
+                <span className="text-[10px] px-2.5 py-1 rounded-full font-semibold tabular-nums bg-cream-200 dark:bg-coal-600 text-stone-600 dark:text-stone-300 ring-1 ring-cream-300 dark:ring-coal-500">{rows.length} hari</span>
             </div>
 
             {rows.length === 0 ? (
@@ -371,10 +372,10 @@ function AbsenPanel({ rows, className = '', onLapor }) {
                 <>
                     <div className="overflow-x-auto flex-1">
                         <table className="min-w-full">
-                            <thead><tr className="bg-stone-50 dark:bg-coal-700/40"><Th className="w-8">#</Th><Th>Tanggal</Th><Th className="hidden sm:table-cell">Hari</Th><Th className="w-20 text-center">Status</Th><Th>Keterangan</Th><Th className="w-12 text-center">Aksi</Th></tr></thead>
-                            <tbody className="divide-y divide-stone-100 dark:divide-coal-700/60">
+                            <thead><tr className="bg-cream-100 dark:bg-coal-600/40"><Th className="w-8">#</Th><Th>Tanggal</Th><Th className="hidden sm:table-cell">Hari</Th><Th className="w-20 text-center">Status</Th><Th>Keterangan</Th><Th className="w-12 text-center">Aksi</Th></tr></thead>
+                            <tbody className="divide-y divide-cream-200 dark:divide-coal-600/60">
                                 {pg.slice.map((p, i) => (
-                                    <tr key={p.id ?? i} className="hover:bg-stone-50 dark:hover:bg-coal-700/40 transition-colors">
+                                    <tr key={p.id ?? i} className="hover:bg-cream-100 dark:hover:bg-coal-600/30 transition-colors">
                                         <Td className="text-[11px] text-stone-400 dark:text-stone-500 tabular-nums">{(pg.page - 1) * pg.perPage + i + 1}</Td>
                                         <Td>
                                             <p className="text-xs sm:text-sm font-medium text-stone-900 dark:text-stone-100 whitespace-nowrap tabular-nums">{fmtDate(p.tanggal)}</p>
@@ -409,7 +410,7 @@ function Empty({ text, subtext }) {
     return (
         <div className="flex-1 grid place-items-center p-10 text-center min-h-[160px]">
             <div>
-                <div className="w-12 h-12 mx-auto mb-3 rounded-2xl grid place-items-center bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600">
+                <div className="w-12 h-12 mx-auto mb-3 rounded-2xl grid place-items-center bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500">
                     <Icon path={P.checkCircle} className="w-6 h-6 text-emerald-500" />
                 </div>
                 <p className="text-xs sm:text-sm font-semibold text-stone-600 dark:text-stone-300">{text}</p>
@@ -429,12 +430,12 @@ function Pagination({ pg }) {
     const nums = []; for (let i = sp; i <= ep; i++) nums.push(i);
 
     const btn = 'px-2.5 py-1 text-xs rounded-md font-medium transition';
-    const normal = `${btn} text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-coal-700 hover:text-stone-900 dark:hover:text-stone-100`;
+    const normal = `${btn} text-stone-500 dark:text-stone-400 hover:bg-cream-200 dark:hover:bg-coal-600 hover:text-stone-900 dark:hover:text-stone-100`;
     const active = `${btn} font-semibold bg-claude-500 text-white`;
     const disabled = `${btn} text-stone-300 dark:text-stone-600 cursor-not-allowed`;
 
     return (
-        <div className="px-3 py-2.5 border-t border-stone-100 dark:border-coal-700 bg-stone-50 dark:bg-coal-700/30">
+        <div className="px-3 py-2.5 border-t border-cream-300 dark:border-coal-600 bg-cream-100 dark:bg-coal-600/40">
             <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="text-[11px] text-stone-400 dark:text-stone-500 tabular-nums">{from}–{to} dari {total}</span>
                 <div className="flex items-center gap-1 flex-wrap">

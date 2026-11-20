@@ -203,11 +203,11 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
     const subtotal = vol1 * vol2 * harga;
 
     const badgeStatus = (s) => ({
-        'Draft':     'bg-stone-100 text-stone-600 ring-stone-200 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500',
+        'Draft':     'bg-cream-200 text-stone-600 ring-cream-300 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500',
         'Diperiksa': 'bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-500/20',
         'Final':     'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20',
-        'Closed':    'bg-stone-800 text-white ring-stone-800 dark:bg-coal-900 dark:ring-coal-600',
-    }[s] || 'bg-stone-100 text-stone-600 ring-stone-200');
+        'Closed':    'bg-coal-800 text-white ring-coal-800 dark:bg-coal-900 dark:ring-coal-600',
+    }[s] || 'bg-cream-200 text-stone-600 ring-cream-300');
 
     const level = (kode) => (kode ? kode.split('.').length : 1);
 
@@ -222,7 +222,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
         const l = level(item.kode_kegiatan);
         if (l === 1) return 'bg-claude-500/15 font-semibold';
         if (l === 2) return 'bg-cream-200/70 font-medium dark:bg-coal-600/50';
-        if (item.is_parent) return 'bg-stone-50 dark:bg-coal-800/50';
+        if (item.is_parent) return 'bg-cream-100 dark:bg-coal-600/40';
         return 'hover:bg-cream-50 dark:hover:bg-coal-600/30';
     };
 
@@ -252,12 +252,12 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
     const thAksi = 'px-5 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400';
 
     // Tinggi & radius seragam untuk semua kontrol filter.
-    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-600';
-    const selectCls = `${fieldCls} cursor-pointer appearance-none pr-9`;
+    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600';
+    const selectCls = `${fieldCls} cursor-pointer appearance-none pr-9 dark:[color-scheme:dark]`;
 
     // Select di dalam modal: tinggi mengikuti TextInput, panah custom.
     // pr-8/pl-3 dipersempit agar label satuan muat di kolom yang sempit.
-    const selectModal = 'block h-[42px] w-full min-w-0 cursor-pointer appearance-none truncate rounded-xl border-0 bg-white pl-3 pr-8 text-sm text-stone-800 shadow-sm ring-1 ring-stone-200 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-700';
+    const selectModal = 'block h-[42px] w-full min-w-0 cursor-pointer appearance-none truncate rounded-xl border-0 bg-white pl-3 pr-8 text-sm text-stone-800 shadow-sm ring-1 ring-cream-300 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600 dark:[color-scheme:dark]';
 
     const ChevronBawah = () => (
         <svg className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400 dark:text-stone-500"
@@ -287,14 +287,14 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
 
         return (
             <span className="inline-flex flex-wrap items-center gap-1.5">
-                <span className="inline-flex items-baseline gap-1 rounded bg-white px-1.5 py-0.5 ring-1 ring-stone-200 dark:bg-coal-800 dark:ring-coal-600">
+                <span className="inline-flex items-baseline gap-1 rounded bg-white px-1.5 py-0.5 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600">
                     <span className="font-semibold text-stone-700 dark:text-stone-200">{item.volume_1}</span>
                     {item.satuan_1 && <span className="text-stone-400">{item.satuan_1}</span>}
                 </span>
                 {Number(item.volume_2) > 0 && (
                     <>
                         <span className="text-stone-400">×</span>
-                        <span className="inline-flex items-baseline gap-1 rounded bg-white px-1.5 py-0.5 ring-1 ring-stone-200 dark:bg-coal-800 dark:ring-coal-600">
+                        <span className="inline-flex items-baseline gap-1 rounded bg-white px-1.5 py-0.5 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600">
                             <span className="font-semibold text-stone-700 dark:text-stone-200">{item.volume_2}</span>
                             {item.satuan_2 && <span className="text-stone-400">{item.satuan_2}</span>}
                         </span>
@@ -336,7 +336,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
             </div>
 
             {/* p-4 di mobile: p-5 menyisakan lebar isi <300px di layar 360px. */}
-            <div className="mb-5 rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+            <div className="mb-5 rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
                         <div className="relative sm:max-w-xs sm:flex-1">
@@ -376,7 +376,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                             <div key={h.id}
                                 className={`rounded-xl p-4 ring-1 ${dipilih
                                     ? 'bg-claude-500/10 ring-claude-500/30'
-                                    : 'bg-white ring-stone-200 dark:bg-coal-800/40 dark:ring-coal-600'}`}>
+                                    : 'bg-white ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600'}`}>
                                 <div className="flex items-start justify-between gap-2">
                                     <h3 className="text-sm font-bold text-stone-800 dark:text-cream-100">{h.tahun_ajaran}</h3>
                                     <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium ring-1 ${badgeStatus(h.status)}`}>{h.status}</span>
@@ -395,7 +395,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                                     </div>
                                 </dl>
 
-                                <div className="mt-3 flex flex-wrap gap-2 border-t border-stone-100 pt-3 dark:border-coal-600">
+                                <div className="mt-3 flex flex-wrap gap-2 border-t border-cream-200 pt-3 dark:border-coal-600">
                                     <button type="button" onClick={() => pilihHeader(h.id)}
                                         className={`${btnGhost} flex-1 justify-center ${
                                             dipilih
@@ -410,7 +410,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                                         <>
                                             {can('rkas.edit_batch') && (
                                                 <button type="button" onClick={() => openEditHeader(h)}
-                                                    className={`${btnGhost} flex-1 justify-center text-stone-600 ring-stone-200 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
+                                                    className={`${btnGhost} flex-1 justify-center text-stone-600 ring-cream-300 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
                                                     Edit
                                                 </button>
                                             )}
@@ -426,14 +426,14 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                             </div>
                         );
                     }) : (
-                        <p className="rounded-xl bg-stone-50 py-10 text-center text-sm text-stone-500 dark:bg-coal-800 dark:text-stone-400">Belum ada data RKAS.</p>
+                        <p className="rounded-xl bg-cream-100 py-10 text-center text-sm text-stone-500 dark:bg-coal-600/40 dark:text-stone-400">Belum ada data RKAS.</p>
                     )}
                 </div>
 
                 {/* Desktop: tabel penuh dengan sorting. */}
-                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 sm:block">
-                    <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
-                        <thead className="bg-stone-50 dark:bg-coal-800">
+                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 sm:block">
+                    <table className="min-w-full divide-y divide-cream-300 dark:divide-coal-600">
+                        <thead className="bg-cream-100 dark:bg-coal-600/40">
                             <tr>
                                 <th onClick={() => handleSort('tahun_ajaran')} className={thCls}><div className="flex items-center">Tahun Ajaran <SortIcon field="tahun_ajaran" /></div></th>
                                 <th className={thPlain}>Pagu Anggaran</th>
@@ -442,7 +442,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                                 <th className={thAksi}>Aksi</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                        <tbody className="divide-y divide-cream-200 bg-white dark:divide-coal-600 dark:bg-coal-700">
                             {headers?.data?.length > 0 ? headers.data.map((h) => {
                                 const dipilih = selectedHeaderId == h.id;
                                 return (
@@ -472,7 +472,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                                                     <>
                                                         {can('rkas.edit_batch') && (
                                                             <button type="button" onClick={() => openEditHeader(h)}
-                                                                className={`${btnGhost} text-stone-600 ring-stone-200 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
+                                                                className={`${btnGhost} text-stone-600 ring-cream-300 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
                                                                 Edit
                                                             </button>
                                                         )}
@@ -500,7 +500,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                     <div className="flex flex-wrap justify-center gap-1">
                         {headers.links.map((link, i) => (
                             <button key={i} onClick={() => link.url && router.get(link.url, {}, { preserveScroll: true })} disabled={!link.url}
-                                className={`rounded-lg px-3 py-1.5 text-sm transition ${link.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
+                                className={`rounded-lg px-3 py-1.5 text-sm transition ${link.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
                                 dangerouslySetInnerHTML={{ __html: link.label }} />
                         ))}
                     </div>
@@ -510,8 +510,8 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
             <div ref={rincianRef} className="scroll-mt-20" />
 
             {header && (
-                <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
-                    <div className="mb-6 border-b border-stone-100 pb-6 dark:border-coal-600">
+                <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+                    <div className="mb-6 border-b border-cream-200 pb-6 dark:border-coal-600">
                         <h2 className="text-base font-semibold text-stone-800 dark:text-cream-50">Rincian Anggaran · {header.tahun_ajaran}</h2>
                         <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Kelola kerangka kegiatan dan pagu anggarannya.</p>
 
@@ -530,7 +530,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                                                 <div className={`flex h-9 w-9 items-center justify-center rounded-full ring-2 ${
                                                     selesai ? 'bg-claude-500 text-white ring-claude-500'
                                                     : berikutnya ? 'bg-white text-claude-600 ring-claude-500 dark:bg-coal-700'
-                                                    : 'bg-stone-50 text-stone-400 ring-stone-200 dark:bg-coal-800 dark:ring-coal-600'
+                                                    : 'bg-cream-100 text-stone-400 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600'
                                                 }`}>
                                                     {selesai
                                                         ? <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -540,7 +540,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                                                 {selesai && pelaku(step.id)}
                                             </div>
                                             {i < LANGKAH.length - 1 && (
-                                                <div className={`mt-4 h-0.5 w-6 rounded sm:w-10 ${i < langkahAktif ? 'bg-claude-500' : 'bg-stone-200 dark:bg-coal-600'}`} />
+                                                <div className={`mt-4 h-0.5 w-6 rounded sm:w-10 ${i < langkahAktif ? 'bg-claude-500' : 'bg-cream-300 dark:bg-coal-600'}`} />
                                             )}
                                         </div>
                                     );
@@ -549,7 +549,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                         </div>
 
                         {/* Aksi status sebagai tombol eksplisit. */}
-                        <div className="mt-6 rounded-xl bg-cream-100 p-4 dark:bg-coal-900/50">
+                        <div className="mt-6 rounded-xl bg-cream-100 p-4 dark:bg-coal-600/40">
                             {!langkahBerikut ? (
                                 <div className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-300">
                                     <svg className="h-5 w-5 flex-shrink-0 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -594,8 +594,8 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                                     return (
                                         <div key={item.id}
                                             style={{ marginLeft: `${Math.min(l - 1, 3) * 12}px` }}
-                                            className={`rounded-xl p-3 ring-1 ring-stone-200 dark:ring-coal-600 ${
-                                                indukUtama ? 'bg-claude-500/15' : l === 2 ? 'bg-cream-200/70 dark:bg-coal-600/50' : 'bg-white dark:bg-coal-800/40'
+                                            className={`rounded-xl p-3 ring-1 ring-cream-300 dark:ring-coal-600 ${
+                                                indukUtama ? 'bg-claude-500/15' : l === 2 ? 'bg-cream-200/70 dark:bg-coal-600/50' : 'bg-white dark:bg-coal-600/40'
                                             }`}>
                                             <div className="flex items-start gap-2">
                                                 {item.is_parent ? <TombolExpand item={item} /> : <span className="w-5 shrink-0 text-center text-stone-300">·</span>}
@@ -619,7 +619,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                                             </div>
 
                                             {adaAksiDetail && draft && (
-                                                <div className="mt-2.5 flex gap-2 border-t border-stone-200/70 pt-2.5 pl-7 dark:border-coal-600">
+                                                <div className="mt-2.5 flex gap-2 border-t border-cream-300 pt-2.5 pl-7 dark:border-coal-600">
                                                     {item.is_parent ? (
                                                         can('rkas.buat_rincian') && (
                                                             <button onClick={() => openAddDetail(item.id)}
@@ -632,13 +632,13 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                                                         <>
                                                             {can('rkas.edit_rincian') && (
                                                                 <button onClick={() => openEditDetail(item)}
-                                                                    className={`${btnGhost} flex-1 justify-center bg-white text-stone-600 ring-stone-200 dark:bg-coal-900 dark:text-stone-300 dark:ring-coal-600`}>
+                                                                    className={`${btnGhost} flex-1 justify-center bg-white text-stone-600 ring-cream-300 dark:bg-coal-600/40 dark:text-stone-300 dark:ring-coal-600`}>
                                                                     Edit
                                                                 </button>
                                                             )}
                                                             {can('rkas.hapus_rincian') && (
                                                                 <button onClick={() => konfirmasiHapusKegiatan(item)}
-                                                                    className={`${btnGhost} flex-1 justify-center bg-white text-red-600 ring-red-200 dark:bg-coal-900 dark:text-red-400 dark:ring-red-500/20`}>
+                                                                    className={`${btnGhost} flex-1 justify-center bg-white text-red-600 ring-red-200 dark:bg-coal-600/40 dark:text-red-400 dark:ring-red-500/20`}>
                                                                     Hapus
                                                                 </button>
                                                             )}
@@ -650,7 +650,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                                     );
                                 })}
 
-                                <div className="flex items-center justify-between gap-3 rounded-xl bg-stone-800 px-4 py-3 dark:bg-coal-900">
+                                <div className="flex items-center justify-between gap-3 rounded-xl bg-coal-800 px-4 py-3 dark:bg-coal-900">
                                     <span className="text-[11px] font-semibold uppercase tracking-wider text-white">Total Teralokasi</span>
                                     <span className={`text-sm font-bold ${parseFloat(header.total_allocated) > parseFloat(header.budget_limit) ? 'text-red-400' : 'text-emerald-400'}`}>
                                         {formatCurrency(header.total_allocated)}
@@ -659,9 +659,9 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                             </div>
 
                             {/* Desktop: tabel pohon. */}
-                            <div className="hidden overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 sm:block">
-                                <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
-                                    <thead className="bg-stone-800 text-white dark:bg-coal-900">
+                            <div className="hidden overflow-x-auto rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 sm:block">
+                                <table className="min-w-full divide-y divide-cream-300 dark:divide-coal-600">
+                                    <thead className="bg-coal-800 text-white dark:bg-coal-900">
                                         <tr>
                                             <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Kode &amp; Uraian Kegiatan</th>
                                             <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider">Rincian Perhitungan</th>
@@ -669,7 +669,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                                             {adaAksiDetail && <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider">Aksi</th>}
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                                    <tbody className="divide-y divide-cream-200 bg-white dark:divide-coal-600 dark:bg-coal-700">
                                         {details.filter(terlihat).map((item) => (
                                             <tr key={item.id} className={`transition ${barisCls(item)}`}>
                                                 <td className="px-4 py-2.5 text-sm text-stone-800 dark:text-cream-100">
@@ -697,7 +697,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                                                             <div className="flex items-center justify-center gap-2">
                                                                 {can('rkas.edit_rincian') && (
                                                                     <button onClick={() => openEditDetail(item)}
-                                                                        className={`${btnGhost} text-stone-600 ring-stone-200 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
+                                                                        className={`${btnGhost} text-stone-600 ring-cream-300 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
                                                                         Edit
                                                                     </button>
                                                                 )}
@@ -714,7 +714,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                                             </tr>
                                         ))}
                                     </tbody>
-                                    <tfoot className="bg-stone-800 text-white dark:bg-coal-900">
+                                    <tfoot className="bg-coal-800 text-white dark:bg-coal-900">
                                         <tr>
                                             <td colSpan="2" className="px-4 py-3.5 text-right text-xs font-semibold uppercase tracking-wider">Total Teralokasi</td>
                                             <td className={`px-4 py-3.5 text-right text-base font-bold ${parseFloat(header.total_allocated) > parseFloat(header.budget_limit) ? 'text-red-400' : 'text-emerald-400'}`}>
@@ -796,7 +796,7 @@ export default function DataRKAS({ headers, details, selectedHeaderId, filters }
                             [30] [Buah] × [ ] [—] × [Rp 10.000]
                             Satuan berupa dropdown, jadi angka tidak bisa nyasar ke sana.
                             p-3 di mobile agar isi tidak terhimpit. */}
-                        <div className="space-y-3 rounded-xl bg-stone-50 p-3 ring-1 ring-stone-200 dark:bg-coal-900/50 dark:ring-coal-600 sm:p-4">
+                        <div className="space-y-3 rounded-xl bg-cream-100 p-3 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600 sm:p-4">
                             {/* Proporsi kolom dibuat eksplisit: 1fr rata membuat select
                                 tersisa ~90px dan teksnya terpotong. minmax(0,...)
                                 supaya grid boleh menyusut tanpa overflow. */}

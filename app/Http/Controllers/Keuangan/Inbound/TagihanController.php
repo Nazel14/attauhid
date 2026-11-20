@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Keuangan\Inbound;
 use App\Http\Controllers\Controller;
 use App\Models\Keuangan\Inbound\InvoiceHeader;
 use App\Models\Keuangan\Inbound\Tagihan;
+use App\Models\Keuangan\MasterData\Kelas;
 use App\Models\Keuangan\MasterData\Siswa;
 use App\Models\Keuangan\MasterData\Tarif;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -95,7 +96,8 @@ class TagihanController extends Controller
                 'totalBelum'   => (float) $totalBelum,
             ],
             // santris tidak punya is_active — statusnya enum aktif/lulus/keluar.
-            'listSiswa' => Siswa::aktif()->orderBy('name')->get(['id', 'nis', 'name', 'student_type']),
+            // Hanya siswa TK: santri Rumah Quran tidak pernah ditagih.
+            'listSiswa' => Siswa::aktif()->tk()->orderBy('name')->get(['id', 'nis', 'name', 'student_type']),
 
             // target_summary dihitung dari relasi targets, jadi eager-load
             // wajib supaya tidak N+1.
@@ -252,6 +254,14 @@ class TagihanController extends Controller
 
         if ($sudahAda) {
             return redirect()->back()->withErrors(['student_id' => 'Siswa ini sudah ada di gelombang tersebut.']);
+        }
+
+        // Daftar pilihan di layar sudah hanya berisi siswa TK, tapi id-nya
+        // datang dari browser — gerbangnya tetap harus ada di sini.
+        if (Siswa::whereKey($request->student_id)->arahan()->exists()) {
+            return redirect()->back()->withErrors([
+                'student_id' => 'Santri Rumah Quran tidak ditagih. Catat infaqnya di Pembayaran → Infaq Rumah Quran.',
+            ]);
         }
 
         DB::transaction(function () use ($request, $header) {
@@ -532,11 +542,20 @@ class TagihanController extends Controller
 
         // Penjaringan sekarang berbasis aturan di tariff_targets:
         // dalam satu dimensi = OR, antar dimensi = AND.
-        $siswas = $tarif->eligibleSantris()->get();
+        //
+        // Santri Rumah Quran dibuang SESUDAH penjaringan, bukan lewat aturan
+        // target: tarif lama tanpa kriteria kelas (misalnya "semua
+        // Reguler") akan ikut menjaring mereka. Disaring dari koleksi
+        // supaya tidak bergantung pada bentuk query eligibleSantris().
+        $kelasArahan = Kelas::where('lembaga', Kelas::LEMBAGA_ARAHAN)->pluck('id')->flip();
+
+        $siswas = $tarif->eligibleSantris()->get()
+            ->reject(fn ($s) => $s->kelas_id && $kelasArahan->has($s->kelas_id))
+            ->values();
 
         if ($siswas->isEmpty()) {
             return redirect()->back()->withErrors([
-                'status_error' => 'Tidak ada santri yang cocok dengan target tarif ini (' . $tarif->targetSummary() . ').',
+                'status_error' => 'Tidak ada siswa TK yang cocok dengan target tarif ini (' . $tarif->targetSummary() . ').',
             ]);
         }
 
@@ -586,7 +605,7 @@ class TagihanController extends Controller
 
         return $jumlah > 0
             ? redirect()->back()->with('success', "{$jumlah} tagihan berhasil dibuat.")
-            : redirect()->back()->withErrors(['status_error' => 'Semua santri yang cocok sudah ditagih untuk periode ini.']);
+            : redirect()->back()->withErrors(['status_error' => 'Semua siswa yang cocok sudah ditagih untuk periode ini.']);
     }
 
     public function publishHeader(InvoiceHeader $header)

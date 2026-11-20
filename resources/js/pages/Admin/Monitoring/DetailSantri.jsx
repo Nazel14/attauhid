@@ -62,7 +62,7 @@ const STATUS_COLORS = {
     Sakit: { bg: 'bg-amber-200/60 dark:bg-amber-500/30', border: 'border-amber-400 dark:border-amber-500', text: 'text-amber-700 dark:text-amber-300', dot: 'bg-amber-500' },
     Alpha: { bg: 'bg-red-200/60 dark:bg-red-500/30', border: 'border-red-400 dark:border-red-500', text: 'text-red-700 dark:text-red-300', dot: 'bg-red-500' },
 };
-const DEFAULT_STATUS_COLOR = { bg: 'bg-stone-100 dark:bg-coal-700/30', border: 'border-stone-300 dark:border-coal-600', text: 'text-stone-500 dark:text-stone-400', dot: 'bg-stone-500' };
+const DEFAULT_STATUS_COLOR = { bg: 'bg-cream-200 dark:bg-coal-600/30', border: 'border-cream-400 dark:border-coal-500', text: 'text-stone-500 dark:text-stone-400', dot: 'bg-stone-500' };
 
 /* ============================================================
  * SUB-COMPONENTS
@@ -164,7 +164,7 @@ export default function DetailSantri({
         <AuthenticatedLayout>
             <Head title={`Monitoring - ${santri.name}`} />
 
-            <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 py-6">
+            <div>
 
                 {/* Kembali — mobile saja */}
                 <Link href={backUrl}
@@ -186,7 +186,7 @@ export default function DetailSantri({
                                 {santri.name?.charAt(0).toUpperCase()}
                             </span>
                         )}
-                        <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-br from-claude-500 to-claude-600 border-2 border-white dark:border-coal-900 flex items-center justify-center shadow">
+                        <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-br from-claude-500 to-claude-600 border-2 border-white dark:border-coal-800 flex items-center justify-center shadow">
                             <BookIcon className="w-2.5 h-2.5 text-white" />
                         </span>
                     </div>
@@ -329,7 +329,7 @@ export default function DetailSantri({
                                 <div key={s.id} className="px-4 py-3 bg-emerald-50/50 dark:bg-emerald-950/20 border-l-2 border-emerald-300 dark:border-emerald-800/30">
                                     <div className="flex items-center justify-between mb-1.5">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-bold text-stone-500 dark:text-stone-600 bg-stone-100 dark:bg-coal-900 px-1.5 py-0.5 rounded">{(setoranHafalan.from ?? 1) + idx}</span>
+                                            <span className="text-[10px] font-bold text-stone-500 dark:text-stone-600 bg-cream-200 dark:bg-coal-800 px-1.5 py-0.5 rounded">{(setoranHafalan.from ?? 1) + idx}</span>
                                             <span className="text-xs font-semibold text-stone-700 dark:text-stone-300">{s.tanggal}</span>
                                         </div>
                                         <MediaButtons s={s} onAudio={setAudioId} onPdf={setPdfId} onNote={(c, g) => setNote({ content: c, guru: g })} />
@@ -413,7 +413,7 @@ export default function DetailSantri({
                                         <div key={s.id} className={`px-4 py-3 ${bg} border-l-2 ${border}`}>
                                             <div className="flex items-center justify-between mb-1.5">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] font-bold text-stone-500 dark:text-stone-600 bg-stone-100 dark:bg-coal-900 px-1.5 py-0.5 rounded">{(paginator.from ?? 1) + idx}</span>
+                                                    <span className="text-[10px] font-bold text-stone-500 dark:text-stone-600 bg-cream-200 dark:bg-coal-800 px-1.5 py-0.5 rounded">{(paginator.from ?? 1) + idx}</span>
                                                     <span className="text-xs font-semibold text-stone-700 dark:text-stone-300">{s.tanggal}</span>
                                                 </div>
                                                 <MediaButtons s={s} onAudio={setAudioId} onPdf={setPdfId} onNote={(c, g) => setNote({ content: c, guru: g })} />
@@ -500,8 +500,8 @@ export default function DetailSantri({
                                                         );
                                                     }
                                                     return (
-                                                        <div key={day.date} className={`aspect-square border rounded-md flex items-center justify-center ${day.is_in_range ? 'bg-stone-100 dark:bg-coal-800/40 border-stone-200 dark:border-coal-700' : 'bg-transparent border-transparent'}`}>
-                                                            <span className={`text-[10px] ${day.is_in_range ? 'text-stone-400 dark:text-stone-600' : 'text-stone-300 dark:text-coal-700'}`}>{day.day}</span>
+                                                        <div key={day.date} className={`aspect-square border rounded-md flex items-center justify-center ${day.is_in_range ? 'bg-cream-200 dark:bg-coal-600/40 border-cream-300 dark:border-coal-600' : 'bg-transparent border-transparent'}`}>
+                                                            <span className={`text-[10px] ${day.is_in_range ? 'text-stone-400 dark:text-stone-600' : 'text-stone-300 dark:text-coal-600'}`}>{day.day}</span>
                                                         </div>
                                                     );
                                                 })}

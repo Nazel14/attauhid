@@ -92,9 +92,9 @@ export default function Index({ statistikKelas = [], tanggalMulai, tanggalAkhir,
 
     return (
         <AuthenticatedLayout>
-            <Head title="Monitoring Santri" />
+            <Head title="Monitoring Siswa" />
 
-            <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 py-6">
+            <div>
 
                 {/* Kembali — mobile & desktop */}
                 <Link href={route('admin.dashboard')}
@@ -109,9 +109,10 @@ export default function Index({ statistikKelas = [], tanggalMulai, tanggalAkhir,
                         <ChartIcon className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <h1 className="text-lg sm:text-xl font-bold text-stone-900 dark:text-stone-100">Monitoring Santri</h1>
-                        <p className="text-[11px] text-stone-500 mt-0.5">Overview setoran dan presensi santri</p>
+                        <h1 className="text-lg sm:text-xl font-bold text-stone-900 dark:text-stone-100">Monitoring Siswa</h1>
+                        <p className="text-[11px] text-stone-500 mt-0.5">Overview setoran dan presensi siswa</p>
                     </div>
+                    <PeriodDropdown period={period} />
                 </div>
 
                 
@@ -140,7 +141,7 @@ export default function Index({ statistikKelas = [], tanggalMulai, tanggalAkhir,
                                 )}
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate">{stat.kelas}</p>
-                                    <p className="text-[11px] text-stone-500 truncate">{stat.guru || '-'} · <span className="text-claude-600 dark:text-claude-400 font-bold">{stat.total_santri}</span> santri</p>
+                                    <p className="text-[11px] text-stone-500 truncate">{stat.guru || '-'} · <span className="text-claude-600 dark:text-claude-400 font-bold">{stat.total_santri}</span> siswa</p>
                                 </div>
                                 <Link href={`${route('admin.monitoring.kelas', stat.kelas_id)}${query}`}
                                     className="flex-shrink-0 px-3 py-1.5 bg-claude-600 hover:bg-claude-500 text-white text-xs font-bold rounded-lg transition">Detail →</Link>
@@ -156,7 +157,7 @@ export default function Index({ statistikKelas = [], tanggalMulai, tanggalAkhir,
                                     <th className="px-5 py-2.5 text-left text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider" style={{ width: 56 }}>No</th>
                                     <th className="px-5 py-2.5 text-left text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Guru Pembimbing</th>
                                     <th className="px-5 py-2.5 text-left text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Kelas</th>
-                                    <th className="px-5 py-2.5 text-left text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider" style={{ width: 160 }}>Jumlah Santri</th>
+                                    <th className="px-5 py-2.5 text-left text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider" style={{ width: 160 }}>Jumlah Siswa</th>
                                     <th className="px-5 py-2.5 text-center text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider" style={{ width: 160 }}>Aksi</th>
                                 </tr>
                             </thead>
@@ -182,7 +183,7 @@ export default function Index({ statistikKelas = [], tanggalMulai, tanggalAkhir,
                                         </td>
                                         <td className="px-5 py-3.5 text-sm text-stone-700 dark:text-stone-300">{stat.kelas}</td>
                                         <td className="px-5 py-3.5">
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border bg-claude-500/10 text-claude-600 border-claude-500/25 dark:text-claude-400">{stat.total_santri} santri</span>
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border bg-claude-500/10 text-claude-600 border-claude-500/25 dark:text-claude-400">{stat.total_santri} siswa</span>
                                         </td>
                                         <td className="px-5 py-3.5 text-center">
                                             <Link href={`${route('admin.monitoring.kelas', stat.kelas_id)}${query}`}

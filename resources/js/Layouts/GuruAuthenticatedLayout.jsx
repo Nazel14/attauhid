@@ -4,6 +4,30 @@ import LogoutButton from '@/Components/LogoutButton';
 import AppLogo from '@/Components/AppLogo';
 import LaporanNotifier from '@/Components/LaporanNotifier';
 
+// Nama aplikasi untuk sidebar dan header mobile.
+//
+// Dibaca dari VITE_APP_NAME, bukan ditulis langsung, supaya salinan TK dan
+// salinan pesantren cukup berbeda di .env. Harus sama dengan yang dipakai
+// AuthenticatedLayout — dulu keduanya ditulis terpisah, jadi mengganti satu
+// saja menyisakan nama lama di panel yang lain.
+//
+// Ingat: variabel VITE_ DIBAKAR ke dalam bundel saat build. Mengubah .env
+// tidak berpengaruh sampai `npm run build` dijalankan ulang.
+const NAMA_APP = import.meta.env.VITE_APP_NAME || 'TK Attauhid';
+
+// Jalur ikon SVG. Konstanta, jadi didefinisikan sekali di level modul
+// alih-alih dibuat ulang setiap render.
+const I = {
+    dash: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+    input: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+    santri: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
+    rapot: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+    setoran: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+    presensi: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+    riwayat: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15',
+    profil: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+    komplain: 'M3 3v18M3 4.5h12.75l-2.25 3 2.25 3H3',
+};
 
 // ---- Toggle tema ----
 function ThemeToggle({ dark, onToggle }) {
@@ -176,59 +200,30 @@ function NavItem({ href, active, icon, children, onClick, collapsed, badge = 0 }
     );
 }
 
-export default function GuruAuthenticatedLayout({ children }) {
-    const { auth, unreadLaporan, kelasAktif, kelasDiampu = [] } = usePage().props;
-    const user = auth?.user;
-    const displayName = user?.display_name || user?.name || '';
-
-    const [open, setOpen] = useState(false); // drawer mobile
-
-    const [collapsed, setCollapsed] = useState(() => {
-        if (typeof window === 'undefined') return false;
-        return localStorage.getItem('sidebar-collapsed') === '1';
-    });
-    useEffect(() => {
-        try { localStorage.setItem('sidebar-collapsed', collapsed ? '1' : '0'); } catch (e) {}
-    }, [collapsed]);
-
-    const [dark, setDark] = useState(() => {
-        if (typeof window === 'undefined') return false;
-        return document.documentElement.classList.contains('dark') || localStorage.getItem('theme') === 'dark';
-    });
-    useEffect(() => {
-        document.documentElement.classList.toggle('dark', dark);
-        try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) {}
-    }, [dark]);
-
-    const I = {
-        dash: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
-        input: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
-        santri: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
-        rapot: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-        setoran: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-        presensi: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
-        riwayat: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15',
-        profil: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
-        komplain: 'M3 3v18M3 4.5h12.75l-2.25 3 2.25 3H3',
-    };
-
-    const closeNav = () => setOpen(false);
-
-    const utama = [
-        { href: route('guru.input.create'), label: 'Catat Setoran', icon: I.input, active: route().current('guru.input.*') },
-    ];
-    const dataSantri = [
-        { href: route('guru.santris.index'), label: 'Kelola Santri', icon: I.santri, active: route().current('guru.santris.*') },
-        { href: route('guru.rapot.index'), label: 'Rapot Santri', icon: I.rapot, active: route().current('guru.rapot.*') },
-    ];
-    const laporan = [
-        { href: route('guru.setorans.index'), label: 'Riwayat Setoran', icon: I.setoran, active: route().current('guru.setorans.*') },
-        { href: route('guru.presensis.index'), label: 'Riwayat Presensi', icon: I.presensi, active: route().current('guru.presensis.*') },
-        { href: route('guru.riwayat-santri'), label: 'Riwayat Santri', icon: I.riwayat, active: route().current('guru.riwayat-santri*') },
-        { href: route('guru.laporan.index'), label: 'Komplain Data', icon: I.komplain, active: route().current('guru.laporan.*'), badge: unreadLaporan },
-    ];
-
-    const SidebarBody = ({ isMini = false }) => (
+// isMini hanya berlaku di desktop; drawer mobile selalu penuh.
+//
+// DIDEFINISIKAN DI LUAR GuruAuthenticatedLayout DENGAN SENGAJA. Bila sebuah
+// komponen dibuat ulang di dalam render induknya, React menganggapnya tipe
+// komponen yang berbeda setiap kali, lalu membongkar dan memasang ulang
+// seluruh pohonnya. Gejalanya: posisi scroll menu kembali ke atas dan
+// dropdown "Pindah Kelas" tertutup sendiri setiap kali tema diganti atau
+// sidebar diciutkan. Panel admin sudah diperbaiki lebih dulu; versi guru
+// ini tertinggal.
+function SidebarBody({
+    isMini = false,
+    user,
+    displayName,
+    kelasAktif,
+    kelasDiampu,
+    utama,
+    dataSantri,
+    laporan,
+    dark,
+    setDark,
+    setCollapsed,
+    closeNav,
+}) {
+    return (
         <div className="flex h-full flex-col">
             {/* Logo + tombol collapse */}
             <div className={`flex h-16 items-center px-3 ${isMini ? 'justify-center' : 'justify-between'}`}>
@@ -238,7 +233,7 @@ export default function GuruAuthenticatedLayout({ children }) {
                     </div>
                     {!isMini && (
                         <div className="leading-tight">
-                            <p className="text-sm font-bold text-stone-800 dark:text-cream-50">Laporan Tahfizh</p>
+                            <p className="text-sm font-bold text-stone-800 dark:text-cream-50">{NAMA_APP}</p>
                             <p className="text-[10px] text-stone-400 dark:text-stone-500">Panel Guru</p>
                         </div>
                     )}
@@ -287,7 +282,7 @@ export default function GuruAuthenticatedLayout({ children }) {
                 ))}
 
                 {isMini ? <div className="mx-2 my-2 h-px bg-cream-300 dark:bg-coal-600" /> : (
-                    <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-600">Data Santri</p>
+                    <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-600">Data Siswa</p>
                 )}
                 {dataSantri.map((m) => (
                     <NavItem key={m.label} href={m.href} active={m.active} icon={m.icon} onClick={closeNav} collapsed={isMini}>{m.label}</NavItem>
@@ -368,7 +363,7 @@ export default function GuruAuthenticatedLayout({ children }) {
                                 >
                                     {displayName}
                                 </p>
-                                <p className="mt-0.5 truncate text-[10px] text-stone-400 dark:text-stone-500">Guru Tahfizh</p>
+                                <p className="mt-0.5 truncate text-[10px] text-stone-400 dark:text-stone-500">Guru</p>
                             </div>
                             <LogoutButton title="Keluar" className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-stone-400 transition hover:bg-red-50 hover:text-red-600 dark:text-stone-500 dark:hover:bg-red-500/10 dark:hover:text-red-400">
                                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
@@ -379,17 +374,67 @@ export default function GuruAuthenticatedLayout({ children }) {
             </div>
         </div>
     );
+}
+
+export default function GuruAuthenticatedLayout({ children }) {
+    const { auth, unreadLaporan, kelasAktif, kelasDiampu = [] } = usePage().props;
+    const user = auth?.user;
+    const displayName = user?.display_name || user?.name || '';
+
+    const [open, setOpen] = useState(false); // drawer mobile
+
+    const [collapsed, setCollapsed] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return localStorage.getItem('sidebar-collapsed') === '1';
+    });
+    useEffect(() => {
+        try { localStorage.setItem('sidebar-collapsed', collapsed ? '1' : '0'); } catch (e) {}
+    }, [collapsed]);
+
+    const [dark, setDark] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return document.documentElement.classList.contains('dark') || localStorage.getItem('theme') === 'dark';
+    });
+    useEffect(() => {
+        document.documentElement.classList.toggle('dark', dark);
+        try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) {}
+    }, [dark]);
+
+    const closeNav = () => setOpen(false);
+
+    const utama = [
+        { href: route('guru.input.create'), label: 'Catat Setoran', icon: I.input, active: route().current('guru.input.*') },
+    ];
+    const dataSantri = [
+        { href: route('guru.santris.index'), label: 'Kelola Siswa', icon: I.santri, active: route().current('guru.santris.*') },
+        { href: route('guru.rapot.index'), label: 'Rapot Siswa', icon: I.rapot, active: route().current('guru.rapot.*') },
+    ];
+    const laporan = [
+        { href: route('guru.setorans.index'), label: 'Riwayat Setoran', icon: I.setoran, active: route().current('guru.setorans.*') },
+        { href: route('guru.presensis.index'), label: 'Riwayat Presensi', icon: I.presensi, active: route().current('guru.presensis.*') },
+        { href: route('guru.riwayat-santri'), label: 'Riwayat Siswa', icon: I.riwayat, active: route().current('guru.riwayat-santri*') },
+        { href: route('guru.laporan.index'), label: 'Komplain Data', icon: I.komplain, active: route().current('guru.laporan.*'), badge: unreadLaporan },
+    ];
+
+    // WAJIB dideklarasikan SETELAH utama, dataSantri, dan laporan. Ketiganya
+    // memakai const, jadi membacanya lebih awal melempar ReferenceError dan
+    // membuat seluruh halaman kosong tanpa pesan apa pun di layar.
+    const sidebarProps = {
+        user, displayName, kelasAktif, kelasDiampu,
+        utama, dataSantri, laporan,
+        dark, setDark, setCollapsed, closeNav,
+    };
 
     return (
         <div className="min-h-screen bg-cream-50 text-stone-900 dark:bg-coal-800 dark:text-cream-50">
             {open && <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden" onClick={closeNav} />}
 
             <aside className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-cream-300 bg-cream-100 transition-transform duration-300 lg:hidden dark:border-coal-600 dark:bg-coal-700 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
-                <SidebarBody isMini={false} />
+                <SidebarBody isMini={false} {...sidebarProps} />
             </aside>
 
             <aside className={`fixed inset-y-0 left-0 z-50 hidden border-r border-cream-300 bg-cream-100 transition-all duration-300 lg:block dark:border-coal-600 dark:bg-coal-700 ${collapsed ? 'w-[76px]' : 'w-64'}`}>
-                <SidebarBody isMini={collapsed} />
+                <SidebarBody isMini={collapsed} {...sidebarProps} />
             </aside>
 
             <div className={`transition-all duration-300 ${collapsed ? 'lg:pl-[76px]' : 'lg:pl-64'}`}>
@@ -397,7 +442,8 @@ export default function GuruAuthenticatedLayout({ children }) {
                     <button onClick={() => setOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-600 hover:bg-cream-200 dark:text-stone-400 dark:hover:bg-coal-600">
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
                     </button>
-                    <span className="text-sm font-bold">Laporan Tahfizh</span>
+                    {/* Judul ini dan judul di sidebar harus selalu sama. */}
+                    <span className="truncate text-sm font-bold">{NAMA_APP}</span>
 
                     <div className="ml-auto flex items-center gap-2">
                         <KelasSwitcher
@@ -413,7 +459,7 @@ export default function GuruAuthenticatedLayout({ children }) {
             </div>
 
             <LaporanNotifier href={route('guru.laporan.index')} />
-            
+
         </div>
     );
 }

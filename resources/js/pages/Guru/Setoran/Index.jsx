@@ -16,17 +16,25 @@ const TargetIcon= (p) => <I {...p} d={<><path d="M12 12m-9 0a9 9 0 1018 0 9 9 0 
 const ArrowLeftIcon = (p) => <I {...p} d={<path d="M10 19l-7-7m0 0l7-7m-7 7h18" />} />;
 
 /* ============================================================
- * HELPERS
+ * TOKEN DESAIN — sama dengan Dashboard / Rapot
  * ============================================================ */
-// warna bar progress berjenjang (semantik capaian) — dipertahankan
-const progressTone = (pct) => {
-    if (pct >= 80) return { bar: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400' };
-    if (pct >= 50) return { bar: 'bg-claude-500',  text: 'text-claude-600 dark:text-claude-400' };
-    if (pct >= 25) return { bar: 'bg-amber-500',   text: 'text-amber-600 dark:text-amber-400' };
-    return { bar: 'bg-red-500', text: 'text-red-600 dark:text-red-400' };
+const CARD = 'bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl';
+const BTN_SOFT = 'inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 text-stone-600 dark:text-stone-300 hover:bg-cream-100 dark:hover:bg-coal-600 transition active:scale-95';
+const GENDER = {
+    P: { avatar: 'bg-pink-50 dark:bg-pink-500/10 ring-pink-100 dark:ring-pink-500/20 text-pink-600 dark:text-pink-400', badge: 'bg-pink-50 dark:bg-pink-500/10 ring-pink-100 dark:ring-pink-500/20 text-pink-700 dark:text-pink-400' },
+    L: { avatar: 'bg-sky-50 dark:bg-sky-500/10 ring-sky-100 dark:ring-sky-500/20 text-sky-600 dark:text-sky-400', badge: 'bg-sky-50 dark:bg-sky-500/10 ring-sky-100 dark:ring-sky-500/20 text-sky-700 dark:text-sky-400' },
 };
-const initial = (name) => (name || '?').charAt(0).toUpperCase();
+// Kategori — sama dengan Riwayat Setoran di halaman Input & Rapot
+const KAT = {
+    Hafalan:  { chip: 'bg-emerald-50 dark:bg-emerald-500/10 ring-emerald-100 dark:ring-emerald-500/20 text-emerald-700 dark:text-emerald-400', text: 'text-emerald-600 dark:text-emerald-400', dot: 'bg-emerald-500' },
+    Murajaah: { chip: 'bg-amber-50 dark:bg-amber-500/10 ring-amber-100 dark:ring-amber-500/20 text-amber-700 dark:text-amber-400',           text: 'text-amber-600 dark:text-amber-400',     dot: 'bg-amber-500' },
+    Tilawah:  { chip: 'bg-orange-50 dark:bg-orange-500/10 ring-orange-100 dark:ring-orange-500/20 text-orange-700 dark:text-orange-400',     text: 'text-orange-600 dark:text-orange-400',   dot: 'bg-orange-500' },
+};
+// Progress — sama dengan Dashboard & Rapot: utama = aksen, Al-Qur'an sekunder = emerald
+const TONE_MAIN  = { bar: 'bg-claude-500',  text: 'text-claude-600 dark:text-claude-400' };
+const TONE_QURAN = { bar: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400' };
 
+const initial = (name) => (name || '?').charAt(0).toUpperCase();
 const PER_PAGE = 15;
 
 /* ============================================================
@@ -34,11 +42,11 @@ const PER_PAGE = 15;
  * ============================================================ */
 function StatPill({ icon, label, value, tone = 'stone' }) {
     const toneMap = {
-        stone:  'bg-stone-100 dark:bg-coal-700 text-stone-500 dark:text-stone-400',
+        stone:  'bg-cream-200 dark:bg-coal-600 text-stone-500 dark:text-stone-400',
         claude: 'bg-claude-100 dark:bg-claude-500/15 text-claude-600 dark:text-claude-400',
     };
     return (
-        <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-4 flex items-center gap-3">
+        <div className={`${CARD} p-4 flex items-center gap-3`}>
             <span className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${toneMap[tone]}`}>{icon}</span>
             <div className="min-w-0">
                 <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">{label}</p>
@@ -48,33 +56,43 @@ function StatPill({ icon, label, value, tone = 'stone' }) {
     );
 }
 
-// pill hitung setoran per kategori (warna kategori = pengecualian semantik)
-function CountChip({ label, value, tone }) {
-    const map = {
-        emerald: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-        blue:    'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400',
-        purple:  'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400',
-    };
+function CountChip({ label, value }) {
     return (
-        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium ${map[tone]}`}>
+        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md ring-1 text-[10px] font-medium ${KAT[label].chip}`}>
             {label} <span className="font-bold tabular-nums">{value}</span>
         </span>
     );
 }
 
 function Avatar({ santri }) {
-    const gender = santri.gender === 'Perempuan'
-        ? 'bg-pink-100 dark:bg-pink-950/60 ring-pink-200 dark:ring-pink-800/60 text-pink-600 dark:text-pink-400'
-        : 'bg-blue-100 dark:bg-blue-950/60 ring-blue-200 dark:ring-blue-800/60 text-blue-600 dark:text-blue-400';
+    const g = santri.gender === 'Perempuan' ? 'P' : 'L';
     return santri.photo_url
-        ? <img src={santri.photo_url} alt="" className="w-11 h-11 rounded-full object-cover object-top ring-1 ring-stone-200 dark:ring-coal-700 flex-shrink-0" />
-        : <span className={`w-11 h-11 rounded-full ring-1 flex items-center justify-center text-sm font-bold flex-shrink-0 ${gender}`}>{initial(santri.name)}</span>;
+        ? <img src={santri.photo_url} alt="" className="w-11 h-11 rounded-full object-cover object-top ring-1 ring-cream-300 dark:ring-coal-600 flex-shrink-0" />
+        : <span className={`w-11 h-11 rounded-full ring-1 flex items-center justify-center text-sm font-bold flex-shrink-0 ${GENDER[g].avatar}`}>{initial(santri.name)}</span>;
+}
+
+// Satu batang progres (label · persen · bar · keterangan).
+// Fungsi render biasa, BUKAN komponen di dalam SantriCard — komponen yang
+// didefinisikan di badan render di-unmount/mount ulang setiap render.
+function ProgressBar({ label, percent, tone, note }) {
+    return (
+        <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-medium text-stone-400 truncate">{label}</span>
+                <span className={`text-sm font-bold tabular-nums flex-shrink-0 ${tone.text}`}>{percent}%</span>
+            </div>
+            <span className="mt-1 block h-1.5 rounded-full bg-cream-300 dark:bg-coal-600 overflow-hidden">
+                <span className={`block h-full rounded-full transition-all duration-500 ${tone.bar}`} style={{ width: `${Math.min(percent, 100)}%` }} />
+            </span>
+            <span className="mt-1 block text-[11px] text-stone-400 truncate">{note}</span>
+        </div>
+    );
 }
 
 /* ---- kartu santri (responsif, satu jalur render) ---- */
 function SantriCard({ santri, index }) {
+    const g = santri.gender === 'Perempuan' ? 'P' : 'L';
     const pct  = santri.progress_persen ?? 0;
-    const tone = progressTone(pct);
     const belumDiatur = santri.is_iqro && !santri.iqro_persen_diketahui;
     const caption = santri.is_iqro
         ? `${santri.total_halaman_iqro}/${santri.total_halaman_jilid} halaman`
@@ -83,49 +101,32 @@ function SantriCard({ santri, index }) {
     // Santri metode ganda (Iqro/Aisar + Al-Qur'an) → tampilkan bar juz sekunder
     const hasQuran2 = !!santri.has_quran_secondary;
     const pct2  = santri.progress_juz2 ?? 0;
-    const tone2 = progressTone(pct2);
     const label1 = santri.is_iqro ? 'Jilid' : 'Progres';
-
-    // Satu batang progres (label · persen · bar · keterangan).
-    // Dipakai untuk bar Jilid maupun bar Al-Qur'an sekunder.
-    const Bar = ({ label, percent, toneObj, note }) => (
-        <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] font-medium text-stone-400 dark:text-stone-500 truncate">{label}</span>
-                <span className={`text-sm font-bold tabular-nums flex-shrink-0 ${toneObj.text}`}>{percent}%</span>
-            </div>
-            <span className="mt-1 block h-1.5 rounded-full bg-stone-200 dark:bg-coal-700 overflow-hidden">
-                <span className={`block h-full rounded-full transition-all duration-500 ${toneObj.bar}`} style={{ width: `${Math.min(percent, 100)}%` }} />
-            </span>
-            <span className="mt-1 block text-[10px] text-stone-400 dark:text-stone-500 truncate">{note}</span>
-        </div>
-    );
 
     // layout="row"   → dua bar BERDAMPINGAN (desktop, kolom lebar)
     // layout="stack" → dua bar bertumpuk (mobile, lebar terbatas)
-    const ProgressBlock = ({ layout = 'stack' }) => {
+    const renderProgress = (layout) => {
         if (belumDiatur) {
-            return <p className="text-[11px] text-stone-400 dark:text-stone-500 italic">Halaman Jilid {santri.target_jilid ?? '-'} belum diatur</p>;
+            return <p className="text-[11px] text-stone-400 italic">Halaman Jilid {santri.target_jilid ?? '-'} belum diatur</p>;
         }
 
-        const bar1 = <Bar label={label1} percent={pct} toneObj={tone} note={caption} />;
+        const bar1 = <ProgressBar label={label1} percent={pct} tone={TONE_MAIN} note={caption} />;
         const bar2 = hasQuran2 ? (
-            <Bar
+            <ProgressBar
                 label="Al-Qur'an"
                 percent={pct2}
-                toneObj={tone2}
+                tone={TONE_QURAN}
                 note={`${Number(santri.capaian_juz_2).toFixed(2)} / ${Number(santri.target_juz_2).toFixed(2)} Juz`}
             />
         ) : null;
 
         if (layout === 'row') {
-            // Pemisah vertikal antar bar; tanpa hasQuran2 bar tunggal memakai lebar penuh.
             return (
                 <div className="flex items-start gap-4">
                     {bar1}
                     {bar2 && (
                         <>
-                            <span className="w-px self-stretch bg-stone-100 dark:bg-coal-700/60" />
+                            <span className="w-px self-stretch bg-cream-300 dark:bg-coal-600" />
                             {bar2}
                         </>
                     )}
@@ -137,7 +138,7 @@ function SantriCard({ santri, index }) {
             <>
                 {bar1}
                 {bar2 && (
-                    <div className="mt-2 pt-2 border-t border-stone-100 dark:border-coal-700/60">
+                    <div className="mt-2 pt-2 border-t border-cream-200 dark:border-coal-600/60">
                         {bar2}
                     </div>
                 )}
@@ -145,55 +146,53 @@ function SantriCard({ santri, index }) {
         );
     };
 
+    const targetChip = (
+        <span className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-[10px] font-semibold text-stone-600 dark:text-stone-300">
+            <TargetIcon className="w-3 h-3" /> {santri.target_display}
+        </span>
+    );
+    const detailBtn = 'inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-claude-500 hover:bg-claude-600 text-white text-xs font-semibold transition-colors active:scale-95';
+
     return (
-        <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-4 hover:ring-stone-300 dark:hover:ring-coal-600 transition-shadow">
+        <div className={`${CARD} p-4 hover:ring-claude-300 dark:hover:ring-claude-500/40 transition`}>
             <div className="flex items-center gap-4">
-                <span className="hidden sm:block text-[11px] text-stone-400 dark:text-stone-600 tabular-nums w-4 text-right flex-shrink-0">{index}</span>
+                <span className="hidden sm:block text-[11px] text-stone-400 tabular-nums w-4 text-right flex-shrink-0">{index}</span>
                 <Avatar santri={santri} />
 
                 {/* identitas — dibatasi agar kolom progres dapat porsi lebar */}
                 <div className="flex-1 min-w-0 sm:max-w-xs">
                     <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">{santri.name}</p>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0 ${santri.gender === 'Perempuan' ? 'bg-pink-50 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400' : 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400'}`}>
-                            {santri.gender === 'Perempuan' ? 'P' : 'L'}
-                        </span>
+                        <p className="text-sm font-semibold tracking-tight text-stone-800 dark:text-stone-100 truncate">{santri.name}</p>
+                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ring-1 flex-shrink-0 ${GENDER[g].badge}`}>{g}</span>
                     </div>
-                    <p className="text-[11px] text-stone-400 dark:text-stone-500 font-mono mt-0.5">{santri.nis}</p>
+                    <p className="text-[11px] text-stone-400 font-mono mt-0.5">{santri.nis}</p>
                     <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                        <CountChip label="Hafalan"  value={santri.total_hafalan}  tone="emerald" />
-                        <CountChip label="Murajaah" value={santri.total_murajaah} tone="blue" />
-                        <CountChip label="Tilawah"  value={santri.total_tilawah}  tone="purple" />
+                        <CountChip label="Hafalan"  value={santri.total_hafalan} />
+                        <CountChip label="Murajaah" value={santri.total_murajaah} />
+                        <CountChip label="Tilawah"  value={santri.total_tilawah} />
                     </div>
                 </div>
 
-                {/* Progres (desktop) — melebar mengikuti sisa ruang, bukan w-44 tetap,
-                    supaya dua bar muat berdampingan dan batangnya terlihat panjang. */}
+                {/* Progres (desktop) — melebar mengikuti sisa ruang */}
                 <div className="hidden sm:block flex-1 min-w-0 max-w-lg">
-                    <ProgressBlock layout="row" />
+                    {renderProgress('row')}
                 </div>
 
                 {/* aksi (desktop) */}
                 <div className="hidden sm:flex flex-col items-stretch gap-2 w-28 flex-shrink-0">
-                    <span className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 text-[10px] font-semibold text-stone-600 dark:text-stone-300">
-                        <TargetIcon className="w-3 h-3" /> {santri.target_display}
-                    </span>
-                    <Link href={route('guru.setorans.detail', santri.id)}
-                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-claude-500 hover:bg-claude-600 text-white text-xs font-semibold transition-colors active:scale-95">
+                    {targetChip}
+                    <Link href={route('guru.setorans.detail', santri.id)} className={detailBtn}>
                         <EyeIcon className="w-3.5 h-3.5" /> Detail
                     </Link>
                 </div>
             </div>
 
             {/* progres + aksi (mobile) */}
-            <div className="sm:hidden mt-3 pt-3 border-t border-stone-100 dark:border-coal-700/60">
-                <ProgressBlock layout="stack" />
+            <div className="sm:hidden mt-3 pt-3 border-t border-cream-200 dark:border-coal-600/60">
+                {renderProgress('stack')}
                 <div className="flex items-center justify-between gap-2 mt-3">
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 text-[10px] font-semibold text-stone-600 dark:text-stone-300">
-                        <TargetIcon className="w-3 h-3" /> {santri.target_display}
-                    </span>
-                    <Link href={route('guru.setorans.detail', santri.id)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-claude-500 hover:bg-claude-600 text-white text-xs font-semibold transition-colors active:scale-95">
+                    {targetChip}
+                    <Link href={route('guru.setorans.detail', santri.id)} className={detailBtn}>
                         <EyeIcon className="w-3.5 h-3.5" /> Lihat Detail
                     </Link>
                 </div>
@@ -218,38 +217,36 @@ export default function Index({ kelas, genderSummary, setoranHariIni, tahunAjara
     const genderLabel = genderSummary.ikhwan > 0 && genderSummary.akhwat > 0
         ? 'Campuran' : genderSummary.ikhwan > 0 ? 'Ikhwan' : genderSummary.akhwat > 0 ? 'Akhwat' : '—';
 
+    const pgBtn = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600 dark:text-stone-300 bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-cream-100 dark:hover:bg-coal-600 transition-colors';
+
     return (
         <GuruAuthenticatedLayout>
             <Head title="Setoran Santri" />
 
-            <div className="max-w-6xl mx-auto px-3 sm:px-4 py-5">
+            {/* Padding dibuang — <main> di layout sudah memberinya (sama seperti Dashboard). */}
+            <div className="max-w-6xl mx-auto">
 
                 {/* Kembali — mobile saja */}
-                <Link href={route('guru.dashboard')}
-                    className="mb-4 sm:hidden inline-flex items-center gap-1.5 rounded-xl border border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-stone-100 dark:hover:bg-coal-700 active:scale-95">
+                <Link href={route('guru.dashboard')} className={`${BTN_SOFT} mb-4 sm:hidden`}>
                     <ArrowLeftIcon className="w-4 h-4" /> Kembali ke Dashboard
                 </Link>
 
-                {/* ===== HEADER ===== */}
+                {/* ===== HEADER (sama dengan Dashboard) ===== */}
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="w-11 h-11 rounded-2xl bg-claude-500 flex items-center justify-center flex-shrink-0 shadow-sm shadow-claude-500/30">
-                        <BookIcon className="w-6 h-6 text-white" />
+                    <div className="w-11 h-11 rounded-2xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center flex-shrink-0 text-stone-600 dark:text-stone-300">
+                        <BookIcon className="w-6 h-6" />
                     </div>
                     <div className="min-w-0 flex-1">
                         <h1 className="text-lg sm:text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">Setoran Santri</h1>
-                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 font-semibold">{kelas.name}</span>
-                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-coal-700 text-stone-600 dark:text-stone-300 font-medium">{genderLabel}</span>
-                            {tahunAjaranAktif && (
-                                <span className="text-[11px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-coal-700 text-stone-600 dark:text-stone-300 font-medium">
-                                    {tahunAjaranAktif.nama} · Sem {tahunAjaranAktif.semester}
-                                </span>
-                            )}
-                        </div>
+                        <p className="text-[11px] text-stone-500 mt-0.5">
+                            Kelas <span className="font-semibold text-claude-600 dark:text-claude-400">{kelas.name}</span>
+                            <span className="mx-1 opacity-40">·</span>{genderLabel}
+                            {tahunAjaranAktif && (<><span className="mx-1 opacity-40">·</span>{tahunAjaranAktif.nama} · Sem {tahunAjaranAktif.semester}</>)}
+                        </p>
                     </div>
                     <Link
                         href={route('guru.input.create')}
-                        className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-claude-500 hover:bg-claude-600 text-white text-xs font-bold transition-colors active:scale-95"
+                        className="flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-claude-500 hover:bg-claude-600 text-white text-xs font-semibold transition-colors active:scale-95"
                     >
                         <PlusIcon className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">Input Setoran</span>
@@ -257,19 +254,21 @@ export default function Index({ kelas, genderSummary, setoranHariIni, tahunAjara
                     </Link>
                 </div>
 
-                {/* ===== STAT CARDS ===== */}
+                {/* ===== STAT CARDS (sama dengan StatCard Dashboard) ===== */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
                     <StatPill tone="claude" icon={<UsersIcon className="w-5 h-5" />} label="Total Santri" value={genderSummary.total} />
                     <StatPill tone="stone"  icon={<BookIcon className="w-5 h-5" />}  label="Setoran Hari Ini" value={totalSetoranHariIni} />
-                    <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-4 flex items-center justify-around">
+                    <div className={`${CARD} p-4 flex items-center justify-around`}>
                         {[
-                            ['Hafalan', setoranHariIni.hafalan, 'text-emerald-600 dark:text-emerald-400'],
-                            ['Murajaah', setoranHariIni.murajaah, 'text-blue-600 dark:text-blue-400'],
-                            ['Tilawah', setoranHariIni.tilawah, 'text-purple-600 dark:text-purple-400'],
-                        ].map(([lbl, val, cls]) => (
+                            ['Hafalan', setoranHariIni.hafalan],
+                            ['Murajaah', setoranHariIni.murajaah],
+                            ['Tilawah', setoranHariIni.tilawah],
+                        ].map(([lbl, val]) => (
                             <div key={lbl} className="text-center">
-                                <p className={`text-lg font-bold tracking-tight tabular-nums ${cls}`}>{val}</p>
-                                <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-0.5">{lbl}</p>
+                                <p className={`text-lg font-bold tracking-tight tabular-nums ${KAT[lbl].text}`}>{val}</p>
+                                <p className="text-[11px] text-stone-400 mt-0.5 flex items-center justify-center gap-1">
+                                    <span className={`w-1.5 h-1.5 rounded-full ${KAT[lbl].dot}`} />{lbl}
+                                </p>
                             </div>
                         ))}
                     </div>
@@ -278,7 +277,7 @@ export default function Index({ kelas, genderSummary, setoranHariIni, tahunAjara
                 {/* ===== DAFTAR SANTRI ===== */}
                 {santris.length ? (
                     <>
-                        <div className="space-y-2.5">
+                        <div className="space-y-2">
                             {paged.map((s, i) => (
                                 <SantriCard key={s.id} santri={s} index={(page - 1) * PER_PAGE + i + 1} />
                             ))}
@@ -287,35 +286,23 @@ export default function Index({ kelas, genderSummary, setoranHariIni, tahunAjara
                         {/* pagination */}
                         {totalPages > 1 && (
                             <div className="flex items-center justify-between mt-5">
-                                <span className="text-[11px] text-stone-400 dark:text-stone-500">
+                                <span className="text-[11px] text-stone-400 tabular-nums">
                                     Halaman {page} dari {totalPages} · {santris.length} santri
                                 </span>
                                 <div className="flex items-center gap-1">
-                                    <button
-                                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                        disabled={page === 1}
-                                        className="px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600 dark:text-stone-300 bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-stone-50 dark:hover:bg-coal-700 transition-colors"
-                                    >
-                                        Sebelumnya
-                                    </button>
-                                    <button
-                                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                                        disabled={page === totalPages}
-                                        className="px-3 py-1.5 rounded-lg text-xs font-semibold text-stone-600 dark:text-stone-300 bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-stone-50 dark:hover:bg-coal-700 transition-colors"
-                                    >
-                                        Berikutnya
-                                    </button>
+                                    <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className={pgBtn}>Sebelumnya</button>
+                                    <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className={pgBtn}>Berikutnya</button>
                                 </div>
                             </div>
                         )}
                     </>
                 ) : (
-                    <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl py-16 text-center">
-                        <span className="inline-flex w-12 h-12 rounded-2xl bg-stone-100 dark:bg-coal-700 items-center justify-center text-stone-400 mb-3">
-                            <BookIcon className="w-6 h-6" />
+                    <div className={`${CARD} py-14 flex flex-col items-center text-center`}>
+                        <span className="w-11 h-11 rounded-2xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center mb-3 text-stone-400">
+                            <BookIcon className="w-5 h-5" />
                         </span>
-                        <p className="text-sm font-semibold text-stone-600 dark:text-stone-300">Belum ada santri</p>
-                        <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Santri belum ditambahkan ke kelas ini.</p>
+                        <p className="text-sm font-semibold text-stone-700 dark:text-stone-300">Belum ada santri</p>
+                        <p className="text-[11px] text-stone-400 mt-0.5">Santri belum ditambahkan ke kelas ini.</p>
                     </div>
                 )}
             </div>

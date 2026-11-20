@@ -56,7 +56,7 @@ export default function Identitas({ identitas }) {
             <Head title="Identitas & Tanda Tangan" />
 
             <Link href={route('keuangan.dashboard')}
-                className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-stone-600 ring-1 ring-stone-200 transition hover:bg-cream-100 active:scale-95 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600 lg:hidden">
+                className="mb-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-stone-600 ring-1 ring-cream-300 transition hover:bg-cream-100 active:scale-95 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600 lg:hidden">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
@@ -74,7 +74,7 @@ export default function Identitas({ identitas }) {
 
                 {/* ---------- Kolom kiri: isian ---------- */}
                 <div className="space-y-5 lg:col-span-3">
-                    <div className="rounded-2xl bg-white p-5 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+                    <div className="rounded-2xl bg-white p-5 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                         <h2 className="text-sm font-semibold text-stone-800 dark:text-cream-100">Kop kwitansi</h2>
                         <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
                             Nama lembaga yang tercetak di sebelah logo.
@@ -101,7 +101,7 @@ export default function Identitas({ identitas }) {
                         </div>
                     </div>
 
-                    <div className="rounded-2xl bg-white p-5 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+                    <div className="rounded-2xl bg-white p-5 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                         <h2 className="text-sm font-semibold text-stone-800 dark:text-cream-100">Penanda tangan</h2>
                         <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
                             Jabatan tercetak di atas tanda tangan, nama di bawah garis.
@@ -113,7 +113,7 @@ export default function Identitas({ identitas }) {
                                 <TextInput value={form.data.nama}
                                     onChange={(e) => form.setData('nama', e.target.value)}
                                     className="mt-1.5 block w-full"
-                                    placeholder="Contoh: KH. Ahmad Fulan, S.Pd.I" />
+                                    placeholder="Contoh: Siti Aminah, S.Pd" />
                                 <InputError message={form.errors.nama} className="mt-1.5" />
                             </div>
 
@@ -122,13 +122,13 @@ export default function Identitas({ identitas }) {
                                 <TextInput value={form.data.jabatan}
                                     onChange={(e) => form.setData('jabatan', e.target.value)}
                                     className="mt-1.5 block w-full"
-                                    placeholder="Contoh: Pimpinan Pondok Pesantren" />
+                                    placeholder="Contoh: Kepala Sekolah" />
                                 <InputError message={form.errors.jabatan} className="mt-1.5" />
                             </div>
                         </div>
                     </div>
 
-                    <div className="rounded-2xl bg-white p-5 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+                    <div className="rounded-2xl bg-white p-5 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                         <h2 className="text-sm font-semibold text-stone-800 dark:text-cream-100">Berkas tanda tangan</h2>
                         <p className="mt-1 text-xs leading-relaxed text-stone-500 dark:text-stone-400">
                             PNG berlatar transparan, maksimal 300 KB. JPG tidak diterima karena
@@ -148,7 +148,7 @@ export default function Identitas({ identitas }) {
                             yang mengatur hal lain. */}
                         {gambarTampil && (
                             <div className="mt-4 flex items-center gap-4">
-                                <div className="flex h-16 w-40 shrink-0 items-center justify-center rounded-xl border border-stone-300 bg-white p-2">
+                                <div className="flex h-16 w-40 shrink-0 items-center justify-center rounded-xl border border-cream-400 bg-white p-2">
                                     <img src={gambarTampil} alt="Tanda tangan tersimpan"
                                         className="max-h-full max-w-full object-contain" />
                                 </div>
@@ -164,10 +164,10 @@ export default function Identitas({ identitas }) {
                             </div>
                         )}
 
-                        <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl bg-cream-50 p-3.5 ring-1 ring-stone-200 dark:bg-coal-600/40 dark:ring-coal-600">
+                        <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl bg-cream-50 p-3.5 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600">
                             <input type="checkbox" checked={form.data.aktif}
                                 onChange={(e) => form.setData('aktif', e.target.checked)}
-                                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-stone-300 text-claude-600 focus:ring-claude-500 dark:border-coal-600" />
+                                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-cream-400 text-claude-600 focus:ring-claude-500 dark:border-coal-600" />
                             <span className="min-w-0">
                                 <span className="block text-sm font-medium text-stone-800 dark:text-cream-100">
                                     Cetak tanda tangan di kwitansi
@@ -192,15 +192,15 @@ export default function Identitas({ identitas }) {
 
                 {/* ---------- Kolom kanan: pratinjau ---------- */}
                 <div className="lg:col-span-2">
-                    <div className="rounded-2xl bg-white p-5 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+                    <div className="rounded-2xl bg-white p-5 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                         <h2 className="text-sm font-semibold text-stone-800 dark:text-cream-100">Pratinjau di kwitansi</h2>
 
                         {/* Sengaja dibuat putih dan serif-netral meski aplikasi
                             sedang gelap: yang ditiru di sini adalah kertas
                             cetak, bukan layar. */}
-                        <div className="mt-4 rounded-xl border border-stone-300 bg-white p-5">
+                        <div className="mt-4 rounded-xl border border-cream-400 bg-white p-5">
                             <div className="border-b-2 border-stone-600 pb-2 text-left">
-                                <p className="text-sm font-bold text-[#D97757]">{form.data.kop_nama || 'Nama Lembaga'}</p>
+                                <p className="text-sm font-bold text-claude-600">{form.data.kop_nama || 'Nama Lembaga'}</p>
                                 {form.data.kop_alamat && (
                                     <p className="mt-0.5 text-[9px] text-stone-500">{form.data.kop_alamat}</p>
                                 )}

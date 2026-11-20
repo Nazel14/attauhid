@@ -171,9 +171,9 @@ window.open(
     const thAksi = 'px-4 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400';
 
     // Tinggi & radius seragam untuk semua kontrol filter.
-    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-600';
+    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600';
     // appearance-none + chevron sendiri: panah bawaan browser tidak mengikuti tema.
-    const selectModal = 'mt-1.5 block w-full cursor-pointer appearance-none rounded-xl border-0 bg-white py-2.5 pl-4 pr-10 text-sm text-stone-800 shadow-sm ring-1 ring-stone-200 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-700';
+    const selectModal = 'mt-1.5 block w-full cursor-pointer appearance-none rounded-xl border-0 bg-white py-2.5 pl-4 pr-10 text-sm text-stone-800 shadow-sm ring-1 ring-cream-300 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600 dark:[color-scheme:dark]';
 
     const btnGhost = 'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium ring-1 transition';
 
@@ -222,14 +222,14 @@ window.open(
                     ['Siswa Menunggak', `${ringkas?.jumlahSiswa || 0} siswa`, 'text-amber-600 dark:text-amber-400', false],
                     ['Invoice Tertunggak', `${ringkas?.jumlahInvoice || 0} invoice`, 'text-stone-700 dark:text-stone-200', false],
                 ].map(([label, nilai, warna, lebar]) => (
-                    <div key={label} className={`rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5 ${lebar ? 'col-span-2 sm:col-span-1' : ''}`}>
+                    <div key={label} className={`rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5 ${lebar ? 'col-span-2 sm:col-span-1' : ''}`}>
                         <p className="truncate text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 sm:text-[11px]">{label}</p>
                         <p className={`mt-1.5 break-words text-lg font-bold leading-tight sm:mt-2 sm:text-xl ${warna}`}>{nilai}</p>
                     </div>
                 ))}
             </div>
 
-            <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+            <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                 <div className="mb-5 flex flex-col gap-2 lg:flex-row lg:items-center">
                     <div className="relative lg:max-w-sm lg:flex-1">
                         <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
@@ -256,7 +256,7 @@ window.open(
                             <div key={t.id}
                                 className={`rounded-xl p-4 ring-1 ${dipilih
                                     ? 'bg-claude-500/10 ring-claude-500/30'
-                                    : 'bg-white ring-stone-200 dark:bg-coal-800/40 dark:ring-coal-600'}`}>
+                                    : 'bg-white ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600'}`}>
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="min-w-0">
                                         <p className="break-words text-sm font-semibold text-stone-800 dark:text-cream-100">{t.siswa?.name}</p>
@@ -267,7 +267,7 @@ window.open(
                                     <span className="shrink-0 text-xs font-medium text-claude-600 dark:text-claude-300">{t.invoice_number}</span>
                                 </div>
 
-                                <div className="mt-3 flex items-end justify-between gap-3 border-t border-stone-100 pt-3 dark:border-coal-600">
+                                <div className="mt-3 flex items-end justify-between gap-3 border-t border-cream-200 pt-3 dark:border-coal-600">
                                     <div className="min-w-0 text-xs">
                                         <p className="break-words text-stone-600 dark:text-stone-300">{t.header?.title}</p>
                                         <p className={lewatTempo ? 'font-medium text-red-500 dark:text-red-400' : 'text-stone-400'}>
@@ -291,7 +291,7 @@ window.open(
                                     ) : <span className="italic text-stone-400">belum pernah</span>}
                                 </p>
 
-                                <div className="mt-3 flex flex-wrap gap-2 border-t border-stone-100 pt-3 dark:border-coal-600">
+                                <div className="mt-3 flex flex-wrap gap-2 border-t border-cream-200 pt-3 dark:border-coal-600">
                                     {adaRiwayat && (
                                         <button type="button" onClick={() => bukaRiwayat(t.id)}
                                             className={`${btnGhost} flex-1 justify-center ${
@@ -309,14 +309,14 @@ window.open(
                                         disabled={!t.siswa?.parent_contact}
                                         className={`${btnGhost} flex-1 justify-center ${t.siswa?.parent_contact
                                             ? 'text-emerald-600 ring-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:ring-emerald-500/20'
-                                            : 'cursor-not-allowed text-stone-300 ring-stone-200 dark:text-stone-600 dark:ring-coal-600'}`}>
+                                            : 'cursor-not-allowed text-stone-300 ring-cream-300 dark:text-stone-600 dark:ring-coal-600'}`}>
                                         <IkonWa />
                                         WhatsApp
                                     </button>
 
                                     {bisaCatat && (
                                         <button type="button" onClick={() => bukaTagih(t)}
-                                            className={`${btnGhost} flex-1 justify-center text-stone-600 ring-stone-200 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600`}>
+                                            className={`${btnGhost} flex-1 justify-center text-stone-600 ring-cream-300 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600`}>
                                             <IkonCatat />
                                             Catat
                                         </button>
@@ -325,16 +325,16 @@ window.open(
                             </div>
                         );
                     }) : (
-                        <p className="rounded-xl bg-stone-50 py-10 text-center text-sm text-stone-500 dark:bg-coal-800 dark:text-stone-400">
+                        <p className="rounded-xl bg-cream-100 py-10 text-center text-sm text-stone-500 dark:bg-coal-600/40 dark:text-stone-400">
                             Tidak ada tunggakan. Semua tagihan lunas.
                         </p>
                     )}
                 </div>
 
                 {/* Desktop: tabel penuh dengan sorting. */}
-                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 sm:block">
-                    <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
-                        <thead className="bg-stone-50 dark:bg-coal-800">
+                <div className="hidden overflow-x-auto rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 sm:block">
+                    <table className="min-w-full divide-y divide-cream-300 dark:divide-coal-600">
+                        <thead className="bg-cream-100 dark:bg-coal-600/40">
                             <tr>
                                 <th onClick={() => handleSort('invoice_number')} className={thCls}><div className="flex items-center">Invoice <SortIcon field="invoice_number" /></div></th>
                                 <th className={thPlain}>Siswa &amp; Kontak</th>
@@ -344,7 +344,7 @@ window.open(
                                 <th className={thAksi}>Aksi</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                        <tbody className="divide-y divide-cream-200 bg-white dark:divide-coal-600 dark:bg-coal-700">
                             {tunggakan?.data?.length > 0 ? tunggakan.data.map((t) => {
                                 const { terakhir, lewatTempo, dipilih, adaRiwayat } = infoBaris(t);
 
@@ -401,14 +401,14 @@ window.open(
                                                         : 'Nomor wali belum diisi di Master Data Siswa'}
                                                     className={`${btnGhost} ${t.siswa?.parent_contact
                                                         ? 'text-emerald-600 ring-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:ring-emerald-500/20 dark:hover:bg-emerald-500/10'
-                                                        : 'cursor-not-allowed text-stone-300 ring-stone-200 dark:text-stone-600 dark:ring-coal-600'}`}>
+                                                        : 'cursor-not-allowed text-stone-300 ring-cream-300 dark:text-stone-600 dark:ring-coal-600'}`}>
                                                     <IkonWa />
                                                     WhatsApp
                                                 </button>
 
                                                 {bisaCatat && (
                                                     <button type="button" onClick={() => bukaTagih(t)}
-                                                        className={`${btnGhost} text-stone-600 ring-stone-200 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
+                                                        className={`${btnGhost} text-stone-600 ring-cream-300 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
                                                         <IkonCatat />
                                                         Catat
                                                     </button>
@@ -429,7 +429,7 @@ window.open(
                     <div className="flex flex-wrap justify-center gap-1">
                         {tunggakan.links.map((l, i) => (
                             <button key={i} onClick={() => l.url && router.get(l.url, {}, { preserveScroll: true })} disabled={!l.url}
-                                className={`rounded-lg px-3 py-1.5 text-sm transition ${l.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
+                                className={`rounded-lg px-3 py-1.5 text-sm transition ${l.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
                                 dangerouslySetInnerHTML={{ __html: l.label }} />
                         ))}
                     </div>
@@ -439,8 +439,8 @@ window.open(
             <div ref={riwayatRef} className="scroll-mt-20" />
 
             {aktif && aktif.riwayat_penagihans?.length > 0 && (
-                <div className="mt-5 rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
-                    <div className="mb-4 flex items-start justify-between gap-2 border-b border-stone-100 pb-3 dark:border-coal-600">
+                <div className="mt-5 rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+                    <div className="mb-4 flex items-start justify-between gap-2 border-b border-cream-200 pb-3 dark:border-coal-600">
                         <h3 className="break-words text-sm font-semibold text-stone-800 dark:text-cream-50">
                             Riwayat Penagihan · {aktif.invoice_number}
                         </h3>
@@ -451,7 +451,7 @@ window.open(
                     </div>
                     <ul className="space-y-2">
                         {[...aktif.riwayat_penagihans].reverse().map((log) => (
-                            <li key={log.id} className="rounded-xl bg-stone-50 p-3 dark:bg-coal-900/50">
+                            <li key={log.id} className="rounded-xl bg-cream-100 p-3 dark:bg-coal-600/40">
                                 <div className="flex items-start justify-between gap-3">
                                     <span className="text-sm font-medium text-stone-800 dark:text-cream-100">{log.metode}</span>
                                     <span className="shrink-0 text-xs text-stone-400">{tanggal(log.tanggal_penagihan)}</span>

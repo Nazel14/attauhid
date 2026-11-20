@@ -1,19 +1,24 @@
 /**
- * ✅ UNIFIED INPUT JAVASCRIPT - FIXED VERSION v3.7
- * PERUBAHAN v3.7:
- * - HAPUS submit handler untuk formCombined & formSetoranOnly
- *   (biarkan setoran-interactive.js yang handle, agar tidak konflik)
- * - Presensi Only: submit native tanpa intercept quranDisplay
- * - Tidak ada fungsi yang dihapus, hanya submit handler yang konflik dihilangkan
- * - switchMode() tetap di create.blade.php
+ * UNIFIED INPUT JAVASCRIPT — v3.8
+ *
+ * PERUBAHAN v3.8:
+ * - Toast & kotak error memakai desain kartu yang sama dengan InputSetoran.jsx
+ *   (kartu putih/coal, ring, tile ikon berwarna). Tanpa emoji.
+ * - loadPresensiHariIni() DIHAPUS dari file ini. Versi yang dipakai ada di
+ *   unified-input-page.js (dimuat sesudahnya dan menimpa deklarasi di sini).
+ *   Versi lama di sini hanya kenal 2 kolom tetap, jadi kalau sampai jalan ia
+ *   menghapus kolom Metode & Progress dari header tabel.
+ * - Validasi Presensi Only: stopImmediatePropagation() saat gagal, supaya
+ *   listener CSRF di unified-input-page.js tidak tetap memanggil form.submit().
+ *
+ * CATATAN TAILWIND: file di public/js tidak dipindai Tailwind. Semua class di
+ * bawah sengaja disalin dari InputSetoran.jsx supaya pasti ter-generate.
+ *
+ * - formCombined & formSetoranOnly tetap ditangani setoran-interactive.js
+ * - switchMode() ada di unified-input-page.js
  */
 
-console.log('✅ Unified Input JS v3.7 loading...');
-
-// =====================================================
-// ✅ NOTE: switchMode() is defined in create.blade.php
-// We do NOT define it here to avoid conflicts
-// =====================================================
+console.log('Unified Input JS v3.8 loading...');
 
 // =====================================================
 // GLOBAL STATE
@@ -25,312 +30,177 @@ let quranLoaded = {
 };
 
 // =====================================================
-// ✅ SIMPLIFIED DEPENDENCY CHECK - ONLY CHECK CRITICAL
+// UI HELPERS — kartu notifikasi (sama dengan toast di InputSetoran.jsx)
+// =====================================================
+const UI_TONE = {
+    success: 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+    error:   'bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400',
+    warning: 'bg-amber-100 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400',
+    info:    'bg-claude-100 dark:bg-claude-500/15 text-claude-600 dark:text-claude-400',
+};
+const UI_ICON = {
+    success: '<path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+    error:   '<path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+    warning: '<path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>',
+    info:    '<path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+};
+const UI_X = '<path d="M6 18L18 6M6 6l12 12"/>';
+
+function uiSvg(d, cls) {
+    return `<svg class="${cls}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+}
+
+function uiEsc(s) {
+    return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+// Buang emoji di awal pesan — script lain masih memanggil showToast('⚠️ ...').
+function uiStripEmoji(msg) {
+    return String(msg ?? '').replace(/^[\p{Extended_Pictographic}️‍\s]+/u, '');
+}
+
+function buildNoticeCard(type, bodyHtml) {
+    const t = UI_TONE[type] ? type : 'info';
+    const wrap = document.createElement('div');
+    wrap.className = 'fixed top-3 right-3 left-3 sm:left-auto z-[300] sm:max-w-sm animate-fade-in';
+    wrap.innerHTML = `
+        <div class="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl shadow-xl px-3.5 py-3 flex items-start gap-3">
+            <span class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${UI_TONE[t]}">${uiSvg(UI_ICON[t], 'w-4 h-4')}</span>
+            <div class="flex-1 min-w-0 pt-1.5 text-sm text-stone-800 dark:text-stone-100">${bodyHtml}</div>
+            <button type="button" class="flex-shrink-0 mt-1 w-6 h-6 rounded-lg flex items-center justify-center text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 hover:bg-cream-200 dark:hover:bg-coal-600 transition">${uiSvg(UI_X, 'w-3.5 h-3.5')}</button>
+        </div>`;
+    const remove = () => {
+        wrap.style.transition = 'opacity .3s';
+        wrap.style.opacity = '0';
+        setTimeout(() => wrap.remove(), 300);
+    };
+    wrap.querySelector('button').addEventListener('click', remove, { once: true });
+    wrap._remove = remove;
+    return wrap;
+}
+
+// =====================================================
+// SIMPLIFIED DEPENDENCY CHECK - ONLY CHECK CRITICAL
 // =====================================================
 let dependenciesReady = false;
 let checkAttempts = 0;
-const MAX_ATTEMPTS = 40; // 20 seconds max wait
+const MAX_ATTEMPTS = 40; // 20 detik
 
 function checkDependencies() {
     checkAttempts++;
-    
-    // ✅ Only check the most critical functions
+
     const critical = ['loadQuran', 'countTotalWords', 'markWord'];
     const missing = critical.filter(fn => typeof window[fn] !== 'function');
-    
+
     if (missing.length > 0) {
         if (checkAttempts >= MAX_ATTEMPTS) {
-            console.error('❌ Failed to load dependencies after 20 seconds');
-            console.error('❌ Missing:', missing);
-            console.log('💡 Try: Hard refresh (Ctrl+Shift+R) or clear browser cache');
-            
-            // Show user-friendly error
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 max-w-md';
-            errorDiv.innerHTML = `
-                <div class="font-bold mb-2">⚠️ System Error</div>
-                <div class="text-sm">Gagal memuat komponen sistem. Silakan:</div>
-                <ol class="text-sm mt-2 list-decimal list-inside">
-                    <li>Hard refresh: tekan <kbd class="bg-red-700 px-1 rounded">Ctrl+Shift+R</kbd></li>
-                    <li>Atau clear browser cache</li>
-                    <li>Refresh halaman lagi</li>
-                </ol>
-            `;
-            document.body.appendChild(errorDiv);
+            console.error('Failed to load dependencies after 20 seconds. Missing:', missing);
+
+            const kbd = 'style="padding:1px 5px;border-radius:5px;font-size:11px;font-family:ui-monospace,monospace;background:rgba(120,113,108,.15);"';
+            document.body.appendChild(buildNoticeCard('error', `
+                <p class="font-semibold">Gagal memuat komponen sistem</p>
+                <ol class="text-xs space-y-0.5 text-stone-600 dark:text-stone-300" style="margin-top:4px;padding-left:16px;list-style:decimal;">
+                    <li>Hard refresh: tekan <kbd ${kbd}>Ctrl+Shift+R</kbd></li>
+                    <li>Atau hapus cache browser</li>
+                    <li>Muat ulang halaman</li>
+                </ol>`));
             return false;
         }
-        
-        // Only log every 5th attempt to reduce console spam
+
         if (checkAttempts % 5 === 0) {
-            console.warn(`⏳ Attempt ${checkAttempts}/${MAX_ATTEMPTS}: Still waiting...`, missing);
+            console.warn(`Attempt ${checkAttempts}/${MAX_ATTEMPTS}: still waiting...`, missing);
         }
-        
+
         setTimeout(checkDependencies, 500);
         return false;
     }
-    
+
     dependenciesReady = true;
-    console.log(`✅ All dependencies loaded (took ${checkAttempts * 0.5}s)`);
-    
+    console.log(`All dependencies loaded (took ${checkAttempts * 0.5}s)`);
     return true;
 }
 
-// Start checking immediately
 checkDependencies();
 
 // =====================================================
-// ✅ PRESENSI ONLY FORM VALIDATION - STANDALONE
-// Tidak intercept formCombined & formSetoranOnly
-// karena sudah dihandle oleh setoran-interactive.js
+// PRESENSI ONLY FORM VALIDATION - STANDALONE
+// formCombined & formSetoranOnly dihandle setoran-interactive.js
 // =====================================================
 function setupPresensiOnlyValidation() {
-    console.log('✅ Setting up Presensi Only validation...');
-    
     const formPresensiOnly = document.getElementById('formPresensiOnly');
     if (!formPresensiOnly) {
-        console.warn('⚠️ formPresensiOnly not found');
+        console.warn('formPresensiOnly not found');
         return;
     }
 
-    // ✅ Cegah double-attach: cek apakah sudah ada listener
-    if (formPresensiOnly._presensiValidationAttached) {
-        console.log('ℹ️ Presensi Only validation already attached, skip');
-        return;
-    }
+    if (formPresensiOnly._presensiValidationAttached) return;
     formPresensiOnly._presensiValidationAttached = true;
 
-    formPresensiOnly.addEventListener('submit', function(e) {
-        console.log('📝 Form Presensi Only submit triggered');
-        
-        // Ambil nilai dari native select (bukan custom select widget)
+    formPresensiOnly.addEventListener('submit', function (e) {
+        // Lewat lagi saat listener CSRF memanggil submit ulang → tidak perlu validasi ulang
+        if (this.dataset.csrfReady === '1') return;
+
         const santriId = formPresensiOnly.querySelector('[name="santri_id"]')?.value;
-        const tanggal = formPresensiOnly.querySelector('[name="tanggal"]')?.value;
-        const sesi = formPresensiOnly.querySelector('[name="sesi"]')?.value;
-        const status = formPresensiOnly.querySelector('[name="status"]:checked');
-        
-        console.log('📋 Presensi Only data:', { santriId, tanggal, sesi, status: status?.value });
-        
-        if (!santriId || santriId === '') {
+        const tanggal  = formPresensiOnly.querySelector('[name="tanggal"]')?.value;
+        const sesi     = formPresensiOnly.querySelector('[name="sesi"]')?.value;
+        const status   = formPresensiOnly.querySelector('[name="status"]:checked');
+
+        const gagal = (msg) => {
             e.preventDefault();
-            showToast('⚠️ Pilih santri terlebih dahulu!', 'error');
-            return;
-        }
-        
-        if (!tanggal) {
-            e.preventDefault();
-            showToast('⚠️ Pilih tanggal terlebih dahulu!', 'error');
-            return;
-        }
-        
-        if (!sesi || sesi === '') {
-            e.preventDefault();
-            showToast('⚠️ Pilih sesi terlebih dahulu!', 'error');
-            return;
-        }
-        
-        if (!status) {
-            e.preventDefault();
-            showToast('⚠️ Pilih status kehadiran!', 'error');
-            return;
-        }
-        
-        // ✅ Validasi passed - disable tombol & submit
-        console.log('✅ Presensi Only validation passed, submitting...');
-        
+            // PENTING: hentikan listener CSRF di unified-input-page.js. Tanpa ini
+            // listener itu tetap jalan dan memanggil form.submit() → data kosong terkirim.
+            e.stopImmediatePropagation();
+            showToast(msg, 'error');
+        };
+
+        if (!santriId) return gagal('Pilih santri terlebih dahulu.');
+        if (!tanggal)  return gagal('Pilih tanggal terlebih dahulu.');
+        if (!sesi)     return gagal('Pilih sesi terlebih dahulu.');
+        if (!status)   return gagal('Pilih status kehadiran.');
+
         const submitBtn = formPresensiOnly.querySelector('button[type="submit"]');
         if (submitBtn) {
-            submitBtn.innerHTML = '⏳ Menyimpan...';
+            submitBtn.textContent = 'Menyimpan…';
             submitBtn.disabled = true;
         }
-        
-        // Biarkan form submit secara native (tidak e.preventDefault())
+        // Lanjut ke listener CSRF (unified-input-page.js) yang melakukan submit.
     });
-    
-    console.log('✅ Presensi Only validation setup complete');
-}
-
-// =====================================================
-// ✅ LOAD PRESENSI HARI INI
-// =====================================================
-async function loadPresensiHariIni() {
-    console.log('📊 Loading presensi hari ini...');
-    
-    try {
-        // Ambil tanggal dari form mana pun yang tersedia
-        const tanggalInput = 
-            document.getElementById('tanggalCombined') ||
-            document.getElementById('tanggalSetoranOnly') ||
-            document.querySelector('[name="tanggal"]');
-        
-        const tanggal = tanggalInput ? tanggalInput.value : new Date().toISOString().split('T')[0];
-        
-        const response = await fetch(`/api/presensi/hari-ini?tanggal=${tanggal}`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        // Update statistics
-        const statHadir = document.getElementById('statHadir');
-        const statSakit = document.getElementById('statSakit');
-        const statIzin = document.getElementById('statIzin');
-        const statAlpha = document.getElementById('statAlpha');
-        
-        if (statHadir) statHadir.textContent = data.hadir || 0;
-        if (statSakit) statSakit.textContent = data.sakit || 0;
-        if (statIzin) statIzin.textContent = data.izin || 0;
-        if (statAlpha) statAlpha.textContent = data.alpha || 0;
-        
-        // Update table headers
-        const sesiHeaders = data.sesi_aktif || [];
-        const tableHeaderRow = document.getElementById('tableHeaderRow');
-        
-        if (tableHeaderRow) {
-            while (tableHeaderRow.children.length > 2) {
-                tableHeaderRow.removeChild(tableHeaderRow.lastChild);
-            }
-            
-            sesiHeaders.forEach(sesi => {
-                const th = document.createElement('th');
-                th.className = 'px-2 py-1 text-center text-gray-700 dark:text-gray-300 border-b dark:border-gray-600 w-16';
-                th.textContent = sesi;
-                tableHeaderRow.appendChild(th);
-            });
-        }
-        
-        // Update table body
-        const tableBody = document.getElementById('tableBodyPresensi');
-        
-        if (tableBody) {
-            const isDark = document.documentElement.classList.contains('dark');
-            const setoranBg = isDark ? '#312e81' : '#e0e7ff';
-            const setoranFg = isDark ? '#a5b4fc' : '#4338ca';
-            if (data.santri_list && data.santri_list.length > 0) {
-                tableBody.innerHTML = data.santri_list.map((santri, index) => {
-                    const sesiCells = sesiHeaders.map(sesi => {
-                        const p = santri.sesi_data && santri.sesi_data[sesi];
-                        if (p) {
-                            // Inline hex agar warna titik status TIDAK ter-purge Tailwind
-                            const dotColor = { Hadir:'#10b981', Sakit:'#f97316', Izin:'#f59e0b', Alpha:'#ef4444' }[p.status] || '#9ca3af';
-                            const jumlahSetoran = p.jumlah_setoran || 0;
-                            const waktu = p.waktu || '';
-                            
-                            return `<td class="px-1 py-2 border-b dark:border-gray-700">
-                                <div class="flex flex-col items-center justify-center gap-1">
-                                    <div class="flex items-center justify-center gap-1.5">
-                                        <div class="w-5 h-5 rounded-full flex-shrink-0 cursor-help" 
-                                            style="background-color:${dotColor};"
-                                            title="${p.status}${waktu ? ' - ' + waktu : ''}"></div>
-                                        ${jumlahSetoran > 0 ? 
-                                            `<span class="setoran-badge px-1 rounded text-[9px]" 
-                                            title="${jumlahSetoran} setoran">📖${jumlahSetoran}</span>` 
-                                            : ''
-                                        }
-                                    </div>
-                                    ${waktu ? 
-                                        `<span class="text-[9px] text-gray-500 dark:text-gray-400 font-mono whitespace-nowrap">${waktu}</span>` 
-                                        : ''
-                                    }
-                                </div>
-                            </td>`;
-                        }
-                        return `<td class="px-1 py-2 border-b dark:border-gray-700"><div class="flex items-center justify-center"><div class="w-5 h-5 rounded-full flex-shrink-0" style="border:2px solid #9ca3af;"></div></div></td>`;
-                    }).join('');
-
-                    return `<tr style="transition: background-color 0.15s;" onmouseover="this.style.backgroundColor='rgba(99,102,241,0.06)'" onmouseout="this.style.backgroundColor=''">
-                        <td class="px-2 py-2.5 border-b dark:border-gray-700 text-gray-700 dark:text-gray-300 text-center font-medium">${index + 1}</td>
-                        <td class="px-2 py-2.5 border-b dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium">${santri.name}</td>
-                        ${sesiCells}
-                    </tr>`;
-                }).join('');
-            } else {
-                const colspan = 2 + sesiHeaders.length;
-                tableBody.innerHTML = `<tr><td colspan="${colspan}" class="text-center py-4 text-gray-500 dark:text-gray-400 italic">Tidak ada santri di kelas ini.</td></tr>`;
-            }
-        }
-        
-        console.log('✅ Presensi hari ini loaded');
-        
-    } catch (error) {
-        console.error('❌ Error loading presensi:', error);
-        const tableBody = document.getElementById('tableBodyPresensi');
-        if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-red-500">❌ Error memuat data presensi</td></tr>`;
-        }
-    }
 }
 
 // =====================================================
 // TOAST NOTIFICATION
 // =====================================================
 function showToast(message, type = 'info') {
-    const colors = {
-        success: 'bg-green-500',
-        error: 'bg-red-500',
-        info: 'bg-blue-500',
-        warning: 'bg-yellow-500'
-    };
-    
-    const toast = document.createElement('div');
-    toast.className = `fixed top-4 right-4 ${colors[type] || 'bg-gray-500'} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
-    toast.textContent = message;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    const card = buildNoticeCard(type, `<p class="font-medium">${uiEsc(uiStripEmoji(message))}</p>`);
+    document.body.appendChild(card);
+    setTimeout(() => { if (card.isConnected) card._remove(); }, 3500);
 }
 
-
-
 // =====================================================
-// ✅ EXPORT TO WINDOW SCOPE
+// EXPORT TO WINDOW SCOPE
 // =====================================================
 window.showToast = showToast;
-window.loadPresensiHariIni = loadPresensiHariIni;
-
-// ✅ NOTE: loadQuranCombined and loadQuranSetoranOnly are defined in mode-handler.js
-// setupFormSubmitHandler is defined in setoran-interactive.js
-// Do NOT override them here
 
 // =====================================================
 // DOM READY INITIALIZATION
 // =====================================================
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ DOM Ready - Initializing Unified Input v3.7...');
-    
-    // ✅ Hanya setup validasi presensi-only
-    // formCombined & formSetoranOnly dihandle oleh setoran-interactive.js
+document.addEventListener('DOMContentLoaded', function () {
     setupPresensiOnlyValidation();
-    
-   
-    
-    // ✅ Load presensi on page load
-    loadPresensiHariIni();
-    
-    // ✅ Auto-refresh presensi every 30 seconds
-    setInterval(loadPresensiHariIni, 30000);
-    
-    // ✅ Watch for tanggal changes (semua form)
+
+    // loadPresensiHariIni() didefinisikan di unified-input-page.js. Dipanggil
+    // lewat pembungkus supaya selalu memakai versi terbaru di window.
+    const refresh = () => {
+        if (typeof window.loadPresensiHariIni === 'function') window.loadPresensiHariIni();
+    };
+
+    refresh();
+    setInterval(refresh, 30000);
+
     document.querySelectorAll('[name="tanggal"]').forEach(input => {
-        input.addEventListener('change', loadPresensiHariIni);
+        input.addEventListener('change', refresh);
     });
-    
-    console.log('✅ Unified Input v3.7 initialization complete');
-    console.log('ℹ️  switchMode() → create.blade.php');
-    console.log('ℹ️  loadQuranCombined/SetoranOnly() → mode-handler.js');
-    console.log('ℹ️  setupFormSubmitHandler() → setoran-interactive.js');
-    console.log('ℹ️  Presensi Only validation → unified-input.js (this file)');
+
+    console.log('Unified Input v3.8 initialization complete');
 });
 
-console.log('✅ Unified Input Script v3.7 LOADED - NO CONFLICT, PRESENSI-ONLY FIXED');
+console.log('Unified Input Script v3.8 LOADED');

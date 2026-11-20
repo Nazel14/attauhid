@@ -38,15 +38,15 @@ export default function RealisasiRkas({ listPeriode, realisasi, summary, filters
     };
 
     const warnaSerapan = (p) =>
-        p >= 100 ? 'bg-red-500' : p >= 80 ? 'bg-amber-500' : p > 0 ? 'bg-emerald-500' : 'bg-stone-300 dark:bg-coal-600';
+        p >= 100 ? 'bg-red-500' : p >= 80 ? 'bg-amber-500' : p > 0 ? 'bg-emerald-500' : 'bg-cream-400 dark:bg-coal-600';
 
     const thCls = 'cursor-pointer px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-stone-500 transition hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200';
     const thPlain = 'px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400';
 
     // Tinggi & radius seragam untuk semua kontrol filter.
-    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-stone-200 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100 dark:ring-coal-600';
+    const fieldCls = 'h-10 w-full rounded-xl border-0 bg-white px-3.5 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-claude-500 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600';
     // appearance-none + chevron sendiri: panah bawaan browser tidak mengikuti tema.
-    const selectCls = `${fieldCls} cursor-pointer appearance-none pr-9 font-medium`;
+    const selectCls = `${fieldCls} cursor-pointer appearance-none pr-9 font-medium dark:[color-scheme:dark]`;
 
     const ChevronBawah = () => (
         <svg className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400 dark:text-stone-500"
@@ -67,7 +67,7 @@ export default function RealisasiRkas({ listPeriode, realisasi, summary, filters
             </div>
 
             {(!listPeriode || listPeriode.length === 0) ? (
-                <div className="rounded-2xl bg-white p-8 text-center ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-12">
+                <div className="rounded-2xl bg-white p-8 text-center ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-12">
                     <p className="text-sm text-stone-500 dark:text-stone-400">Belum ada RKAS berstatus Final. Finalkan RKAS terlebih dahulu untuk melihat realisasinya.</p>
                 </div>
             ) : (
@@ -81,14 +81,14 @@ export default function RealisasiRkas({ listPeriode, realisasi, summary, filters
                             ['Sisa Anggaran', formatCurrency(summary?.sisa_anggaran || 0), 'text-emerald-600 dark:text-emerald-400'],
                             ['Persentase Serapan', `${summary?.persentase_serapan || 0}%`, 'text-claude-600 dark:text-claude-300'],
                         ].map(([label, nilai, warna]) => (
-                            <div key={label} className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
+                            <div key={label} className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-5">
                                 <p className="truncate text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 sm:text-[11px]">{label}</p>
                                 <p className={`mt-1.5 break-words text-base font-bold leading-tight sm:mt-2 sm:text-lg ${warna}`}>{nilai}</p>
                             </div>
                         ))}
                     </div>
 
-                    <div className="rounded-2xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
+                    <div className="rounded-2xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-700 dark:ring-coal-600 sm:p-6">
                         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
                             <div className="relative sm:w-56">
                                 <select value={periodeId} onChange={(e) => setPeriodeId(e.target.value)} className={selectCls}>
@@ -114,7 +114,7 @@ export default function RealisasiRkas({ listPeriode, realisasi, summary, filters
                                 <span className="font-medium text-stone-600 dark:text-stone-300">Serapan keseluruhan</span>
                                 <span className="font-semibold text-stone-800 dark:text-cream-100">{summary?.persentase_serapan || 0}%</span>
                             </div>
-                            <div className="h-2.5 overflow-hidden rounded-full bg-stone-100 dark:bg-coal-900">
+                            <div className="h-2.5 overflow-hidden rounded-full bg-cream-200 dark:bg-coal-600/40">
                                 <div className={`h-full rounded-full transition-all ${warnaSerapan(summary?.persentase_serapan || 0)}`}
                                     style={{ width: `${Math.min(summary?.persentase_serapan || 0, 100)}%` }} />
                             </div>
@@ -129,7 +129,7 @@ export default function RealisasiRkas({ listPeriode, realisasi, summary, filters
                                 const sisa = pagu - real;
 
                                 return (
-                                    <div key={r.id} className="rounded-xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-800/40 dark:ring-coal-600">
+                                    <div key={r.id} className="rounded-xl bg-white p-4 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600">
                                         <p className="text-[10px] font-medium text-stone-500 dark:text-stone-400">{r.kode_kegiatan}</p>
                                         <p className="mt-0.5 break-words text-sm font-semibold text-stone-800 dark:text-cream-100">{r.nama_kegiatan}</p>
 
@@ -150,8 +150,8 @@ export default function RealisasiRkas({ listPeriode, realisasi, summary, filters
                                             </div>
                                         </dl>
 
-                                        <div className="mt-3 flex items-center gap-2 border-t border-stone-100 pt-3 dark:border-coal-600">
-                                            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-stone-100 dark:bg-coal-900">
+                                        <div className="mt-3 flex items-center gap-2 border-t border-cream-200 pt-3 dark:border-coal-600">
+                                            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-cream-200 dark:bg-coal-600/40">
                                                 <div className={`h-full rounded-full ${warnaSerapan(persen)}`} style={{ width: `${Math.min(persen, 100)}%` }} />
                                             </div>
                                             <span className="shrink-0 text-xs font-semibold text-stone-600 dark:text-stone-300">{persen}%</span>
@@ -159,12 +159,12 @@ export default function RealisasiRkas({ listPeriode, realisasi, summary, filters
                                     </div>
                                 );
                             }) : (
-                                <p className="rounded-xl bg-stone-50 py-10 text-center text-sm text-stone-500 dark:bg-coal-800 dark:text-stone-400">
+                                <p className="rounded-xl bg-cream-100 py-10 text-center text-sm text-stone-500 dark:bg-coal-600/40 dark:text-stone-400">
                                     Tidak ada mata kegiatan pada periode ini.
                                 </p>
                             )}
 
-                            <div className="rounded-xl bg-stone-800 p-4 dark:bg-coal-900">
+                            <div className="rounded-xl bg-coal-800 p-4 dark:bg-coal-900">
                                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/70">Total</p>
                                 <div className="space-y-1.5 text-xs">
                                     <div className="flex justify-between gap-3">
@@ -188,9 +188,9 @@ export default function RealisasiRkas({ listPeriode, realisasi, summary, filters
                         </div>
 
                         {/* Desktop: tabel penuh dengan sorting. */}
-                        <div className="hidden overflow-x-auto rounded-xl ring-1 ring-stone-200 dark:ring-coal-600 sm:block">
-                            <table className="min-w-full divide-y divide-stone-200 dark:divide-coal-600">
-                                <thead className="bg-stone-50 dark:bg-coal-800">
+                        <div className="hidden overflow-x-auto rounded-xl ring-1 ring-cream-300 dark:ring-coal-600 sm:block">
+                            <table className="min-w-full divide-y divide-cream-300 dark:divide-coal-600">
+                                <thead className="bg-cream-100 dark:bg-coal-600/40">
                                     <tr>
                                         <th onClick={() => handleSort('kode_kegiatan')} className={thCls}><div className="flex items-center">Kode <SortIcon field="kode_kegiatan" /></div></th>
                                         <th onClick={() => handleSort('nama_kegiatan')} className={thCls}><div className="flex items-center">Uraian Kegiatan <SortIcon field="nama_kegiatan" /></div></th>
@@ -200,7 +200,7 @@ export default function RealisasiRkas({ listPeriode, realisasi, summary, filters
                                         <th className={thPlain}>Serapan</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-stone-100 bg-white dark:divide-coal-600 dark:bg-coal-700">
+                                <tbody className="divide-y divide-cream-200 bg-white dark:divide-coal-600 dark:bg-coal-700">
                                     {realisasi?.data?.length > 0 ? realisasi.data.map((r) => {
                                         const pagu = parseFloat(r.pagu_anggaran) || 0;
                                         const real = parseFloat(r.nominal_realisasi) || 0;
@@ -217,7 +217,7 @@ export default function RealisasiRkas({ listPeriode, realisasi, summary, filters
                                                 </td>
                                                 <td className="px-4 py-3.5">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-stone-100 dark:bg-coal-900">
+                                                        <div className="h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-cream-200 dark:bg-coal-600/40">
                                                             <div className={`h-full rounded-full ${warnaSerapan(persen)}`} style={{ width: `${Math.min(persen, 100)}%` }} />
                                                         </div>
                                                         <span className="text-xs font-medium text-stone-600 dark:text-stone-300">{persen}%</span>
@@ -229,7 +229,7 @@ export default function RealisasiRkas({ listPeriode, realisasi, summary, filters
                                         <tr><td colSpan="6" className="px-6 py-12 text-center text-sm text-stone-500 dark:text-stone-400">Tidak ada mata kegiatan pada periode ini.</td></tr>
                                     )}
                                 </tbody>
-                                <tfoot className="bg-stone-800 text-white dark:bg-coal-900">
+                                <tfoot className="bg-coal-800 text-white dark:bg-coal-900">
                                     <tr>
                                         <td colSpan="2" className="px-4 py-3.5 text-right text-xs font-semibold uppercase tracking-wider">Total</td>
                                         <td className="whitespace-nowrap px-4 py-3.5 text-right text-sm font-bold">{formatCurrency(summary?.total_anggaran || 0)}</td>
@@ -247,7 +247,7 @@ export default function RealisasiRkas({ listPeriode, realisasi, summary, filters
                                 <div className="flex flex-wrap justify-center gap-1">
                                     {realisasi.links.map((l, i) => (
                                         <button key={i} onClick={() => l.url && router.get(l.url, {}, { preserveScroll: true })} disabled={!l.url}
-                                            className={`rounded-lg px-3 py-1.5 text-sm transition ${l.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-stone-200 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
+                                            className={`rounded-lg px-3 py-1.5 text-sm transition ${l.active ? 'bg-claude-500 font-medium text-white' : 'text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 disabled:opacity-40 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'}`}
                                             dangerouslySetInnerHTML={{ __html: l.label }} />
                                     ))}
                                 </div>

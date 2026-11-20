@@ -22,6 +22,21 @@ const XIcon       = (p) => <I {...p} d={<path d="M6 18L18 6M6 6l12 12" />} />;
 const CheckIcon   = (p) => <I {...p} d={<path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />} />;
 const DownloadIcon= (p) => <I {...p} d={<path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />} />;
 const ArrowLeftIcon = (p) => <I {...p} d={<path d="M10 19l-7-7m0 0l7-7m-7 7h18" />} />;
+const ChevDown    = (p) => <I {...p} d={<path d="M6 9l6 6 6-6" />} />;
+
+/* ============================================================
+ * TOKEN DESAIN — sama dengan Dashboard / Rapot / Presensi
+ * ============================================================ */
+const CARD = 'bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl';
+const SUB = 'bg-cream-100 dark:bg-coal-600/40 ring-1 ring-cream-300 dark:ring-coal-600 rounded-xl';
+const TILE = 'w-6 h-6 rounded-lg bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-stone-500 dark:text-stone-400 flex items-center justify-center flex-shrink-0';
+const BTN_SOFT = 'inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 text-stone-600 dark:text-stone-300 hover:bg-cream-100 dark:hover:bg-coal-600 transition active:scale-95';
+const BTN_SECONDARY = 'py-2.5 rounded-xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-stone-700 dark:text-stone-300 text-sm font-semibold hover:bg-cream-300 dark:hover:bg-coal-500 transition-colors';
+// color-scheme lewat class (ikut toggle Dark Mode aplikasi), BUKAN style 'auto' /
+// 'light dark' yang mengikuti tema sistem operasi.
+const INP = 'w-full bg-white dark:bg-coal-600/40 border border-cream-300 dark:border-coal-600 rounded-xl text-sm text-stone-800 dark:text-stone-100 px-3 py-2 outline-none focus:border-claude-500 focus:ring-2 focus:ring-claude-500/20 transition [color-scheme:light] dark:[color-scheme:dark]';
+const ICON_BTN = 'p-1.5 rounded-lg text-stone-500 dark:text-stone-400 hover:bg-cream-200 dark:hover:bg-coal-600 transition-colors';
+const CLOSE_BTN = 'w-7 h-7 rounded-lg bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center text-stone-500 dark:text-stone-300 hover:bg-cream-300 dark:hover:bg-coal-500 transition-colors';
 
 /* ============================================================
  * HELPERS
@@ -29,18 +44,18 @@ const ArrowLeftIcon = (p) => <I {...p} d={<path d="M10 19l-7-7m0 0l7-7m-7 7h18" 
 const nf2 = (n) => Number(n ?? 0).toFixed(2);
 const initial = (name) => (name || '?').charAt(0).toUpperCase();
 
-// warna badge nilai (semantik — dipertahankan)
+// Badge nilai — sama dengan Rapot: ≥90 emerald, ≥75 netral, <75 amber
 const nilaiTone = (n) => {
-    if (n >= 90) return 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-emerald-200 dark:ring-emerald-500/20';
-    if (n >= 75) return 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-blue-200 dark:ring-blue-500/20';
-    return 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-amber-200 dark:ring-amber-500/20';
+    if (n >= 90) return 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-500/20';
+    if (n >= 75) return 'bg-cream-200 dark:bg-coal-600 text-stone-700 dark:text-stone-200 ring-cream-300 dark:ring-coal-500';
+    return 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-amber-100 dark:ring-amber-500/20';
 };
 
-// tema per kategori (warna kategori = pengecualian semantik yg dipertahankan)
+// Kategori — sama dengan Riwayat Setoran di halaman Input & Rapot
 const KAT = {
-    Hafalan:  { text: 'text-emerald-600 dark:text-emerald-400', head: 'bg-emerald-50 dark:bg-emerald-500/10', badge: 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' },
-    Murajaah: { text: 'text-blue-600 dark:text-blue-400',       head: 'bg-blue-50 dark:bg-blue-500/10',       badge: 'bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400' },
-    Tilawah:  { text: 'text-purple-600 dark:text-purple-400',   head: 'bg-purple-50 dark:bg-purple-500/10',   badge: 'bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400' },
+    Hafalan:  { text: 'text-emerald-700 dark:text-emerald-400', dot: 'bg-emerald-500', box: 'bg-emerald-50 dark:bg-emerald-500/10 ring-emerald-100 dark:ring-emerald-500/20', chip: 'bg-emerald-50 dark:bg-emerald-500/10 ring-emerald-100 dark:ring-emerald-500/20 text-emerald-700 dark:text-emerald-400' },
+    Murajaah: { text: 'text-amber-700 dark:text-amber-400',     dot: 'bg-amber-500',   box: 'bg-amber-50 dark:bg-amber-500/10 ring-amber-100 dark:ring-amber-500/20',         chip: 'bg-amber-50 dark:bg-amber-500/10 ring-amber-100 dark:ring-amber-500/20 text-amber-700 dark:text-amber-400' },
+    Tilawah:  { text: 'text-orange-700 dark:text-orange-400',   dot: 'bg-orange-500',  box: 'bg-orange-50 dark:bg-orange-500/10 ring-orange-100 dark:ring-orange-500/20',     chip: 'bg-orange-50 dark:bg-orange-500/10 ring-orange-100 dark:ring-orange-500/20 text-orange-700 dark:text-orange-400' },
 };
 
 /* ============================================================
@@ -51,43 +66,45 @@ function SetoranTable({ kategori, rows, isIqro, perPage = 10, onAudio, onNote, o
     const theme = KAT[kategori];
     const totalPages = Math.max(1, Math.ceil(rows.length / perPage));
     const paged = rows.slice((page - 1) * perPage, page * perPage);
+    const pgBtn = 'px-2 py-1 rounded-md text-xs text-stone-500 dark:text-stone-400 hover:bg-cream-200 dark:hover:bg-coal-600 disabled:opacity-30 disabled:cursor-not-allowed';
 
     return (
-        <div className="ring-1 ring-stone-200 dark:ring-coal-700 rounded-xl overflow-hidden">
-            <div className={`flex items-center justify-between px-4 py-2.5 ${theme.head}`}>
+        <div className="ring-1 ring-cream-300 dark:ring-coal-600 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-cream-300 dark:border-coal-600">
+                <span className={`w-2 h-2 rounded-full ${theme.dot}`} />
                 <h4 className={`text-sm font-bold tracking-tight ${theme.text}`}>{kategori}</h4>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${theme.badge}`}>{rows.length} setoran</span>
+                <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-md ring-1 font-semibold ${theme.chip}`}>{rows.length} setoran</span>
             </div>
 
             {rows.length ? (
                 <>
-                    <div className="divide-y divide-stone-100 dark:divide-coal-700/60">
+                    <div className="divide-y divide-cream-200 dark:divide-coal-600/60">
                         {paged.map((s, i) => (
-                            <div key={s.id} className="px-3 py-2.5">
+                            <div key={s.id} className="px-3 py-2.5 hover:bg-cream-100 dark:hover:bg-coal-600/30 transition-colors">
                                 <div className="flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-2 min-w-0">
-                                        <span className="text-[10px] text-stone-400 dark:text-stone-600 bg-stone-100 dark:bg-coal-700 px-1.5 py-0.5 rounded tabular-nums flex-shrink-0">
+                                        <span className="text-[10px] text-stone-400 bg-cream-200 dark:bg-coal-600 px-1.5 py-0.5 rounded tabular-nums flex-shrink-0">
                                             #{(page - 1) * perPage + i + 1}
                                         </span>
-                                        <span className="text-[11px] font-semibold text-stone-600 dark:text-stone-300 flex-shrink-0">{s.tanggal}</span>
+                                        <span className="text-xs font-semibold text-stone-600 dark:text-stone-300 flex-shrink-0">{s.tanggal}</span>
                                     </div>
                                     <div className="flex items-center gap-0.5 flex-shrink-0">
                                         {s.has_audio && (
-                                            <button onClick={() => onAudio(s.audio_url)} title="Audio" className="p-1.5 rounded-lg text-stone-500 hover:text-claude-600 hover:bg-stone-100 dark:hover:bg-coal-700 transition-colors">
+                                            <button onClick={() => onAudio(s.audio_url)} title="Audio" className={`${ICON_BTN} hover:text-claude-600 dark:hover:text-claude-400`}>
                                                 <PlayIcon className="w-3.5 h-3.5" />
                                             </button>
                                         )}
                                         {s.pdf_url && (
-                                            <a href={s.pdf_url} target="_blank" rel="noreferrer" title="PDF koreksi" className="p-1.5 rounded-lg text-stone-500 hover:text-red-500 hover:bg-stone-100 dark:hover:bg-coal-700 transition-colors">
+                                            <a href={s.pdf_url} target="_blank" rel="noreferrer" title="PDF koreksi" className={`${ICON_BTN} hover:text-red-500`}>
                                                 <PdfIcon className="w-3.5 h-3.5" />
                                             </a>
                                         )}
                                         {s.catatan && (
-                                            <button onClick={() => onNote(s.catatan)} title="Catatan guru" className="p-1.5 rounded-lg text-stone-500 hover:text-amber-500 hover:bg-stone-100 dark:hover:bg-coal-700 transition-colors">
+                                            <button onClick={() => onNote(s.catatan)} title="Catatan guru" className={`${ICON_BTN} hover:text-amber-500`}>
                                                 <NoteIcon className="w-3.5 h-3.5" />
                                             </button>
                                         )}
-                                        <button onClick={() => onDelete(s.id)} title="Hapus" className="p-1.5 rounded-lg text-stone-500 hover:text-red-500 hover:bg-stone-100 dark:hover:bg-coal-700 transition-colors">
+                                        <button onClick={() => onDelete(s.id)} title="Hapus" className={`${ICON_BTN} hover:text-red-500 hover:!bg-red-50 dark:hover:!bg-red-500/10`}>
                                             <TrashIcon className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
@@ -106,19 +123,17 @@ function SetoranTable({ kategori, rows, isIqro, perPage = 10, onAudio, onNote, o
                     </div>
 
                     {totalPages > 1 && (
-                        <div className="flex items-center justify-between px-4 py-2 bg-stone-50 dark:bg-coal-700/40 border-t border-stone-100 dark:border-coal-700/60">
-                            <span className="text-[10px] text-stone-400 dark:text-stone-500">{page}/{totalPages} · {rows.length} data</span>
+                        <div className="flex items-center justify-between px-4 py-2 bg-cream-100 dark:bg-coal-600/40 border-t border-cream-300 dark:border-coal-600">
+                            <span className="text-[11px] text-stone-400 tabular-nums">{page}/{totalPages} · {rows.length} data</span>
                             <div className="flex items-center gap-1">
-                                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
-                                    className="px-2 py-1 rounded-md text-xs text-stone-500 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-coal-600 disabled:opacity-30 disabled:cursor-not-allowed">‹</button>
-                                <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                                    className="px-2 py-1 rounded-md text-xs text-stone-500 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-coal-600 disabled:opacity-30 disabled:cursor-not-allowed">›</button>
+                                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className={pgBtn}>‹</button>
+                                <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className={pgBtn}>›</button>
                             </div>
                         </div>
                     )}
                 </>
             ) : (
-                <div className="p-6 text-center text-xs text-stone-400 dark:text-stone-500">Belum ada data {kategori.toLowerCase()}</div>
+                <div className="p-6 text-center text-[11px] text-stone-400">Belum ada data {kategori.toLowerCase()}</div>
             )}
         </div>
     );
@@ -126,20 +141,64 @@ function SetoranTable({ kategori, rows, isIqro, perPage = 10, onAudio, onNote, o
 
 /* ============================================================
  * MODAL SHELL
+ * onClose disimpan di ref: kalau dijadikan dependency efek, listener
+ * Escape & kunci scroll dilepas-pasang di setiap render.
  * ============================================================ */
 function Modal({ open, onClose, children, maxW = 'max-w-sm' }) {
+    const closeRef = useRef(onClose);
+    closeRef.current = onClose;
     useEffect(() => {
-        const onEsc = (e) => e.key === 'Escape' && onClose();
-        if (open) { document.addEventListener('keydown', onEsc); document.body.style.overflow = 'hidden'; }
+        if (!open) return;
+        const onEsc = (e) => e.key === 'Escape' && closeRef.current();
+        document.addEventListener('keydown', onEsc);
+        document.body.style.overflow = 'hidden';
         return () => { document.removeEventListener('keydown', onEsc); document.body.style.overflow = ''; };
-    }, [open, onClose]);
+    }, [open]);
 
     if (!open) return null;
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
-            <div className={`w-full ${maxW} bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl shadow-2xl p-5`} onClick={(e) => e.stopPropagation()}>
+            <div className={`w-full ${maxW} ${CARD} shadow-2xl p-5`} onClick={(e) => e.stopPropagation()}>
                 {children}
             </div>
+        </div>
+    );
+}
+
+function ModalHead({ icon, title, onClose }) {
+    return (
+        <div className="flex items-center gap-2 mb-4">
+            <span className={TILE}>{icon}</span>
+            <h3 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-100 flex-1">{title}</h3>
+            <button onClick={onClose} className={CLOSE_BTN}><XIcon className="w-4 h-4" /></button>
+        </div>
+    );
+}
+
+function SectionHead({ icon, title }) {
+    return (
+        <div className="flex items-center gap-2 mb-3">
+            <span className={TILE}>{icon}</span>
+            <h2 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">{title}</h2>
+        </div>
+    );
+}
+
+function JuzProgress({ label, total, target, persen, pctBar, doneText }) {
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-stone-500 dark:text-stone-400">{label}: <strong className="text-stone-800 dark:text-stone-200">{target} Juz</strong></span>
+                <span className="text-sm font-bold text-claude-600 dark:text-claude-400 tabular-nums">{nf2(total)} Juz ({nf2(persen)}%)</span>
+            </div>
+            <div className="w-full h-2 rounded-full bg-cream-300 dark:bg-coal-600 overflow-hidden">
+                <div className="h-full rounded-full bg-claude-500 transition-all duration-500" style={{ width: `${pctBar}%` }} />
+            </div>
+            {persen >= 100 ? (
+                <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1.5">{doneText}</p>
+            ) : (
+                <p className="text-[11px] text-stone-400 mt-1.5">Sisa: {nf2(target - total)} Juz</p>
+            )}
         </div>
     );
 }
@@ -155,7 +214,7 @@ function useToast() {
         clearTimeout(timer.current);
         timer.current = setTimeout(() => setToast(null), 4000);
     };
-    return { toast, show };
+    return { toast, show, hide: () => setToast(null) };
 }
 
 /* ============================================================
@@ -166,7 +225,7 @@ export default function Detail({
     kelasKonteks, isSemesterAktif, filter = {}, progress, stats, setoran,
 }) {
     const { flash } = usePage().props;
-    const { toast, show } = useToast();
+    const { toast, show, hide } = useToast();
 
     const [tglMulai, setTglMulai] = useState(filter.tanggal_mulai || '');
     const [tglAkhir, setTglAkhir] = useState(filter.tanggal_akhir || '');
@@ -211,8 +270,8 @@ export default function Detail({
 
     const pctBar = Math.min(progress.progress_persen, 100);
     const avatarTone = santri.gender === 'Perempuan'
-        ? 'bg-pink-100 dark:bg-pink-950/60 ring-pink-200 dark:ring-pink-800/60 text-pink-600 dark:text-pink-400'
-        : 'bg-blue-100 dark:bg-blue-950/60 ring-blue-200 dark:ring-blue-800/60 text-blue-600 dark:text-blue-400';
+        ? 'bg-pink-50 dark:bg-pink-500/10 ring-pink-100 dark:ring-pink-500/20 text-pink-600 dark:text-pink-400'
+        : 'bg-sky-50 dark:bg-sky-500/10 ring-sky-100 dark:ring-sky-500/20 text-sky-600 dark:text-sky-400';
 
     const statCards = useMemo(() => ([
         { kat: 'Hafalan',  data: stats.hafalan },
@@ -226,49 +285,51 @@ export default function Detail({
 
             {/* TOAST */}
             {toast && (
-                <div key={toast.id} className="fixed top-4 right-4 left-4 sm:left-auto sm:w-80 z-[300]">
-                    <div className="flex items-start gap-3 bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl shadow-xl p-3">
+                <div key={toast.id} className="fixed top-3 right-3 left-3 sm:left-auto sm:w-96 z-[300]">
+                    <div className={`flex items-start gap-3 ${CARD} shadow-xl px-3.5 py-3`}>
                         <span className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${toast.type === 'success' ? 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400'}`}>
                             {toast.type === 'success' ? <CheckIcon className="w-4 h-4" /> : <XIcon className="w-4 h-4" />}
                         </span>
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1 pt-0.5">
                             <p className="text-xs font-bold text-stone-800 dark:text-stone-100">{toast.type === 'success' ? 'Berhasil' : 'Gagal'}</p>
-                            <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">{toast.msg}</p>
+                            <p className="text-xs text-stone-600 dark:text-stone-300 mt-0.5">{toast.msg}</p>
                         </div>
+                        <button onClick={hide} className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 hover:bg-cream-200 dark:hover:bg-coal-600 transition">
+                            <XIcon className="w-3.5 h-3.5" />
+                        </button>
                     </div>
                 </div>
             )}
 
-            <div className="max-w-5xl mx-auto px-3 sm:px-4 py-5">
+            {/* Padding dibuang — <main> di layout sudah memberinya (sama seperti Dashboard). */}
+            <div className="max-w-5xl mx-auto">
 
-                {/* Kembali — mobile saja */}
-                <Link href={route('guru.setorans.index')}
-                    className="mb-4 sm:hidden inline-flex items-center gap-1.5 rounded-xl border border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-stone-100 dark:hover:bg-coal-700 active:scale-95">
-                    <ArrowLeftIcon className="w-4 h-4" /> Kembali ke Setoran
-                </Link>
-                <Link href={route('guru.setorans.index')}
-                    className="mb-4 hidden sm:inline-flex flex-shrink-0 items-center gap-1.5 rounded-xl border border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-stone-100 dark:hover:bg-coal-700 active:scale-95">
+                <Link href={route('guru.setorans.index')} className={`${BTN_SOFT} mb-4`}>
                     <ArrowLeftIcon className="w-4 h-4" /> Kembali ke Setoran
                 </Link>
 
                 {/* ===== HEADER ===== */}
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-5">
                     {santri.photo_url
-                        ? <img src={santri.photo_url} alt="" className="w-11 h-11 rounded-2xl object-cover object-top ring-1 ring-stone-200 dark:ring-coal-700 flex-shrink-0" />
+                        ? <img src={santri.photo_url} alt="" className="w-11 h-11 rounded-2xl object-cover object-top ring-1 ring-cream-300 dark:ring-coal-600 flex-shrink-0" />
                         : <span className={`w-11 h-11 rounded-2xl ring-1 flex items-center justify-center text-base font-bold flex-shrink-0 ${avatarTone}`}>{initial(santri.name)}</span>}
                     <div className="min-w-0 flex-1">
                         <h1 className="text-lg sm:text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">{santri.name}</h1>
-                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-coal-700 text-stone-600 dark:text-stone-300 font-mono">{santri.nis}</span>
-                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 font-semibold">{kelasKonteks}</span>
+                        <p className="text-[11px] text-stone-500 mt-0.5">
+                            <span className="font-mono">{santri.nis}</span>
+                            <span className="mx-1 opacity-40">·</span>
+                            Kelas <span className="font-semibold text-claude-600 dark:text-claude-400">{kelasKonteks}</span>
                             {taObjekTerpilih && (
-                                <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${isSemesterAktif ? 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' : 'bg-stone-100 dark:bg-coal-700 text-stone-500 dark:text-stone-400'}`}>
-                                    {taObjekTerpilih.nama} · Sem {taObjekTerpilih.semester}{isSemesterAktif ? ' · Aktif' : ' · Riwayat'}
-                                </span>
+                                <>
+                                    <span className="mx-1 opacity-40">·</span>{taObjekTerpilih.nama} · Sem {taObjekTerpilih.semester}
+                                    <span className={`ml-1.5 px-1.5 py-px rounded-full text-[10px] font-semibold ${isSemesterAktif ? 'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' : 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400'}`}>
+                                        {isSemesterAktif ? 'Aktif' : 'Riwayat'}
+                                    </span>
+                                </>
                             )}
-                        </div>
+                        </p>
                     </div>
-                    <Link href={route('guru.input.create')} className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-claude-500 hover:bg-claude-600 text-white text-xs font-bold transition-colors active:scale-95">
+                    <Link href={route('guru.input.create')} className="flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-claude-500 hover:bg-claude-600 text-white text-xs font-semibold transition-colors active:scale-95">
                         <PlusIcon className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">Input Setoran</span>
                         <span className="sm:hidden">Input</span>
@@ -278,15 +339,10 @@ export default function Detail({
                 {/* ===== SEMESTER + FILTER ===== */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
                     {/* pilih semester */}
-                    <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-4">
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-2.5">Semester / Tahun Ajaran</p>
+                    <div className={`${CARD} p-4 sm:p-5`}>
+                        <SectionHead icon={<CalendarIcon className="w-3.5 h-3.5" />} title="Semester / Tahun Ajaran" />
                         <div className="relative">
-                            <select
-                                value={taTerpilih ?? ''}
-                                onChange={(e) => pilihSemester(e.target.value)}
-                                className="w-full appearance-none bg-white dark:bg-coal-900 ring-1 ring-stone-200 dark:ring-coal-700 rounded-xl text-sm text-stone-800 dark:text-stone-200 px-3 py-2.5 pr-9 outline-none focus:ring-2 focus:ring-claude-400 transition-shadow"
-                                style={{ colorScheme: 'auto' }}
-                            >
+                            <select value={taTerpilih ?? ''} onChange={(e) => pilihSemester(e.target.value)} className={`${INP} appearance-none pr-9 !py-2.5`}>
                                 {taList.map((ta) => (
                                     <option key={ta.id} value={ta.id}>
                                         {ta.nama} — Semester {ta.semester} ({ta.semester === 1 ? 'Ganjil' : 'Genap'})
@@ -295,31 +351,23 @@ export default function Detail({
                                 ))}
                             </select>
                             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-stone-400">
-                                <I d={<path d="M6 9l6 6 6-6" />} className="w-4 h-4" />
+                                <ChevDown className="w-4 h-4" />
                             </span>
                         </div>
                     </div>
 
                     {/* filter tanggal */}
-                    <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-4">
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-2.5">Filter Periode</p>
+                    <div className={`${CARD} p-4 sm:p-5`}>
+                        <SectionHead icon={<FilterIcon className="w-3.5 h-3.5" />} title="Filter Periode" />
                         <div className="grid grid-cols-2 gap-2 mb-2">
-                            <div className="relative">
-                                <input type="date" value={tglMulai} onChange={(e) => setTglMulai(e.target.value)}
-                                    className="w-full bg-white dark:bg-coal-900 ring-1 ring-stone-200 dark:ring-coal-700 rounded-xl text-sm text-stone-800 dark:text-stone-200 px-3 py-2 outline-none focus:ring-2 focus:ring-claude-400"
-                                    style={{ colorScheme: 'light dark' }} />
-                            </div>
-                            <div className="relative">
-                                <input type="date" value={tglAkhir} onChange={(e) => setTglAkhir(e.target.value)}
-                                    className="w-full bg-white dark:bg-coal-900 ring-1 ring-stone-200 dark:ring-coal-700 rounded-xl text-sm text-stone-800 dark:text-stone-200 px-3 py-2 outline-none focus:ring-2 focus:ring-claude-400"
-                                    style={{ colorScheme: 'light dark' }} />
-                            </div>
+                            <input type="date" value={tglMulai} onChange={(e) => setTglMulai(e.target.value)} className={INP} aria-label="Tanggal mulai" />
+                            <input type="date" value={tglAkhir} onChange={(e) => setTglAkhir(e.target.value)} className={INP} aria-label="Tanggal akhir" />
                         </div>
                         <div className="flex items-center gap-2">
-                            <button onClick={applyFilter} className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-claude-500 hover:bg-claude-600 text-white text-xs font-bold transition-colors active:scale-95">
+                            <button onClick={applyFilter} className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-claude-500 hover:bg-claude-600 text-white text-xs font-semibold transition-colors active:scale-95">
                                 <FilterIcon className="w-3.5 h-3.5" /> Terapkan
                             </button>
-                            <button onClick={resetFilter} className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 text-stone-600 dark:text-stone-300 text-xs font-bold hover:bg-stone-200 dark:hover:bg-coal-600 transition-colors active:scale-95">
+                            <button onClick={resetFilter} title="Reset filter" className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 text-stone-600 dark:text-stone-300 text-xs font-semibold hover:bg-cream-300 dark:hover:bg-coal-500 transition-colors active:scale-95">
                                 <ResetIcon className="w-3.5 h-3.5" />
                             </button>
                         </div>
@@ -327,67 +375,45 @@ export default function Detail({
                 </div>
 
                 {/* ===== PROGRESS HAFALAN ===== */}
-                <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-5 mb-4">
+                <div className={`${CARD} p-4 sm:p-5 mb-4`}>
                     <div className="flex items-center gap-2 mb-4">
-                        <span className="w-6 h-6 bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400">
-                            <ChartIcon className="w-3.5 h-3.5" />
-                        </span>
+                        <span className={TILE}><ChartIcon className="w-3.5 h-3.5" /></span>
                         <h2 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">Progress Hafalan</h2>
                     </div>
 
-                     {isIqro ? (
+                    {isIqro ? (
                         <>
-                            <div className="flex items-center justify-between rounded-xl bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100 dark:ring-emerald-500/20 px-4 py-3">
+                            <div className={`${SUB} flex items-center justify-between px-4 py-3`}>
                                 <div>
-                                    <p className="text-xs text-stone-500 dark:text-stone-400">Target: Jilid {santri.target_jilid ?? '-'}</p>
-                                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">Progress diukur per halaman yang disetor (Hafalan)</p>
+                                    <p className="text-xs font-semibold text-stone-700 dark:text-stone-200">Target: Jilid {santri.target_jilid ?? '-'}</p>
+                                    <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">Progress diukur per halaman yang disetor (Hafalan)</p>
                                 </div>
-                                <span className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
+                                <span className="text-2xl font-bold tracking-tight text-claude-600 dark:text-claude-400 tabular-nums">
                                     {progress.total_halaman_iqro}<span className="text-xs font-medium ml-1">hal</span>
                                 </span>
                             </div>
 
                             {hasQuranSecondary && (
-                                <div className="mt-3">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-xs text-stone-500 dark:text-stone-400">Target Al-Qur'an: <strong className="text-stone-800 dark:text-stone-200">{progress.target_juz} Juz</strong></span>
-                                        <span className="text-sm font-bold text-claude-600 dark:text-claude-400 tabular-nums">{nf2(progress.total_hafalan_juz)} Juz ({nf2(progress.progress_persen)}%)</span>
-                                    </div>
-                                    <div className="w-full h-3 rounded-full bg-stone-200 dark:bg-coal-700 overflow-hidden">
-                                        <div className="h-full rounded-full bg-claude-500 transition-all duration-500" style={{ width: `${pctBar}%` }} />
-                                    </div>
-                                    {progress.progress_persen >= 100 ? (
-                                        <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1.5">Target Al-Qur'an tercapai.</p>
-                                    ) : (
-                                        <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Sisa: {nf2(progress.target_juz - progress.total_hafalan_juz)} Juz</p>
-                                    )}
+                                <div className="mt-4">
+                                    <JuzProgress label="Target Al-Qur'an" total={progress.total_hafalan_juz} target={progress.target_juz}
+                                        persen={progress.progress_persen} pctBar={pctBar} doneText="Target Al-Qur'an tercapai." />
                                 </div>
                             )}
                         </>
                     ) : (
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs text-stone-500 dark:text-stone-400">Target: <strong className="text-stone-800 dark:text-stone-200">{progress.target_juz} Juz</strong></span>
-                                <span className="text-sm font-bold text-claude-600 dark:text-claude-400 tabular-nums">{nf2(progress.total_hafalan_juz)} Juz ({nf2(progress.progress_persen)}%)</span>
-                            </div>
-                            <div className="w-full h-3 rounded-full bg-stone-200 dark:bg-coal-700 overflow-hidden">
-                                <div className="h-full rounded-full bg-claude-500 transition-all duration-500" style={{ width: `${pctBar}%` }} />
-                            </div>
-                            {progress.progress_persen >= 100 ? (
-                                <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1.5">Target tercapai.</p>
-                            ) : (
-                                <p className="text-xs text-stone-400 dark:text-stone-500 mt-1.5">Sisa: {nf2(progress.target_juz - progress.total_hafalan_juz)} Juz</p>
-                            )}
-                        </div>
+                        <JuzProgress label="Target" total={progress.total_hafalan_juz} target={progress.target_juz}
+                            persen={progress.progress_persen} pctBar={pctBar} doneText="Target tercapai." />
                     )}
 
                     {/* 3 stat kategori */}
                     <div className="grid grid-cols-3 gap-2 mt-4">
                         {statCards.map(({ kat, data }) => (
-                            <div key={kat} className={`rounded-xl ring-1 p-3 text-center ${KAT[kat].head} ring-stone-200 dark:ring-coal-700`}>
-                                <p className={`text-[10px] font-bold uppercase mb-1 ${KAT[kat].text}`}>{kat}</p>
+                            <div key={kat} className={`rounded-xl ring-1 p-3 text-center ${KAT[kat].box}`}>
+                                <p className={`text-[11px] font-semibold mb-1 flex items-center justify-center gap-1 ${KAT[kat].text}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${KAT[kat].dot}`} />{kat}
+                                </p>
                                 <p className={`text-xl font-bold tracking-tight tabular-nums ${KAT[kat].text}`}>{data.total}<span className="text-xs font-medium">x</span></p>
-                               <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-0.5">
+                                <p className="text-[10px] text-stone-500 dark:text-stone-400 mt-0.5">
                                     {isIqro
                                         ? (hasQuranSecondary ? `${data.halaman} hal · ${nf2(data.total_juz)} juz` : `${data.halaman} halaman`)
                                         : `${nf2(data.total_juz)} juz`}
@@ -398,11 +424,9 @@ export default function Detail({
                 </div>
 
                 {/* ===== RIWAYAT SETORAN ===== */}
-                <div className="bg-white dark:bg-coal-800 ring-1 ring-stone-200 dark:ring-coal-700 rounded-2xl p-5">
+                <div className={`${CARD} p-4 sm:p-5`}>
                     <div className="flex items-center gap-2 mb-4">
-                        <span className="w-6 h-6 bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 rounded-lg flex items-center justify-center text-stone-500 dark:text-stone-400">
-                            <BookIcon className="w-3.5 h-3.5" />
-                        </span>
+                        <span className={TILE}><BookIcon className="w-3.5 h-3.5" /></span>
                         <h2 className="text-sm font-bold tracking-tight text-stone-800 dark:text-stone-200">Riwayat Setoran</h2>
                     </div>
 
@@ -421,17 +445,12 @@ export default function Detail({
 
             {/* ===== MODAL AUDIO ===== */}
             <Modal open={!!audioUrl} onClose={() => setAudioUrl(null)}>
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100">Rekaman Audio</h3>
-                    <button onClick={() => setAudioUrl(null)} className="w-7 h-7 rounded-lg bg-stone-100 dark:bg-coal-700 flex items-center justify-center text-stone-500 hover:bg-stone-200 dark:hover:bg-coal-600 transition-colors">
-                        <XIcon className="w-4 h-4" />
-                    </button>
-                </div>
+                <ModalHead icon={<PlayIcon className="w-3.5 h-3.5" />} title="Rekaman Audio" onClose={() => setAudioUrl(null)} />
                 {audioUrl && (
                     <>
                         <audio src={audioUrl} controls autoPlay className="w-full rounded-lg" />
                         <div className="mt-3 flex justify-end">
-                            <a href={audioUrl} download className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-claude-500 hover:bg-claude-600 text-white text-xs font-bold transition-colors">
+                            <a href={audioUrl} download className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-claude-500 hover:bg-claude-600 text-white text-xs font-semibold transition-colors active:scale-95">
                                 <DownloadIcon className="w-3.5 h-3.5" /> Download
                             </a>
                         </div>
@@ -441,30 +460,23 @@ export default function Detail({
 
             {/* ===== MODAL CATATAN ===== */}
             <Modal open={!!noteText} onClose={() => setNoteText(null)} maxW="max-w-md">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100">Catatan Guru</h3>
-                    <button onClick={() => setNoteText(null)} className="w-7 h-7 rounded-lg bg-stone-100 dark:bg-coal-700 flex items-center justify-center text-stone-500 hover:bg-stone-200 dark:hover:bg-coal-600 transition-colors">
-                        <XIcon className="w-4 h-4" />
-                    </button>
-                </div>
-                <div className="rounded-xl bg-amber-50 dark:bg-amber-500/10 ring-1 ring-amber-100 dark:ring-amber-500/20 p-4">
-                    <p className="text-sm text-stone-700 dark:text-stone-200 whitespace-pre-wrap">{noteText}</p>
+                <ModalHead icon={<NoteIcon className="w-3.5 h-3.5" />} title="Catatan Guru" onClose={() => setNoteText(null)} />
+                <div className={`${SUB} p-4`}>
+                    <p className="text-sm leading-relaxed text-stone-700 dark:text-stone-200 whitespace-pre-wrap">{noteText}</p>
                 </div>
             </Modal>
 
             {/* ===== MODAL HAPUS ===== */}
             <Modal open={!!deleteId} onClose={() => setDeleteId(null)}>
                 <div className="text-center">
-                    <span className="mx-auto w-14 h-14 rounded-full bg-red-100 dark:bg-red-500/15 ring-1 ring-red-200 dark:ring-red-500/20 flex items-center justify-center text-red-500 mb-4">
+                    <span className="mx-auto w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-500/10 ring-1 ring-red-100 dark:ring-red-500/20 flex items-center justify-center text-red-500 dark:text-red-400 mb-4">
                         <TrashIcon className="w-7 h-7" />
                     </span>
-                    <h3 className="text-base font-bold tracking-tight text-stone-900 dark:text-stone-100 mb-1">Hapus setoran ini?</h3>
-                    <p className="text-xs text-stone-400 dark:text-stone-500 mb-5">Tindakan ini permanen dan tidak dapat dibatalkan.</p>
+                    <h3 className="text-base font-bold tracking-tight text-stone-800 dark:text-stone-100 mb-1">Hapus setoran ini?</h3>
+                    <p className="text-xs text-stone-500 dark:text-stone-400 mb-5">Tindakan ini permanen dan tidak dapat dibatalkan.</p>
                     <div className="grid grid-cols-2 gap-3">
-                        <button onClick={() => setDeleteId(null)} className="py-2.5 rounded-xl bg-stone-100 dark:bg-coal-700 ring-1 ring-stone-200 dark:ring-coal-600 text-stone-700 dark:text-stone-300 text-sm font-semibold hover:bg-stone-200 dark:hover:bg-coal-600 transition-colors">
-                            Batal
-                        </button>
-                        <button onClick={confirmDelete} className="py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-colors">
+                        <button onClick={() => setDeleteId(null)} className={BTN_SECONDARY}>Batal</button>
+                        <button onClick={confirmDelete} className="py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-semibold transition-colors">
                             Ya, hapus
                         </button>
                     </div>

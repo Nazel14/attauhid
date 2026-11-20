@@ -32,8 +32,10 @@ router.on('invalid', (event) => {
     }
 });
 
+const namaApp = import.meta.env.VITE_APP_NAME || 'TK Attauhid';
+
 createInertiaApp({
-    title: (title) => `${title} - Laporan Tahfizh`,
+    title: (title) => `${title} - ${namaApp}`,
     resolve: (name) =>
         resolvePageComponent(
             `./Pages/${name}.jsx`,
@@ -43,6 +45,6 @@ createInertiaApp({
         createRoot(el).render(<App {...props} />);
     },
     progress: {
-        color: '#D97757', // terracotta, samakan dengan palet claude
+        color: '#7EB842', 
     },
 });

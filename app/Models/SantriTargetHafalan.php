@@ -29,9 +29,14 @@ class SantriTargetHafalan extends Model
     // RELASI
     // =====================================================
 
+    /**
+     * withTrashed: alasan sama dengan relasi santri() di model lain —
+     * target hafalan ikut tercetak di rapor historis, dan rapor itu
+     * tetap harus bernama walau santrinya sudah diarsipkan.
+     */
     public function santri(): BelongsTo
     {
-        return $this->belongsTo(Santri::class);
+        return $this->belongsTo(Santri::class)->withTrashed();
     }
 
     public function tahunAjaran(): BelongsTo
