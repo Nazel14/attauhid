@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Keuangan\MasterData;
 
 use App\Http\Controllers\Controller;
 use App\Models\Keuangan\MasterData\Kelas;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -138,19 +139,37 @@ class KelasController extends Controller
 
         // Tabel kelas kini dipakai bersama raport: santri, riwayat kelas,
         // presensi, dan setoran semuanya menunjuk ke sini.
-        if ($kelas->santris()->exists()) {
+        //
+        // Yang tetap DITOLAK hanya kelas yang masih berisi santri. Menghapusnya
+        // akan membuat santri itu kehilangan kelas tanpa ada yang sadar —
+        // mereka harus dipindahkan dulu secara sengaja.
+        $jumlahSantri = $kelas->santris()->count();
+
+        if ($jumlahSantri > 0) {
             return redirect()->back()->withErrors([
-                'delete_error' => 'Gagal menghapus! Kosongkan terlebih dahulu daftar santri/siswa dari kelas ini.',
+                'delete_error' => "Gagal menghapus! Kelas ini masih berisi {$jumlahSantri} santri/siswa. Pindahkan mereka ke kelas lain terlebih dahulu.",
             ]);
         }
 
-        if ($kelas->guru_id) {
-            return redirect()->back()->withErrors([
-                'delete_error' => 'Gagal menghapus! Kelas ini masih punya wali kelas di modul raport.',
-            ]);
-        }
+        // Wali kelas BUKAN lagi alasan menolak. Penugasannya tersimpan di
+        // kolom guru_id baris ini sendiri, jadi ikut hilang bersama kelasnya
+        // — tidak ada data lain yang tertinggal. Versi sebelumnya menolak di
+        // sini, sehingga hampir semua kelas tidak pernah bisa dihapus.
+        try {
+            $kelas->delete();
+        } catch (QueryException $e) {
+            // Kelas kosong tapi pernah dipakai: setoran, presensi, atau riwayat
+            // kelas lama masih menunjuk ke sini dan database menolak
+            // menghapusnya. Itu memang benar — riwayat hafalan tidak boleh
+            // kehilangan kelasnya. Jalan keluarnya menonaktifkan, bukan hapus.
+            if ($e->getCode() === '23000') {
+                return redirect()->back()->withErrors([
+                    'delete_error' => 'Kelas ini sudah punya riwayat setoran, presensi, atau riwayat kelas, jadi tidak bisa dihapus. Nonaktifkan saja: klik Edit, lalu hilangkan centang "Kelas Sedang Aktif".',
+                ]);
+            }
 
-        $kelas->delete();
+            throw $e;
+        }
 
         return redirect()->back()->with('success', 'Data kelas berhasil dihapus.');
     }
