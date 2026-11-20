@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Head, useForm, usePage, router } from '@inertiajs/react';
+import AppLogo from '@/Components/AppLogo';
 
 /* Teks & warna berbeda per panel — dipakai header kartu supaya user
    tahu persis ke mana dia akan masuk sebelum menekan tombol. */
@@ -266,9 +267,10 @@ export default function Login({ status, flash }) {
                             baik satu modul maupun dua modul. */}
                         <div className={`flex flex-col items-center text-center ${tampilForm ? 'mb-7' : 'mb-5'}`}>
                             <div className="mb-4 flex h-[68px] w-[68px] items-center justify-center rounded-2xl bg-white p-3 shadow-sm ring-1 ring-stone-200 dark:bg-[#282C25] dark:ring-white/10">
-                                {/* Ganti ke /logo-attauhid.svg setelah berkasnya
-                                    disalin ke public/. */}
-                                <img src="/favicon.ico" alt="Logo" className="h-full w-full" style={{ objectFit: 'contain' }} />
+                                {/* Logo kubus yang sama dengan sidebar. Sebelumnya
+                                    memuat /favicon.ico, yang masih berisi logo "A"
+                                    lama — jadi login dan sidebar tidak seragam. */}
+                                <AppLogo className="h-full w-full" />
                             </div>
                             <h1 className="tq-judul mb-1 text-xl font-bold tracking-tight text-stone-800 dark:text-stone-50">
                                 {judul}

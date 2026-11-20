@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
+import AppLogo from '@/Components/AppLogo';
 
 /* =====================================================================
  * LANDING TK ATTAUHID
@@ -357,9 +358,10 @@ export default function Landing() {
                     <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5 sm:px-6">
                         <div className="flex min-w-0 items-center gap-2.5">
                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-stone-200 dark:bg-[#353B31] dark:ring-white/10">
-                                {/* Ganti ke /logo-attauhid.svg setelah berkasnya
-                                    disalin ke public/. */}
-                                <img src="/favicon.ico" alt="" className="h-full w-full" style={{ objectFit: 'contain' }} />
+                                {/* Logo kubus yang sama dengan halaman login dan
+                                    sidebar. Sebelumnya memuat /favicon.ico, yang
+                                    masih berisi logo "A" lama. */}
+                                <AppLogo className="h-full w-full" />
                             </div>
                             <div className="min-w-0 leading-tight">
                                 <p className="tq-judul truncate text-[15px] font-bold text-stone-800 dark:text-stone-100">TK Attauhid</p>
