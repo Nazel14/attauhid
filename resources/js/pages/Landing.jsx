@@ -128,6 +128,12 @@ const MailIcon = (p) => (
         <path d="M3.5 7l8.5 6 8.5-6" />
     </Svg>
 );
+const LoginIcon = (p) => (
+    <Svg {...p}>
+        <path d="M15 3h3a2 2 0 012 2v14a2 2 0 01-2 2h-3" />
+        <path d="M10 17l5-5-5-5M15 12H3" />
+    </Svg>
+);
 const IdIcon = (p) => (
     <Svg {...p}>
         <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -393,6 +399,18 @@ export default function Landing() {
                             >
                                 {dark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
                             </button>
+                            {/* Pintu masuk sistem untuk guru, bendahara, dan
+                                wali. Dibuat bergaris, bukan blok berwarna, supaya
+                                tidak bersaing dengan "Hubungi" — tamu landing ini
+                                kebanyakan calon wali murid, bukan pengguna sistem. */}
+                            <Link
+                                href={route('login')}
+                                className="tq-judul flex items-center gap-1.5 rounded-xl border-2 px-3.5 py-1.5 text-[13px] font-bold transition hover:bg-white/60 focus:outline-none focus-visible:ring-2 dark:hover:bg-[#353B31]/60"
+                                style={{ borderColor: 'var(--tq-hijau)', color: 'var(--tq-hijau)' }}
+                            >
+                                <LoginIcon className="h-4 w-4" />
+                                Masuk
+                            </Link>
                             <a
                                 href={KONTAK_WA}
                                 target="_blank"
