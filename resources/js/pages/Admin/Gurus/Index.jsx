@@ -138,6 +138,91 @@ function PasswordInput({ value, onChange, name, placeholder, required }) {
     );
 }
 
+/* Rincian dampak penghapusan — dijumlah dari satu atau beberapa guru. */
+const KOSONG_DAMPAK = { absensi: 0, gaji_draft: 0, gaji_beku: 0, santri: 0, kelas: 0, setoran: 0, presensi: 0 };
+const jumlahkanDampak = (list) => list.reduce((acc, g) => {
+    const d = g.dampak_hapus || {};
+    Object.keys(acc).forEach((k) => { acc[k] += Number(d[k] || 0); });
+    return acc;
+}, { ...KOSONG_DAMPAK });
+
+function BarisDampak({ jumlah, label, nada }) {
+    if (!jumlah) return null;
+    const warna = {
+        hapus: 'text-red-700 dark:text-red-300',
+        lepas: 'text-stone-700 dark:text-stone-300',
+        simpan: 'text-amber-700 dark:text-amber-300',
+    }[nada];
+    return (
+        <li className={`flex items-baseline justify-between gap-3 text-xs ${warna}`}>
+            <span>{label}</span>
+            <span className="font-bold tabular-nums">{jumlah}</span>
+        </li>
+    );
+}
+
+function DialogHapus({ target, onClose, onConfirm, proses }) {
+    if (!target) return null;
+    const banyak = target.gurus.length > 1;
+    const d = jumlahkanDampak(target.gurus);
+    const akun = target.gurus.filter((g) => g.user).length;
+    const adaLepas = d.santri + d.kelas + d.setoran + d.presensi > 0;
+
+    return (
+        <Modal open onClose={proses ? () => {} : onClose} title={banyak ? `Hapus ${target.gurus.length} Guru` : 'Hapus Guru'} maxWidth="sm:max-w-md">
+            <div className="p-5 space-y-4">
+                <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-300">
+                        <TrashIcon className="w-5 h-5" />
+                    </span>
+                    <div className="min-w-0">
+                        <p className="text-sm font-bold text-stone-900 dark:text-stone-100 break-words">
+                            {banyak ? target.gurus.map((g) => g.name).join(', ') : target.gurus[0].name}
+                        </p>
+                        <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">Penghapusan ini permanen dan tidak bisa dibatalkan.</p>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-red-200 bg-red-50/60 px-4 py-3 dark:border-red-500/20 dark:bg-red-500/10">
+                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-red-700 dark:text-red-300">Ikut terhapus</p>
+                    <ul className="space-y-1">
+                        <BarisDampak jumlah={target.gurus.length} label="Data guru" nada="hapus" />
+                        <BarisDampak jumlah={akun} label="Akun login & foto" nada="hapus" />
+                        <BarisDampak jumlah={d.absensi} label="Absensi" nada="hapus" />
+                        <BarisDampak jumlah={d.gaji_draft} label="Baris gaji (periode masih draft)" nada="hapus" />
+                    </ul>
+                </div>
+
+                {adaLepas && (
+                    <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 dark:border-coal-600 dark:bg-coal-800/50">
+                        <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-stone-600 dark:text-stone-300">Tetap ada, tanpa guru</p>
+                        <ul className="space-y-1">
+                            <BarisDampak jumlah={d.santri} label="Santri bimbingan" nada="lepas" />
+                            <BarisDampak jumlah={d.kelas} label="Kelas yang diampu" nada="lepas" />
+                            <BarisDampak jumlah={d.setoran} label="Setoran hafalan" nada="lepas" />
+                            <BarisDampak jumlah={d.presensi} label="Presensi santri" nada="lepas" />
+                        </ul>
+                    </div>
+                )}
+
+                {d.gaji_beku > 0 && (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+                        <strong>{d.gaji_beku} baris gaji</strong> yang sudah diproses tetap disimpan dengan nama guru, karena sudah tercatat di buku kas.
+                    </div>
+                )}
+
+                <div className="flex gap-3 pt-1">
+                    <button type="button" onClick={onClose} disabled={proses} className={BTN_SECONDARY}>Batal</button>
+                    <button type="button" onClick={onConfirm} disabled={proses}
+                        className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-500 transition disabled:opacity-50">
+                        {proses ? 'Menghapus...' : 'Hapus Permanen'}
+                    </button>
+                </div>
+            </div>
+        </Modal>
+    );
+}
+
 /* ============================================================
  * MAIN PAGE
  * ============================================================ */
@@ -236,17 +321,31 @@ export default function Index({ gurus = [] }) {
     };
 
     /* ---- Delete ---- */
-    const deleteGuru = (guru) => {
-        if (confirm(`Yakin ingin menghapus Guru ${guru.name}?`)) {
-            router.delete(route('admin.gurus.destroy', guru.id), { preserveScroll: true });
-        }
-    };
+    // Dialog konfirmasi menampilkan rincian data yang ikut terhapus,
+    // menggantikan confirm() bawaan browser yang tidak bisa memuat itu.
+    const [hapusTarget, setHapusTarget] = useState(null); // { gurus: [...] }
+    const [prosesHapus, setProsesHapus] = useState(false);
+
+    const deleteGuru = (guru) => setHapusTarget({ gurus: [guru] });
     const bulkDelete = () => {
         if (!selected.length) return;
-        if (confirm(`Yakin ingin menghapus ${selected.length} guru yang dipilih?`)) {
+        setHapusTarget({ gurus: gurus.filter((g) => selected.includes(g.id)) });
+    };
+
+    const jalankanHapus = () => {
+        if (!hapusTarget) return;
+        const opsi = {
+            preserveScroll: true,
+            onStart: () => setProsesHapus(true),
+            onFinish: () => { setProsesHapus(false); setHapusTarget(null); },
+        };
+
+        if (hapusTarget.gurus.length === 1) {
+            router.delete(route('admin.gurus.destroy', hapusTarget.gurus[0].id), opsi);
+        } else {
             router.delete(route('admin.gurus.bulk-destroy'), {
-                data: { guru_ids: selected },
-                preserveScroll: true,
+                ...opsi,
+                data: { guru_ids: hapusTarget.gurus.map((g) => g.id) },
                 onSuccess: () => setSelected([]),
             });
         }
@@ -565,6 +664,9 @@ export default function Index({ gurus = [] }) {
                     </div>
                 </form>
             </Modal>
+
+            {/* ===== DIALOG: HAPUS ===== */}
+            <DialogHapus target={hapusTarget} onClose={() => setHapusTarget(null)} onConfirm={jalankanHapus} proses={prosesHapus} />
 
             {/* ===== MODAL: TEMPLATE ===== */}
             <Modal open={templateOpen} onClose={() => setTemplateOpen(false)} title="Download Template Import" maxWidth="sm:max-w-sm">

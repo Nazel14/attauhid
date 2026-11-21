@@ -117,7 +117,9 @@
                     <tr>
                         <td class="isi" width="50%">
                             <p class="kecil-caps">Nama pegawai</p>
-                            <p class="nama-pegawai">{{ $d->employee?->name ?? '—' }}</p>
+                            {{-- Nama cadangan dari snapshot: baris gaji yang sudah dibayar tetap
+                                 disimpan walau gurunya dihapus. --}}
+                            <p class="nama-pegawai">{{ $d->employee?->name ?? $d->nama_pegawai_snapshot ?? '—' }}</p>
                         </td>
                         <td class="isi" width="30%">
                             <p class="kecil-caps">Jabatan</p>

@@ -24,7 +24,8 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
     const [isEditing, setIsEditing] = useState(false);
     const [editId, setEditId] = useState(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [deleteId, setDeleteId] = useState(null);
+    const [deleteTarget, setDeleteTarget] = useState(null); // baris pegawai yang akan dihapus
+    const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState('');
 
     const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
@@ -124,15 +125,27 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
         setIsModalOpen(true);
     };
 
-    const confirmDelete = (id) => { setDeleteError(''); setDeleteId(id); setIsDeleteModalOpen(true); };
+    const confirmDelete = (item) => { setDeleteError(''); setDeleteTarget(item); setIsDeleteModalOpen(true); };
 
     const executeDelete = () => {
-        router.delete(route('keuangan.master-data.pegawai.destroy', deleteId), {
+        router.delete(route('keuangan.master-data.pegawai.destroy', deleteTarget.id), {
             preserveScroll: true,
-            onSuccess: () => { setIsDeleteModalOpen(false); setDeleteId(null); },
+            onStart: () => setDeleting(true),
+            onFinish: () => setDeleting(false),
+            onSuccess: () => { setIsDeleteModalOpen(false); setDeleteTarget(null); },
             onError: (err) => { if (err.delete_error) setDeleteError(err.delete_error); },
         });
     };
+
+    // Rincian dari server (App\Services\HapusPegawai::dampak) — sama dengan
+    // dialog hapus di Management Guru panel raport.
+    const dampak = deleteTarget?.dampak_hapus || {};
+    const adaLepas = (dampak.santri || 0) + (dampak.kelas || 0) + (dampak.setoran || 0) + (dampak.presensi || 0) > 0;
+    const BarisDampak = ({ n, label, warna }) => (n ? (
+        <li className={`flex items-baseline justify-between gap-3 text-xs ${warna}`}>
+            <span>{label}</span><span className="font-bold tabular-nums">{n}</span>
+        </li>
+    ) : null);
 
     const submit = (e) => {
         e.preventDefault();
@@ -349,7 +362,7 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
                                         </button>
                                     )}
                                     {can('master.pegawai.hapus') && (
-                                        <button onClick={() => confirmDelete(item.id)}
+                                        <button onClick={() => confirmDelete(item)}
                                             className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">
                                             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -414,7 +427,7 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
                                                     </button>
                                                 )}
                                                 {can('master.pegawai.hapus') && (
-                                                    <button onClick={() => confirmDelete(item.id)}
+                                                    <button onClick={() => confirmDelete(item)}
                                                         className={`${btnGhost} text-red-600 ring-red-200 hover:bg-red-50 dark:text-red-400 dark:ring-red-500/20 dark:hover:bg-red-500/10`}>
                                                         Hapus
                                                     </button>
@@ -622,26 +635,62 @@ export default function DataPegawai({ pegawai, listJabatan, listTunjangan, listP
                 </form>
             </Modal>
 
-            <Modal show={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} maxWidth="sm">
-                <div className="p-6 text-center">
-                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400">
-                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
+            <Modal show={isDeleteModalOpen} onClose={() => !deleting && setIsDeleteModalOpen(false)} maxWidth="md">
+                {deleteTarget && (
+                    <div className="space-y-4 p-6">
+                        <div className="flex items-start gap-3">
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400">
+                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </span>
+                            <div className="min-w-0">
+                                <h3 className="text-base font-semibold text-stone-800 dark:text-cream-50">Hapus {deleteTarget.name}</h3>
+                                <p className="mt-0.5 text-sm text-stone-500 dark:text-stone-400">Penghapusan ini permanen dan tidak bisa dibatalkan.</p>
+                            </div>
+                        </div>
+
+                        <div className="rounded-xl bg-red-50/70 px-4 py-3 ring-1 ring-red-200 dark:bg-red-500/10 dark:ring-red-500/20">
+                            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-red-700 dark:text-red-300">Ikut terhapus</p>
+                            <ul className="space-y-1">
+                                <BarisDampak n={1} label="Data pegawai & komponen gaji" warna="text-red-700 dark:text-red-300" />
+                                <BarisDampak n={deleteTarget.user ? 1 : 0} label="Akun login & foto" warna="text-red-700 dark:text-red-300" />
+                                <BarisDampak n={dampak.absensi} label="Absensi" warna="text-red-700 dark:text-red-300" />
+                                <BarisDampak n={dampak.gaji_draft} label="Baris gaji (periode masih draft)" warna="text-red-700 dark:text-red-300" />
+                            </ul>
+                        </div>
+
+                        {adaLepas && (
+                            <div className="rounded-xl bg-cream-100 px-4 py-3 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600">
+                                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-300">Tetap ada, tanpa guru</p>
+                                <ul className="space-y-1">
+                                    <BarisDampak n={dampak.santri} label="Santri bimbingan" warna="text-stone-700 dark:text-stone-300" />
+                                    <BarisDampak n={dampak.kelas} label="Kelas yang diampu" warna="text-stone-700 dark:text-stone-300" />
+                                    <BarisDampak n={dampak.setoran} label="Setoran hafalan" warna="text-stone-700 dark:text-stone-300" />
+                                    <BarisDampak n={dampak.presensi} label="Presensi santri" warna="text-stone-700 dark:text-stone-300" />
+                                </ul>
+                            </div>
+                        )}
+
+                        {dampak.gaji_beku > 0 && (
+                            <p className="rounded-xl bg-amber-50 px-4 py-3 text-xs text-amber-800 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20">
+                                <strong>{dampak.gaji_beku} baris gaji</strong> yang sudah diproses tetap disimpan dengan nama pegawai, karena sudah tercatat di buku kas.
+                            </p>
+                        )}
+
+                        {deleteError && (
+                            <div className="rounded-xl bg-red-50 p-3 text-sm text-red-600 ring-1 ring-red-200 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/20">{deleteError}</div>
+                        )}
+
+                        <div className="flex justify-end gap-2 pt-1">
+                            <SecondaryButton onClick={() => setIsDeleteModalOpen(false)} disabled={deleting}>Batal</SecondaryButton>
+                            <button onClick={executeDelete} disabled={deleting}
+                                className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:opacity-50">
+                                {deleting ? 'Menghapus...' : 'Hapus Permanen'}
+                            </button>
+                        </div>
                     </div>
-                    <h3 className="text-base font-semibold text-stone-800 dark:text-cream-50">Konfirmasi Hapus</h3>
-                    <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Yakin ingin menghapus pegawai ini?</p>
-                    {deleteError && (
-                        <div className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-600 ring-1 ring-red-200 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/20">{deleteError}</div>
-                    )}
-                    <div className="mt-5 flex justify-center gap-2">
-                        <SecondaryButton onClick={() => setIsDeleteModalOpen(false)}>Batal</SecondaryButton>
-                        <button onClick={executeDelete} disabled={deleteError !== ''}
-                            className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:opacity-50">
-                            Ya, Hapus
-                        </button>
-                    </div>
-                </div>
+                )}
             </Modal>
         </KeuanganLayout>
     );

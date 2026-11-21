@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Models\Kelas;
 use App\Models\Keuangan\MasterData\Jabatan;
 use App\Traits\LogsActivity;
+use App\Services\HapusPegawai;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -35,6 +37,11 @@ class GuruController extends Controller
             ->whereNotNull('user_id')
             ->orderBy('name')
             ->get();
+
+        // Rincian data yang terdampak bila guru dihapus — ditampilkan di
+        // dialog konfirmasi supaya admin tahu persis apa yang ikut hilang.
+        $dampak = app(HapusPegawai::class)->dampak($gurus->pluck('id')->all());
+        $gurus->each(fn ($g) => $g->setAttribute('dampak_hapus', $dampak[$g->id] ?? null));
 
         return Inertia::render('Admin/Gurus/Index', [
             'gurus' => $gurus,
@@ -235,50 +242,25 @@ class GuruController extends Controller
     }
 
     /**
-     * Menghapus Guru dan akun User yang terkait.
+     * Menghapus guru secara permanen. Aturannya ada di App\Services\HapusPegawai,
+     * dipakai bersama dengan Master Data Pegawai di panel keuangan.
      */
     public function destroy(Guru $guru)
     {
         try {
             $name = $guru->name;
             $oldValues = $guru->toArray();
-            
-            // Sejak tabel gurus dipakai bersama modul keuangan, menghapus guru
-            // berarti membuang riwayat absensi & slip gajinya (FK cascade).
-            // Guru yang sudah punya riwayat cukup dinonaktifkan.
-            if ($guru->absensi()->exists()) {
-                return redirect()->back()->with(
-                    'error',
-                    "Guru {$guru->name} sudah punya riwayat absensi/penggajian. Nonaktifkan saja lewat tombol Edit agar datanya tetap utuh."
-                );
-            }
 
-            DB::beginTransaction();
+            DB::transaction(fn () => app(HapusPegawai::class)->hapus($guru));
 
-            // SET guru_id di kelas menjadi NULL (kelas tetap ada, guru dihapus)
-            Kelas::where('guru_id', $guru->id)->update(['guru_id' => null]);
-
-            // Hapus user terkait + file fotonya
-            if ($guru->user) {
-                if ($guru->user->profile_photo && Storage::disk('public')->exists($guru->user->profile_photo)) {
-                    Storage::disk('public')->delete($guru->user->profile_photo);
-                }
-                $guru->user->delete();
-            }
-
-            // forceDelete: model Guru kini pakai SoftDeletes untuk kebutuhan
-            // modul keuangan, tapi tombol Hapus di panel raport artinya permanen.
-            $guru->forceDelete();
-            
             $this->logDelete('guru', $name, $oldValues);
 
-            DB::commit();
-
             return redirect()->route('admin.gurus.index')
-                ->with('success', 'Guru berhasil dihapus! Kelas yang sebelumnya diajar guru ini tetap ada (tanpa guru).');
+                ->with('success', "Guru {$name} berhasil dihapus beserta absensi dan akun loginnya. Data santri, kelas, dan setoran tetap utuh.");
 
+        } catch (QueryException $e) {
+            return redirect()->back()->with('error', app(HapusPegawai::class)->pesanGagal($e));
         } catch (\Exception $e) {
-            DB::rollBack();
             return redirect()->back()
                 ->with('error', 'Gagal menghapus Guru. ' . $e->getMessage());
         }
@@ -300,37 +282,14 @@ class GuruController extends Controller
         try {
             $deletedCount = count($request->guru_ids);
             $guruNames = Guru::whereIn('id', $request->guru_ids)->pluck('name')->toArray();
-            
-            // Guru dengan riwayat absensi/gaji dilewati, bukan dihapus diam-diam.
-            $adaRiwayat = Guru::whereIn('id', $request->guru_ids)
-                ->whereHas('absensi')
-                ->pluck('name')
-                ->toArray();
 
-            if (! empty($adaRiwayat)) {
-                return redirect()->back()->with(
-                    'error',
-                    'Gagal! Guru berikut punya riwayat absensi/penggajian: ' . implode(', ', $adaRiwayat) . '. Nonaktifkan saja lewat Edit.'
-                );
-            }
-
+            // Satu transaksi untuk semua: gagal satu, batal semua — tidak
+            // ada kondisi setengah terhapus.
             DB::transaction(function () use ($request) {
-                // SET guru_id menjadi NULL di kelas
-                Kelas::whereIn('guru_id', $request->guru_ids)->update(['guru_id' => null]);
-
-                $gurus = Guru::whereIn('id', $request->guru_ids)->with('user')->get();
-
-                foreach ($gurus as $guru) {
-                    if ($guru->user) {
-                        if ($guru->user->profile_photo && Storage::disk('public')->exists($guru->user->profile_photo)) {
-                            Storage::disk('public')->delete($guru->user->profile_photo);
-                        }
-                        $guru->user->delete();
-                    }
-                    $guru->forceDelete();
-                }
+                Guru::whereIn('id', $request->guru_ids)->with('user')->get()
+                    ->each(fn ($guru) => app(HapusPegawai::class)->hapus($guru));
             });
-            
+
             $this->logActivity(
                 'delete',
                 'guru',
@@ -341,8 +300,10 @@ class GuruController extends Controller
             );
 
             return redirect()->route('admin.gurus.index')
-                ->with('success', "Berhasil menghapus {$deletedCount} guru! Kelas tetap ada.");
-                
+                ->with('success', "Berhasil menghapus {$deletedCount} guru. Data santri, kelas, dan setoran tetap utuh.");
+
+        } catch (QueryException $e) {
+            return redirect()->back()->with('error', app(HapusPegawai::class)->pesanGagal($e));
         } catch (\Exception $e) {
             \Log::error("Error bulk deleting Guru: " . $e->getMessage());
             return redirect()->back()

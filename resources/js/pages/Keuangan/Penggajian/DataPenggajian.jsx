@@ -557,7 +557,8 @@ export default function DataPenggajian({ headers, details, selectedHeaderId, fil
                         {details.data.length > 0 ? details.data.map((d) => (
                             <div key={d.id} className="rounded-xl bg-white p-4 ring-1 ring-stone-200 dark:bg-coal-800/40 dark:ring-coal-600">
                                 <div>
-                                    <p className="text-sm font-semibold text-stone-800 dark:text-cream-100">{d.employee?.name}</p>
+                                    <p className="text-sm font-semibold text-stone-800 dark:text-cream-100">{d.employee?.name ?? d.nama_pegawai_snapshot ?? '—'}</p>
+                                    {!d.employee && <p className="text-[10px] font-medium text-red-500">Guru sudah dihapus</p>}
                                     <p className="text-xs text-stone-400">{d.employee?.jabatan?.nama_jabatan || '—'}</p>
                                 </div>
 
@@ -640,7 +641,8 @@ export default function DataPenggajian({ headers, details, selectedHeaderId, fil
                                 {details.data.length > 0 ? details.data.map((d) => (
                                     <tr key={d.id} className="transition hover:bg-cream-50 dark:hover:bg-coal-600/40">
                                         <td className="px-4 py-3 text-sm">
-                                            <span className="font-medium text-stone-800 dark:text-cream-100">{d.employee?.name}</span><br />
+                                            <span className="font-medium text-stone-800 dark:text-cream-100">{d.employee?.name ?? d.nama_pegawai_snapshot ?? '—'}</span><br />
+                                            {!d.employee && <><span className="text-[10px] font-medium text-red-500">Guru sudah dihapus</span><br /></>}
                                             <span className="text-xs text-stone-400">{d.employee?.jabatan?.nama_jabatan || '—'}</span>
                                         </td>
                                         <td className="whitespace-nowrap px-4 py-3 text-sm text-stone-700 dark:text-stone-200">{formatCurrency(d.gaji_pokok)}</td>
