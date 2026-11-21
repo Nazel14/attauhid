@@ -24,6 +24,8 @@ const P = {
     qr: 'M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 4h2m-2 2h6m-6-6h6m0 4v2',
     bank: 'M3 21h18M4 10h16M5 10V7l7-4 7 4v3M6 21v-8m4 8v-8m4 8v-8m4 8v-8',
     chat: 'M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-3.5-7.14L21 4l-1.2 3.6A8.96 8.96 0 0121 12z',
+    heart: 'M12 20s-7-4.4-7-9.2A4.2 4.2 0 0112 8a4.2 4.2 0 017 2.8c0 4.8-7 9.2-7 9.2z',
+    calendar: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
 };
 
 // ── helpers ──
@@ -54,8 +56,15 @@ const TAGIHAN_STATUS = {
     Installment: { label: 'Cicilan',     chip: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-amber-100 dark:ring-amber-500/20' },
     Unpaid:      { label: 'Belum Bayar', chip: 'bg-cream-200 dark:bg-coal-600 text-stone-600 dark:text-stone-300 ring-cream-300 dark:ring-coal-500' },
     Lewat:       { label: 'Lewat Tempo', chip: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 ring-red-100 dark:ring-red-500/20' },
+    Cancelled:   { label: 'Dibatalkan',  chip: 'bg-cream-100 dark:bg-coal-600/40 text-stone-400 dark:text-stone-500 ring-cream-300 dark:ring-coal-600' },
 };
-const statusTagihan = (t) => (t.lewat_tempo ? TAGIHAN_STATUS.Lewat : (TAGIHAN_STATUS[t.status] ?? TAGIHAN_STATUS.Unpaid));
+// Batal diperiksa lebih dulu: tagihan yang dibatalkan bukan kewajiban lagi,
+// jadi tidak boleh tampil sebagai "Lewat Tempo" meski tanggalnya terlewat.
+const statusTagihan = (t) => {
+    if (t.status === 'Cancelled') return TAGIHAN_STATUS.Cancelled;
+    if (t.lewat_tempo) return TAGIHAN_STATUS.Lewat;
+    return TAGIHAN_STATUS[t.status] ?? TAGIHAN_STATUS.Unpaid;
+};
 
 function StatCard({ icon, label, value, sub, tone = 'stone' }) {
     const toneMap = {
@@ -70,7 +79,7 @@ function StatCard({ icon, label, value, sub, tone = 'stone' }) {
             <span className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${toneMap[tone]}`}>{icon}</span>
             <div className="min-w-0">
                 <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">{label}</p>
-                <p className="text-lg font-bold tracking-tight text-stone-900 dark:text-stone-100 leading-tight tabular-nums">{value}</p>
+                <p className="text-base sm:text-lg font-bold tracking-tight text-stone-900 dark:text-stone-100 leading-tight tabular-nums whitespace-nowrap">{value}</p>
                 {sub && <p className="text-[10px] text-stone-400 truncate">{sub}</p>}
             </div>
         </div>
@@ -146,7 +155,7 @@ function BarisSalin({ label, nilai }) {
 
 /* Isi panel pembayaran. Dipisah dari pembungkusnya supaya bisa dipakai
    di dalam modal tanpa ikut membawa Card. */
-function IsiCaraBayar({ rekening = [], waAdmin, santri, sisa, judul }) {
+function IsiCaraBayar({ rekening = [], waAdmin, santri, sisa, judul, infaq = false }) {
     const [pilih, setPilih] = useState(0);
 
     if (!rekening.length) {
@@ -160,15 +169,25 @@ function IsiCaraBayar({ rekening = [], waAdmin, santri, sisa, judul }) {
     const r = rekening[Math.min(pilih, rekening.length - 1)];
 
     const pesanWa = () => {
-        const teks =
-            `Assalamu'alaikum, saya wali dari:\n\n` +
-            `Nama  : ${santri?.name ?? '-'}\n` +
-            `NIS   : ${santri?.nis ?? '-'}\n` +
-            `Kelas : ${santri?.kelas ?? '-'}\n\n` +
-            (judul ? `Tagihan: ${judul}\n` : '') +
-            `Nominal: ${rp(sisa)}\n` +
-            `Metode : ${r.nama}\n\n` +
-            `Bukti transfer saya lampirkan. Terima kasih.`;
+        // Infaq tidak punya nominal tetap — barisnya dibiarkan untuk diisi
+        // wali sendiri, bukan dikirim "Rp 0" yang membingungkan bendahara.
+        const teks = infaq
+            ? `Assalamu'alaikum, saya wali dari:\n\n` +
+              `Nama  : ${santri?.name ?? '-'}\n` +
+              `NIS   : ${santri?.nis ?? '-'}\n` +
+              `Kelas : ${santri?.kelas ?? '-'}\n\n` +
+              `Konfirmasi infaq Rumah Quran\n` +
+              `Nominal: Rp \n` +
+              `Metode : ${r.nama}\n\n` +
+              `Bukti transfer saya lampirkan. Jazakumullahu khairan.`
+            : `Assalamu'alaikum, saya wali dari:\n\n` +
+              `Nama  : ${santri?.name ?? '-'}\n` +
+              `NIS   : ${santri?.nis ?? '-'}\n` +
+              `Kelas : ${santri?.kelas ?? '-'}\n\n` +
+              (judul ? `Tagihan: ${judul}\n` : '') +
+              `Nominal: ${rp(sisa)}\n` +
+              `Metode : ${r.nama}\n\n` +
+              `Bukti transfer saya lampirkan. Terima kasih.`;
 
         return `https://wa.me/${waAdmin}?text=${encodeURIComponent(teks)}`;
     };
@@ -221,8 +240,9 @@ function IsiCaraBayar({ rekening = [], waAdmin, santri, sisa, judul }) {
                 <div className="mt-4 pt-4 border-t border-cream-300 dark:border-coal-600">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed max-w-xs">
-                            Setelah transfer, kirim bukti lewat WhatsApp. Status lunas diperbarui
-                            setelah bendahara memverifikasi.
+                            {infaq
+                                ? 'Setelah transfer, kirim bukti lewat WhatsApp. Infaq tercatat di riwayat setelah bendahara memverifikasi.'
+                                : 'Setelah transfer, kirim bukti lewat WhatsApp. Status lunas diperbarui setelah bendahara memverifikasi.'}
                         </p>
                         <button
                             type="button"
@@ -273,7 +293,7 @@ function ModalBayar({ data, onClose, rekening, waAdmin, santri }) {
                             <span className="w-7 h-7 rounded-lg grid place-items-center bg-claude-100 dark:bg-claude-500/15 text-claude-600 dark:text-claude-400">
                                 <Icon path={P.bank} className="w-3.5 h-3.5" />
                             </span>
-                            Cara Pembayaran
+                            {data.infaq ? 'Cara Berinfaq' : 'Cara Pembayaran'}
                         </h3>
                         <p className="text-[11px] text-stone-400 dark:text-stone-500 mt-0.5 truncate">{data.judul}</p>
                     </div>
@@ -282,14 +302,14 @@ function ModalBayar({ data, onClose, rekening, waAdmin, santri }) {
                     </button>
                 </div>
                 <div className="p-4 sm:p-5">
-                    <IsiCaraBayar rekening={rekening} waAdmin={waAdmin} santri={santri} sisa={data.sisa} judul={data.judul} />
+                    <IsiCaraBayar rekening={rekening} waAdmin={waAdmin} santri={santri} sisa={data.sisa} judul={data.judul} infaq={Boolean(data.infaq)} />
                 </div>
             </div>
         </div>
     );
 }
 
-export default function Index({ santri = null, ringkasan = null, tagihan = [], pembayaran = [], rekening = [], waAdmin = null, message = null }) {
+export default function Index({ santri = null, lembaga = 'tk', ringkasan = null, infaq = null, tagihan = [], pembayaran = [], rekening = [], waAdmin = null, message = null }) {
     const [mobileTab, setMobileTab] = useState('tagihan');
     const [bayar, setBayar] = useState(null); // { judul, sisa } — null = modal tertutup
 
@@ -314,6 +334,30 @@ export default function Index({ santri = null, ringkasan = null, tagihan = [], p
     const lunasSemua = (r.total_tunggakan ?? 0) <= 0;
     const isPr = santri?.gender === 'P' || santri?.gender === 'Perempuan';
 
+    // Santri Rumah Quran: tidak ada tagihan, hanya riwayat infaq sukarela.
+    if (lembaga === 'arahan') {
+        return (
+            <SantriAuthenticatedLayout>
+                <Head title="Infaq" />
+                <HalamanInfaq
+                    santri={santri}
+                    isPr={isPr}
+                    infaq={infaq ?? {}}
+                    pembayaran={pembayaran}
+                    adaRekening={rekening.length > 0}
+                    onCaraBayar={() => setBayar({ judul: 'Infaq Rumah Quran', sisa: 0, infaq: true })}
+                />
+                <ModalBayar
+                    data={bayar}
+                    onClose={() => setBayar(null)}
+                    rekening={rekening}
+                    waAdmin={waAdmin}
+                    santri={santri}
+                />
+            </SantriAuthenticatedLayout>
+        );
+    }
+
     return (
         <SantriAuthenticatedLayout>
             <Head title="Keuangan" />
@@ -332,19 +376,7 @@ export default function Index({ santri = null, ringkasan = null, tagihan = [], p
                 </div>
 
                 <div className="space-y-4">
-                    {/* Santri info */}
-                    <Card className="p-4 sm:p-5">
-                        <div className="flex items-center gap-4">
-                            <span className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ring-1 flex items-center justify-center text-lg font-bold flex-shrink-0 ${isPr ? 'bg-pink-50 dark:bg-pink-500/10 ring-pink-100 dark:ring-pink-500/20 text-pink-600 dark:text-pink-400' : 'bg-sky-50 dark:bg-sky-500/10 ring-sky-100 dark:ring-sky-500/20 text-sky-600 dark:text-sky-400'}`}>
-                                {(santri?.name ?? '?').charAt(0).toUpperCase()}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                                <h3 className="text-sm sm:text-base font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">{santri?.name}</h3>
-                                <p className="text-[11px] text-stone-400 dark:text-stone-500 font-mono">{santri?.nis ?? '-'}</p>
-                                <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 font-semibold">{santri?.kelas ?? '-'}</span>
-                            </div>
-                        </div>
-                    </Card>
+                    <KartuSantri santri={santri} isPr={isPr} />
 
                     {/* Tunggakan — kartu utama, dibedakan supaya langsung terbaca */}
                     <Card className={`p-4 sm:p-5 ${lunasSemua ? 'ring-emerald-100 dark:ring-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/5' : 'ring-claude-200 dark:ring-claude-500/20 bg-claude-50/60 dark:bg-claude-500/5'}`}>
@@ -387,9 +419,9 @@ export default function Index({ santri = null, ringkasan = null, tagihan = [], p
                     {/* Stat cards */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                         <StatCard tone="claude"  icon={<Icon path={P.bill} className="w-5 h-5" />}  label="Total Tagihan" value={tagihan.length} sub="tagihan terbit" />
-                        <StatCard tone="emerald" icon={<Icon path={P.check} className="w-5 h-5" />} label="Sudah Lunas"   value={tagihan.filter((t) => t.status === 'Paid').length} sub="tagihan selesai" />
+                        <StatCard tone="emerald" icon={<Icon path={P.check} className="w-5 h-5" />} label="Sudah Lunas"   value={r.jumlah_lunas ?? 0} sub="tagihan selesai" />
                         <StatCard tone="red"     icon={<Icon path={P.alert} className="w-5 h-5" />} label="Lewat Tempo"   value={r.jumlah_lewat ?? 0} sub="perlu segera dibayar" />
-                        <StatCard tone="amber"   icon={<Icon path={P.clock} className="w-5 h-5" />} label="Menunggu"      value={r.menunggu_verifikasi ?? 0} sub="belum diverifikasi" />
+                        <StatCard tone="amber"   icon={<Icon path={P.coins} className="w-5 h-5" />} label="Total Dibayar" value={rp(r.total_dibayar)} sub="sudah disahkan" />
                     </div>
 
                     {/* Catatan verifikasi — hanya muncul bila memang relevan */}
@@ -409,7 +441,7 @@ export default function Index({ santri = null, ringkasan = null, tagihan = [], p
                             Tagihan <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums bg-black/5 dark:bg-white/10">{tagihan.length}</span>
                         </button>
                         <button onClick={() => setMobileTab('bayar')} className={`flex-1 py-2.5 text-xs font-semibold rounded-xl transition-colors ring-1 ${mobileTab === 'bayar' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-500/20' : 'bg-white dark:bg-coal-700 text-stone-500 dark:text-stone-400 ring-cream-300 dark:ring-coal-600'}`}>
-                            Pembayaran <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums bg-black/5 dark:bg-white/10">{pembayaran.length}</span>
+                            Transaksi <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums bg-black/5 dark:bg-white/10">{pembayaran.length}</span>
                         </button>
                     </div>
 
@@ -420,7 +452,7 @@ export default function Index({ santri = null, ringkasan = null, tagihan = [], p
                             rows={tagihan}
                             onBayar={rekening.length ? setBayar : null}
                         />
-                        <PembayaranPanel className={mobileTab === 'bayar' ? 'lg:block' : 'hidden lg:block'} rows={pembayaran} />
+                        <RiwayatPanel className={mobileTab === 'bayar' ? 'lg:block' : 'hidden lg:block'} rows={pembayaran} />
                     </div>
                 </div>
             </div>
@@ -442,7 +474,24 @@ const Th = ({ children, className = '' }) => (
 const Td = ({ children, className = '' }) => <td className={`px-3 py-2.5 text-xs ${className}`}>{children}</td>;
 
 // ── Panel Tagihan ──
-function TagihanPanel({ rows, className = '', onBayar = null }) {
+const FILTER_TAGIHAN = [
+    ['semua', 'Semua'],
+    ['belum', 'Belum Lunas'],
+    ['lunas', 'Lunas'],
+    ['batal', 'Dibatalkan'],
+];
+
+function TagihanPanel({ rows: semua, className = '', onBayar = null }) {
+    const [filter, setFilter] = useState('semua');
+    const rows = semua.filter((t) => {
+        if (filter === 'belum') return t.status === 'Unpaid' || t.status === 'Installment';
+        if (filter === 'lunas') return t.status === 'Paid';
+        if (filter === 'batal') return t.status === 'Cancelled';
+        return true;
+    });
+    // Tab "Dibatalkan" hanya muncul bila memang ada — kebanyakan wali tidak
+    // pernah punya tagihan batal, dan tab kosong cuma menambah bingung.
+    const adaBatal = semua.some((t) => t.status === 'Cancelled');
     const pg = usePaged(rows, 10);
     const [buka, setBuka] = useState(null); // id tagihan yang rinciannya dibuka
 
@@ -458,11 +507,26 @@ function TagihanPanel({ rows, className = '', onBayar = null }) {
                         <p className="text-[10px] text-stone-400 dark:text-stone-500 leading-tight">Ketuk baris untuk rincian</p>
                     </div>
                 </div>
-                <span className="text-[10px] px-2.5 py-1 rounded-full font-semibold tabular-nums bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 ring-1 ring-claude-200 dark:ring-claude-500/20">{rows.length} tagihan</span>
+                <span className="text-[10px] px-2.5 py-1 rounded-full font-semibold tabular-nums bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 ring-1 ring-claude-200 dark:ring-claude-500/20">{semua.length} tagihan</span>
             </div>
 
+            {semua.length > 0 && (
+                <div className="flex gap-1.5 overflow-x-auto px-4 sm:px-5 py-2.5 border-b border-cream-300 dark:border-coal-600">
+                    {FILTER_TAGIHAN.filter(([k]) => k !== 'batal' || adaBatal).map(([k, label]) => (
+                        <button key={k} type="button" onClick={() => { setFilter(k); pg.setPage(1); }}
+                            className={`shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-semibold ring-1 transition ${filter === k
+                                ? 'bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 ring-claude-200 dark:ring-claude-500/20'
+                                : 'bg-white dark:bg-coal-700 text-stone-500 dark:text-stone-400 ring-cream-300 dark:ring-coal-600 hover:bg-cream-100 dark:hover:bg-coal-600'}`}>
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {rows.length === 0 ? (
-                <Empty text="Belum ada tagihan" subtext="Tagihan akan muncul setelah diterbitkan pesantren" />
+                semua.length === 0
+                    ? <Empty text="Belum ada tagihan" subtext="Tagihan akan muncul setelah diterbitkan sekolah" />
+                    : <Empty text="Tidak ada tagihan di kategori ini" />
             ) : (
                 <>
                     <div className="overflow-x-auto flex-1">
@@ -496,8 +560,14 @@ function TagihanPanel({ rows, className = '', onBayar = null }) {
                                                     </p>
                                                 </Td>
                                                 <Td className="text-right">
-                                                    <p className="font-bold text-stone-900 dark:text-stone-100 tabular-nums">{rp(t.sisa)}</p>
-                                                    <p className="text-[10px] text-stone-400 dark:text-stone-500 tabular-nums">dari {rp(t.total)}</p>
+                                                    {t.status === 'Cancelled' ? (
+                                                        <p className="text-stone-400 dark:text-stone-500 tabular-nums line-through">{rp(t.total)}</p>
+                                                    ) : (
+                                                        <>
+                                                            <p className="font-bold text-stone-900 dark:text-stone-100 tabular-nums">{rp(t.sisa)}</p>
+                                                            <p className="text-[10px] text-stone-400 dark:text-stone-500 tabular-nums">dari {rp(t.total)}</p>
+                                                        </>
+                                                    )}
                                                 </Td>
                                                 <Td className="text-center">
                                                     <span className={`inline-flex items-center rounded-lg px-2 py-0.5 text-[10px] font-bold ring-1 whitespace-nowrap ${st.chip}`}>{st.label}</span>
@@ -507,6 +577,11 @@ function TagihanPanel({ rows, className = '', onBayar = null }) {
                                             {aktif && (
                                                 <tr className="bg-cream-100 dark:bg-coal-600/40">
                                                     <td colSpan={3} className="px-3 py-3">
+                                                        {t.status === 'Cancelled' && (
+                                                            <p className="mb-2.5 rounded-lg bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 px-2.5 py-2 text-[11px] text-stone-500 dark:text-stone-400">
+                                                                Tagihan ini dibatalkan sekolah{t.alasan_batal ? ` (${t.alasan_batal})` : ''} — tidak perlu dibayar.
+                                                            </p>
+                                                        )}
                                                         <p className="text-[11px] font-semibold text-stone-500 dark:text-stone-400 mb-2">Rincian</p>
                                                         {t.rincian?.length ? (
                                                             <div className="space-y-1.5">
@@ -526,7 +601,7 @@ function TagihanPanel({ rows, className = '', onBayar = null }) {
                                                         )}
                                                         <div className="flex items-center justify-between gap-3 mt-2.5">
                                                             <p className="text-[10px] text-stone-400 dark:text-stone-500 font-mono truncate">{t.nomor}</p>
-                                                            {onBayar && t.status !== 'Paid' && (
+                                                            {onBayar && (t.status === 'Unpaid' || t.status === 'Installment') && (
                                                                 <button
                                                                     type="button"
                                                                     onClick={(e) => { e.stopPropagation(); onBayar({ judul: t.judul, sisa: t.sisa }); }}
@@ -552,34 +627,79 @@ function TagihanPanel({ rows, className = '', onBayar = null }) {
     );
 }
 
-// ── Panel Pembayaran ──
-function PembayaranPanel({ rows, className = '' }) {
-    const pg = usePaged(rows, 10);
+// ── Panel Riwayat Transaksi ──
+// Dipakai dua halaman: riwayat pembayaran (TK) dan riwayat infaq (Rumah
+// Quran). Filter tahun dikerjakan di browser — datanya sudah terkirim utuh.
+function RiwayatPanel({ rows, className = '', judul = 'Riwayat Transaksi', sub = 'Kuitansi terbit setelah disahkan', satuan = 'transaksi', kosong = 'Belum ada pembayaran' }) {
+    const tahunList = [...new Set(rows.map((b) => (b.tanggal ?? '').slice(0, 4)).filter(Boolean))].sort().reverse();
+    const [tahun, setTahun] = useState('');
+    const terfilter = tahun ? rows.filter((b) => (b.tanggal ?? '').startsWith(tahun)) : rows;
+    const totalSah = terfilter.filter((b) => b.sah).reduce((n, b) => n + Number(b.nominal || 0), 0);
+    const pg = usePaged(terfilter, 10);
 
     return (
         <div className={`bg-white dark:bg-coal-700 rounded-2xl ring-1 ring-cream-300 dark:ring-coal-600 overflow-hidden flex flex-col ${className}`}>
-            <div className="px-4 sm:px-5 py-3.5 flex items-center justify-between border-b border-cream-300 dark:border-coal-600">
-                <div className="flex items-center gap-2.5">
-                    <span className="w-8 h-8 rounded-lg grid place-items-center bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100 dark:ring-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+            <div className="px-4 sm:px-5 py-3.5 flex items-center justify-between gap-3 border-b border-cream-300 dark:border-coal-600">
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-8 h-8 shrink-0 rounded-lg grid place-items-center bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100 dark:ring-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                         <Icon path={P.coins} className="w-4 h-4" />
                     </span>
-                    <div>
-                        <h4 className="font-bold tracking-tight text-sm text-stone-900 dark:text-stone-100">Riwayat Pembayaran</h4>
-                        <p className="text-[10px] text-stone-400 dark:text-stone-500 leading-tight">Kuitansi terbit setelah disahkan</p>
+                    <div className="min-w-0">
+                        <h4 className="font-bold tracking-tight text-sm text-stone-900 dark:text-stone-100 truncate">{judul}</h4>
+                        <p className="text-[10px] text-stone-400 dark:text-stone-500 leading-tight truncate">{sub}</p>
                     </div>
                 </div>
-                <span className="text-[10px] px-2.5 py-1 rounded-full font-semibold tabular-nums bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-100 dark:ring-emerald-500/20">{rows.length} transaksi</span>
+                {tahunList.length > 1 ? (
+                    <select value={tahun} onChange={(e) => { setTahun(e.target.value); pg.setPage(1); }}
+                        aria-label="Filter tahun"
+                        className="shrink-0 rounded-lg border-0 bg-cream-100 dark:bg-coal-600/40 py-1.5 pl-2.5 pr-7 text-[11px] font-semibold text-stone-600 dark:text-stone-300 ring-1 ring-cream-300 dark:ring-coal-600 focus:ring-2 focus:ring-claude-500 dark:[color-scheme:dark]">
+                        <option value="">Semua tahun</option>
+                        {tahunList.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                ) : (
+                    <span className="shrink-0 text-[10px] px-2.5 py-1 rounded-full font-semibold tabular-nums bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-100 dark:ring-emerald-500/20">{rows.length} {satuan}</span>
+                )}
             </div>
 
-            {rows.length === 0 ? (
-                <Empty text="Belum ada pembayaran" subtext="Riwayat akan muncul setelah pembayaran dicatat" />
+            {terfilter.length === 0 ? (
+                <Empty text={kosong} subtext="Riwayat akan muncul setelah dicatat bendahara" />
             ) : (
                 <>
-                    <div className="overflow-x-auto flex-1">
+                    {/* HP: daftar bertumpuk. Tabel empat kolom terpotong di
+                        layar 390px — kolom kuitansi justru yang hilang. */}
+                    <div className="sm:hidden divide-y divide-cream-200 dark:divide-coal-600/60">
+                        {pg.slice.map((b) => (
+                            <div key={b.id} className="px-4 py-3">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-semibold text-stone-900 dark:text-stone-100 tabular-nums">{fmtDate(b.tanggal)}</p>
+                                        <p className="text-[11px] text-stone-400 dark:text-stone-500 mt-0.5 leading-snug">
+                                            {b.kategori_label}{b.untuk ? ` · ${b.untuk}` : ''} · {b.metode}
+                                        </p>
+                                        {b.catatan && <p className="text-[11px] text-stone-400 dark:text-stone-500 italic leading-snug">{b.catatan}</p>}
+                                    </div>
+                                    <p className="shrink-0 text-sm font-bold text-stone-900 dark:text-stone-100 tabular-nums">{rp(b.nominal)}</p>
+                                </div>
+                                <div className="mt-2 flex items-center justify-between gap-3">
+                                    <span className={`inline-flex items-center rounded-lg px-2 py-0.5 text-[10px] font-bold ring-1 whitespace-nowrap ${b.sah ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-500/20' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-amber-100 dark:ring-amber-500/20'}`}>
+                                        {b.status}
+                                    </span>
+                                    {b.sah && (
+                                        <button type="button" onClick={() => { const url = safeRoute('santri.keuangan.kwitansi', { pembayaran: b.id }); if (url !== '#') window.open(url, '_blank', 'noopener,noreferrer'); }}
+                                            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold text-claude-700 dark:text-claude-400 ring-1 ring-claude-200 dark:ring-claude-500/20 bg-claude-50 dark:bg-claude-500/10 active:scale-95">
+                                            <Icon path={P.receipt} className="w-3.5 h-3.5" /> Kuitansi
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="hidden sm:block overflow-x-auto flex-1">
                         <table className="min-w-full">
                             <thead>
                                 <tr className="bg-cream-100 dark:bg-coal-600/40">
-                                    <Th className="w-24">Tanggal</Th>
+                                    <Th>Tanggal &amp; Keterangan</Th>
                                     <Th className="text-right">Nominal</Th>
                                     <Th className="w-28 text-center">Status</Th>
                                     <Th className="w-14 text-center">Bukti</Th>
@@ -588,9 +708,15 @@ function PembayaranPanel({ rows, className = '' }) {
                             <tbody className="divide-y divide-cream-200 dark:divide-coal-600/60">
                                 {pg.slice.map((b) => (
                                     <tr key={b.id} className="hover:bg-cream-100 dark:hover:bg-coal-600/30 transition-colors">
-                                        <Td className="text-stone-500 dark:text-stone-400 whitespace-nowrap tabular-nums">{fmtDate(b.tanggal)}</Td>
+                                        <Td>
+                                            <p className="text-stone-900 dark:text-stone-100 font-semibold leading-tight tabular-nums whitespace-nowrap">{fmtDate(b.tanggal)}</p>
+                                            <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-0.5 leading-snug">
+                                                {b.kategori_label}{b.untuk ? ` · ${b.untuk}` : ''}
+                                            </p>
+                                            {b.catatan && <p className="text-[10px] text-stone-400 dark:text-stone-500 italic leading-snug">{b.catatan}</p>}
+                                        </Td>
                                         <Td className="text-right">
-                                            <p className="font-bold text-stone-900 dark:text-stone-100 tabular-nums">{rp(b.nominal)}</p>
+                                            <p className="font-bold text-stone-900 dark:text-stone-100 tabular-nums whitespace-nowrap">{rp(b.nominal)}</p>
                                             <p className="text-[10px] text-stone-400 dark:text-stone-500">{b.metode}</p>
                                         </Td>
                                         <Td className="text-center">
@@ -608,9 +734,109 @@ function PembayaranPanel({ rows, className = '' }) {
                             </tbody>
                         </table>
                     </div>
+                    {/* Jumlah yang sudah disahkan pada tahun terpilih — angka yang
+                        biasanya dicari wali saat mencocokkan dengan catatannya. */}
+                    <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-2.5 border-t border-cream-300 dark:border-coal-600 text-xs">
+                        <span className="text-stone-500 dark:text-stone-400">Total diterima{tahun ? ` ${tahun}` : ''}</span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{rp(totalSah)}</span>
+                    </div>
                     <Pagination pg={pg} />
                 </>
             )}
+        </div>
+    );
+}
+
+function KartuSantri({ santri, isPr }) {
+    return (
+        <Card className="p-4 sm:p-5">
+            <div className="flex items-center gap-4">
+                <span className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ring-1 flex items-center justify-center text-lg font-bold flex-shrink-0 ${isPr ? 'bg-pink-50 dark:bg-pink-500/10 ring-pink-100 dark:ring-pink-500/20 text-pink-600 dark:text-pink-400' : 'bg-sky-50 dark:bg-sky-500/10 ring-sky-100 dark:ring-sky-500/20 text-sky-600 dark:text-sky-400'}`}>
+                    {(santri?.name ?? '?').charAt(0).toUpperCase()}
+                </span>
+                <div className="min-w-0 flex-1">
+                    <h3 className="text-sm sm:text-base font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">{santri?.name}</h3>
+                    <p className="text-[11px] text-stone-400 dark:text-stone-500 font-mono">{santri?.nis ?? '-'}</p>
+                    <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full bg-claude-100 dark:bg-claude-500/15 text-claude-700 dark:text-claude-400 font-semibold">{santri?.kelas ?? '-'}</span>
+                </div>
+            </div>
+        </Card>
+    );
+}
+
+/* Halaman khusus santri Rumah Quran: infaq sukarela, tanpa tagihan. */
+function HalamanInfaq({ santri, isPr, infaq, pembayaran, adaRekening, onCaraBayar }) {
+    const t = infaq ?? {};
+
+    return (
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-5">
+            <div className="flex items-center gap-3 mb-5">
+                <div className="w-11 h-11 rounded-2xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center flex-shrink-0">
+                    <Icon path={P.heart} className="w-6 h-6 text-stone-600 dark:text-stone-300" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <h1 className="text-lg sm:text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">Infaq</h1>
+                    <p className="text-[11px] text-stone-500 mt-0.5">Riwayat infaq sukarela Anda di Rumah Quran</p>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                <KartuSantri santri={santri} isPr={isPr} />
+
+                <Card className="p-4 sm:p-5 ring-emerald-100 dark:ring-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/5">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="min-w-0">
+                            <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">Infaq tahun {t.tahun}</p>
+                            <p className="text-2xl sm:text-3xl font-bold tracking-tight leading-none mt-1 tabular-nums text-emerald-600 dark:text-emerald-400">
+                                {rp(t.total_tahun)}
+                            </p>
+                            <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-1.5">
+                                {t.terakhir
+                                    ? `Terakhir ${fmtDate(t.terakhir.tanggal)} · ${rp(t.terakhir.nominal)}`
+                                    : 'Belum ada infaq yang tercatat.'}
+                            </p>
+                        </div>
+                        {adaRekening && (
+                            <button
+                                type="button"
+                                onClick={onCaraBayar}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-claude-500 hover:bg-claude-600 text-white text-sm font-semibold transition-colors shadow-sm active:scale-95"
+                            >
+                                <Icon path={P.qr} className="w-4 h-4" /> Cara Berinfaq
+                            </button>
+                        )}
+                    </div>
+                    <p className="mt-3 flex items-start gap-2 text-[11px] text-stone-500 dark:text-stone-400">
+                        <Icon path={P.info} className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                        Infaq di Rumah Quran bersifat sukarela — tidak ada tagihan maupun tunggakan.
+                    </p>
+                </Card>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <StatCard tone="emerald" icon={<Icon path={P.heart} className="w-5 h-5" />}    label="Total Infaq"   value={rp(t.total_semua)} sub="seluruh periode" />
+                    <StatCard tone="claude"  icon={<Icon path={P.calendar} className="w-5 h-5" />} label={`Tahun ${t.tahun ?? ''}`} value={rp(t.total_tahun)} sub="sudah disahkan" />
+                    <StatCard tone="stone"   icon={<Icon path={P.receipt} className="w-5 h-5" />}  label="Jumlah Infaq"  value={t.jumlah ?? 0} sub="kali berinfaq" />
+                    <StatCard tone="amber"   icon={<Icon path={P.clock} className="w-5 h-5" />}    label="Menunggu"      value={t.menunggu ?? 0} sub="belum diverifikasi" />
+                </div>
+
+                {(t.menunggu ?? 0) > 0 && (
+                    <div className="flex items-start gap-2.5 rounded-2xl bg-amber-50 dark:bg-amber-500/10 ring-1 ring-amber-100 dark:ring-amber-500/20 p-3">
+                        <Icon path={P.info} className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-stone-600 dark:text-stone-300">
+                            Ada <strong className="font-semibold text-stone-900 dark:text-stone-100">{t.menunggu} infaq</strong> yang
+                            masih menunggu verifikasi bendahara. Infaq baru dijumlahkan setelah disahkan.
+                        </p>
+                    </div>
+                )}
+
+                <RiwayatPanel
+                    rows={pembayaran}
+                    judul="Riwayat Infaq"
+                    sub="Kuitansi terbit setelah disahkan"
+                    satuan="infaq"
+                    kosong="Belum ada infaq"
+                />
+            </div>
         </div>
     );
 }

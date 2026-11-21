@@ -255,8 +255,10 @@ class SantriController extends Controller
             return null;
         }
 
+        // Hanya Unpaid/Installment. Versi lama memakai "!= Paid", sehingga
+        // tagihan yang sudah DIBATALKAN ikut terhitung sebagai tunggakan.
         $belum = $kelas::where('student_id', $santri->id)
-            ->where('status', '!=', 'Paid')
+            ->whereIn('status', ['Unpaid', 'Installment'])
             ->where(function ($q) {
                 $q->whereDoesntHave('header')
                   ->orWhereHas('header', fn ($h) => $h->whereIn('status', ['Published', 'Closed']));
@@ -281,6 +283,42 @@ class SantriController extends Controller
                 'sisa'        => (float) $terdekat->remaining_balance,
                 'jatuh_tempo' => $terdekat->header->due_date->format('Y-m-d'),
                 'lewat'       => $terdekat->header->due_date->isPast(),
+            ] : null,
+        ];
+    }
+
+    /**
+     * Ringkasan infaq untuk kartu dashboard santri Rumah Quran.
+     *
+     * Pengganti ringkasanTagihan(): santri Rumah Quran tidak pernah ditagih,
+     * jadi yang relevan baginya adalah infaq yang sudah disahkan bendahara.
+     * Penjagaan modulnya sama — model keuangan dirujuk lewat string.
+     */
+    private function ringkasanInfaq(Santri $santri): ?array
+    {
+        if (! config('modules.keuangan')) {
+            return null;
+        }
+
+        $kelas = \App\Models\Keuangan\Inbound\Pembayaran::class;
+
+        if (! class_exists($kelas)) {
+            return null;
+        }
+
+        $dasar = $kelas::where('student_id', $santri->id)
+            ->where('kategori', 'infaq_arahan')
+            ->where('status_approval', 'disetujui');
+
+        $terakhir = (clone $dasar)->orderByDesc('payment_date')->orderByDesc('id')->first(['payment_date', 'nominal']);
+
+        return [
+            'tahun'       => now()->year,
+            'total_tahun' => (float) (clone $dasar)->whereYear('payment_date', now()->year)->sum('nominal'),
+            'jumlah'      => (clone $dasar)->count(),
+            'terakhir'    => $terakhir ? [
+                'tanggal' => $terakhir->payment_date?->format('Y-m-d'),
+                'nominal' => (float) $terakhir->nominal,
             ] : null,
         ];
     }
@@ -357,10 +395,15 @@ class SantriController extends Controller
             ? round(($santri->stats_presensi->total_hadir / $santri->stats_presensi->total_hari) * 100, 1)
             : 0;
 
+        // Rumah Quran tidak punya tagihan — kartunya diganti ringkasan infaq.
+        $isRq = $santri->isArahan();
+
         return Inertia::render('Santri/Dashboard', [
             'santris'          => [$santri],
             'tahunAjaranAktif' => $tahunAjaranAktif,
-            'tagihan'          => $this->ringkasanTagihan($santri),
+            'lembaga'          => $isRq ? 'arahan' : 'tk',
+            'tagihan'          => $isRq ? null : $this->ringkasanTagihan($santri),
+            'infaq'            => $isRq ? $this->ringkasanInfaq($santri) : null,
         ]);
     }
 

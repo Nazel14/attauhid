@@ -23,6 +23,7 @@ const InfoIcon  = (p) => <I {...p} d={<path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9
 const TrendIcon = (p) => <I {...p} d={<path d="M3 17l6-6 4 4 8-8m0 0h-5m5 0v5" />} />;
 const ChartIcon = (p) => <I {...p} d={<path d="M3 3v18h18M9 17V9m4 8V5m4 12v-6" />} />;
 const WalletIcon= (p) => <I {...p} d={<path d="M3 10h18M7 15h.01M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />} />;
+const HeartIcon = (p) => <I {...p} d={<path d="M12 20s-7-4.4-7-9.2A4.2 4.2 0 0112 8a4.2 4.2 0 017 2.8c0 4.8-7 9.2-7 9.2z" />} />;
 const ArrowIcon = (p) => <I {...p} d={<path d="M13 7l5 5m0 0l-5 5m5-5H6" />} />;
 
 /* ============================================================
@@ -229,10 +230,56 @@ function KartuTagihan({ data }) {
     );
 }
 
+/* Kartu infaq — pengganti kartu tunggakan untuk santri Rumah Quran.
+   Selalu tampil (meski belum pernah berinfaq), karena ini satu-satunya
+   pintu ke riwayat infaq dari dashboard. Warnanya hijau tenang: infaq
+   sukarela bukan sesuatu yang perlu "diingatkan" seperti tunggakan. */
+function KartuInfaq({ data }) {
+    if (!data) return null;
+
+    const rp = (v) => 'Rp ' + Number(v ?? 0).toLocaleString('id-ID');
+    const fmt = (d) => { try { return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }); } catch { return d; } };
+    const href = (() => { try { return route('santri.keuangan.index'); } catch { return null; } })();
+
+    return (
+        <div className="mb-5 rounded-2xl p-4 sm:p-5 ring-1 bg-emerald-50/60 dark:bg-emerald-500/5 ring-emerald-100 dark:ring-emerald-500/20">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                    <span className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                        <HeartIcon className="w-5 h-5" />
+                    </span>
+                    <div className="min-w-0">
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">
+                            Infaq tahun {data.tahun}{data.jumlah ? ` · ${data.jumlah} kali` : ''}
+                        </p>
+                        <p className="text-xl sm:text-2xl font-bold tracking-tight leading-tight tabular-nums text-emerald-600 dark:text-emerald-400">
+                            {rp(data.total_tahun)}
+                        </p>
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5 truncate">
+                            {data.terakhir
+                                ? `Terakhir ${fmt(data.terakhir.tanggal)} · ${rp(data.terakhir.nominal)}`
+                                : 'Belum ada infaq yang tercatat'}
+                        </p>
+                    </div>
+                </div>
+
+                {href && (
+                    <Link
+                        href={href}
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 text-xs font-semibold text-stone-700 dark:text-stone-200 hover:bg-cream-100 dark:hover:bg-coal-600 transition active:scale-95"
+                    >
+                        Riwayat Infaq <ArrowIcon className="w-3.5 h-3.5" />
+                    </Link>
+                )}
+            </div>
+        </div>
+    );
+}
+
 /* ============================================================
  * HALAMAN
  * ============================================================ */
-export default function Dashboard({ santris = [], tahunAjaranAktif = null, tagihan = null, message }) {
+export default function Dashboard({ santris = [], tahunAjaranAktif = null, lembaga = 'tk', tagihan = null, infaq = null, message }) {
     const list = Array.isArray(santris) ? santris : [];
     const santriName = list[0]?.name ?? 'Santri';
 
@@ -261,7 +308,7 @@ export default function Dashboard({ santris = [], tahunAjaranAktif = null, tagih
                     )}
                 </div>
 
-                <KartuTagihan data={tagihan} />
+                {lembaga === 'arahan' ? <KartuInfaq data={infaq} /> : <KartuTagihan data={tagihan} />}
 
                 {list.length === 0 ? (
                     <div className="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl py-16 text-center">
