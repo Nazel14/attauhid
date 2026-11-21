@@ -41,6 +41,14 @@ const GENDER_BADGE = {
 };
 const GENDER_BADGE_DEFAULT = 'bg-stone-100 text-stone-600 border-stone-200 dark:bg-coal-700 dark:text-stone-400 dark:border-coal-600';
 
+/* Lembaga: hijau untuk TK, biru At Tauhid untuk Rumah Quran — sama dengan
+   badge di panel keuangan, supaya satu kelas terlihat sama di kedua panel. */
+const LEMBAGA_BADGE = {
+    tk:     'bg-claude-50 text-claude-700 border-claude-200 dark:bg-claude-500/10 dark:text-claude-300 dark:border-claude-500/20',
+    arahan: 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:border-sky-500/20',
+};
+const LEMBAGA_DEFAULT = { tk: 'TK At Tauhid', arahan: 'Rumah Quran' };
+
 /* ============================================================
  * SUB-COMPONENTS
  * ============================================================ */
@@ -106,6 +114,14 @@ function Modal({ open, onClose, title, children, maxWidth = 'sm:max-w-md' }) {
     );
 }
 
+function LembagaBadge({ value, label }) {
+    return (
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${LEMBAGA_BADGE[value] || LEMBAGA_BADGE.tk}`}>
+            {label}
+        </span>
+    );
+}
+
 function GenderBadge({ value, label }) {
     return (
         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${GENDER_BADGE[value] || GENDER_BADGE_DEFAULT}`}>
@@ -123,8 +139,15 @@ const smartCapitalize = (value) =>
 /* ============================================================
  * MAIN PAGE
  * ============================================================ */
-export default function Index({ kelas = [], gurus = [], genderRestrictions = {}, tahunAjaranAktif = null }) {
+export default function Index({ kelas = [], gurus = [], genderRestrictions = {}, tahunAjaranAktif = null, lembagaOptions = LEMBAGA_DEFAULT }) {
     const { flash = {} } = usePage().props;
+
+    /* ---- Filter lembaga ----
+       Disaring di browser: daftar kelas dikirim utuh tanpa paginasi. */
+    const [lembagaFilter, setLembagaFilter] = useState('');
+    const lembagaDari = (k) => (k.lembaga === 'arahan' ? 'arahan' : 'tk');
+    const kelasTampil = lembagaFilter ? kelas.filter((k) => lembagaDari(k) === lembagaFilter) : kelas;
+    const labelLembaga = (k) => lembagaOptions[lembagaDari(k)] || LEMBAGA_DEFAULT[lembagaDari(k)];
 
     /* ---- Toast dari flash ---- */
     const NOTIF_DURATION = 10000;
@@ -140,9 +163,12 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
 
     /* ---- Seleksi ---- */
     const [selected, setSelected] = useState([]);
-    const allIds = kelas.map((k) => k.id);
+    // Pilih Semua hanya menjangkau kelas yang sedang tampil — kalau tidak,
+    // tab "Rumah Quran" bisa ikut menghapus kelas TK yang tidak terlihat.
+    const allIds = kelasTampil.map((k) => k.id);
     const allSelected = allIds.length > 0 && selected.length === allIds.length;
     const toggleAll = () => setSelected(allSelected ? [] : allIds);
+    const gantiFilter = (v) => { setLembagaFilter(v); setSelected([]); };
     const toggleOne = (id) => setSelected((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
 
     /* ---- Modal state ---- */
@@ -160,7 +186,8 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
         tahun_ajaran: tahunAjaranAktif?.nama || '',
         guru_id: '',
         gender_restriction: '',
-        // Dipakai bersama modul keuangan (daya tampung & status kelas).
+        // Dipakai bersama modul keuangan (lembaga, daya tampung, status kelas).
+        lembaga: 'tk',
         tingkat: '',
         kapasitas: 20,
         is_active: true,
@@ -174,6 +201,7 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
             tahun_ajaran: tahunAjaranAktif?.nama || '',
             guru_id: '',
             gender_restriction: '',
+            lembaga: lembagaFilter || 'tk',
             tingkat: '',
             kapasitas: 20,
             is_active: true,
@@ -189,6 +217,7 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
             tahun_ajaran: k.tahun_ajaran || '',
             guru_id: k.guru_id ?? '',
             gender_restriction: k.gender_restriction || '',
+            lembaga: lembagaDari(k),
             tingkat: k.tingkat || '',
             kapasitas: k.kapasitas ?? 20,
             is_active: k.is_active ?? true,
@@ -215,7 +244,7 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
 
     /* ---- Delete ---- */
     const deleteKelas = (k) => {
-        if (confirm(`Hapus Kelas ${k.name}? Kelas yang masih memiliki siswa tidak dapat dihapus.`)) {
+        if (confirm(`Hapus Kelas ${k.name}?\n\nKelas yang masih punya santri (termasuk yang diarsipkan), riwayat kelas, atau setoran tidak dapat dihapus — nonaktifkan saja lewat Edit.`)) {
             router.delete(route('admin.kelas.destroy', k.id), { preserveScroll: true });
         }
     };
@@ -301,6 +330,25 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
                     </button>
                 </div>
 
+                {/* ===== FILTER LEMBAGA ===== */}
+                <div className="grid grid-cols-3 gap-2 mb-4 sm:flex">
+                    {[['', 'Semua'], ...Object.entries(lembagaOptions)].map(([key, label]) => {
+                        const jumlah = key ? kelas.filter((k) => lembagaDari(k) === key).length : kelas.length;
+                        const aktif = lembagaFilter === key;
+                        return (
+                            <button key={key || 'semua'} type="button" onClick={() => gantiFilter(key)}
+                                className={`truncate rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-4 ${
+                                    aktif
+                                        ? 'bg-claude-600 text-white shadow-lg shadow-claude-500/25'
+                                        : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50 dark:bg-coal-800 dark:text-stone-300 dark:border-coal-700 dark:hover:bg-coal-700'
+                                }`}>
+                                {label}
+                                <span className={`ml-1.5 ${aktif ? 'text-white/80' : 'text-stone-400'}`}>{jumlah}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+
                 {/* ===== BULK ACTION BAR ===== */}
                 {selected.length > 0 && (
                     <div className="bg-claude-500/8 border border-claude-500/25 rounded-2xl px-4 py-3 mb-4 flex items-center justify-between gap-3">
@@ -320,23 +368,23 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
 
                 {/* ===== MOBILE CARDS ===== */}
                 <div className="lg:hidden space-y-2">
-                    {kelas.length > 0 && (
+                    {kelasTampil.length > 0 && (
                         <div className="flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-coal-800 border border-stone-200 dark:border-coal-700 rounded-2xl">
                             <input type="checkbox" checked={allSelected} onChange={toggleAll}
                                 ref={(el) => { if (el) el.indeterminate = selected.length > 0 && !allSelected; }}
                                 className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 focus:ring-claude-500 cursor-pointer" />
                             <span className="text-xs font-semibold text-stone-600 dark:text-stone-400 flex-1">Pilih Semua</span>
-                            <span className="text-[11px] text-stone-400 dark:text-stone-600">{kelas.length} data</span>
+                            <span className="text-[11px] text-stone-400 dark:text-stone-600">{kelasTampil.length} data</span>
                         </div>
                     )}
 
-                    {kelas.length === 0 ? (
+                    {kelasTampil.length === 0 ? (
                         <div className="bg-white dark:bg-coal-800 border border-stone-200 dark:border-coal-700 rounded-2xl py-16 text-center">
-                            <div className="text-4xl mb-3">🏫</div>
+                            <SchoolIcon className="w-10 h-10 mx-auto mb-3 text-stone-300 dark:text-stone-600" />
                             <p className="text-sm font-semibold text-stone-600 dark:text-stone-400">Belum ada data kelas</p>
                             <p className="text-xs text-stone-400 dark:text-stone-600 mt-1.5">Tap tombol "Tambah Kelas" di atas</p>
                         </div>
-                    ) : kelas.map((k) => {
+                    ) : kelasTampil.map((k) => {
                         const isSel = selected.includes(k.id);
                         return (
                             <div key={k.id} className={`rounded-2xl border overflow-hidden transition-all ${isSel ? 'border-claude-500/50 ring-1 ring-claude-500/15 bg-claude-500/5' : 'border-stone-200 dark:border-coal-700 bg-white dark:bg-coal-800'}`}>
@@ -345,7 +393,10 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
                                         className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 flex-shrink-0 cursor-pointer" />
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate">{k.name}</p>
-                                        <p className="text-[11px] text-stone-400 dark:text-stone-500">{k.tahun_ajaran}</p>
+                                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                            <LembagaBadge value={lembagaDari(k)} label={labelLembaga(k)} />
+                                            <span className="text-[11px] text-stone-400 dark:text-stone-500">{k.tahun_ajaran}</span>
+                                        </div>
                                     </div>
                                     <GenderBadge value={k.gender_restriction} label={genderRestrictions[k.gender_restriction] || '-'} />
                                 </div>
@@ -387,20 +438,20 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
                                         ref={(el) => { if (el) el.indeterminate = selected.length > 0 && !allSelected; }}
                                         className="w-4 h-4 rounded border-stone-300 dark:border-coal-600 text-claude-600 cursor-pointer" />
                                 </th>
-                                {['No', 'Nama Kelas', 'Tahun Ajaran', 'Wali Kelas', 'Jenis Kelas', 'Terisi'].map((h) => (
+                                {['No', 'Nama Kelas', 'Lembaga', 'Tahun Ajaran', 'Wali Kelas', 'Jenis Kelas', 'Terisi'].map((h) => (
                                     <th key={h} className="px-4 py-3 text-left text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">{h}</th>
                                 ))}
                                 <th className="px-4 py-3 text-center text-[10px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100 dark:divide-coal-700">
-                            {kelas.length === 0 ? (
-                                <tr><td colSpan={8} className="py-16 text-center">
-                                    <div className="text-4xl mb-3">🏫</div>
+                            {kelasTampil.length === 0 ? (
+                                <tr><td colSpan={9} className="py-16 text-center">
+                                    <SchoolIcon className="w-10 h-10 mx-auto mb-3 text-stone-300 dark:text-stone-600" />
                                     <p className="text-sm font-semibold text-stone-600 dark:text-stone-400">Belum ada data kelas</p>
                                     <p className="text-xs text-stone-400 dark:text-stone-600 mt-1">Klik "Tambah Kelas" di atas</p>
                                 </td></tr>
-                            ) : kelas.map((k, idx) => {
+                            ) : kelasTampil.map((k, idx) => {
                                 const isSel = selected.includes(k.id);
                                 return (
                                     <tr key={k.id} className={`transition-colors ${isSel ? 'bg-claude-500/5' : 'hover:bg-stone-50 dark:hover:bg-coal-700/30'}`}>
@@ -411,6 +462,9 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
                                         <td className="px-4 py-3 text-sm text-stone-400 dark:text-stone-500">{idx + 1}</td>
                                         <td className="px-4 py-3">
                                             <span className="text-sm font-medium text-stone-800 dark:text-stone-200">{k.name}</span>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <LembagaBadge value={lembagaDari(k)} label={labelLembaga(k)} />
                                         </td>
                                         <td className="px-4 py-3 text-sm text-stone-500 dark:text-stone-400">{k.tahun_ajaran}</td>
                                         <td className="px-4 py-3">
@@ -496,6 +550,29 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
                         {err(kelasForm.errors.gender_restriction)}
                     </div>
 
+                    <div>
+                        <label className={LBL}>Lembaga <span className="text-red-500">*</span></label>
+                        <div className="grid grid-cols-2 gap-2">
+                            {Object.entries(lembagaOptions).map(([key, label]) => {
+                                const aktif = kelasForm.data.lembaga === key;
+                                return (
+                                    <button key={key} type="button" onClick={() => kelasForm.setData('lembaga', key)}
+                                        className={`rounded-xl border px-3 py-2.5 text-left text-sm transition ${
+                                            aktif
+                                                ? 'border-claude-500 bg-claude-500/10 font-semibold text-claude-700 ring-2 ring-claude-500/20 dark:text-claude-300'
+                                                : 'border-stone-300 text-stone-600 hover:bg-stone-50 dark:border-coal-600 dark:text-stone-300 dark:hover:bg-coal-700'
+                                        }`}>
+                                        {label}
+                                        <span className="mt-0.5 block text-[11px] font-normal text-stone-400">
+                                            {key === 'arahan' ? 'Infaq sukarela, tanpa tagihan' : 'Ditagih lewat gelombang tagihan'}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        {err(kelasForm.errors.lembaga)}
+                    </div>
+
                     <div className="grid grid-cols-2 gap-3 border-t border-stone-100 dark:border-coal-700 pt-4">
                         <div>
                             <label className={LBL}>Tingkat</label>
@@ -551,7 +628,7 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
             <Modal open={importOpen} onClose={() => setImportOpen(false)} title="Import Data Kelas dari Excel">
                 <form onSubmit={submitImport} className="p-5 space-y-4">
                     <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl px-4 py-3">
-                        <p className="text-[11px] text-amber-700 dark:text-amber-400 font-semibold">⚠️ Penting: Download template terlebih dahulu dan isi sesuai format!</p>
+                        <p className="text-[11px] text-amber-700 dark:text-amber-400 font-semibold">Penting: download template terlebih dahulu dan isi sesuai format.</p>
                     </div>
                     <div>
                         <label className={LBL}>Pilih File Excel (.xlsx atau .xls) <span className="text-red-500">*</span></label>
@@ -588,7 +665,7 @@ export default function Index({ kelas = [], gurus = [], genderRestrictions = {},
             <Modal open={bulkOpen} onClose={() => setBulkOpen(false)} title="Bulk Update Data Kelas">
                 <form onSubmit={submitBulk} className="p-5 space-y-4">
                     <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl px-4 py-3">
-                        <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1.5">📋 Cara Pakai:</p>
+                        <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1.5">Cara pakai:</p>
                         <ol className="text-[11px] text-amber-700/80 dark:text-amber-300/70 space-y-0.5 list-decimal list-inside">
                             <li>Klik "Export" terlebih dahulu</li>
                             <li>Edit data di Excel yang terdownload</li>

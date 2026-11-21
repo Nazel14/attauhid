@@ -37,6 +37,10 @@ class KelasController extends Controller
             'gurus' => $gurus,
             'genderRestrictions' => $genderRestrictions,
             'tahunAjaranAktif' => $tahunAjaranAktif,
+            // TK ditagih lewat gelombang tagihan, Rumah Quran membayar infaq
+            // sukarela — pilihannya dibaca dari model supaya labelnya sama
+            // dengan panel keuangan.
+            'lembagaOptions' => Kelas::LEMBAGA,
         ]);
     }
     /**
@@ -51,9 +55,12 @@ class KelasController extends Controller
         'gender_restriction' => 'required|in:ikhwan,akhwat,campuran',
         // Tiga kolom di bawah dipakai bersama modul keuangan.
         'tingkat' => 'nullable|string|max:100',
+        'lembaga' => 'required|in:' . implode(',', array_keys(Kelas::LEMBAGA)),
         'kapasitas' => 'required|integer|min:1|max:100',
         'is_active' => 'boolean',
     ], [
+        'lembaga.required' => 'Lembaga wajib dipilih.',
+        'lembaga.in' => 'Lembaga tidak dikenali.',
         'kapasitas.required' => 'Kapasitas kelas wajib diisi.',
         'kapasitas.min' => 'Kapasitas minimal 1 santri.',
     ]);
@@ -90,7 +97,7 @@ class KelasController extends Controller
      */
     public function update(Request $request, Kelas $kela)
     {
-          $oldValues = $kela->only(['name', 'tahun_ajaran', 'guru_id', 'gender_restriction', 'tingkat', 'kapasitas', 'is_active']);
+          $oldValues = $kela->only(['name', 'tahun_ajaran', 'guru_id', 'gender_restriction', 'tingkat', 'lembaga', 'kapasitas', 'is_active']);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -98,9 +105,12 @@ class KelasController extends Controller
             'guru_id' => 'required|exists:gurus,id',
             'gender_restriction' => 'required|in:ikhwan,akhwat,campuran',
             'tingkat' => 'nullable|string|max:100',
+            'lembaga' => 'required|in:' . implode(',', array_keys(Kelas::LEMBAGA)),
             'kapasitas' => 'required|integer|min:1|max:100',
             'is_active' => 'boolean',
         ], [
+            'lembaga.required' => 'Lembaga wajib dipilih.',
+            'lembaga.in' => 'Lembaga tidak dikenali.',
             'kapasitas.required' => 'Kapasitas kelas wajib diisi.',
             'kapasitas.min' => 'Kapasitas minimal 1 santri.',
         ]);
@@ -142,23 +152,52 @@ class KelasController extends Controller
      * Menghapus Kelas.
      */
     public function destroy(Kelas $kela)
-{
-    // Jangan hapus kelas yang masih punya santri — santri beserta seluruh
-    // riwayat setoran/presensi-nya akan ikut terhapus (cascade DB).
-    $jumlahSantri = $kela->santris()->count();
-    if ($jumlahSantri > 0) {
+    {
+        if ($alasan = $this->alasanTidakBisaDihapus($kela)) {
+            return redirect()->route('admin.kelas.index')->with('error', $alasan);
+        }
+
+        $name = $kela->name;
+        $oldValues = $kela->toArray();
+        $kela->delete();
+        $this->logDelete('kelas', $name, $oldValues);
+
         return redirect()->route('admin.kelas.index')
-            ->with('error', "Kelas \"{$kela->name}\" masih memiliki {$jumlahSantri} santri. Pindahkan atau hapus santrinya dulu sebelum menghapus kelas.");
+            ->with('success', 'Kelas/Halaqah berhasil dihapus.');
     }
 
-    $name = $kela->name;
-    $oldValues = $kela->toArray();
-    $kela->delete();
-    $this->logDelete('kelas', $name, $oldValues);
-    
-    return redirect()->route('admin.kelas.index')
-        ->with('success', 'Kelas/Halaqah berhasil dihapus.');
-}
+    /**
+     * Alasan sebuah kelas TIDAK boleh dihapus, atau null bila aman.
+     *
+     * Di database, menghapus kelas tidak berhenti di baris kelas saja:
+     *   santris.kelas_id               ON DELETE CASCADE  → santri ikut terhapus
+     *   santri_kelas_history.kelas_id  ON DELETE CASCADE  → riwayat kelas ikut terhapus
+     *   setorans.kelas_id              ON DELETE SET NULL → setoran kehilangan kelasnya
+     *
+     * Santri yang sudah DIARSIPKAN wajib ikut dihitung (withTrashed). Hitungan
+     * biasa melewatkan mereka, padahal CASCADE tetap menghapusnya permanen —
+     * itu yang membuat kelas Ummu Shofi sempat terhapus beserta riwayatnya.
+     *
+     * Dipakai destroy() dan bulkDestroy() supaya dua jalur hapus tidak
+     * pernah punya aturan berbeda.
+     */
+    private function alasanTidakBisaDihapus(Kelas $kelas): ?string
+    {
+        $jumlahSantri = $kelas->santris()->withTrashed()->count();
+
+        if ($jumlahSantri > 0) {
+            return "Kelas \"{$kelas->name}\" masih tercatat untuk {$jumlahSantri} santri (termasuk yang sudah diarsipkan). Pindahkan santrinya dulu, atau nonaktifkan kelas ini saja.";
+        }
+
+        $punyaRiwayat = DB::table('santri_kelas_history')->where('kelas_id', $kelas->id)->exists()
+            || DB::table('setorans')->where('kelas_id', $kelas->id)->exists();
+
+        if ($punyaRiwayat) {
+            return "Kelas \"{$kelas->name}\" sudah punya riwayat kelas atau setoran, jadi tidak bisa dihapus. Nonaktifkan saja lewat Edit: hilangkan centang \"Kelas Aktif\".";
+        }
+
+        return null;
+    }
 
     /**
      * Bulk delete kelas (hapus banyak sekaligus)
@@ -174,17 +213,17 @@ class KelasController extends Controller
         ]);
 
         try {
-            // Tolak kalau ada kelas yang masih punya santri
-            $kelasBerisi = Kelas::whereIn('id', $request->kelas_ids)
-                ->withCount('santris')
-                ->get()
-                ->filter(fn ($k) => $k->santris_count > 0)
+            // Aturan yang sama persis dengan hapus satuan. Satu kelas yang
+            // tidak boleh dihapus membatalkan seluruh pilihan — hapus massal
+            // yang separuh jalan lebih membingungkan daripada ditolak utuh.
+            $ditolak = Kelas::whereIn('id', $request->kelas_ids)->get()
+                ->filter(fn ($k) => $this->alasanTidakBisaDihapus($k) !== null)
                 ->pluck('name')
                 ->toArray();
 
-            if (!empty($kelasBerisi)) {
+            if (!empty($ditolak)) {
                 return redirect()->route('admin.kelas.index')
-                    ->with('error', 'Kelas berikut masih memiliki santri dan tidak bisa dihapus: ' . implode(', ', $kelasBerisi) . '. Pindahkan/hapus santrinya dulu.');
+                    ->with('error', 'Tidak ada yang dihapus. Kelas berikut masih punya santri (termasuk yang diarsipkan), riwayat kelas, atau setoran: <strong>' . e(implode(', ', $ditolak)) . '</strong>. Hilangkan centangnya dari pilihan, atau nonaktifkan kelas tersebut.');
             }
 
             $deletedCount = count($request->kelas_ids);
