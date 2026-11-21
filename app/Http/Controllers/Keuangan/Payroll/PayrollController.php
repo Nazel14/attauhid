@@ -23,10 +23,17 @@ class PayrollController extends Controller
         '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember',
     ];
 
+    /**
+     * Izin per tahap. Satu tahap boleh punya beberapa nama: di database
+     * izin tahap persetujuan bernama 'approve_final', sementara kode lama
+     * memakai 'approve_disetujui' — akibatnya tombol Setujui terkunci untuk
+     * semua role. Nama mana pun yang dimiliki user dianggap sah.
+     */
     private const IZIN = [
-        'diperiksa' => 'penggajian.approve_diperiksa',
-        'disetujui' => 'penggajian.approve_disetujui',
-        'dibayar'   => 'penggajian.approve_dibayar',
+        'diperiksa' => ['penggajian.approve_diperiksa'],
+        'disetujui' => ['penggajian.approve_final', 'penggajian.approve_disetujui'],
+        // Di database tahap pencairan bernama 'approve_tutup_batch'.
+        'dibayar'   => ['penggajian.approve_tutup_batch', 'penggajian.approve_dibayar'],
     ];
 
     private const SYARAT = [
@@ -256,7 +263,11 @@ class PayrollController extends Controller
 
         $stage = $request->stage;
 
-        abort_unless(Auth::user()->can(self::IZIN[$stage]), 403, 'Anda tidak memiliki akses untuk tahap ini.');
+        // can() aman untuk nama izin yang tidak ada di tabel (hasilnya false),
+        // berbeda dengan hasAnyPermission() yang melempar exception.
+        $boleh = collect(self::IZIN[$stage])->contains(fn ($izin) => Auth::user()->can($izin));
+
+        abort_unless($boleh, 403, 'Anda tidak memiliki akses untuk tahap ini.');
 
         // Versi asli hanya mengecek keberadaan diperiksa_by / disetujui_by,
         // bukan status saat ini. Header yang sudah 'dibayar' bisa didorong

@@ -62,9 +62,7 @@ function KartuKelas({ item, href, tanpaKelas = false }) {
                 Rumah Quran tidak ditagih, jadi pembagian itu tidak berarti apa-apa. */}
             <div className="flex-1 px-4 py-3">
                 {arahan ? (
-                    <p className="rounded-xl bg-sky-50 px-3 py-2.5 text-center text-xs text-sky-700 ring-1 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-500/20">
-                        Infaq sukarela · tanpa tagihan
-                    </p>
+                    <p className="text-[11px] text-store-500 dark:text-stone-400"></p>
                 ) : (
                 <div className="grid grid-cols-2 gap-2">
                     <div className="rounded-xl bg-cream-100 px-3 py-2 text-center ring-1 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600">

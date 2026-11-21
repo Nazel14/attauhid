@@ -37,6 +37,17 @@ Route::middleware([
         Route::get('/keuangan/kwitansi/{pembayaran}', [PortalKeuanganController::class, 'printKwitansi'])
             ->whereNumber('pembayaran')
             ->name('keuangan.kwitansi');
+
+        // Wali mengirim bukti transfer. Masuk sebagai draft di halaman
+        // Pembayaran bendahara — tidak mengubah saldo sebelum disetujui.
+        // throttle: cegah tombol kirim ditekan berulang-ulang.
+        Route::post('/keuangan/konfirmasi', [PortalKeuanganController::class, 'kirimKonfirmasi'])
+            ->middleware('throttle:10,1')
+            ->name('keuangan.konfirmasi');
+
+        Route::delete('/keuangan/konfirmasi/{pembayaran}', [PortalKeuanganController::class, 'batalkanKonfirmasi'])
+            ->whereNumber('pembayaran')
+            ->name('keuangan.konfirmasi.batal');
     }
 
     /* ---------- Komplain / Laporan Data ---------- */

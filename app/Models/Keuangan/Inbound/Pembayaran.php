@@ -18,10 +18,11 @@ class Pembayaran extends Model implements HasMedia
     protected $table = 'inbound_payments';
 
     protected $fillable = [
-        'receipt_number', 'student_id', 'invoice_id', 'kategori', 'nama_pihak',
+        'receipt_number', 'student_id', 'invoice_id', 'kategori', 'sumber', 'nama_pihak',
         'account_id', 'nominal', 'payment_date', 'payment_method', 'catatan',
         'status_approval', 'diperiksa_by', 'disetujui_by',
         'diperiksa_at', 'disetujui_at', 'created_by',
+        'ditolak_by', 'ditolak_at', 'alasan_tolak',
     ];
 
     protected $casts = [
@@ -29,7 +30,24 @@ class Pembayaran extends Model implements HasMedia
         'payment_date' => 'date',
         'diperiksa_at' => 'datetime',
         'disetujui_at' => 'datetime',
+        'ditolak_at'   => 'datetime',
     ];
+
+    /**
+     * Asal catatan pembayaran.
+     *
+     * 'bendahara' = dicatat langsung di panel keuangan (jalur lama).
+     * 'wali'      = dikirim orang tua dari panel santri lewat unggah bukti.
+     *
+     * Keduanya melewati tahap persetujuan yang sama persis; kiriman wali
+     * tidak pernah langsung sah. Penanda ini hanya supaya bendahara tahu
+     * asalnya dan supaya wali hanya bisa membatalkan kirimannya sendiri.
+     */
+    public const SUMBER_BENDAHARA = 'bendahara';
+    public const SUMBER_WALI      = 'wali';
+
+    /** Status akhir untuk kiriman yang ditolak bendahara. */
+    public const STATUS_DITOLAK = 'ditolak';
 
     /**
      * Urutan di sini = urutan tab di halaman Pembayaran.
@@ -88,6 +106,16 @@ class Pembayaran extends Model implements HasMedia
     public function penyetuju(): BelongsTo
     {
         return $this->belongsTo(User::class, 'disetujui_by');
+    }
+
+    public function penolak(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'ditolak_by');
+    }
+
+    public function getDariWaliAttribute(): bool
+    {
+        return $this->sumber === self::SUMBER_WALI;
     }
 
     // Bukan createdBy: Laravel men-snake_case nama relasi saat serialisasi,

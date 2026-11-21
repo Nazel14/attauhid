@@ -246,22 +246,22 @@ class DashboardController extends Controller
             'RKAS', 'perlu diperiksa', 'diperiksa',
             'keuangan.pengeluaran.rkas', ['statusFilter' => 'Draft']);
 
-        $this->tambah($n, $user, 'pembayaran.approve_disetujui', 'pembayaran-disetujui',
+        $this->tambah($n, $user, ['pembayaran.approve_final', 'pembayaran.approve_disetujui'], 'pembayaran-disetujui',
             fn () => Pembayaran::where('status_approval', 'diperiksa')->count(),
             'pembayaran', 'perlu disetujui', 'disetujui',
             'keuangan.pemasukan.pembayaran.index', ['statusFilter' => 'diperiksa']);
 
-        $this->tambah($n, $user, 'pengeluaran.approve_disetujui', 'pengeluaran-disetujui',
+        $this->tambah($n, $user, ['pengeluaran.approve_final', 'pengeluaran.approve_disetujui'], 'pengeluaran-disetujui',
             fn () => Pengeluaran::where('status_approval', 'diperiksa')->count(),
             'pengeluaran', 'perlu disetujui', 'disetujui',
             'keuangan.pengeluaran.pengajuan', ['status' => 'diperiksa']);
 
-        $this->tambah($n, $user, 'penggajian.approve_disetujui', 'penggajian-disetujui',
+        $this->tambah($n, $user, ['penggajian.approve_final', 'penggajian.approve_disetujui'], 'penggajian-disetujui',
             fn () => PayrollHeader::where('status_approval', 'diperiksa')->count(),
             'batch penggajian', 'perlu disetujui', 'disetujui',
             'keuangan.penggajian.data', ['status' => 'diperiksa']);
 
-        $this->tambah($n, $user, 'penggajian.approve_dibayar', 'penggajian-dibayar',
+        $this->tambah($n, $user, ['penggajian.approve_tutup_batch', 'penggajian.approve_dibayar'], 'penggajian-dibayar',
             fn () => PayrollHeader::where('status_approval', 'disetujui')->count(),
             'batch penggajian', 'perlu dibayarkan', 'dibayarkan',
             'keuangan.penggajian.data', ['status' => 'disetujui']);
@@ -293,11 +293,18 @@ class DashboardController extends Controller
      * Modul keuangan diport bertahap. Notifikasi yang route tujuannya belum
      * terdaftar dilewati — tanpa ini route() melempar RouteNotFoundException
      * dan dashboard jadi error 500.
+     *
+     * $permission boleh berupa daftar nama: izin tahap akhir di database
+     * bernama 'approve_final' / 'approve_tutup_batch', sedangkan kode lama
+     * memakai 'approve_disetujui' / 'approve_dibayar'. Memiliki salah satu
+     * sudah cukup.
      */
-    private function tambah(array &$n, $user, string $permission, string $key, callable $hitung,
+    private function tambah(array &$n, $user, string|array $permission, string $key, callable $hitung,
                             string $dokumen, string $status, string $aksi, string $routeName, array $params): void
     {
-        if (!$user->can($permission) || !Route::has($routeName)) {
+        $boleh = collect((array) $permission)->contains(fn ($izin) => $user->can($izin));
+
+        if (!$boleh || !Route::has($routeName)) {
             return;
         }
 

@@ -31,8 +31,9 @@ const LANGKAH = [
 
 // Label tombol untuk memajukan dokumen ke tahap berikutnya.
 const AKSI_LANJUT = {
-    diperiksa: { label: 'Tandai Diperiksa', perm: 'pembayaran.approve_diperiksa' },
-    disetujui: { label: 'Setujui Pembayaran', perm: 'pembayaran.approve_disetujui' },
+    diperiksa: { label: 'Tandai Diperiksa', perm: ['pembayaran.approve_diperiksa'] },
+    // Nama izin di database: approve_final. approve_disetujui ikut diterima.
+    disetujui: { label: 'Setujui Pembayaran', perm: ['pembayaran.approve_final', 'pembayaran.approve_disetujui'] },
 };
 
 const waktu = (t) => {
@@ -41,15 +42,37 @@ const waktu = (t) => {
     return `${d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })} · ${d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':')}`;
 };
 
+// Alasan cepat untuk menolak kiriman wali — bendahara tinggal klik, lalu
+// boleh disunting. Alasan ini dibaca langsung oleh wali di portal.
+const ALASAN_CEPAT = [
+    'Dana belum masuk ke rekening',
+    'Nominal di bukti tidak sesuai',
+    'Bukti tidak terbaca / buram',
+    'Bukti untuk tagihan lain',
+    'Kiriman ganda',
+];
+
+const BadgeWali = ({ kecil = false }) => (
+    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full bg-sky-50 font-medium text-sky-700 ring-1 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-500/20 ${kecil ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]'}`}
+        title="Dikirim wali santri lewat portal">
+        <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+        </svg>
+        Dari wali
+    </span>
+);
+
 const tanggal = (s) => (s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-');
 
-export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, listSiswa, listRekening, listTagihan, filters }) {
+export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, listSiswa, listRekening, listTagihan, menungguWali = {}, filters }) {
     const { auth } = usePage().props;
     const can = (p) => (auth.permissions || []).includes(p);
 
     const [kategori, setKategori] = useState(kategoriAktif || 'tagihan');
     const [search, setSearch] = useState(filters?.search || '');
     const [statusFilter, setStatusFilter] = useState(filters?.statusFilter || '');
+    const [sumberFilter, setSumberFilter] = useState(filters?.sumberFilter || '');
+    const [alasanTolak, setAlasanTolak] = useState('');
     const [monthFilter, setMonthFilter] = useState(filters?.monthFilter || '');
     const [sortField, setSortField] = useState(filters?.sort_field || 'created_at');
     const [sortDirection, setSortDirection] = useState(filters?.sort_direction || 'desc');
@@ -87,12 +110,12 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
 
         const t = setTimeout(() => {
             router.get(route('keuangan.pemasukan.pembayaran.index'),
-                { kategori, search, monthFilter, statusFilter, sort_field: sortField, sort_direction: sortDirection },
+                { kategori, search, monthFilter, statusFilter, sumberFilter, sort_field: sortField, sort_direction: sortDirection },
                 { preserveState: true, preserveScroll: true, replace: true });
         }, 300);
 
         return () => clearTimeout(t);
-    }, [kategori, search, monthFilter, statusFilter, sortField, sortDirection]);
+    }, [kategori, search, monthFilter, statusFilter, sumberFilter, sortField, sortDirection]);
 
     const gantiKategori = (k) => { setKategori(k); setTerpilih(null); };
 
@@ -167,7 +190,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
             preserveScroll: true,
             onFinish: () => setProses(false),
             onSuccess: () => { setDialog(null); setPesanError(''); },
-            onError: (err) => setPesanError(err.approve || 'Gagal memproses.'),
+            onError: (err) => setPesanError(err.approve || err.alasan_tolak || 'Gagal memproses.'),
         };
         if (method === 'delete') router.delete(url, opts);
         else router.post(url, body, opts);
@@ -177,17 +200,28 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
         'draft':     'bg-cream-200 text-stone-600 ring-cream-300 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500',
         'diperiksa': 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20',
         'disetujui': 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20',
+        'ditolak':   'bg-red-50 text-red-700 ring-red-200 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/20',
     }[s] || 'bg-cream-200 text-stone-600 ring-cream-300');
 
-    const langkahAktif = aktif ? LANGKAH.findIndex((s) => s.id === aktif.status_approval) : 0;
+    // Yang ditolak berhenti di tahap terakhir yang sempat dilewatinya.
+    const ditolak = aktif?.status_approval === 'ditolak';
+    const langkahAktif = !aktif ? 0
+        : ditolak ? (aktif.diperiksa_at ? 1 : 0)
+        : LANGKAH.findIndex((s) => s.id === aktif.status_approval);
 
     // Tahap berikutnya yang tersedia untuk dokumen yang sedang dibuka.
-    const langkahBerikut = aktif && langkahAktif >= 0 && langkahAktif < LANGKAH.length - 1
+    const langkahBerikut = aktif && !ditolak && langkahAktif >= 0 && langkahAktif < LANGKAH.length - 1
         ? LANGKAH[langkahAktif + 1]
         : null;
 
     const infoLanjut = langkahBerikut ? AKSI_LANJUT[langkahBerikut.id] : null;
-    const bisaLanjut = infoLanjut ? can(infoLanjut.perm) : false;
+    const bisaLanjut = infoLanjut ? infoLanjut.perm.some(can) : false;
+
+    // Menolak = wewenang tahap pemeriksaan, selama belum disahkan.
+    const bisaTolak = aktif && ['draft', 'diperiksa'].includes(aktif.status_approval) && can('pembayaran.approve_diperiksa');
+
+    // Yang ditolak belum pernah menyentuh saldo, jadi boleh dihapus.
+    const bisaDihapus = (item) => ['draft', 'ditolak'].includes(item.status_approval) && can('pembayaran.hapus');
 
     const pelaku = (step) => {
         if (!aktif) return null;
@@ -269,6 +303,13 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                                 : 'bg-white text-stone-600 ring-1 ring-cream-300 hover:bg-cream-100 dark:bg-coal-700 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600'
                         }`}>
                         {label}
+                        {menungguWali?.[k] > 0 && (
+                            <span className={`ml-1.5 inline-flex min-w-[1.25rem] justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+                                kategori === k ? 'bg-white/25 text-white' : 'bg-sky-500 text-white'
+                            }`} title={`${menungguWali[k]} kiriman wali menunggu diperiksa`}>
+                                {menungguWali[k]}
+                            </span>
+                        )}
                     </button>
                 ))}
             </div>
@@ -286,21 +327,34 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                         </div>
 
                         {/* Bulan & status berdampingan di mobile — bertumpuk terlalu boros. */}
-                        <div className="flex gap-2">
-                            <div className="flex-1 sm:w-44 sm:flex-none">
+                        <div className="grid grid-cols-2 gap-2 sm:flex">
+                            <div className="sm:w-44 sm:flex-none">
                                 <input type="month" value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)}
                                     aria-label="Filter periode" className={monthCls} />
                             </div>
 
-                            <div className="relative flex-1 sm:w-44 sm:flex-none">
-                                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectCls}>
+                            <div className="relative sm:w-40 sm:flex-none">
+                                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectCls} aria-label="Filter status">
                                     <option value="">Semua Status</option>
                                     <option value="draft">Draft</option>
                                     <option value="diperiksa">Diperiksa</option>
                                     <option value="disetujui">Disetujui</option>
+                                    <option value="ditolak">Ditolak</option>
                                 </select>
                                 <ChevronBawah />
                             </div>
+
+                            {/* Hanya kategori yang bisa dikirim wali dari portal. */}
+                            {PERLU_SISWA.includes(kategori) && (
+                                <div className="relative col-span-2 sm:w-44 sm:flex-none">
+                                    <select value={sumberFilter} onChange={(e) => setSumberFilter(e.target.value)} className={selectCls} aria-label="Filter sumber">
+                                        <option value="">Semua Sumber</option>
+                                        <option value="wali">Kiriman Wali</option>
+                                        <option value="bendahara">Dicatat Bendahara</option>
+                                    </select>
+                                    <ChevronBawah />
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -315,14 +369,18 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                         const dipilih = terpilih === item.id;
                         const bisaCetak = item.status_approval === 'disetujui' && can('pembayaran.cetak');
                         const bisaUbah = item.status_approval === 'draft';
+                        const dariWali = item.sumber === 'wali';
 
                         return (
                             <div key={item.id} className={`overflow-hidden rounded-2xl ring-1 transition ${dipilih ? 'bg-claude-500/5 ring-claude-500/40' : 'ring-cream-300 dark:ring-coal-600'}`}>
                                 <div className="flex items-start justify-between gap-3 p-4">
                                     <div className="min-w-0">
-                                        <p className="truncate text-sm font-semibold text-stone-800 dark:text-cream-100">
-                                            {item.siswa?.name || item.nama_pihak || item.catatan || '—'}
-                                        </p>
+                                        <div className="flex min-w-0 items-center gap-1.5">
+                                            <p className="truncate text-sm font-semibold text-stone-800 dark:text-cream-100">
+                                                {item.siswa?.name || item.nama_pihak || item.catatan || '—'}
+                                            </p>
+                                            {dariWali && <BadgeWali kecil />}
+                                        </div>
                                         <p className="mt-0.5 truncate text-xs text-stone-400">
                                             <span className="text-claude-600 dark:text-claude-300">{item.receipt_number}</span>
                                             {(item.tagihan?.invoice_number || (item.siswa && item.catatan)) && ` · ${item.tagihan?.invoice_number || item.catatan}`}
@@ -363,7 +421,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                                             Ubah
                                         </button>
                                     )}
-                                    {bisaUbah && can('pembayaran.hapus') && (
+                                    {bisaDihapus(item) && (
                                         <button type="button" onClick={() => { setPesanError(''); setDialog({ jenis: 'hapus', id: item.id }); }}
                                             className="flex flex-1 items-center justify-center border-l border-cream-200 py-2.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-coal-600 dark:text-red-400 dark:hover:bg-red-500/10">
                                             Hapus
@@ -403,6 +461,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                                             <span className="font-medium text-stone-800 dark:text-cream-100">
                                                 {item.siswa?.name || item.nama_pihak || item.catatan || '—'}
                                             </span>
+                                            {item.sumber === 'wali' && <span className="ml-1.5 align-middle"><BadgeWali kecil /></span>}
                                             {(item.tagihan?.invoice_number || (item.siswa && item.catatan)) && (
                                                 <><br /><span className="text-xs text-stone-400">{item.tagihan?.invoice_number || item.catatan}</span></>
                                             )}
@@ -431,21 +490,17 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                                                     </a>
                                                 )}
 
-                                                {item.status_approval === 'draft' && (
-                                                    <>
-                                                        {can('pembayaran.edit') && (
-                                                            <button type="button" onClick={() => openEdit(item)}
-                                                                className={`${btnGhost} text-stone-600 ring-cream-300 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
-                                                                Ubah
-                                                            </button>
-                                                        )}
-                                                        {can('pembayaran.hapus') && (
-                                                            <button type="button" onClick={() => { setPesanError(''); setDialog({ jenis: 'hapus', id: item.id }); }}
-                                                                className={`${btnGhost} text-red-600 ring-red-200 hover:bg-red-50 dark:text-red-400 dark:ring-red-500/20 dark:hover:bg-red-500/10`}>
-                                                                Hapus
-                                                            </button>
-                                                        )}
-                                                    </>
+                                                {item.status_approval === 'draft' && can('pembayaran.edit') && (
+                                                    <button type="button" onClick={() => openEdit(item)}
+                                                        className={`${btnGhost} text-stone-600 ring-cream-300 hover:bg-cream-100 dark:text-stone-300 dark:ring-coal-600 dark:hover:bg-coal-600`}>
+                                                        Ubah
+                                                    </button>
+                                                )}
+                                                {bisaDihapus(item) && (
+                                                    <button type="button" onClick={() => { setPesanError(''); setDialog({ jenis: 'hapus', id: item.id }); }}
+                                                        className={`${btnGhost} text-red-600 ring-red-200 hover:bg-red-50 dark:text-red-400 dark:ring-red-500/20 dark:hover:bg-red-500/10`}>
+                                                        Hapus
+                                                    </button>
                                                 )}
                                             </div>
                                         </td>
@@ -489,6 +544,9 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                                 ['Metode', aktif.payment_method],
                                 ['Rekening Tujuan', aktif.rekening?.account_name],
                                 ['Pihak', aktif.siswa?.name || aktif.nama_pihak || '—'],
+                                ...(PERLU_SISWA.includes(aktif.kategori)
+                                    ? [['Sumber', aktif.sumber === 'wali' ? 'Dikirim wali lewat portal' : 'Dicatat bendahara']]
+                                    : []),
                             ].map(([k, v]) => (
                                 <div key={k}>
                                     <dt className="text-[11px] uppercase tracking-wider text-stone-400">{k}</dt>
@@ -526,12 +584,15 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                         <h3 className="mb-6 border-b border-cream-200 pb-3 text-sm font-semibold text-stone-800 dark:border-coal-600 dark:text-cream-50">Jalur Persetujuan</h3>
 
                         {/* Lingkaran kini murni indikator — tidak bisa diklik.
-                            Digulir horizontal di layar sempit, bukan dimampatkan. */}
-                        <div className="-mx-1 overflow-x-auto px-1 pb-1">
+                            Digulir horizontal di layar sempit, bukan dimampatkan.
+                            overflow-x-auto ikut memotong arah vertikal, padahal
+                            ring-2 digambar di LUAR lingkaran — beri ruang 4px
+                            di atas (pt-1) dan tarik balik dengan -mt-1. */}
+                        <div className="-mx-1 -mt-1 overflow-x-auto px-1 pb-1 pt-1">
                             <div className="flex min-w-max items-start gap-x-2 gap-y-6">
                                 {LANGKAH.map((step, i) => {
                                     const selesai = i <= langkahAktif;
-                                    const berikutnya = i === langkahAktif + 1;
+                                    const berikutnya = !ditolak && i === langkahAktif + 1;
 
                                     return (
                                         <div key={step.id} className="flex items-start">
@@ -558,8 +619,36 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                         </div>
 
                         {/* Aksi persetujuan sebagai tombol eksplisit. */}
-                        <div className="mt-6 rounded-xl bg-cream-100 p-4 dark:bg-coal-600/40">
-                            {!langkahBerikut ? (
+                        {aktif.sumber === 'wali' && ['draft', 'diperiksa'].includes(aktif.status_approval) && (
+                            <div className="mt-6 flex gap-2.5 rounded-xl bg-sky-50 p-3.5 text-xs leading-relaxed text-sky-800 ring-1 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-200 dark:ring-sky-500/20">
+                                <svg className="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>
+                                    Kiriman ini dibuat wali santri dari portal. Cocokkan bukti dengan mutasi rekening
+                                    <strong> {aktif.rekening?.account_name || 'tujuan'}</strong> sebelum diproses.
+                                    Bila tidak cocok, tolak dengan alasan yang jelas — wali akan melihatnya dan bisa mengirim ulang.
+                                </span>
+                            </div>
+                        )}
+
+                        <div className={`${aktif.sumber === 'wali' && ['draft', 'diperiksa'].includes(aktif.status_approval) ? 'mt-3' : 'mt-6'} rounded-xl bg-cream-100 p-4 dark:bg-coal-600/40`}>
+                            {ditolak ? (
+                                <div className="flex gap-2.5 text-sm">
+                                    <svg className="mt-0.5 h-5 w-5 shrink-0 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <div className="min-w-0">
+                                        <p className="font-medium text-red-600 dark:text-red-400">Pembayaran ditolak — tidak menambah saldo kas.</p>
+                                        {aktif.alasan_tolak && (
+                                            <p className="mt-1 break-words text-stone-700 dark:text-stone-200">Alasan: {aktif.alasan_tolak}</p>
+                                        )}
+                                        {aktif.penolak && (
+                                            <p className="mt-1 text-xs text-stone-400">{aktif.penolak.name} · {waktu(aktif.ditolak_at)}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : !langkahBerikut ? (
                                 <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
                                     <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -575,12 +664,21 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                                             : ' Dokumen akan terkunci dari perubahan.'}
                                         {!bisaLanjut && <><br /><span className="text-stone-400">Anda tidak memiliki wewenang untuk tahap ini.</span></>}
                                     </p>
-                                    <PrimaryButton
-                                        disabled={!bisaLanjut || proses}
-                                        onClick={() => { setPesanError(''); setDialog({ jenis: 'approve', stage: langkahBerikut.id, label: langkahBerikut.label }); }}
-                                        className="w-full shrink-0 justify-center disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
-                                        {infoLanjut?.label || 'Lanjutkan'}
-                                    </PrimaryButton>
+                                    <div className="flex w-full shrink-0 flex-col-reverse gap-2 sm:w-auto sm:flex-row">
+                                        {bisaTolak && (
+                                            <button type="button" disabled={proses}
+                                                onClick={() => { setPesanError(''); setAlasanTolak(''); setDialog({ jenis: 'tolak' }); }}
+                                                className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-red-600 ring-1 ring-red-200 transition hover:bg-red-50 disabled:opacity-50 dark:bg-coal-700 dark:text-red-400 dark:ring-red-500/30 dark:hover:bg-red-500/10">
+                                                Tolak
+                                            </button>
+                                        )}
+                                        <PrimaryButton
+                                            disabled={!bisaLanjut || proses}
+                                            onClick={() => { setPesanError(''); setDialog({ jenis: 'approve', stage: langkahBerikut.id, label: langkahBerikut.label }); }}
+                                            className="justify-center disabled:cursor-not-allowed disabled:opacity-50">
+                                            {infoLanjut?.label || 'Lanjutkan'}
+                                        </PrimaryButton>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -741,22 +839,91 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
             </Modal>
 
             <Modal show={isBukti} onClose={() => setIsBukti(false)} maxWidth="lg">
-                <div className="p-6">
-                    <h2 className="mb-4 text-base font-semibold text-stone-800 dark:text-cream-50">Bukti Pembayaran</h2>
-                    <ul className="max-h-80 space-y-2 overflow-y-auto pr-1">
-                        {aktif?.attachments?.map((f) => (
-                            <li key={f.id} className="flex items-center justify-between gap-3 rounded-xl bg-cream-100 p-3 dark:bg-coal-600/40">
-                                <span className="truncate text-sm text-stone-700 dark:text-stone-200">{f.file_name}</span>
-                                <a href={f.url} target="_blank" rel="noreferrer"
-                                    className="shrink-0 rounded-lg bg-claude-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-claude-600">Buka</a>
-                            </li>
-                        ))}
+                <div className="flex max-h-[85vh] flex-col">
+                    <div className="flex items-center justify-between gap-3 border-b border-cream-200 px-6 py-4 dark:border-coal-600">
+                        <div className="min-w-0">
+                            <h2 className="text-base font-semibold text-stone-800 dark:text-cream-50">Bukti Pembayaran</h2>
+                            {aktif && (
+                                <p className="mt-0.5 truncate text-xs text-stone-400">{aktif.receipt_number} · {formatCurrency(aktif.nominal)}</p>
+                            )}
+                        </div>
+                        <button type="button" onClick={() => setIsBukti(false)} title="Tutup" aria-label="Tutup"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-stone-400 transition hover:bg-cream-200 hover:text-stone-600 dark:hover:bg-coal-600 dark:hover:text-stone-300">
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+
+                    {/* Foto langsung ditampilkan supaya bisa dicocokkan dengan
+                        mutasi rekening tanpa membuka tab baru. PDF tetap lewat tombol. */}
+                    <ul className="space-y-3 overflow-y-auto p-6">
+                        {aktif?.attachments?.map((f) => {
+                            const gambar = /\.(jpe?g|png|webp|gif)$/i.test(f.file_name || '');
+                            return (
+                                <li key={f.id} className="overflow-hidden rounded-xl bg-cream-100 ring-1 ring-cream-300 dark:bg-coal-600/40 dark:ring-coal-600">
+                                    {gambar && (
+                                        <a href={f.url} target="_blank" rel="noreferrer" title="Buka ukuran penuh" className="block bg-white dark:bg-coal-800">
+                                            <img src={f.url} alt={f.file_name} loading="lazy" className="mx-auto max-h-80 w-auto object-contain" />
+                                        </a>
+                                    )}
+                                    <div className="flex items-center justify-between gap-3 p-3">
+                                        <span className="truncate text-sm text-stone-700 dark:text-stone-200">{f.file_name}</span>
+                                        <a href={f.url} target="_blank" rel="noreferrer"
+                                            className="shrink-0 rounded-lg bg-claude-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-claude-600">
+                                            {gambar ? 'Ukuran Penuh' : 'Buka'}
+                                        </a>
+                                    </div>
+                                </li>
+                            );
+                        })}
                     </ul>
                 </div>
             </Modal>
 
-            <Modal show={dialog !== null} onClose={() => { setDialog(null); setPesanError(''); }} maxWidth="sm">
-                {dialog && (
+            <Modal show={dialog?.jenis === 'tolak'} onClose={() => { setDialog(null); setPesanError(''); }} maxWidth="md">
+                {dialog?.jenis === 'tolak' && aktif && (
+                    <form className="p-6"
+                        onSubmit={(e) => { e.preventDefault(); aksi(route('keuangan.pemasukan.pembayaran.tolak', aktif.id), 'post', { alasan_tolak: alasanTolak }); }}>
+                        <h3 className="text-base font-semibold text-stone-800 dark:text-cream-50">Tolak Pembayaran</h3>
+                        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                            {aktif.receipt_number} · {formatCurrency(aktif.nominal)}
+                            {aktif.sumber === 'wali' && ' · alasan di bawah akan dibaca wali santri.'}
+                        </p>
+
+                        <div className="mt-4 flex flex-wrap gap-1.5">
+                            {ALASAN_CEPAT.map((a) => (
+                                <button key={a} type="button" onClick={() => setAlasanTolak(a)}
+                                    className={`rounded-full px-3 py-1.5 text-xs font-medium ring-1 transition ${
+                                        alasanTolak === a
+                                            ? 'bg-red-50 text-red-700 ring-red-300 dark:bg-red-500/15 dark:text-red-300 dark:ring-red-500/40'
+                                            : 'bg-white text-stone-600 ring-cream-300 hover:bg-cream-100 dark:bg-coal-600/40 dark:text-stone-300 dark:ring-coal-600'
+                                    }`}>
+                                    {a}
+                                </button>
+                            ))}
+                        </div>
+
+                        <textarea value={alasanTolak} onChange={(e) => setAlasanTolak(e.target.value)} rows={3} maxLength={255}
+                            placeholder="Tulis alasan penolakan..."
+                            className="mt-3 block w-full rounded-xl border-0 bg-white px-4 py-3 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-red-400 dark:bg-coal-600/40 dark:text-cream-100 dark:ring-coal-600" />
+                        <p className="mt-1 text-right text-[11px] text-stone-400">{alasanTolak.length}/255</p>
+
+                        {pesanError && (
+                            <div className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-600 ring-1 ring-red-200 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/20">{pesanError}</div>
+                        )}
+
+                        <div className="mt-5 flex justify-end gap-2">
+                            <SecondaryButton type="button" onClick={() => { setDialog(null); setPesanError(''); }} disabled={proses}>Batal</SecondaryButton>
+                            <button type="submit" disabled={proses || !alasanTolak.trim()}
+                                className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50">
+                                Ya, Tolak
+                            </button>
+                        </div>
+                    </form>
+                )}
+            </Modal>
+
+            <Modal show={dialog !== null && dialog.jenis !== 'tolak'} onClose={() => { setDialog(null); setPesanError(''); }} maxWidth="sm">
+                {dialog && dialog.jenis !== 'tolak' && (
                     <div className="p-6 text-center">
                         <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full ${dialog.jenis === 'hapus' ? 'bg-red-50 text-red-600 dark:bg-red-500/10' : 'bg-claude-500/10 text-claude-600 dark:text-claude-300'}`}>
                             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -770,7 +937,7 @@ export default function Pembayaran({ pembayaran, kategoriAktif, daftarKategori, 
                         </h3>
                         <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
                             {dialog.jenis === 'hapus'
-                                ? 'Yakin menghapus catatan pembayaran ini?'
+                                ? 'Yakin menghapus catatan pembayaran ini? Bukti yang terlampir ikut terhapus.'
                                 : dialog.stage === 'disetujui'
                                     ? 'Setelah disetujui, saldo kas bertambah dan tercatat permanen di buku kas.'
                                     : `Tandai pembayaran ini sebagai "${dialog.label}"?`}

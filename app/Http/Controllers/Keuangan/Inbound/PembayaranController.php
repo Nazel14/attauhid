@@ -46,6 +46,7 @@ class PembayaranController extends Controller
             'rekening:id,account_name',
             'pemeriksa:id,name',
             'penyetuju:id,name',
+            'penolak:id,name',
             'dibuatOleh:id,name',
         ])->where('kategori', $kategori);
 
@@ -65,6 +66,12 @@ class PembayaranController extends Controller
         });
 
         $query->when($request->statusFilter, fn ($q, $s) => $q->where('status_approval', $s));
+
+        // Kiriman dari portal wali vs yang dicatat bendahara sendiri.
+        $query->when(
+            in_array($request->sumberFilter, [Pembayaran::SUMBER_BENDAHARA, Pembayaran::SUMBER_WALI], true),
+            fn ($q) => $q->where('sumber', $request->sumberFilter)
+        );
 
         $sortField     = $request->input('sort_field', 'created_at');
         $sortDirection = $request->input('sort_direction', 'desc');
@@ -97,7 +104,14 @@ class PembayaranController extends Controller
                     ->whereIn('status', ['Unpaid', 'Installment'])
                     ->get(['id', 'invoice_number', 'student_id', 'remaining_balance'])
                 : [],
-            'filters' => $request->only(['search', 'kategori', 'monthFilter', 'statusFilter', 'sort_field', 'sort_direction']),
+            // Kiriman wali yang belum disentuh bendahara, per kategori —
+            // dipakai untuk penanda di tab supaya tidak terlewat.
+            'menungguWali' => Pembayaran::where('sumber', Pembayaran::SUMBER_WALI)
+                ->where('status_approval', 'draft')
+                ->selectRaw('kategori, COUNT(*) as jumlah')
+                ->groupBy('kategori')
+                ->pluck('jumlah', 'kategori'),
+            'filters' => $request->only(['search', 'kategori', 'monthFilter', 'statusFilter', 'sumberFilter', 'sort_field', 'sort_direction']),
         ]);
     }
 
@@ -165,7 +179,8 @@ class PembayaranController extends Controller
 
     public function destroy(Pembayaran $pembayaran)
     {
-        if ($pembayaran->status_approval !== 'draft') {
+        // Yang ditolak belum pernah menyentuh saldo, jadi aman dihapus.
+        if (! in_array($pembayaran->status_approval, ['draft', Pembayaran::STATUS_DITOLAK], true)) {
             return redirect()->back()->withErrors(['approve' => 'Pembayaran yang sudah diproses tidak dapat dihapus.']);
         }
 
@@ -175,15 +190,62 @@ class PembayaranController extends Controller
         return redirect()->back()->with('success', 'Pembayaran berhasil dihapus.');
     }
 
+    /**
+     * Menolak pembayaran yang belum disahkan — biasanya kiriman wali yang
+     * buktinya tidak cocok dengan mutasi rekening.
+     *
+     * Tidak ada saldo yang perlu dikembalikan: sisa tagihan dan saldo kas
+     * hanya berubah di tahap 'disetujui', yang belum pernah dilewati.
+     * Barisnya tetap disimpan (bukan dihapus) agar wali bisa melihat
+     * alasannya dan mengirim ulang dengan bukti yang benar.
+     */
+    public function tolak(Request $request, Pembayaran $pembayaran)
+    {
+        abort_unless(Auth::user()->can('pembayaran.approve_diperiksa'), 403,
+            'Anda tidak memiliki akses untuk menolak pembayaran.');
+
+        $data = $request->validate([
+            'alasan_tolak' => 'required|string|max:255',
+        ], [
+            'alasan_tolak.required' => 'Tuliskan alasan penolakan — alasan ini dibaca wali santri.',
+        ]);
+
+        if (! in_array($pembayaran->status_approval, ['draft', 'diperiksa'], true)) {
+            return redirect()->back()->withErrors([
+                'approve' => 'Hanya pembayaran yang belum disetujui yang bisa ditolak. Status saat ini: '
+                    . $pembayaran->status_approval . '.',
+            ]);
+        }
+
+        $pembayaran->update([
+            'status_approval' => Pembayaran::STATUS_DITOLAK,
+            'ditolak_by'      => Auth::id(),
+            'ditolak_at'      => now(),
+            'alasan_tolak'    => $data['alasan_tolak'],
+        ]);
+
+        return redirect()->back()->with('success', 'Pembayaran ditolak. Alasannya akan terlihat di portal wali.');
+    }
+
     public function approve(Request $request, Pembayaran $pembayaran)
     {
         // Versi asli membaca $request->stage tanpa validasi sama sekali.
         $request->validate(['stage' => 'required|in:diperiksa,disetujui']);
 
         $stage = $request->stage;
-        $izin  = ['diperiksa' => 'pembayaran.approve_diperiksa', 'disetujui' => 'pembayaran.approve_disetujui'];
+        // Di database izin tahap akhir bernama 'pembayaran.approve_final'.
+        // 'approve_disetujui' tetap diterima agar instalasi yang terlanjur
+        // memakai nama itu tidak ikut terkunci.
+        $izin = [
+            'diperiksa' => ['pembayaran.approve_diperiksa'],
+            'disetujui' => ['pembayaran.approve_final', 'pembayaran.approve_disetujui'],
+        ];
 
-        abort_unless(Auth::user()->can($izin[$stage]), 403, 'Anda tidak memiliki akses untuk tahap ini.');
+        // can() aman untuk nama izin yang tidak ada di tabel (hasilnya false),
+        // berbeda dengan hasAnyPermission() yang melempar exception.
+        $boleh = collect($izin[$stage])->contains(fn ($p) => Auth::user()->can($p));
+
+        abort_unless($boleh, 403, 'Anda tidak memiliki akses untuk tahap ini.');
 
         $syarat = ['diperiksa' => 'draft', 'disetujui' => 'diperiksa'];
 

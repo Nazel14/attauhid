@@ -26,10 +26,13 @@ const LANGKAH = [
 ];
 
 // Label tombol + permission untuk memajukan penggajian ke tahap berikutnya.
+// perm berupa daftar: nama izin di database ('approve_final') berbeda dengan
+// nama lama di kode ('approve_disetujui'). Salah satu dimiliki = boleh.
+// Harus sama dengan PayrollController::IZIN.
 const AKSI_LANJUT = {
-    diperiksa: { label: 'Tandai Diperiksa',  perm: 'penggajian.approve_diperiksa', catatan: 'Rincian gaji terkunci dari perubahan.' },
-    disetujui: { label: 'Setujui Penggajian', perm: 'penggajian.approve_disetujui', catatan: 'Menunggu pencairan oleh pihak berwenang.' },
-    dibayar:   { label: 'Bayarkan Gaji',      perm: 'penggajian.approve_dibayar',   catatan: 'Saldo rekening berkurang dan tercatat di buku kas.' },
+    diperiksa: { label: 'Tandai Diperiksa',  perm: ['penggajian.approve_diperiksa'], catatan: 'Rincian gaji terkunci dari perubahan.' },
+    disetujui: { label: 'Setujui Penggajian', perm: ['penggajian.approve_final', 'penggajian.approve_disetujui'], catatan: 'Menunggu pencairan oleh pihak berwenang.' },
+    dibayar:   { label: 'Bayarkan Gaji',      perm: ['penggajian.approve_tutup_batch', 'penggajian.approve_dibayar'], catatan: 'Saldo rekening berkurang dan tercatat di buku kas.' },
 };
 
 const TAHUN = Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() - 1 + i).toString());
@@ -184,7 +187,7 @@ export default function DataPenggajian({ headers, details, selectedHeaderId, fil
 
     const infoLanjut = langkahBerikut ? AKSI_LANJUT[langkahBerikut.id] : null;
     const belumAdaRincian = langkahBerikut?.id === 'diperiksa' && !(details?.total > 0);
-    const bisaLanjut = infoLanjut ? can(infoLanjut.perm) && !belumAdaRincian : false;
+    const bisaLanjut = infoLanjut ? infoLanjut.perm.some((p) => can(p)) && !belumAdaRincian : false;
 
     const pelaku = (step) => {
         if (!header) return null;

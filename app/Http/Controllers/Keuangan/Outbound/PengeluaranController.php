@@ -15,9 +15,14 @@ use Inertia\Inertia;
 
 class PengeluaranController extends Controller
 {
+    /**
+     * Izin per tahap. Di database izin pencairan bernama 'approve_final';
+     * kode lama memakai 'approve_disetujui' sehingga tombol Setujui & Cairkan
+     * terkunci untuk semua role. Nama mana pun yang dimiliki user dianggap sah.
+     */
     private const IZIN = [
-        'diperiksa' => 'pengeluaran.approve_diperiksa',
-        'disetujui' => 'pengeluaran.approve_disetujui',
+        'diperiksa' => ['pengeluaran.approve_diperiksa'],
+        'disetujui' => ['pengeluaran.approve_final', 'pengeluaran.approve_disetujui'],
     ];
 
     /** Status yang harus dimiliki dokumen sebelum transisi. */
@@ -144,7 +149,11 @@ class PengeluaranController extends Controller
 
         $stage = $request->stage;
 
-        abort_unless(Auth::user()->can(self::IZIN[$stage]), 403, 'Anda tidak memiliki akses untuk tahap ini.');
+        // can() aman untuk nama izin yang tidak ada di tabel (hasilnya false),
+        // berbeda dengan hasAnyPermission() yang melempar exception.
+        $boleh = collect(self::IZIN[$stage])->contains(fn ($izin) => Auth::user()->can($izin));
+
+        abort_unless($boleh, 403, 'Anda tidak memiliki akses untuk tahap ini.');
 
         // Versi asli tidak memeriksa status saat ini sama sekali. Dokumen yang
         // sudah 'disetujui' bisa dikembalikan ke 'diperiksa' lalu disetujui

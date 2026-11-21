@@ -4,23 +4,66 @@
     <meta charset="UTF-8">
     <title>Cetak Massal Tagihan</title>
     <style>
-        /* DejaVu Sans — satu-satunya font bawaan DomPDF yang mendukung
-           karakter non-ASCII dengan benar. Konsisten dengan PDF raport. */
-        body { font-family: 'DejaVu Sans', sans-serif; font-size: 12px; color: #334155; margin: 0; padding: 0; }
-        .table-layout { width: 100%; border-collapse: collapse; }
-        .table-items { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px; }
-        .table-items th { background-color: #f5f4ef; border: 1px solid #d6d3d1; padding: 9px; text-align: left; font-weight: bold; color: #1c1917; }
-        .table-items td { border: 1px solid #d6d3d1; padding: 9px; }
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-        .font-bold { font-weight: bold; }
-        .text-primary { color: #D97757; }
-        .text-red { color: #dc2626; }
-        .text-muted { color: #78716c; }
-        .header-line { border: 0; border-bottom: 2px solid #e7e5e4; margin: 18px 0; }
-        .badge { padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; border: 1px solid; text-transform: uppercase; }
-        .badge-unpaid { background-color: #fef2f2; color: #dc2626; border-color: #fca5a5; }
-        .badge-installment { background-color: #eff6ff; color: #2563eb; border-color: #93c5fd; }
+        /* Gaya disamakan dengan kwitansi. DejaVu Sans — satu-satunya font
+           bawaan DomPDF yang mendukung karakter non-ASCII dengan benar.
+           Tata letak memakai tabel: DomPDF tidak mendukung flex/grid. */
+        @page { margin: 14mm 14mm; }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 10.5px; color: #1B1D19; margin: 0; padding: 0; }
+        p { margin: 0; }
+        .layout { width: 100%; border-collapse: collapse; }
+        .layout td { padding: 0; vertical-align: top; }
+        .kanan { text-align: right; }
+        .tengah { text-align: center; }
+        .redup { color: #7A8074; }
+        .tebal { font-weight: bold; }
+
+        .aksen { height: 5px; background: #7EB842; border-radius: 3px; }
+
+        /* Kop */
+        .kop { margin-top: 14px; }
+        .kop-nama { margin-top: 6px; font-size: 16px; font-weight: bold; color: #3D5C24; }
+        .kop-alamat { margin-top: 3px; font-size: 9px; color: #7A8074; line-height: 1.4; }
+        .label-dok { font-size: 8px; font-weight: bold; letter-spacing: 3px; color: #649634; }
+        .nomor { margin-top: 3px; font-size: 15px; font-weight: bold; }
+
+        .kecil-caps { font-size: 7.5px; font-weight: bold; letter-spacing: 1.3px; color: #7A8074; text-transform: uppercase; }
+
+        /* Kartu info */
+        .kartu { background: #F6F7F2; border: 1px solid #E1E4D8; border-radius: 9px; }
+        .kartu td.isi { padding: 12px 14px; }
+        .nama { margin-top: 4px; font-size: 13.5px; font-weight: bold; }
+        .baris-info { margin-top: 2px; font-size: 9.5px; color: #5C6157; }
+
+        .chip { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 8px; font-weight: bold; letter-spacing: 1px; }
+        .chip-belum { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
+        .chip-cicil { background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; }
+
+        .tempo { margin-top: 6px; font-size: 9.5px; }
+        .tempo strong { color: #B45309; }
+
+        /* Rincian item */
+        .items { width: 100%; border-collapse: collapse; margin-top: 18px; }
+        .items th {
+            background: #F6F7F2; padding: 8px 10px; text-align: left;
+            font-size: 7.5px; font-weight: bold; letter-spacing: 1.2px; text-transform: uppercase; color: #7A8074;
+            border-top: 1px solid #E1E4D8; border-bottom: 1px solid #E1E4D8;
+        }
+        /* Perataan kolom harus disebut eksplisit: aturan th di atas lebih
+           spesifik daripada .kanan/.tengah sehingga menimpanya. */
+        .items th.kanan { text-align: right; }
+        .items th.tengah { text-align: center; }
+        .items td { padding: 9px 10px; border-bottom: 1px solid #EDEFE6; }
+        .no { color: #9CA196; }
+
+        /* Instruksi + ringkasan */
+        .instruksi { background: #F6F7F2; border: 1px solid #E1E4D8; border-radius: 9px; padding: 11px 14px; font-size: 9px; }
+        .instruksi ol { margin: 5px 0 0 0; padding-left: 14px; color: #5C6157; line-height: 1.5; }
+        .ringkas td { padding: 4px 0; }
+        .total-sisa { margin-top: 8px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 9px; }
+        .total-sisa td.isi { padding: 10px 14px; vertical-align: middle; }
+        .sisa-nominal { font-size: 17px; font-weight: bold; color: #B91C1C; }
+
+        .kaki { margin-top: 22px; padding-top: 8px; border-top: 1px solid #EDEFE6; font-size: 8px; color: #9CA196; }
         .page-break { page-break-after: always; }
     </style>
 </head>
@@ -39,90 +82,118 @@
             }
         }
 
-        // Identitas lembaga dibaca dari tabel settings — pengaturannya ada
-        // di Pengaturan Sistem -> Identitas & Tanda Tangan. config('app.name')
-        // tinggal jadi cadangan untuk instalasi yang belum mengisinya.
+        // Identitas lembaga dari Pengaturan Sistem -> Identitas & Tanda Tangan.
         $namaSekolah   = \App\Models\Setting::get('kop_nama', config('app.name'));
         $alamatSekolah = \App\Models\Setting::get('kop_alamat', config('app.school_address', ''));
+
+        // Dihitung sekali — sama untuk seluruh tagihan dalam batch ini.
+        $jatuhTempo = $header->due_date ? \Carbon\Carbon::parse($header->due_date)->translatedFormat('d F Y') : '—';
+        $dicetak    = now()->translatedFormat('d M Y');
+        $rp = fn ($n) => 'Rp ' . number_format((float) $n, 0, ',', '.');
     @endphp
 
     @foreach($tagihans as $tagihan)
-        <table class="table-layout">
+        <div class="aksen"></div>
+
+        {{-- KOP --}}
+        <table class="layout kop">
             <tr>
-                <td width="60%">
+                <td width="62%">
                     @if($logo)
-                        <img src="{{ $logo }}" style="max-height: 60px; width: auto;" alt="Logo">
+                        <img src="{{ $logo }}" style="height: 46px; width: auto;" alt="Logo">
                     @endif
-                    <h2 class="text-primary" style="margin: 6px 0 0 0; font-size: 16px;">{{ $namaSekolah }}</h2>
+                    <p class="kop-nama">{{ $namaSekolah }}</p>
                     @if($alamatSekolah)
-                        <p style="margin: 4px 0 0 0; font-size: 10px;" class="text-muted">{{ $alamatSekolah }}</p>
+                        <p class="kop-alamat">{{ $alamatSekolah }}</p>
                     @endif
                 </td>
-                <td width="40%" class="text-right" valign="top">
-                    <h1 style="margin: 0; font-size: 22px; color: #1c1917;">INVOICE</h1>
-                    <p style="margin: 5px 0 0 0; font-size: 13px;" class="font-bold">{{ $tagihan->invoice_number }}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 11px;" class="text-muted">Dicetak {{ now()->translatedFormat('d M Y') }}</p>
+                <td width="38%" class="kanan" style="vertical-align: bottom;">
+                    <p class="label-dok">TAGIHAN</p>
+                    <p class="nomor">{{ $tagihan->invoice_number }}</p>
+                    <p class="redup" style="margin-top: 3px; font-size: 9px;">Dicetak {{ $dicetak }}</p>
                 </td>
             </tr>
         </table>
 
-        <hr class="header-line">
-
-        <table class="table-layout">
+        {{-- INFO: penerima & gelombang --}}
+        <table class="layout" style="margin-top: 16px;">
             <tr>
-                <td width="55%" valign="top">
-                    <p style="margin: 0; font-size: 10px;" class="text-muted">DITAGIHKAN KEPADA</p>
-                    <h3 style="margin: 5px 0 2px 0; font-size: 14px;">{{ $tagihan->siswa?->name ?? '-' }}</h3>
-                    <p style="margin: 0;">NIS: {{ $tagihan->siswa?->nis ?? '-' }}</p>
-                    @if($tagihan->siswa?->parent_name)
-                        <p style="margin: 2px 0 0 0; font-size: 11px;" class="text-muted">Wali: {{ $tagihan->siswa->parent_name }}</p>
-                    @endif
+                <td width="49%">
+                    <div class="kartu">
+                        <table class="layout">
+                            <tr>
+                                <td class="isi">
+                                    <p class="kecil-caps">Ditagihkan kepada</p>
+                                    <p class="nama">{{ $tagihan->siswa?->name ?? '-' }}</p>
+                                    <p class="baris-info">NIS {{ $tagihan->siswa?->nis ?? '-' }}</p>
+                                    @if($tagihan->siswa?->parent_name)
+                                        <p class="baris-info">Wali: {{ $tagihan->siswa->parent_name }}</p>
+                                    @endif
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
                 </td>
-                <td width="45%" valign="top" class="text-right">
+                <td width="2%"></td>
+                <td width="49%">
                     {{-- Pakai $header dari controller, bukan $tagihan->header —
                          menghindari N+1 query pada batch berisi ratusan invoice. --}}
-                    <p style="margin: 0; font-size: 10px;" class="text-muted">GELOMBANG PENAGIHAN</p>
-                    <p style="margin: 5px 0 2px 0;" class="font-bold">{{ $header->title }}</p>
-                    <p style="margin: 0;">Periode: {{ $header->period }}</p>
-                    <p style="margin: 0;">Tempo: {{ \Carbon\Carbon::parse($header->due_date)->translatedFormat('d F Y') }}</p>
-                    <div style="margin-top: 8px;">
-                        <span class="badge {{ $tagihan->status === 'Installment' ? 'badge-installment' : 'badge-unpaid' }}">
-                            {{ $tagihan->status === 'Installment' ? 'DICICIL SEBAGIAN' : 'BELUM BAYAR' }}
-                        </span>
+                    <div class="kartu">
+                        <table class="layout">
+                            <tr>
+                                <td class="isi">
+                                    <table class="layout">
+                                        <tr>
+                                            <td><p class="kecil-caps">Gelombang penagihan</p></td>
+                                            <td class="kanan">
+                                                <span class="chip {{ $tagihan->status === 'Installment' ? 'chip-cicil' : 'chip-belum' }}">
+                                                    {{ $tagihan->status === 'Installment' ? 'DICICIL SEBAGIAN' : 'BELUM BAYAR' }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    <p class="nama" style="font-size: 12px;">{{ $header->title }}</p>
+                                    <p class="baris-info">Periode {{ $header->period }}</p>
+                                    <p class="tempo">Jatuh tempo <strong>{{ $jatuhTempo }}</strong></p>
+                                </td>
+                            </tr>
+                        </table>
                     </div>
                 </td>
             </tr>
         </table>
 
-        <table class="table-items">
+        {{-- RINCIAN --}}
+        <table class="items">
             <thead>
                 <tr>
-                    <th width="8%" class="text-center">No</th>
-                    <th width="57%">Deskripsi Tagihan</th>
-                    <th width="35%" class="text-right">Nominal</th>
+                    <th width="7%" class="tengah">No</th>
+                    <th width="58%">Deskripsi</th>
+                    <th width="35%" class="kanan">Nominal</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($tagihan->items as $index => $item)
                     <tr>
-                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td class="tengah no">{{ $index + 1 }}</td>
                         <td>{{ $item->deskripsi }}</td>
-                        <td class="text-right">Rp {{ number_format($item->nominal, 0, ',', '.') }}</td>
+                        <td class="kanan">{{ $rp($item->nominal) }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="3" class="text-center text-muted" style="padding: 16px;">Tidak ada rincian item.</td>
+                        <td colspan="3" class="tengah redup" style="padding: 16px;">Tidak ada rincian item.</td>
                     </tr>
                 @endforelse
             </tbody>
         </table>
 
-        <table class="table-layout">
+        {{-- INSTRUKSI + RINGKASAN --}}
+        <table class="layout" style="margin-top: 16px;">
             <tr>
-                <td width="55%" valign="top">
-                    <div style="background-color: #faf9f5; border: 1px solid #e7e5e4; padding: 10px; border-radius: 8px; font-size: 10px;">
-                        <p style="margin: 0 0 5px 0;" class="font-bold">Instruksi Pembayaran</p>
-                        <ol style="margin: 0; padding-left: 15px;" class="text-muted">
+                <td width="53%">
+                    <div class="instruksi">
+                        <p class="tebal" style="color: #3D5C24;">Instruksi pembayaran</p>
+                        <ol>
                             <li>Harap melunasi sebelum tanggal jatuh tempo.</li>
                             <li>Abaikan tagihan ini bila pembayaran sudah dilakukan.</li>
                             <li>Simpan kwitansi sebagai bukti pembayaran yang sah.</li>
@@ -130,24 +201,32 @@
                     </div>
                 </td>
                 <td width="5%"></td>
-                <td width="40%" valign="top">
-                    <table class="table-layout">
+                <td width="42%">
+                    <table class="layout ringkas">
                         <tr>
-                            <td style="padding-bottom: 5px;">Total Tagihan</td>
-                            <td class="text-right" style="padding-bottom: 5px;">Rp {{ number_format($tagihan->total_amount, 0, ',', '.') }}</td>
+                            <td class="redup">Total tagihan</td>
+                            <td class="kanan">{{ $rp($tagihan->total_amount) }}</td>
                         </tr>
                         <tr>
-                            <td class="text-muted" style="padding-bottom: 5px;">Sudah Dibayar</td>
-                            <td class="text-right text-muted" style="padding-bottom: 5px;">Rp {{ number_format($tagihan->total_amount - $tagihan->remaining_balance, 0, ',', '.') }}</td>
-                        </tr>
-                        <tr>
-                            <td style="border-top: 2px solid #d6d3d1; padding-top: 8px; font-size: 13px;"><strong>SISA PIUTANG</strong></td>
-                            <td class="text-right text-red" style="border-top: 2px solid #d6d3d1; padding-top: 8px; font-size: 13px; font-weight: bold;">Rp {{ number_format($tagihan->remaining_balance, 0, ',', '.') }}</td>
+                            <td class="redup">Sudah dibayar</td>
+                            <td class="kanan" style="color: #4D752A;">{{ $rp($tagihan->total_amount - $tagihan->remaining_balance) }}</td>
                         </tr>
                     </table>
+                    <div class="total-sisa">
+                        <table class="layout">
+                            <tr>
+                                <td class="isi"><p class="kecil-caps" style="color: #B91C1C;">Sisa tagihan</p></td>
+                                <td class="isi kanan"><p class="sisa-nominal">{{ $rp($tagihan->remaining_balance) }}</p></td>
+                            </tr>
+                        </table>
+                    </div>
                 </td>
             </tr>
         </table>
+
+        <p class="kaki">
+            {{ $namaSekolah }} · {{ $tagihan->invoice_number }} · Dokumen ini dicetak dari sistem keuangan sekolah.
+        </p>
 
         @if(!$loop->last)
             <div class="page-break"></div>

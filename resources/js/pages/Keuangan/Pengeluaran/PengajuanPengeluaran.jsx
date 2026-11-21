@@ -19,9 +19,12 @@ const LANGKAH = [
 ];
 
 // Label tombol + permission untuk memajukan pengajuan ke tahap berikutnya.
+// perm berupa daftar: nama izin di database ('approve_final') berbeda dengan
+// nama lama di kode ('approve_disetujui'). Salah satu dimiliki = boleh.
+// Harus sama dengan PengeluaranController::IZIN.
 const AKSI_LANJUT = {
-    diperiksa: { label: 'Tandai Diperiksa',   perm: 'pengeluaran.approve_diperiksa', catatan: 'Pengajuan terkunci dari perubahan.' },
-    disetujui: { label: 'Setujui & Cairkan',  perm: 'pengeluaran.approve_disetujui', catatan: 'Saldo rekening berkurang saat tahap ini.' },
+    diperiksa: { label: 'Tandai Diperiksa',   perm: ['pengeluaran.approve_diperiksa'], catatan: 'Pengajuan terkunci dari perubahan.' },
+    disetujui: { label: 'Setujui & Cairkan',  perm: ['pengeluaran.approve_final', 'pengeluaran.approve_disetujui'], catatan: 'Saldo rekening berkurang saat tahap ini.' },
 };
 
 const TAB = ['semua', 'draft', 'diperiksa', 'disetujui', 'selesai'];
@@ -173,7 +176,7 @@ export default function PengajuanPengeluaran({ pengeluaran, rkas_options, rekeni
         : null;
 
     const infoLanjut = langkahBerikut ? AKSI_LANJUT[langkahBerikut.id] : null;
-    const bisaLanjut = infoLanjut ? can(infoLanjut.perm) : false;
+    const bisaLanjut = infoLanjut ? infoLanjut.perm.some((p) => can(p)) : false;
 
     const pelaku = (step) => {
         if (!aktif) return null;

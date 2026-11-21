@@ -259,6 +259,11 @@ Route::middleware([
         // Gerbang per tahap ada di controller — satu route melayani dua stage.
         Route::post('/pembayaran/{pembayaran}/approve', [PembayaranController::class, 'approve'])
             ->middleware('permission:pembayaran.lihat')->name('pembayaran.approve');
+
+        // Menolak pembayaran yang belum disahkan (biasanya kiriman wali).
+        // Gerbang approve_diperiksa dicek di controller.
+        Route::post('/pembayaran/{pembayaran}/tolak', [PembayaranController::class, 'tolak'])
+            ->middleware('permission:pembayaran.lihat')->name('pembayaran.tolak');
     });
 
     // Bukti pembayaran disimpan di storage/app, disajikan lewat controller
