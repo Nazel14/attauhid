@@ -84,25 +84,39 @@ const BusIcon = (p) => (
         <path d="M3.5 11h17M7 20v-3M17 20v-3M7.5 14h.01M16.5 14h.01" />
     </Svg>
 );
-const StarIcon = (p) => (
+/* Empat ikon Capaian Pembelajaran — digambar ulang supaya masing-masing
+   langsung terbaca maknanya, bukan simbol umum:
+     agama      → bulan sabit dan kilau bintang
+     literasi   → "Aa", huruf besar dan kecil
+     matematika → empat tanda operasi hitung
+     sains      → labu ukur berisi cairan dan gelembung */
+const AgamaIcon = (p) => (
     <Svg {...p}>
-        <path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.9 6.7 19.7l1.1-5.9L3.5 9.7l5.9-.8L12 3.5z" />
+        <path d="M12 3a6 6 0 009 9 9 9 0 11-9-9z" />
+        <path d="M19.5 2.5v4M17.5 4.5h4" />
     </Svg>
 );
-const AbcIcon = (p) => (
+const LiterasiIcon = (p) => (
     <Svg {...p}>
-        <path d="M3 17l3-9 3 9M4 14h4M13 8h2.5a2 2 0 010 4H13V8zm0 4h3a2 2 0 010 4h-3v-4zM21 9.5A2.5 2.5 0 0019 8.5a2.5 2.5 0 000 7 2.5 2.5 0 002-1" />
+        <path d="M2.5 19L7.25 5h.5L12.5 19M4.3 14h6.4" />
+        <circle cx="17.25" cy="15.75" r="3.25" />
+        <path d="M20.5 12.25V19" />
     </Svg>
 );
-const NumberIcon = (p) => (
+const MatematikaIcon = (p) => (
     <Svg {...p}>
-        <path d="M9 4L7 20M17 4l-2 16M4 9h16M3 15h16" />
+        <path d="M7.5 4v6M4.5 7h6" />
+        <path d="M13.5 7h6" />
+        <path d="M5 14l5 5M10 14l-5 5" />
+        <path d="M13.5 15h6M13.5 18.5h6" />
     </Svg>
 );
 const FlaskIcon = (p) => (
     <Svg {...p}>
-        <path d="M9.5 3v6.2L4.8 17a2 2 0 001.7 3h11a2 2 0 001.7-3l-4.7-7.8V3" />
-        <path d="M8.5 3h7M7.4 14h9.2" />
+        <path d="M9 3h6M10 3v6.2L4.6 18.4A1.7 1.7 0 006.1 21h11.8a1.7 1.7 0 001.5-2.6L14 9.2V3" />
+        <path d="M6.8 15h10.4" />
+        <circle cx="10.5" cy="17.75" r=".75" fill="currentColor" />
+        <circle cx="13.75" cy="18.25" r=".5" fill="currentColor" />
     </Svg>
 );
 const CheckIcon = (p) => (
@@ -209,19 +223,19 @@ const PROGRAM = [
 
 const CAPAIAN = [
     {
-        icon: StarIcon,
+        icon: AgamaIcon,
         warna: 'oranye',
         judul: 'Nilai Agama dan Budi Pekerti',
         teks: 'Anak mengenal Allah sebagai Rabb, Al-Khaliq, dan Ar-Raziq; hafal rukun Islam, rukun iman, doa harian, dan juz ’amma sesuai jenjang; serta terbiasa dengan adab Islami dalam keseharian.',
     },
     {
-        icon: AbcIcon,
+        icon: LiterasiIcon,
         warna: 'biru',
         judul: 'Dasar-Dasar Literasi',
         teks: 'Anak mengenal huruf hijaiyah dan mulai membaca Iqra’ sesuai tingkatan individual, serta mengenal huruf latin sebagai jalur literasi yang berjalan beriringan.',
     },
     {
-        icon: NumberIcon,
+        icon: MatematikaIcon,
         warna: 'hijau',
         judul: 'Dasar-Dasar Matematika',
         teks: 'Anak mengenal bilangan, berhitung, bentuk, dan pola sederhana dalam konteks kegiatan sehari-hari.',
@@ -616,7 +630,7 @@ export default function Landing() {
                                 <Reveal key={c.judul} delay={i * 70} reduced={reduced}>
                                     <div className="flex h-full gap-3.5 rounded-3xl border border-stone-200/80 bg-white/70 p-5 sm:gap-4 sm:p-6 dark:border-[#474E40] dark:bg-[#353B31]/70">
                                         <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl tq-ikon-${c.warna}`}>
-                                            <c.icon className="h-5 w-5" />
+                                            <c.icon className="h-6 w-6" />
                                         </div>
                                         <div className="min-w-0">
                                             <h3 className="tq-judul text-[16px] font-bold text-stone-800 dark:text-stone-100">{c.judul}</h3>
