@@ -82,13 +82,18 @@
         {{-- ?v= WAJIB dinaikkan tiap kali gambarnya diganti. WhatsApp menyimpan
              pratinjau di servernya sendiri dan tidak akan mengambil ulang kalau
              URL-nya sama persis. --}}
-        <meta property="og:image" content="{{ asset('og-image.jpg') }}?v=4">
+        <meta property="og:image" content="{{ asset('og-image.jpg') }}?v=5">
+        <meta property="og:image:secure_url" content="{{ asset('og-image.jpg') }}?v=5">
         <meta property="og:image:type" content="image/jpeg">
         <meta property="og:image:width" content="1200">
         <meta property="og:image:height" content="630">
+        <meta property="og:image:alt" content="Logo TK Attauhid — Mendidik dengan Tauhid">
         <meta property="og:locale" content="id_ID">
 
         <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="TK Attauhid — Mendidik dengan Tauhid">
+        <meta name="twitter:description" content="Lembaga pendidikan anak usia dini di Lembang, Bandung Barat.">
+        <meta name="twitter:image" content="{{ asset('og-image.jpg') }}?v=5">
 
         {{-- React + Inertia entry --}}
         @viteReactRefresh
