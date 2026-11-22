@@ -121,7 +121,7 @@ function KelasCard({ kelas }) {
             <div className={`px-4 pt-4 pb-3.5 ${theme.tint}`}>
                 <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                        <h3 className="truncate text-base font-bold text-stone-900 dark:text-stone-100" title={kelas.name}>{kelas.name}</h3>
+                        <h3 className="line-clamp-2 break-words text-base font-bold leading-snug text-stone-900 dark:text-stone-100" title={kelas.name}>{kelas.name}</h3>
                         <p className="mt-0.5 truncate text-[11px] text-stone-500 dark:text-stone-400" title={kelas.guru_name || ''}>{kelas.guru_name || 'Belum ada guru'}</p>
                     </div>
                     <span className={`inline-flex flex-shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${theme.badge}`}>
