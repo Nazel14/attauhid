@@ -66,11 +66,8 @@ function Toast({ notif, onClose, duration = 10000 }) {
  * gender_restriction di database — JANGAN diubah. Yang boleh diganti hanya
  * `label`, yaitu tulisan yang dilihat pengguna.
  *
- * `tint` dan `accent` SENGAJA SAMA untuk ketiganya. Sebelumnya kepala kartu
- * diwarnai menurut gender, sehingga biru dan merah muda jadi warna paling
- * dominan di halaman dan menenggelamkan warna sekolah. Gender tetap terbaca
- * dari lencana kecil di pojok — itu sudah cukup, dan tidak perlu diulang
- * sebagai latar seluruh kartu.
+ * `tint` dan `accent` SENGAJA SAMA untuk ketiganya, supaya warna sekolah
+ * tetap dominan. Gender cukup terbaca dari lencana kecil di pojok.
  */
 const TINT_NETRAL = 'bg-cream-100 dark:bg-coal-600/40';
 const ANGKA_HIJAU = 'text-claude-600 dark:text-claude-400';
@@ -81,9 +78,41 @@ const GENDER_THEME = {
     akhwat:   { tint: TINT_NETRAL, accent: ANGKA_HIJAU, badge: 'bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-500/15 dark:text-pink-300 dark:border-pink-500/25',             dot: 'bg-pink-500',   label: 'Perempuan' },
 };
 
+/* Kotak rincian gender — tampil di SEMUA kartu supaya tinggi kartu seragam.
+ *
+ * Dulu kotak ini hanya muncul di kelas campuran. Karena grid menyamakan
+ * tinggi kartu dalam satu baris, kartu kelas khusus jadi punya ruang kosong
+ * besar di atas tombol.
+ *
+ * Di kelas khusus, gender yang bukan peruntukannya diredupkan ("—"). Kalau
+ * ternyata berisi siswa, kotaknya ditandai kuning: ada siswa salah kelas.
+ */
+const KOTAK_GENDER = [
+    {
+        key: 'ikhwan', label: 'Laki-laki', field: 'laki_laki',
+        warna: 'border-blue-200/70 bg-blue-50 dark:border-blue-500/20 dark:bg-blue-500/10',
+        teks: 'text-blue-500 dark:text-blue-400',
+        angka: 'text-blue-600 dark:text-blue-300',
+    },
+    {
+        key: 'akhwat', label: 'Perempuan', field: 'perempuan',
+        warna: 'border-pink-200/70 bg-pink-50 dark:border-pink-500/20 dark:bg-pink-500/10',
+        teks: 'text-pink-500 dark:text-pink-400',
+        angka: 'text-pink-600 dark:text-pink-300',
+    },
+];
+
 function KelasCard({ kelas }) {
-    const theme = GENDER_THEME[kelas.gender_restriction] || GENDER_THEME.campuran;
-    const isCampuran = kelas.gender_restriction === 'campuran';
+    const jenis = kelas.gender_restriction;
+    const theme = GENDER_THEME[jenis] || GENDER_THEME.campuran;
+    const kelasKhusus = jenis === 'ikhwan' || jenis === 'akhwat';
+
+    const kotak = KOTAK_GENDER.map((b) => {
+        const nilai = Number(kelas[b.field] ?? 0);
+        const diLuar = kelasKhusus && jenis !== b.key;
+        return { ...b, nilai, diLuar, salah: diLuar && nilai > 0 };
+    });
+    const adaSalah = kotak.some((b) => b.salah);
 
     return (
         <div className="group flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-cream-300 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5 dark:bg-coal-700 dark:ring-coal-600 dark:hover:shadow-black/30">
@@ -91,8 +120,8 @@ function KelasCard({ kelas }) {
             <div className={`px-4 pt-4 pb-3.5 ${theme.tint}`}>
                 <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                        <h3 className="truncate text-base font-bold text-stone-900 dark:text-stone-100">{kelas.name}</h3>
-                        <p className="mt-0.5 truncate text-[11px] text-stone-500 dark:text-stone-400">{kelas.guru_name || 'Belum ada guru'}</p>
+                        <h3 className="truncate text-base font-bold text-stone-900 dark:text-stone-100" title={kelas.name}>{kelas.name}</h3>
+                        <p className="mt-0.5 truncate text-[11px] text-stone-500 dark:text-stone-400" title={kelas.guru_name || ''}>{kelas.guru_name || 'Belum ada guru'}</p>
                     </div>
                     <span className={`inline-flex flex-shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${theme.badge}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${theme.dot}`} />
@@ -105,31 +134,38 @@ function KelasCard({ kelas }) {
                 </div>
             </div>
 
-            {/* Rincian gender — HANYA untuk kelas campuran.
-                Di kelas khusus, angkanya sama persis dengan angka besar di
-                kepala kartu, jadi menampilkannya lagi cuma mengulang tanpa
-                menambah informasi; lencana di pojok sudah menyebutkan
-                kekhususannya. */}
-            {isCampuran && (
-                <div className="flex-1 px-4 py-3">
-                    <div className="grid grid-cols-2 gap-2">
-                        <div className="rounded-xl border border-blue-200/70 bg-blue-50 px-3 py-2 text-center dark:border-blue-500/20 dark:bg-blue-500/10">
-                            <p className="mb-0.5 text-[10px] text-blue-500 dark:text-blue-400">Laki-laki</p>
-                            <p className="text-lg font-bold text-blue-600 dark:text-blue-300">{kelas.laki_laki}</p>
-                        </div>
-                        <div className="rounded-xl border border-pink-200/70 bg-pink-50 px-3 py-2 text-center dark:border-pink-500/20 dark:bg-pink-500/10">
-                            <p className="mb-0.5 text-[10px] text-pink-500 dark:text-pink-400">Perempuan</p>
-                            <p className="text-lg font-bold text-pink-600 dark:text-pink-300">{kelas.perempuan}</p>
-                        </div>
-                    </div>
+            {/* Rincian gender — semua kartu */}
+            <div className="px-4 py-3">
+                <div className="grid grid-cols-2 gap-2">
+                    {kotak.map((b) => {
+                        const kotakCls = b.salah
+                            ? 'border-amber-300 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10'
+                            : b.diLuar
+                                ? 'border-dashed border-cream-300 dark:border-coal-600'
+                                : b.warna;
+                        const labelCls = b.salah
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : b.diLuar ? 'text-stone-400 dark:text-stone-500' : b.teks;
+                        const angkaCls = b.salah
+                            ? 'text-amber-600 dark:text-amber-300'
+                            : b.diLuar ? 'text-stone-300 dark:text-stone-600' : b.angka;
+                        return (
+                            <div key={b.key} className={`rounded-xl border px-3 py-2 text-center ${kotakCls}`}>
+                                <p className={`mb-0.5 text-[10px] ${labelCls}`}>{b.label}</p>
+                                <p className={`text-lg font-bold ${angkaCls}`}>{b.diLuar && !b.salah ? '—' : b.nilai}</p>
+                            </div>
+                        );
+                    })}
                 </div>
-            )}
+                {adaSalah && (
+                    <p className="mt-2 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                        Ada siswa yang tidak sesuai jenis kelas ini.
+                    </p>
+                )}
+            </div>
 
-            {/* Footer.
-                mt-auto menahan tombol tetap di dasar kartu. Tanpa ini, kartu
-                kelas khusus (yang tidak punya blok rincian di atas) tombolnya
-                naik dan tidak sejajar dengan kartu campuran di sebelahnya. */}
-            <div className="mt-auto px-4 pb-4 pt-3">
+            {/* Footer — mt-auto menahan tombol tetap di dasar kartu */}
+            <div className="mt-auto px-4 pb-4 pt-1">
                 <Link href={route('admin.santris.detail', kelas.id)}
                     className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-claude-600 py-2.5 text-center text-xs font-bold text-white shadow-sm shadow-claude-500/20 transition hover:bg-claude-500 active:scale-95">
                     Lihat Detail Siswa <ArrowRightIcon className="w-3.5 h-3.5" />
@@ -185,7 +221,7 @@ export default function Index({ kelasWithStats = [] }) {
                 {/* ===== GRID KELAS CARDS ===== */}
                 {kelasWithStats.length === 0 ? (
                     <div className="bg-white dark:bg-coal-700 border border-cream-300 dark:border-coal-600 rounded-2xl py-20 text-center shadow-sm dark:shadow-none">
-                        <div className="text-5xl mb-4">🏫</div>
+                        <GraduationIcon className="w-12 h-12 mx-auto mb-4 text-stone-300 dark:text-stone-600" />
                         <p className="text-sm font-semibold text-stone-600 dark:text-stone-400">Belum ada kelas yang tersedia</p>
                         <p className="text-xs text-stone-400 dark:text-stone-600 mt-1.5">Silakan tambahkan kelas terlebih dahulu</p>
                         <Link href={route('admin.kelas.index')} className="inline-flex items-center gap-1.5 mt-4 px-4 py-2 bg-claude-600 hover:bg-claude-500 text-white text-xs font-bold rounded-xl transition">
