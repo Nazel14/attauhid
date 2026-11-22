@@ -113,6 +113,7 @@ function KelasCard({ kelas }) {
         return { ...b, nilai, diLuar, salah: diLuar && nilai > 0 };
     });
     const adaSalah = kotak.some((b) => b.salah);
+    const tampil = kotak.filter((b) => !b.diLuar || b.salah);
 
     return (
         <div className="group flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-cream-300 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5 dark:bg-coal-700 dark:ring-coal-600 dark:hover:shadow-black/30">
@@ -136,26 +137,14 @@ function KelasCard({ kelas }) {
 
             {/* Rincian gender — semua kartu */}
             <div className="px-4 py-3">
-                <div className="grid grid-cols-2 gap-2">
-                    {kotak.map((b) => {
-                        const kotakCls = b.salah
-                            ? 'border-amber-300 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10'
-                            : b.diLuar
-                                ? 'border-dashed border-cream-300 dark:border-coal-600'
-                                : b.warna;
-                        const labelCls = b.salah
-                            ? 'text-amber-600 dark:text-amber-400'
-                            : b.diLuar ? 'text-stone-400 dark:text-stone-500' : b.teks;
-                        const angkaCls = b.salah
-                            ? 'text-amber-600 dark:text-amber-300'
-                            : b.diLuar ? 'text-stone-300 dark:text-stone-600' : b.angka;
-                        return (
-                            <div key={b.key} className={`rounded-xl border px-3 py-2 text-center ${kotakCls}`}>
-                                <p className={`mb-0.5 text-[10px] ${labelCls}`}>{b.label}</p>
-                                <p className={`text-lg font-bold ${angkaCls}`}>{b.diLuar && !b.salah ? '—' : b.nilai}</p>
-                            </div>
-                        );
-                    })}
+                <div className={`grid gap-2 ${tampil.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {tampil.map((b) => (
+                        <div key={b.key}
+                            className={`rounded-xl border px-3 py-2 text-center ${b.salah ? 'border-amber-300 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10' : b.warna}`}>
+                            <p className={`mb-0.5 text-[10px] ${b.salah ? 'text-amber-600 dark:text-amber-400' : b.teks}`}>{b.label}</p>
+                            <p className={`text-lg font-bold ${b.salah ? 'text-amber-600 dark:text-amber-300' : b.angka}`}>{b.nilai}</p>
+                        </div>
+                    ))}
                 </div>
                 {adaSalah && (
                     <p className="mt-2 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
