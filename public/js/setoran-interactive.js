@@ -958,29 +958,11 @@ async function captureQuranScreenshots(deviceType) {
 }
 
 // =====================================================
-// generatePDFContent — v12.0 (DESAIN BARU: terracotta + cream, minimalis)
+// generatePDFContent — v13.0
 //
-// GANTI SELURUH fungsi generatePDFContent LAMA di setoran-interactive.js
-// dengan fungsi ini. Semua logika ekstraksi data TIDAK diubah — hanya
-// template pdfHTML (CSS + markup) yang di-redesign.
-//
-// CATATAN:
-//   - Halaman INFO (header, tabel, nilai) = cream ivory + aksen terracotta.
-//   - Halaman SCREENSHOT Arab/Iqro TETAP navy #3E3D3A (teks putih) —
-//     tidak diubah, hanya menempel di bawah lewat ${screenshotHTML}.
-//   - DomPDF-safe: table-based, warna solid, TANPA flexbox / gradient.
-//     Kalau border-radius kecil tidak sempurna di DomPDF, jatuhnya jadi
-//     kotak — tetap rapi.
-//
-// PALETTE (design system raport-tahfizh):
-//   Terracotta  #D97757   (aksen utama)
-//   Terracotta-  #BE5D3D  (aksen gelap / teks di atas tint)
-//   Ivory       #FAF9F5   (latar halaman)
-//   Cream       #F5F4EF   (header tabel)
-//   Tint        #FBEDE7   (latar nilai / pill aksen)
-//   Ink         #3E3D3A   (teks utama - coal)
-//   Muted       #78716C   (label - stone)
-//   Line        #ECE9E3   (border hangat)
+// Mengumpulkan data setoran dari form & layar, lalu menyerahkannya ke
+// buildSetoranPdfHtml (di bawah) untuk disusun jadi HTML PDF.
+// Logika pengambilan data TIDAK berubah dari v12.0.
 // =====================================================
 async function generatePDFContent(deviceType = 'desktop') {
     try {
@@ -1075,9 +1057,6 @@ async function generatePDFContent(deviceType = 'desktop') {
         const tanggal     = formEl?.querySelector('[name="tanggal"]')?.value || '-';
         const nilai       = document.getElementById(`displayNilai${activeMode}`)?.textContent || '100';
         const catatanGuru = formEl?.querySelector('[name="catatan_guru"]')?.value || '-';
-        const f           = cfg.fontSize;
-
-        const fmtCount = (n) => (!n || n === 0 || n === '0') ? '-' : n;
 
         const MIN_DATAURL_LENGTH = 5000;
         const validSlices = screenshotDataUrls.filter((dataUrl, idx) => {
@@ -1093,30 +1072,167 @@ async function generatePDFContent(deviceType = 'desktop') {
                 screenshotHTML += `<div class="sp-page"><img class="sp-img" src="${dataUrl}"></div>\n`;
             });
         } else {
-            screenshotHTML = '<p style="color:#A8A29E;font-size:9px;padding:10px;">Screenshot tidak tersedia.</p>';
+            screenshotHTML = '<p style="color:#A2A79C;font-size:9px;padding:10px 9mm;">Screenshot tidak tersedia.</p>';
         }
 
-        // ── Baris tabel info (cabang Iqro / Al-Qur'an) ────────────────────
-        // Titik dua ditulis langsung di label, bukan lewat td.k::after —
-        // DomPDF tidak konsisten merender pseudo-element `content`.
-        const rowsHTML = isIqro ? `
-            <tr><td class="k">Nama Santri :</td> <td class="v">${namaSantri}</td></tr>
-            <tr><td class="k">Metode :</td>      <td class="v">${metodeVal || 'Iqro'}</td></tr>
-            <tr><td class="k">Jilid :</td>       <td class="v">Jilid ${iqroJilid}</td></tr>
-            <tr><td class="k">Halaman :</td>     <td class="v">${iqroHalStart} &ndash; ${iqroHalEnd} <span class="muted">(Total ${iqroJumlahHal})</span></td></tr>
-            <tr><td class="k">Total Kata :</td>  <td class="v">${totalKata}</td></tr>
-            <tr><td class="k">Catatan Guru :</td><td class="v">${catatanGuru || '-'}</td></tr>
-        ` : `
-            <tr><td class="k">Nama Santri :</td> <td class="v">${namaSantri}</td></tr>
-            <tr><td class="k">Surat :</td>       <td class="v">${suratStart} &ndash; ${suratEnd}</td></tr>
-            <tr><td class="k">Ayat :</td>        <td class="v">${ayatStart} &ndash; ${ayatEnd}</td></tr>
-            <tr><td class="k">Halaman :</td>     <td class="v">${pageStart} &ndash; ${pageEnd} <span class="muted">(Total ${totalPage})</span></td></tr>
-            <tr><td class="k">Total Juz :</td>   <td class="v">${totalJuz}</td></tr>
-            <tr><td class="k">Total Kata :</td>  <td class="v">${totalKata}</td></tr>
-            <tr><td class="k">Catatan Guru :</td><td class="v">${catatanGuru || '-'}</td></tr>
-        `;
+        // Nama lembaga untuk kop — diambil dari meta di app.blade.php
+        // (apple-mobile-web-app-title), jadi tidak perlu ditulis dua kali.
+        const lembaga = document.querySelector('meta[name="apple-mobile-web-app-title"]')?.content?.trim() || '';
 
-        const pdfHTML = `<!DOCTYPE html>
+        return buildSetoranPdfHtml({
+            lembaga, isIqro, namaSantri, tanggal, kategori, nilai, catatanGuru,
+            metode: metodeVal, iqroJilid, iqroHalStart, iqroHalEnd, iqroJumlahHal,
+            suratStart, suratEnd, ayatStart, ayatEnd,
+            pageStart, pageEnd, totalPage, totalJuz, totalKata,
+            kesalahan: {
+                kelancaran: kesalahanCount.kelancaran,
+                tajwid:     kesalahanCount.tajwid,
+                pelafalan:  kesalahanCount.pelafalan,
+            },
+            jumlahHalamanBacaan: validSlices.length,
+            screenshotHTML,
+        }, cfg);
+
+    } catch (error) {
+        console.error('❌ PDF generation error:', error);
+        document.querySelectorAll('[id^="quranDisplay-"]').forEach(el => { if (el.parentNode) el.parentNode.removeChild(el); });
+        return null;
+    }
+}
+
+// =====================================================
+// buildSetoranPdfHtml — v13.0 (DESAIN BARU: hijau At Tauhid, kartu modern)
+//
+// Hanya menyusun HTML dari data yang sudah dikumpulkan generatePDFContent.
+// Dipisah supaya desain bisa diubah tanpa menyentuh logika pengambilan data.
+//
+// DomPDF-safe:
+//   - Tata letak pakai <table>, TANPA flexbox / grid / gradient.
+//   - Selector padding sel pakai "td.kelas" — aturan umum "table td" di
+//     DomPDF menang atas class tunggal.
+//   - Jarak antar kartu memakai sel pengisi (td.gap), bukan border-spacing.
+//
+// Halaman screenshot Arab/Iqro TIDAK diubah: latar #3E3D3A wajib tetap,
+// karena _sliceCanvasFixed mendeteksi celah antar-baris dari warna itu.
+//
+// PALET (logo At Tauhid):
+//   Hijau       #7EB842   aksen utama
+//   Hijau tua   #4E7F22   teks di atas tint hijau
+//   Tint hijau  #EEF6E4
+//   Oranye      #F39A2B   aksen kedua
+//   Biru        #35A7DD   aksen ketiga
+//   Ink         #2A3026   teks utama
+//   Muted       #7A7F76   label
+//   Garis       #E3E6DC
+//   Latar       #F6F7F2
+// =====================================================
+function buildSetoranPdfHtml(d, cfg) {
+    const f = cfg.fontSize;
+
+    // Nama santri & catatan diketik pengguna — wajib di-escape supaya
+    // karakter < > & tidak merusak (atau menyisipkan) HTML di PDF.
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+    const angka = (v) => { const n = parseInt(v, 10); return Number.isFinite(n) ? n : 0; };
+    const strip = (v) => (v === undefined || v === null || v === '' ? '-' : v);
+
+    // Tanggal "2026-11-22" → "Minggu, 22 November 2026"
+    const fmtTanggal = (v) => {
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v || ''));
+        if (!m) return strip(v);
+        const t = new Date(+m[1], +m[2] - 1, +m[3]);
+        return t.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    };
+
+    const nilai = Math.max(0, Math.min(100, angka(d.nilai)));
+    // Warna nilai: hijau ≥ 85, oranye ≥ 70, merah di bawahnya.
+    const tone = nilai >= 85
+        ? { c: '#4E7F22', bg: '#EEF6E4', line: '#CFE5B4', bar: '#7EB842' }
+        : nilai >= 70
+            ? { c: '#B86A0E', bg: '#FDF1E0', line: '#F5D6AA', bar: '#F39A2B' }
+            : { c: '#B4232A', bg: '#FDECEC', line: '#F3C4C4', bar: '#E5484D' };
+
+    const kK = angka(d.kesalahan.kelancaran);
+    const kT = angka(d.kesalahan.tajwid);
+    const kP = angka(d.kesalahan.pelafalan);
+    const totalSalah = kK + kT + kP;
+
+    // Bar nilai: dua sel persentase. 0 dan 100 ditangani terpisah —
+    // DomPDF menggambar sel 0% sebagai garis tipis.
+    const barNilai = nilai <= 0
+        ? `<td class="bar-sisa" style="width:100%"></td>`
+        : nilai >= 100
+            ? `<td class="bar-isi" style="width:100%;background:${tone.bar}"></td>`
+            : `<td class="bar-isi" style="width:${nilai}%;background:${tone.bar}"></td><td class="bar-sisa" style="width:${100 - nilai}%"></td>`;
+
+    const judul    = d.isIqro ? `Setoran ${esc(d.metode || 'Iqro')}` : 'Setoran Tahfizh';
+    const lembaga  = esc(d.lembaga || '');
+
+    // Tinggi dua kartu hero disamakan (div di dalam sel tabel tidak ikut
+    // meregang di DomPDF). Dihitung dari ukuran huruf perangkat.
+    const px = (v) => parseFloat(v) || 12;
+    const heroH = Math.round(px(f.score) * 1.05 + px(f.body) * 2.4 + 24) + 'px';
+
+    // ── Ringkasan angka (4 kotak) ──────────────────────────────────
+    const kpi = d.isIqro ? [
+        ['Jilid', esc(d.iqroJilid), ''],
+        ['Halaman', `${esc(d.iqroHalStart)}&ndash;${esc(d.iqroHalEnd)}`, `${d.iqroJumlahHal} halaman`],
+        ['Total Kata', esc(d.totalKata), ''],
+        ['Kesalahan', totalSalah, totalSalah ? 'kata ditandai' : 'tidak ada'],
+    ] : [
+        ['Halaman', `${esc(d.pageStart)}&ndash;${esc(d.pageEnd)}`, `${esc(d.totalPage)} halaman`],
+        ['Total Juz', esc(d.totalJuz), ''],
+        ['Total Kata', esc(d.totalKata), ''],
+        ['Kesalahan', totalSalah, totalSalah ? 'kata ditandai' : 'tidak ada'],
+    ];
+    const kpiHTML = kpi.map(([label, val, sub], i) => `
+        ${i ? '<td class="gap"></td>' : ''}
+        <td class="kpi-cell"><div class="kpi">
+            <div class="kpi-label">${label}</div>
+            <div class="kpi-val">${val}</div>
+            <div class="kpi-sub">${sub || '&nbsp;'}</div>
+        </div></td>`).join('');
+
+    // ── Rincian bacaan ─────────────────────────────────────────────
+    const rincian = d.isIqro ? [
+        ['Metode', esc(d.metode || 'Iqro')],
+        ['Jilid', `Jilid ${esc(d.iqroJilid)}`],
+        ['Halaman', `${esc(d.iqroHalStart)} &ndash; ${esc(d.iqroHalEnd)}`],
+    ] : [
+        ['Surat', `${esc(d.suratStart)} &ndash; ${esc(d.suratEnd)}`],
+        ['Ayat', `${esc(d.ayatStart)} &ndash; ${esc(d.ayatEnd)}`],
+        ['Halaman', `${esc(d.pageStart)} &ndash; ${esc(d.pageEnd)}`],
+    ];
+    const rincianHTML = rincian.map(([k, v], i) => `
+        <tr><td class="rk${i === rincian.length - 1 ? ' last' : ''}">${k}</td><td class="rv${i === rincian.length - 1 ? ' last' : ''}">${v}</td></tr>`).join('');
+
+    // ── Koreksi (3 kotak berwarna) ─────────────────────────────────
+    const koreksi = [
+        ['Kelancaran', kK, '#22A55A', '#EAF7EF', '#BFE6CD'],
+        ['Tajwid',     kT, '#C98A04', '#FDF5DC', '#F1DE9C'],
+        ['Pelafalan',  kP, '#D93B3B', '#FDECEC', '#F3C4C4'],
+    ];
+    const koreksiHTML = koreksi.map(([label, n, c, bg, line], i) => `
+        ${i ? '<td class="gap"></td>' : ''}
+        <td class="kor-cell"><div class="kor" style="background:${n ? bg : '#FFFFFF'};border-color:${n ? line : '#E3E6DC'}">
+            <table class="lay"><tr>
+                <td class="kor-dot-cell"><div class="kor-dot" style="background:${c}"></div></td>
+                <td class="kor-label-cell"><div class="kor-label">${label}</div><div class="kor-sub">&minus;4 poin / kata</div></td>
+                <td class="kor-n-cell" style="color:${n ? c : '#B9BDB4'}">${n || '&ndash;'}</td>
+            </tr></table>
+        </div></td>`).join('');
+
+    const catatan = (d.catatanGuru && d.catatanGuru.trim() && d.catatanGuru.trim() !== '-')
+        ? `<div class="sec">Catatan Guru</div>
+           <div class="note">${esc(d.catatanGuru.trim()).replace(/\n/g, '<br>')}</div>`
+        : '';
+
+    const dicetak = new Date().toLocaleString('id-ID', {
+        day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+
+    return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -1125,55 +1241,81 @@ async function generatePDFContent(deviceType = 'desktop') {
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; orphans: 1; widows: 1; }
 body {
-    font-family: 'DejaVu Sans', Arial, sans-serif;
-    background: #FAF9F5; color: #3E3D3A;
-    font-size: ${f.body}; line-height: 1.6;
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', 'DejaVu Sans', Arial, sans-serif;
+    background: #F6F7F2; color: #2A3026;
+    font-size: ${f.body}; line-height: 1.5;
 }
-.page-info { display: block; padding: ${cfg.pageInfoPadding}; background: #FAF9F5; }
+table.lay { width: 100%; border-collapse: collapse; }
+table.lay td { padding: 0; vertical-align: top; }
+table.lay td.gap { width: 2%; }
 
-/* ── Header ─────────────────────────────────────── */
-.hdr { padding-bottom: 16px; margin-bottom: 20px; border-bottom: 1px solid #ECE9E3; }
-.accent-line { width: 46px; height: 4px; background: #D97757; border-radius: 3px; margin-bottom: 12px; }
-.brand { font-size: ${f.h1}; font-weight: 700; letter-spacing: -0.6px; color: #3E3D3A; margin: 0 0 10px 0; line-height: 1.1; }
-.pill {
-    display: inline-block; padding: 4px 12px; border-radius: 20px;
-    font-size: ${f.body}; font-weight: 600; margin-right: 7px;
-    background: #F1EEE8; color: #57534E; border: 1px solid #E7E3DB;
+.page-info { display: block; background: #F6F7F2; padding: 0 0 10mm 0; }
+table.topbar { width: 100%; border-collapse: collapse; }
+table.topbar td { height: 7px; padding: 0; font-size: 1px; line-height: 1px; }
+.wrap { padding: 9mm 9mm 0 9mm; }
+
+/* ── Kop ───────────────────────────────────────── */
+.eyebrow { font-size: 0.85em; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #7EB842; margin-bottom: 4px; }
+.title { font-size: ${f.h1}; font-weight: 800; letter-spacing: -0.5px; color: #2A3026; line-height: 1.15; margin: 0; }
+table.lay td.kop-kanan { text-align: right; vertical-align: middle; }
+.chip {
+    display: inline-block; padding: 4px 11px; border-radius: 20px;
+    font-size: 0.9em; font-weight: 700; margin-left: 5px; white-space: nowrap;
+    background: #FFFFFF; color: #4A5145; border: 1px solid #E3E6DC;
 }
-.pill-accent { background: #FBEDE7; color: #BE5D3D; border-color: #F1D4C7; }
+.chip-hijau { background: #EEF6E4; color: #4E7F22; border-color: #CFE5B4; }
+.rule { height: 1px; background: #E3E6DC; margin: 14px 0 16px 0; }
 
-/* ── Section label ──────────────────────────────── */
-.sec { font-size: ${f.h2}; font-weight: 700; color: #3E3D3A; margin: 20px 0 9px 0; letter-spacing: -0.2px; }
-.sec-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #D97757; margin-right: 8px; vertical-align: middle; }
+/* ── Hero: santri + nilai ──────────────────────── */
+.hero-santri { background: #FFFFFF; border: 1px solid #E3E6DC; border-radius: 14px; padding: 16px 18px; height: ${heroH}; }
+table.lay td.hero-nilai-cell { width: 30%; }
+.lbl { font-size: 0.85em; font-weight: 600; color: #7A7F76; margin-bottom: 3px; }
+.nama { font-size: ${f.h2}; font-weight: 800; color: #2A3026; line-height: 1.25; }
+.tgl { margin-top: 6px; color: #7A7F76; font-size: 0.95em; }
+.hero-nilai { border-radius: 14px; padding: 12px 16px; text-align: center; border: 1px solid; height: ${heroH}; }
+.nilai-lbl { font-size: 0.8em; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
+.nilai-val { font-size: ${f.score}; font-weight: 800; line-height: 1.05; margin: 2px 0 8px 0; }
+table.bar { width: 100%; border-collapse: collapse; height: 6px; }
+table.bar td { padding: 0; height: 6px; font-size: 1px; line-height: 1px; }
+table.bar td.bar-isi { border-radius: 3px; }
+table.bar td.bar-sisa { background: #FFFFFF; border-radius: 3px; }
 
-/* ── Info card ──────────────────────────────────── */
-.card { background: #FFFFFF; border: 1px solid #ECE9E3; border-radius: 12px; overflow: hidden; }
-.info-table { width: 100%; border-collapse: collapse; }
-.info-table td { padding: 10px 16px; font-size: ${f.body}; line-height: 1.5; vertical-align: top; border-bottom: 1px solid #F2EFEA; }
-.info-table tr:last-child td { border-bottom: none; }
-.info-table td.k { font-weight: 600; color: #78716C; width: 140px; white-space: nowrap; }
-.info-table td.v { color: #3E3D3A; }
-.muted { color: #A8A29E; font-weight: 400; }
+/* ── KPI ───────────────────────────────────────── */
+table.lay td.kpi-cell { width: 23.5%; }
+.kpi { background: #FFFFFF; border: 1px solid #E3E6DC; border-radius: 12px; padding: 10px 13px; }
+.kpi-label { font-size: 0.8em; font-weight: 700; color: #7A7F76; text-transform: uppercase; letter-spacing: 0.6px; }
+.kpi-val { font-size: ${f.h2}; font-weight: 800; color: #2A3026; margin-top: 3px; line-height: 1.2; }
+.kpi-sub { font-size: 0.8em; color: #A2A79C; margin-top: 1px; }
 
-/* ── Detail Koreksi ─────────────────────────────── */
-table.ct { width: 100%; border-collapse: collapse; background: #FFFFFF; border: 1px solid #ECE9E3; border-radius: 12px; overflow: hidden; }
-table.ct th { background: #F5F4EF; font-weight: 700; color: #57534E; text-align: left; padding: ${cfg.infoPadding}; font-size: ${cfg.tableFontSize}; border-bottom: 1px solid #ECE9E3; }
-table.ct td { padding: ${cfg.infoPadding}; font-size: ${cfg.tableFontSize}; color: #3E3D3A; border-bottom: 1px solid #F2EFEA; }
-table.ct tr:last-child td { border-bottom: none; }
-.err-name { font-weight: 600; padding-left: 14px !important; }
-.err-k { border-left: 3px solid #22c55e; }
-.err-t { border-left: 3px solid #eab308; }
-.err-p { border-left: 3px solid #ef4444; }
-.ket { color: #A8A29E; }
+/* ── Section ───────────────────────────────────── */
+.sec { font-size: 0.85em; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #7A7F76; margin: 18px 0 8px 0; }
+.sec-bar { display: inline-block; width: 14px; height: 3px; background: #7EB842; border-radius: 2px; vertical-align: middle; margin-right: 7px; }
 
-/* ── Nilai ──────────────────────────────────────── */
-.score { margin-top: 18px; background: #FBEDE7; border: 1px solid #F1D4C7; border-radius: 14px; padding: 16px; text-align: center; }
-.score-label { font-size: ${f.body}; font-weight: 700; color: #BE5D3D; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.6px; }
-.score-value { font-size: ${f.score}; font-weight: 800; color: #D97757; line-height: 1; }
+/* ── Rincian ───────────────────────────────────── */
+.card { background: #FFFFFF; border: 1px solid #E3E6DC; border-radius: 12px; overflow: hidden; }
+table.rinci { width: 100%; border-collapse: collapse; }
+table.rinci td.rk, table.rinci td.rv { padding: 9px 16px; border-bottom: 1px solid #EEF0E9; vertical-align: top; }
+table.rinci td.rk { width: 28%; color: #7A7F76; font-weight: 600; }
+table.rinci td.rv { color: #2A3026; font-weight: 700; }
+table.rinci td.last { border-bottom: none; }
 
-.footer { margin-top: 18px; text-align: center; font-size: 9px; color: #A8A29E; }
+/* ── Koreksi ───────────────────────────────────── */
+table.lay td.kor-cell { width: 32%; }
+.kor { border: 1px solid; border-radius: 12px; padding: 10px 13px; }
+table.lay td.kor-dot-cell { width: 16px; vertical-align: middle; }
+table.lay td.kor-label-cell { vertical-align: middle; }
+.kor-dot { width: 9px; height: 9px; border-radius: 5px; }
+.kor-label { font-weight: 700; color: #2A3026; }
+.kor-sub { font-size: 0.8em; color: #A2A79C; }
+table.lay td.kor-n-cell { text-align: right; font-size: ${f.h2}; font-weight: 800; width: 28%; vertical-align: middle; }
 
-/* ── Halaman screenshot (TETAP navy) ────────────── */
+/* ── Catatan ───────────────────────────────────── */
+.note { background: #FFFFFF; border: 1px solid #E3E6DC; border-left: 4px solid #F39A2B; border-radius: 10px; padding: 11px 15px; color: #3C433A; line-height: 1.6; }
+
+.footer { margin-top: 18px; padding-top: 10px; border-top: 1px dashed #DCE0D4; color: #A2A79C; font-size: 0.85em; }
+table.lay td.footer-kanan { text-align: right; }
+
+/* ── Halaman screenshot (latar TETAP #3E3D3A) ──── */
 .sp-page {
     width: 100%; margin: 0; padding: 0; overflow: hidden;
     background: #3E3D3A;
@@ -1186,48 +1328,56 @@ table.ct tr:last-child td { border-bottom: none; }
 </head>
 <body>
 <div class="page-info">
-    <div class="hdr">
-        <div class="accent-line"></div>
-        <div class="brand">Setoran Tahfizh</div>
-        <div>
-            <span class="pill">${tanggal}</span>
-            <span class="pill pill-accent">${kategori}</span>
-        </div>
+    <table class="topbar"><tr>
+        <td style="width:70%;background:#7EB842"></td>
+        <td style="width:18%;background:#F39A2B"></td>
+        <td style="width:12%;background:#35A7DD"></td>
+    </tr></table>
+    <div class="wrap">
+
+        <table class="lay"><tr>
+            <td>
+                ${lembaga ? `<div class="eyebrow">${lembaga}</div>` : ''}
+                <h1 class="title">${judul}</h1>
+            </td>
+            <td class="kop-kanan">
+                ${d.kategori && d.kategori !== '-' ? `<span class="chip chip-hijau">${esc(d.kategori)}</span>` : ''}
+            </td>
+        </tr></table>
+        <div class="rule"></div>
+
+        <table class="lay"><tr>
+            <td><div class="hero-santri">
+                <div class="lbl">Nama Santri</div>
+                <div class="nama">${esc(d.namaSantri)}</div>
+                <div class="tgl">${esc(fmtTanggal(d.tanggal))}</div>
+            </div></td>
+            <td class="gap"></td>
+            <td class="hero-nilai-cell"><div class="hero-nilai" style="background:${tone.bg};border-color:${tone.line}">
+                <div class="nilai-lbl" style="color:${tone.c}">Nilai Akhir</div>
+                <div class="nilai-val" style="color:${tone.c}">${nilai}</div>
+                <table class="bar"><tr>${barNilai}</tr></table>
+            </div></td>
+        </tr></table>
+
+        <div class="sec"><span class="sec-bar"></span>Ringkasan</div>
+        <table class="lay"><tr>${kpiHTML}</tr></table>
+
+        <div class="sec"><span class="sec-bar"></span>Rincian Bacaan</div>
+        <div class="card"><table class="rinci">${rincianHTML}</table></div>
+
+        <div class="sec"><span class="sec-bar"></span>Detail Koreksi</div>
+        <table class="lay"><tr>${koreksiHTML}</tr></table>
+
+        ${catatan.replace('<div class="sec">', '<div class="sec"><span class="sec-bar"></span>')}
+
+        <table class="lay footer"><tr>
+            <td>Dicetak ${esc(dicetak)}</td>
+            <td class="footer-kanan">${d.jumlahHalamanBacaan ? `Lampiran bacaan: ${d.jumlahHalamanBacaan} halaman` : ''}</td>
+        </tr></table>
     </div>
-
-    <div class="sec"><span class="sec-dot"></span>Info Setoran</div>
-    <div class="card">
-        <table class="info-table">${rowsHTML}</table>
-    </div>
-
-    <div class="sec"><span class="sec-dot"></span>Detail Koreksi</div>
-    <table class="ct">
-        <thead>
-            <tr><th>Jenis Kesalahan</th><th>Jumlah</th><th>Keterangan</th></tr>
-        </thead>
-        <tbody>
-            <tr><td class="err-name err-k">Kelancaran</td><td>${fmtCount(kesalahanCount.kelancaran)}</td><td class="ket">-4 poin per kata</td></tr>
-            <tr><td class="err-name err-t">Tajwid</td>    <td>${fmtCount(kesalahanCount.tajwid)}</td>    <td class="ket">-4 poin per kata</td></tr>
-            <tr><td class="err-name err-p">Pelafalan</td> <td>${fmtCount(kesalahanCount.pelafalan)}</td> <td class="ket">-4 poin per kata</td></tr>
-        </tbody>
-    </table>
-
-    <div class="score">
-        <div class="score-label">Nilai Akhir</div>
-        <div class="score-value">${nilai}</div>
-    </div>
-
-    <div class="footer">Dicetak: ${new Date().toLocaleString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
-</div>${screenshotHTML}</body>
+</div>${d.screenshotHTML}</body>
 </html>`;
-
-        return pdfHTML;
-
-    } catch (error) {
-        console.error('❌ PDF generation error:', error);
-        document.querySelectorAll('[id^="quranDisplay-"]').forEach(el => { if (el.parentNode) el.parentNode.removeChild(el); });
-        return null;
-    }
 }
 
 function guardPdfPayloadSize(form, mode) {
