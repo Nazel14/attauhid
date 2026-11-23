@@ -59,9 +59,9 @@ function StatCard({ icon, label, value, sub, tone = 'stone' }) {
         <div className="bg-white dark:bg-coal-700 ring-1 ring-cream-300 dark:ring-coal-600 rounded-2xl p-4 flex items-center gap-3">
             <span className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${toneMap[tone]}`}>{icon}</span>
             <div className="min-w-0">
-                <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium truncate">{label}</p>
+                <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium break-words">{label}</p>
                 <p className="text-lg font-bold tracking-tight text-stone-900 dark:text-stone-100 leading-tight">{value}</p>
-                {sub && <p className="text-[10px] text-stone-400 truncate">{sub}</p>}
+                {sub && <p className="text-[10px] text-stone-400 break-words">{sub}</p>}
             </div>
         </div>
     );
@@ -203,13 +203,17 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
             <div className="max-w-6xl mx-auto">
 
                 {/* ===== HEADER ===== */}
-                <div className="flex items-center gap-3 mb-5">
+                {/* items-start: kalau nama guru panjang dan turun baris, ikon
+                    tetap sejajar dengan baris pertama judul. */}
+                <div className="flex items-start gap-3 mb-5">
                     <div className="w-11 h-11 rounded-2xl bg-cream-200 dark:bg-coal-600 ring-1 ring-cream-300 dark:ring-coal-500 flex items-center justify-center flex-shrink-0">
                         <DashboardIcon className="w-6 h-6 text-stone-600 dark:text-stone-300" />
                     </div>
-                    <div className="min-w-0">
-                        <h1 className="text-lg sm:text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 truncate">
-                            Selamat Datang, {guruName}
+                    <div className="min-w-0 flex-1">
+                        {/* Nama guru ditampilkan utuh (break-words), tidak dipotong "…". */}
+                        <h1 className="text-lg sm:text-xl font-bold tracking-tight leading-snug text-stone-900 dark:text-stone-100 break-words">
+                            <span className="block text-sm sm:text-base font-semibold text-stone-500 dark:text-stone-400">Selamat Datang,</span>
+                            {guruName}
                         </h1>
                         <p className="text-[11px] text-stone-500 mt-0.5">Ringkasan siswa ampuan &amp; presensi hari ini</p>
                     </div>
@@ -234,7 +238,7 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
                             {santriSiapNaik.map((s) => (
                                 <div key={s.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-cream-100 dark:bg-coal-600/40 ring-1 ring-cream-300 dark:ring-coal-600">
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-semibold text-stone-800 dark:text-stone-100 truncate">{s.name}</p>
+                                        <p className="text-sm font-semibold leading-snug text-stone-800 dark:text-stone-100 break-words">{s.name}</p>
                                         <p className="text-[11px] text-stone-500 dark:text-stone-400">
                                             {s.metode} Jilid {s.jilid_sekarang}
                                             <span className="mx-1 text-claude-500">→</span>
@@ -256,7 +260,7 @@ export default function Dashboard({ santriList = [], santriSiapNaik = [], santri
                                 <div key={`t-${s.id}`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-emerald-100 dark:ring-emerald-500/20">
                                     <TrophyIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-semibold text-stone-800 dark:text-stone-100 truncate">{s.name}</p>
+                                        <p className="text-sm font-semibold leading-snug text-stone-800 dark:text-stone-100 break-words">{s.name}</p>
                                         <p className="text-[11px] text-stone-500 dark:text-stone-400">Tuntas seluruh jilid {s.metode} (Jilid {s.jilid})</p>
                                     </div>
                                     <span className="shrink-0 text-[10px] font-bold px-2 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">

@@ -171,6 +171,7 @@ const IdIcon = (p) => (
 const NAV = [
     ['#program', 'Program'],
     ['#capaian', 'Capaian'],
+    ['#kegiatan', 'Kegiatan'],
     ['#visi', 'Visi & Misi'],
     ['#pendidik', 'Pendidik'],
     ['#fasilitas', 'Fasilitas'],
@@ -266,6 +267,40 @@ const FASILITAS = [
     'Kamar mandi laki-laki dan perempuan terpisah',
 ];
 
+/* ===================== FOTO =====================
+   Semua foto diambil dari dokumen "Profil TK Attauhid", diperbesar (HD),
+   lalu disimpan di public/images/landing/ dalam dua ukuran WebP:
+   <nama>-800.webp dan <nama>-1600.webp. Browser memilih sendiri ukuran
+   yang pas lewat srcset, jadi HP tidak perlu mengunduh versi besar.
+
+   w/h = ukuran versi 1600. Ditulis supaya browser bisa menyiapkan ruang
+   sebelum foto selesai dimuat (halaman tidak "loncat" saat digulir).
+
+   Profil tidak memberi keterangan per foto, jadi TIDAK ada caption yang
+   tampil di layar. alt hanya menggambarkan apa yang terlihat di foto,
+   untuk pembaca layar dan saat foto gagal dimuat. */
+const FOTO_GEDUNG = { src: 'gedung', w: 1600, h: 883, alt: 'Gedung TK Attauhid tampak depan' };
+
+const FOTO_KEGIATAN = [
+    { src: 'kegiatan-1', w: 784, h: 1600, alt: 'Anak-anak mengerjakan kegiatan mewarnai di kelas' },
+    { src: 'kegiatan-2', w: 1600, h: 1150, alt: 'Anak-anak berfoto bersama di depan papan kelas' },
+    { src: 'kegiatan-5', w: 1600, h: 1246, alt: 'Anak-anak bergandengan tangan membentuk lingkaran di halaman sekolah' },
+    { src: 'kegiatan-3', w: 1109, h: 1600, alt: 'Anak-anak berkegiatan bersama di atas karpet' },
+    { src: 'kegiatan-4', w: 1127, h: 1600, alt: 'Anak belajar menulis huruf hijaiyah di buku' },
+];
+
+const FOTO_FASILITAS = [
+    { src: 'fasilitas-arena-bermain', w: 1600, h: 883, alt: 'Arena bermain dengan perosotan di halaman sekolah', lebar: true },
+    { src: 'fasilitas-ruang-1', w: 1600, h: 1600, alt: 'Ruangan kelas dengan meja kecil dan hiasan dinding' },
+    { src: 'fasilitas-ruang-2', w: 1600, h: 1600, alt: 'Ruangan dengan lantai bergaris dan dinding biru' },
+    { src: 'fasilitas-ruang-3', w: 1600, h: 1600, alt: 'Lorong dalam gedung sekolah' },
+    { src: 'fasilitas-mini-aviary', w: 1600, h: 1125, alt: 'Burung di dalam mini aviary' },
+    { src: 'fasilitas-halaman', w: 779, h: 1600, alt: 'Halaman depan gedung sekolah' },
+    { src: 'fasilitas-ruang-tamu', w: 1600, h: 1600, alt: 'Ruang tamu dengan sofa' },
+    { src: 'fasilitas-kantor', w: 1600, h: 1600, alt: 'Ruang kantor dengan meja kerja' },
+    { src: 'fasilitas-kamar-mandi', w: 1600, h: 1341, alt: 'Kamar mandi' },
+];
+
 const PENDIDIK = [
     { nama: 'Arel Hibatullah Ridwan, A.Md., S.Pd.', peran: 'Direktur Pendidikan' },
     { nama: 'Martha Amelia Gaha, S.Pd., Gr.', peran: 'Kepala Sekolah' },
@@ -288,6 +323,10 @@ export default function Landing() {
     // Menu mobile. Di bawah md navigasi section tidak muat di satu baris,
     // jadi dilipat ke panel yang dibuka lewat tombol garis tiga.
     const [menuBuka, setMenuBuka] = useState(false);
+
+    // Lightbox foto: { daftar, index } atau null bila tertutup.
+    const [lightbox, setLightbox] = useState(null);
+    const bukaFoto = (daftar, index) => setLightbox({ daftar, index });
 
     /* Pola dark mode sama dengan Login.jsx supaya pilihan tema ikut
        terbawa saat pengunjung masuk ke sistem. */
@@ -366,6 +405,34 @@ export default function Landing() {
                 .tq-btn-hijau:hover { background: var(--tq-hijau-gelap); }
                 .tq-btn-hijau:active { transform: scale(.985); }
 
+                /* Tombol "Masuk" di navbar — pil dengan latar hijau tipis,
+                   garis halus, dan ikon dalam lingkaran hijau solid. */
+                .tq-btn-masuk {
+                    color: #4F7F22;
+                    background: rgba(126,184,66,.12);
+                    box-shadow: inset 0 0 0 1px rgba(126,184,66,.35);
+                    transition: background-color .2s ease, box-shadow .2s ease, transform .2s ease;
+                }
+                .tq-btn-masuk:hover {
+                    background: rgba(126,184,66,.2);
+                    box-shadow: inset 0 0 0 1px rgba(126,184,66,.55), 0 6px 16px -8px rgba(126,184,66,.7);
+                }
+                .tq-btn-masuk:active { transform: scale(.97); }
+                .tq-btn-masuk-ikon {
+                    background: var(--tq-hijau);
+                    color: #fff;
+                    box-shadow: 0 2px 6px -2px rgba(79,127,34,.6);
+                }
+                .dark .tq-btn-masuk {
+                    color: #B5DD8C;
+                    background: rgba(126,184,66,.16);
+                    box-shadow: inset 0 0 0 1px rgba(126,184,66,.4);
+                }
+                .dark .tq-btn-masuk:hover {
+                    background: rgba(126,184,66,.26);
+                    box-shadow: inset 0 0 0 1px rgba(126,184,66,.6), 0 6px 16px -8px rgba(0,0,0,.6);
+                }
+
                 .tq-link-nav { transition: color .18s ease; }
                 .tq-link-nav:hover { color: var(--tq-hijau); }
 
@@ -435,25 +502,20 @@ export default function Landing() {
                                 {dark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
                             </button>
                             {/* Pintu masuk sistem untuk guru, bendahara, dan
-                                wali. Dibuat bergaris, bukan blok berwarna, supaya
-                                tidak bersaing dengan "Hubungi" — tamu landing ini
-                                kebanyakan calon wali murid, bukan pengguna sistem. */}
+                                wali. Pil berwarna lembut (bukan blok penuh) supaya
+                                tidak bersaing dengan tombol "Hubungi sekolah" di hero — tamu landing ini
+                                kebanyakan calon wali murid, bukan pengguna sistem.
+                                Ikon di lingkaran hijau bergeser sedikit saat
+                                disorot, memberi kesan "masuk". */}
                             <Link
                                 href={route('login')}
-                                className="tq-judul flex h-9 items-center gap-1.5 rounded-xl border-2 px-3 text-[13px] font-bold transition sm:px-3.5 hover:bg-white/60 focus:outline-none focus-visible:ring-2 dark:hover:bg-[#353B31]/60"
-                                style={{ borderColor: 'var(--tq-hijau)', color: 'var(--tq-hijau)' }}
+                                className="tq-btn-masuk tq-judul group flex h-9 items-center gap-2 rounded-full pl-1 pr-3.5 text-[13px] font-bold focus:outline-none focus-visible:ring-2 sm:pr-4"
                             >
-                                <LoginIcon className="h-4 w-4" />
+                                <span className="tq-btn-masuk-ikon flex h-7 w-7 items-center justify-center rounded-full">
+                                    <LoginIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+                                </span>
                                 Masuk
                             </Link>
-                            <a
-                                href={KONTAK_WA}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="tq-btn-oranye tq-judul hidden h-9 items-center rounded-xl px-4 text-[13px] font-bold shadow-md focus:outline-none focus-visible:ring-2 sm:inline-flex"
-                            >
-                                Hubungi
-                            </a>
                             <button
                                 type="button"
                                 onClick={() => setMenuBuka((v) => !v)}
@@ -544,7 +606,11 @@ export default function Landing() {
                         </div>
                     </div>
 
-                    <KartuIdentitas />
+                    {/* Foto gedung menjadi bagian atas kartu identitas — satu
+                        kartu utuh, bukan dua lapis yang saling tumpuk. Foto
+                        gedung dipilih (bukan foto anak) untuk bagian paling
+                        atas halaman. */}
+                    <KartuIdentitas foto={FOTO_GEDUNG} onFoto={() => bukaFoto([FOTO_GEDUNG], 0)} />
                 </section>
 
                 {/* ============ PROGRAM SEKOLAH ============ */}
@@ -638,6 +704,29 @@ export default function Landing() {
                                         </div>
                                     </div>
                                 </Reveal>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* ============ KEGIATAN — foto dari profil ============ */}
+                <section id="kegiatan" className="relative z-10 scroll-mt-16 sm:scroll-mt-20 border-t border-stone-200/70 dark:border-[#3B4235]">
+                    <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
+                        <Eyebrow latin="Kegiatan" />
+                        <h2 className="tq-judul mt-3 max-w-2xl text-[1.6rem] font-bold leading-tight text-stone-800 dark:text-stone-50 sm:text-[2.2rem]">
+                            Kegiatan
+                        </h2>
+
+                        {/* Susunan kolom (masonry), bukan grid: foto kegiatan ada
+                            yang tegak dan ada yang mendatar, dan di sini keduanya
+                            tampil utuh tanpa dipotong paksa jadi kotak. */}
+                        <div className="mt-7 columns-2 gap-3 sm:mt-10 sm:gap-4 lg:columns-3">
+                            {FOTO_KEGIATAN.map((f, i) => (
+                                <div key={f.src} className="mb-3 break-inside-avoid sm:mb-4">
+                                    <Reveal delay={i * 70} reduced={reduced}>
+                                        <FotoTombol foto={f} onClick={() => bukaFoto(FOTO_KEGIATAN, i)} sizes="(min-width: 1024px) 370px, 50vw" />
+                                    </Reveal>
+                                </div>
                             ))}
                         </div>
                     </div>
@@ -751,6 +840,28 @@ export default function Landing() {
                                 </Reveal>
                             ))}
                         </div>
+
+                        {/* Galeri fasilitas. Kotak seragam supaya rapi; foto
+                            pertama (arena bermain, mendatar) dibuat selebar dua
+                            kolom di HP agar 9 foto di grid 2 kolom tidak
+                            menyisakan satu petak sendirian di baris terakhir. */}
+                        <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:gap-4 lg:grid-cols-3">
+                            {FOTO_FASILITAS.map((f, i) => (
+                                <Reveal
+                                    key={f.src}
+                                    delay={(i % 3) * 60}
+                                    reduced={reduced}
+                                    className={f.lebar ? 'col-span-2 lg:col-span-1' : ''}
+                                >
+                                    <FotoTombol
+                                        foto={f}
+                                        onClick={() => bukaFoto(FOTO_FASILITAS, i)}
+                                        sizes="(min-width: 1024px) 370px, 50vw"
+                                        className={`w-full object-cover ${f.lebar ? 'aspect-[2/1] lg:aspect-square' : 'aspect-square'}`}
+                                    />
+                                </Reveal>
+                            ))}
+                        </div>
                     </div>
                 </section>
 
@@ -822,6 +933,15 @@ export default function Landing() {
                     </div>
                 </footer>
             </div>
+
+            {lightbox && (
+                <Lightbox
+                    daftar={lightbox.daftar}
+                    index={lightbox.index}
+                    onPindah={(index) => setLightbox((l) => ({ ...l, index }))}
+                    onTutup={() => setLightbox(null)}
+                />
+            )}
         </>
     );
 }
@@ -842,7 +962,7 @@ function Eyebrow({ latin }) {
 /* Kartu hero berisi halaman "Identitas" apa adanya — nama, nomor izin,
    yayasan, alamat, kontak. Sebelumnya kartu ini berisi tiga kalimat
    karangan; diganti data yang memang tertulis di profil. */
-function KartuIdentitas() {
+function KartuIdentitas({ foto = null, onFoto }) {
     const BARIS = [
         { label: 'Nama', nilai: 'TK Attauhid' },
         { label: 'Nomor Izin Berusaha', nilai: `${NIB} — di bawah ${YAYASAN}` },
@@ -851,16 +971,31 @@ function KartuIdentitas() {
     ];
 
     return (
-        <div className="relative mx-auto w-full max-w-md">
+        <div className="relative mx-auto w-full max-w-md lg:max-w-lg">
             <div
                 className="pointer-events-none absolute -inset-5 rounded-[2.5rem] blur-2xl"
                 style={{ background: 'linear-gradient(140deg, rgba(126,184,66,.18), rgba(54,167,223,.14) 60%, rgba(250,144,44,.16))' }}
             />
 
-            <div className="relative overflow-hidden rounded-3xl border sm:rounded-[2rem] border-stone-200/80 bg-white/92 shadow-[0_28px_70px_-30px_rgba(60,80,40,.4)] dark:border-[#474E40] dark:bg-[#353B31]/95">
+            {/* Latar kartu SOLID. Sebelumnya bg-white/92 — angka 92 tidak
+                ada di skala opasitas Tailwind, jadi kelasnya tidak pernah
+                ter-build dan kartu tampil tembus pandang. */}
+            <div className="relative overflow-hidden rounded-3xl border sm:rounded-[2rem] border-stone-200/80 bg-white shadow-[0_28px_70px_-30px_rgba(60,80,40,.4)] dark:border-[#474E40] dark:bg-[#353B31]">
+                {foto && (
+                    <button
+                        type="button"
+                        onClick={onFoto}
+                        aria-label="Perbesar foto gedung"
+                        className="group block w-full overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-inset"
+                    >
+                        <span className="block transition-transform duration-500 ease-out group-hover:scale-[1.03]">
+                            <Foto foto={foto} eager sizes="(min-width: 1024px) 512px, 100vw" className="aspect-[16/9] w-full object-cover" />
+                        </span>
+                    </button>
+                )}
                 <div className="h-2 w-full" style={{ background: 'linear-gradient(90deg, var(--tq-hijau) 0%, var(--tq-oranye) 50%, var(--tq-biru) 100%)' }} />
 
-                <div className="px-5 py-6 sm:px-7 sm:py-7">
+                <div className="px-5 py-5 sm:px-7 sm:py-6">
                     <div className="flex items-center gap-2.5">
                         <span className="flex h-9 w-9 items-center justify-center rounded-xl tq-ikon-biru">
                             <IdIcon className="h-5 w-5" />
@@ -870,7 +1005,7 @@ function KartuIdentitas() {
                         </p>
                     </div>
 
-                    <dl className="mt-6 space-y-5">
+                    <dl className="mt-4 space-y-3.5">
                         {BARIS.map((b) => (
                             <div key={b.label}>
                                 <dt className="text-[10px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-400">{b.label}</dt>
@@ -925,6 +1060,135 @@ function Reveal({ children, delay = 0, reduced, className = '' }) {
             }}
         >
             {children}
+        </div>
+    );
+}
+/* ===================== FOTO ===================== */
+
+const fotoUrl = (src, w) => `/images/landing/${src}-${w}.webp`;
+
+/* <img> dengan srcset 800/1600. Default lazy: foto di bawah layar baru
+   diunduh saat hampir terlihat. eager hanya untuk foto di hero. */
+function Foto({ foto, sizes = '100vw', eager = false, className = 'h-auto w-full' }) {
+    return (
+        <img
+            src={fotoUrl(foto.src, 800)}
+            srcSet={`${fotoUrl(foto.src, 800)} 800w, ${fotoUrl(foto.src, 1600)} 1600w`}
+            sizes={sizes}
+            width={foto.w}
+            height={foto.h}
+            alt={foto.alt}
+            loading={eager ? 'eager' : 'lazy'}
+            decoding="async"
+            className={`block bg-stone-200 dark:bg-[#353B31] ${className}`}
+        />
+    );
+}
+
+/* Foto yang bisa diklik untuk diperbesar. */
+function FotoTombol({ foto, onClick, sizes, className }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            aria-label={`Perbesar foto: ${foto.alt}`}
+            className="group block w-full overflow-hidden rounded-2xl ring-1 ring-stone-200/80 focus:outline-none focus-visible:ring-2 dark:ring-white/10 sm:rounded-3xl"
+        >
+            <span className="block overflow-hidden">
+                <span className="block transition-transform duration-500 ease-out group-hover:scale-[1.04]">
+                    <Foto foto={foto} sizes={sizes} className={className} />
+                </span>
+            </span>
+        </button>
+    );
+}
+
+const ChevronIcon = ({ arah = 'kanan', ...p }) => (
+    <Svg {...p}>
+        <path d={arah === 'kanan' ? 'M9 5l7 7-7 7' : 'M15 5l-7 7 7 7'} />
+    </Svg>
+);
+
+/* Penampil foto layar penuh.
+   - Tutup: tombol X, klik area gelap, atau tombol Esc.
+   - Pindah: tombol panah, panah kiri/kanan keyboard, atau geser di HP. */
+function Lightbox({ daftar, index, onPindah, onTutup }) {
+    const foto = daftar[index];
+    const banyak = daftar.length > 1;
+    const sentuhX = useRef(null);
+
+    const geser = (d) => onPindah((index + d + daftar.length) % daftar.length);
+
+    useEffect(() => {
+        const onKey = (e) => {
+            if (e.key === 'Escape') onTutup();
+            if (banyak && e.key === 'ArrowRight') geser(1);
+            if (banyak && e.key === 'ArrowLeft') geser(-1);
+        };
+        document.addEventListener('keydown', onKey);
+        // Kunci gulir halaman di belakang selama lightbox terbuka.
+        const lama = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.removeEventListener('keydown', onKey);
+            document.body.style.overflow = lama;
+        };
+    });
+
+    const tombol = 'flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur transition hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white';
+
+    return (
+        <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Foto diperbesar"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 sm:p-8"
+            onClick={onTutup}
+            onTouchStart={(e) => { sentuhX.current = e.touches[0].clientX; }}
+            onTouchEnd={(e) => {
+                if (!banyak || sentuhX.current === null) return;
+                const dx = e.changedTouches[0].clientX - sentuhX.current;
+                sentuhX.current = null;
+                if (Math.abs(dx) > 50) geser(dx < 0 ? 1 : -1);
+            }}
+        >
+            <img
+                key={foto.src}
+                src={fotoUrl(foto.src, 1600)}
+                width={foto.w}
+                height={foto.h}
+                alt={foto.alt}
+                onClick={(e) => e.stopPropagation()}
+                className="max-h-[85vh] w-auto max-w-full rounded-xl object-contain shadow-2xl"
+            />
+
+            <button type="button" aria-label="Tutup" onClick={onTutup} className={`${tombol} absolute right-3 top-3 sm:right-5 sm:top-5`}>
+                <CloseIcon className="h-5 w-5" />
+            </button>
+
+            {banyak && (
+                <>
+                    <button
+                        type="button"
+                        aria-label="Foto sebelumnya"
+                        onClick={(e) => { e.stopPropagation(); geser(-1); }}
+                        className={`${tombol} absolute left-2 top-1/2 -translate-y-1/2 sm:left-5`}
+                    >
+                        <ChevronIcon arah="kiri" className="h-6 w-6" />
+                    </button>
+                    <button
+                        type="button"
+                        aria-label="Foto berikutnya"
+                        onClick={(e) => { e.stopPropagation(); geser(1); }}
+                        className={`${tombol} absolute right-2 top-1/2 -translate-y-1/2 sm:right-5`}
+                    >
+                        <ChevronIcon arah="kanan" className="h-6 w-6" />
+                    </button>
+                    <p className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-[12px] font-semibold tabular-nums text-white/90 backdrop-blur">
+                        {index + 1} / {daftar.length}
+                    </p>
+                </>
+            )}
         </div>
     );
 }

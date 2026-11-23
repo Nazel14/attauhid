@@ -92,7 +92,7 @@ function KelasSwitcher({ kelasAktif, kelasList = [], variant = 'full' }) {
                                 : 'text-stone-600 hover:bg-cream-200 dark:text-stone-300 dark:hover:bg-coal-600'
                         }`}
                     >
-                        <span className="flex-1 truncate">{k.name}</span>
+                        <span className="flex-1 break-words leading-snug">{k.name}</span>
                         {aktif && (
                             <svg className="h-3.5 w-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17l-5-5" />
@@ -130,9 +130,10 @@ function KelasSwitcher({ kelasAktif, kelasList = [], variant = 'full' }) {
                     type="button"
                     disabled={!multi}
                     onClick={() => multi && setOpen((o) => !o)}
-                    className={`flex items-center gap-1 rounded-lg bg-claude-500/10 px-2 py-1 text-[11px] font-bold text-claude-600 ring-1 ring-claude-500/20 dark:text-claude-400 ${multi ? 'transition active:scale-95' : 'cursor-default'}`}
+                    className={`flex items-center gap-1 rounded-lg bg-claude-500/10 px-2 py-1 text-left text-[11px] font-bold leading-tight text-claude-600 ring-1 ring-claude-500/20 dark:text-claude-400 ${multi ? 'transition active:scale-95' : 'cursor-default'}`}
                 >
-                    <span className="max-w-[90px] truncate">{kelasAktif.name}</span>
+                    {/* Tidak dipotong: nama kelas panjang turun baris di dalam pill. */}
+                    <span className="max-w-[110px] break-words">{kelasAktif.name}</span>
                     {multi && (
                         <svg className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -157,7 +158,7 @@ function KelasSwitcher({ kelasAktif, kelasList = [], variant = 'full' }) {
                     <span className="block text-[9px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">
                         Kelas Aktif
                     </span>
-                    <span className="block truncate text-sm font-bold text-stone-800 dark:text-cream-50">
+                    <span className="block break-words text-sm font-bold leading-snug text-stone-800 dark:text-cream-50">
                         {kelasAktif.name}
                     </span>
                 </span>
@@ -187,7 +188,7 @@ function NavItem({ href, active, icon, children, onClick, collapsed, badge = 0 }
             <svg className={`h-[18px] w-[18px] flex-shrink-0 ${active ? 'text-white' : 'text-stone-400 group-hover:text-stone-600 dark:text-stone-500 dark:group-hover:text-stone-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={icon} />
             </svg>
-            {!collapsed && <span className="truncate">{children}</span>}
+            {!collapsed && <span className="min-w-0 break-words leading-snug">{children}</span>}
             {!collapsed && badge > 0 && (
                 <span className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? 'bg-white/25 text-white' : 'bg-claude-500 text-white'}`}>
                     {badge > 99 ? '99+' : badge}
@@ -356,14 +357,14 @@ function SidebarBody({
                                 </span>
                             )}
                             <div className="min-w-0 flex-1">
+                                {/* Nama ditampilkan utuh, tidak dibatasi 2 baris. */}
                                 <p
                                     className="text-[11px] font-semibold leading-tight text-stone-800 break-words dark:text-cream-50"
                                     title={displayName}
-                                    style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
                                 >
                                     {displayName}
                                 </p>
-                                <p className="mt-0.5 truncate text-[10px] text-stone-400 dark:text-stone-500">Guru</p>
+                                <p className="mt-0.5 text-[10px] text-stone-400 dark:text-stone-500">Guru</p>
                             </div>
                             <LogoutButton title="Keluar" className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-stone-400 transition hover:bg-red-50 hover:text-red-600 dark:text-stone-500 dark:hover:bg-red-500/10 dark:hover:text-red-400">
                                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
@@ -438,14 +439,24 @@ export default function GuruAuthenticatedLayout({ children }) {
             </aside>
 
             <div className={`transition-all duration-300 ${collapsed ? 'lg:pl-[76px]' : 'lg:pl-64'}`}>
-                <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-cream-300 bg-cream-100/80 px-4 backdrop-blur-xl lg:hidden dark:border-coal-600 dark:bg-coal-700/80">
-                    <button onClick={() => setOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-600 hover:bg-cream-200 dark:text-stone-400 dark:hover:bg-coal-600">
+                {/* min-h-16 (bukan h-16) supaya header bisa meninggi bila nama
+                    aplikasi atau nama kelas turun baris, bukan terpotong. */}
+                <header className="sticky top-0 z-30 flex min-h-[4rem] items-center gap-2.5 border-b border-cream-300 bg-cream-100/80 px-3 py-2 backdrop-blur-xl lg:hidden dark:border-coal-600 dark:bg-coal-700/80">
+                    <button onClick={() => setOpen(true)} aria-label="Buka menu" className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-stone-600 hover:bg-cream-200 dark:text-stone-400 dark:hover:bg-coal-600">
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
                     </button>
-                    {/* Judul ini dan judul di sidebar harus selalu sama. */}
-                    <span className="truncate text-sm font-bold">{NAMA_APP}</span>
 
-                    <div className="ml-auto flex items-center gap-2">
+                    {/* Logo tampil di header saat menu tertutup — sama dengan
+                        logo di sidebar. */}
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-cream-200 ring-1 ring-cream-300 dark:bg-coal-600 dark:ring-coal-500">
+                        <AppLogo className="h-[18px] w-[18px]" />
+                    </div>
+
+                    {/* Judul ini dan judul di sidebar harus selalu sama.
+                        break-words: nama panjang turun baris, tidak terpotong. */}
+                    <span className="min-w-0 flex-1 break-words text-sm font-bold leading-tight">{NAMA_APP}</span>
+
+                    <div className="flex flex-shrink-0 items-center gap-2">
                         <KelasSwitcher
                             kelasAktif={kelasAktif}
                             kelasList={kelasDiampu}
