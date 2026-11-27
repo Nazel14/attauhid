@@ -193,24 +193,30 @@ export default function Login({ status, flash }) {
                     style={{ background: 'radial-gradient(circle, rgba(126,184,66,.16), transparent 70%)' }}
                 />
 
-                {/* Theme toggle */}
+                {/* Theme toggle — hijau di kedua mode, seragam dengan toggle
+                    tema di panel Guru/Admin/Keuangan/Santri. Sebelumnya mode
+                    terang memakai bulatan oranye dan matahari kuning. */}
                 <button
                     type="button"
                     onClick={toggleTheme}
                     aria-label={dark ? 'Aktifkan mode terang' : 'Aktifkan mode gelap'}
-                    className="group absolute right-4 top-4 z-20 flex h-9 w-16 items-center rounded-full border border-stone-200 bg-white/80 px-1 shadow-sm backdrop-blur transition dark:border-[#474E40] dark:bg-[#353B31]/90"
+                    className="group absolute right-4 top-4 z-20 flex h-9 w-16 items-center rounded-full px-1 shadow-sm backdrop-blur transition"
+                    style={{
+                        background: dark ? 'rgba(126,184,66,.22)' : 'rgba(126,184,66,.14)',
+                        boxShadow: 'inset 0 0 0 1px rgba(126,184,66,.35)',
+                    }}
                 >
-                    <span className="pointer-events-none absolute left-2 text-amber-500 transition-opacity duration-300" style={{ opacity: dark ? 0.35 : 0 }}>
+                    <span className="tq-teks-hijau pointer-events-none absolute left-2 transition-opacity duration-300" style={{ opacity: dark ? 0.5 : 0 }}>
                         <SunIcon className="h-3.5 w-3.5" />
                     </span>
-                    <span className="pointer-events-none absolute right-2 text-indigo-300 transition-opacity duration-300" style={{ opacity: dark ? 0 : 0.35 }}>
+                    <span className="tq-teks-hijau pointer-events-none absolute right-2 transition-opacity duration-300" style={{ opacity: dark ? 0 : 0.5 }}>
                         <MoonIcon className="h-3.5 w-3.5" />
                     </span>
                     <span
                         className={`relative flex h-7 w-7 items-center justify-center rounded-full text-white shadow-md transition-transform duration-300 ease-out ${
                             dark ? 'translate-x-7' : 'translate-x-0'
                         }`}
-                        style={{ background: dark ? 'var(--tq-hijau)' : 'var(--tq-oranye)' }}
+                        style={{ background: 'var(--tq-hijau)' }}
                     >
                         {dark ? <MoonIcon className="h-4 w-4" /> : <SunIcon className="h-4 w-4" />}
                     </span>

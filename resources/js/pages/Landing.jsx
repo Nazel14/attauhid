@@ -281,12 +281,14 @@ const FASILITAS = [
    untuk pembaca layar dan saat foto gagal dimuat. */
 const FOTO_GEDUNG = { src: 'gedung', w: 1600, h: 883, alt: 'Gedung TK Attauhid tampak depan' };
 
+/* Foto kegiatan: tetap 5 foto, tetapi yang dulu buram (hasil perbesaran
+   dari dokumen profil) diganti foto asli dari sekolah dengan tema serupa. */
 const FOTO_KEGIATAN = [
-    { src: 'kegiatan-1', w: 784, h: 1600, alt: 'Anak-anak mengerjakan kegiatan mewarnai di kelas' },
-    { src: 'kegiatan-2', w: 1600, h: 1150, alt: 'Anak-anak berfoto bersama di depan papan kelas' },
-    { src: 'kegiatan-5', w: 1600, h: 1246, alt: 'Anak-anak bergandengan tangan membentuk lingkaran di halaman sekolah' },
-    { src: 'kegiatan-3', w: 1109, h: 1600, alt: 'Anak-anak berkegiatan bersama di atas karpet' },
-    { src: 'kegiatan-4', w: 1127, h: 1600, alt: 'Anak belajar menulis huruf hijaiyah di buku' },
+    { src: 'kegiatan-01', w: 1600, h: 1199, alt: 'Anak-anak memegang kartu huruf di depan papan kelas' },
+    { src: 'kegiatan-02', w: 1280, h: 1600, alt: 'Anak memperlihatkan hasil mewarnai gambar wajah' },
+    { src: 'kegiatan-03', w: 1280, h: 1600, alt: 'Anak menyusun gelas kertas menjadi menara' },
+    { src: 'kegiatan-04', w: 1279, h: 1600, alt: 'Anak-anak menyusun kepingan puzzle di atas karpet' },
+    { src: 'kegiatan-05', w: 1280, h: 1600, alt: 'Anak-anak belajar huruf hijaiyah dengan kartu dan manik-manik' },
 ];
 
 const FOTO_FASILITAS = [
@@ -337,6 +339,26 @@ export default function Landing() {
     useEffect(() => {
         document.documentElement.classList.toggle('dark', dark);
     }, [dark]);
+    /* Pindah ke bagian halaman dengan gulir halus.
+       Tidak cukup memakai CSS scroll-behavior saja: di HP, menu ☰ ikut
+       ditutup saat tautan diketuk, sehingga tinggi header menyusut dan
+       posisi tujuan bergeser. Karena itu menu ditutup dulu, lalu posisi
+       tujuan dihitung SETELAH tata letak selesai berubah (dua frame).
+       Jarak dari header sticky diatur oleh kelas scroll-mt-* tiap section. */
+    const keBagian = (e, href) => {
+        e.preventDefault();
+        setMenuBuka(false);
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            const tujuan = href === '#' ? null : document.querySelector(href);
+            const halus = reduced ? 'auto' : 'smooth';
+            if (tujuan) tujuan.scrollIntoView({ behavior: halus, block: 'start' });
+            else window.scrollTo({ top: 0, behavior: halus });
+            // Alamat ikut berubah (#program dll.) supaya bisa dibagikan,
+            // tanpa memicu loncatan bawaan browser.
+            try { history.replaceState(null, '', href === '#' ? window.location.pathname : href); } catch (err) {}
+        }));
+    };
+
     const toggleTheme = () => {
         setDark((d) => {
             const next = !d;
@@ -386,6 +408,12 @@ export default function Landing() {
                      #3B4235  garis antar bagian
                      #474E40  garis tepi kartu
                    --------------------------------------------------------- */
+                /* Cadangan untuk tautan # lain: gulir halus, kecuali pengunjung
+                   meminta animasi dikurangi di pengaturan perangkatnya. */
+                @media (prefers-reduced-motion: no-preference) {
+                    html { scroll-behavior: smooth; }
+                }
+
                 .tq-judul { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; }
                 .tq-teks  { font-family: 'Nunito', system-ui, sans-serif; }
 
@@ -468,13 +496,10 @@ export default function Landing() {
                 {/* ============ NAV ============ */}
                 <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-[#F6F7F2]/90 backdrop-blur-md dark:border-[#3B4235] dark:bg-[#282C25]/90">
                     <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-3.5">
-                        <a href="#" className="flex min-w-0 items-center gap-2.5" onClick={() => setMenuBuka(false)}>
-                            <div className="flex h-9 w-9 shrink-0 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-stone-200 dark:bg-[#353B31] dark:ring-white/10">
-                                {/* Logo kubus yang sama dengan halaman login dan
-                                    sidebar. Sebelumnya memuat /favicon.ico, yang
-                                    masih berisi logo "A" lama. */}
-                                <AppLogo className="h-full w-full" />
-                            </div>
+                        <a href="#" className="flex min-w-0 items-center gap-2.5" onClick={(e) => keBagian(e, '#')}>
+                            {/* Logo tanpa kotak/garis tepi, ukurannya sama dengan
+                                header panel (Guru/Admin/Keuangan/Santri). */}
+                            <AppLogo className="h-9 w-9 shrink-0 sm:h-10 sm:w-10" />
                             <div className="min-w-0 leading-tight">
                                 <p className="tq-judul truncate text-[15px] font-bold text-stone-800 dark:text-stone-100">TK Attauhid</p>
                                 {/* Tagline disembunyikan di HP: ruangnya habis oleh
@@ -486,7 +511,7 @@ export default function Landing() {
 
                         <nav className="hidden items-center gap-6 md:flex">
                             {NAV.map(([href, label]) => (
-                                <a key={href} href={href} className="tq-link-nav text-[13px] font-semibold text-stone-600 dark:text-stone-400">
+                                <a key={href} href={href} onClick={(e) => keBagian(e, href)} className="tq-link-nav text-[13px] font-semibold text-stone-600 dark:text-stone-400">
                                     {label}
                                 </a>
                             ))}
@@ -497,10 +522,13 @@ export default function Landing() {
                                 type="button"
                                 onClick={toggleTheme}
                                 aria-label={dark ? 'Aktifkan mode terang' : 'Aktifkan mode gelap'}
-                                className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-200 bg-white/80 text-stone-500 shadow-sm transition hover:text-stone-700 focus:outline-none focus-visible:ring-2 dark:border-[#474E40] dark:bg-[#353B31]/90 dark:text-stone-300"
+                                className="hidden h-9 w-9 items-center justify-center rounded-full border border-stone-200 bg-white/80 text-stone-500 shadow-sm transition hover:text-stone-700 focus:outline-none focus-visible:ring-2 md:flex dark:border-[#474E40] dark:bg-[#353B31]/90 dark:text-stone-300"
                             >
                                 {dark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
                             </button>
+                            {/* Tombol tema dan "Masuk" hanya tampil di layar md ke
+                                atas. Di HP keduanya dipindah ke dalam menu ☰
+                                supaya navbar lega: cukup logo + tombol menu. */}
                             {/* Pintu masuk sistem untuk guru, bendahara, dan
                                 wali. Pil berwarna lembut (bukan blok penuh) supaya
                                 tidak bersaing dengan tombol "Hubungi sekolah" di hero — tamu landing ini
@@ -509,7 +537,7 @@ export default function Landing() {
                                 disorot, memberi kesan "masuk". */}
                             <Link
                                 href={route('login')}
-                                className="tq-btn-masuk tq-judul group flex h-9 items-center gap-2 rounded-full pl-1 pr-3.5 text-[13px] font-bold focus:outline-none focus-visible:ring-2 sm:pr-4"
+                                className="tq-btn-masuk tq-judul group hidden h-9 items-center gap-2 rounded-full pl-1 pr-4 text-[13px] font-bold focus:outline-none focus-visible:ring-2 md:flex"
                             >
                                 <span className="tq-btn-masuk-ikon flex h-7 w-7 items-center justify-center rounded-full">
                                     <LoginIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -537,23 +565,52 @@ export default function Landing() {
                                     <a
                                         key={href}
                                         href={href}
-                                        onClick={() => setMenuBuka(false)}
+                                        onClick={(e) => keBagian(e, href)}
                                         className="rounded-xl px-3 py-2.5 text-[14px] font-semibold text-stone-700 transition hover:bg-white/70 dark:text-stone-300 dark:hover:bg-[#353B31]"
                                     >
                                         {label}
                                     </a>
                                 ))}
                             </nav>
-                            <a
-                                href={KONTAK_WA}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={() => setMenuBuka(false)}
-                                className="tq-btn-oranye tq-judul mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[14px] font-bold shadow-md"
+                            {/* Baris pengganti tema — toggle hijau, seragam dengan
+                                panel sistem. Seluruh baris bisa diketuk. */}
+                            <button
+                                type="button"
+                                onClick={toggleTheme}
+                                aria-pressed={dark}
+                                className="mt-3 flex w-full items-center justify-between rounded-xl border border-stone-200/80 bg-white/70 px-3 py-2.5 text-[14px] font-semibold text-stone-700 transition dark:border-[#474E40] dark:bg-[#353B31] dark:text-stone-300"
                             >
-                                <WaIcon className="h-5 w-5" />
-                                Hubungi sekolah
-                            </a>
+                                <span className="flex items-center gap-2.5">
+                                    <span className="tq-ikon-hijau flex h-8 w-8 items-center justify-center rounded-lg">
+                                        {dark ? <MoonIcon className="h-4 w-4" /> : <SunIcon className="h-4 w-4" />}
+                                    </span>
+                                    {dark ? 'Mode gelap' : 'Mode terang'}
+                                </span>
+                                <SaklarTema dark={dark} />
+                            </button>
+
+                            <div className="mt-3 grid grid-cols-2 gap-2">
+                                <Link
+                                    href={route('login')}
+                                    onClick={() => setMenuBuka(false)}
+                                    className="tq-btn-masuk tq-judul group flex items-center justify-center gap-2 rounded-xl py-2.5 text-[14px] font-bold"
+                                >
+                                    <span className="tq-btn-masuk-ikon flex h-7 w-7 items-center justify-center rounded-full">
+                                        <LoginIcon className="h-3.5 w-3.5" />
+                                    </span>
+                                    Masuk
+                                </Link>
+                                <a
+                                    href={KONTAK_WA}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={() => setMenuBuka(false)}
+                                    className="tq-btn-oranye tq-judul flex items-center justify-center gap-2 rounded-xl py-2.5 text-[14px] font-bold shadow-md"
+                                >
+                                    <WaIcon className="h-5 w-5" />
+                                    Hubungi
+                                </a>
+                            </div>
                         </div>
                     )}
                 </header>
@@ -598,6 +655,7 @@ export default function Landing() {
                             </a>
                             <a
                                 href="#program"
+                                onClick={(e) => keBagian(e, '#program')}
                                 className="tq-judul rounded-2xl border-2 px-6 py-3 text-center text-[14px] font-bold transition hover:bg-white/60 focus:outline-none focus-visible:ring-2 dark:hover:bg-[#353B31]/60"
                                 style={{ borderColor: 'var(--tq-biru)', color: 'var(--tq-biru)' }}
                             >
@@ -913,23 +971,88 @@ export default function Landing() {
                     </div>
                 </section>
 
-                {/* ============ FOOTER ============ */}
-                <footer className="relative z-10 border-t border-stone-200/70 dark:border-[#3B4235]">
-                    <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-center sm:flex-row sm:px-6 sm:text-left">
-                        <div>
-                            <p className="tq-judul text-[13px] font-bold text-stone-700 dark:text-stone-300">
-                                TK Attauhid · {YAYASAN}
-                            </p>
-                            <p className="mt-0.5 text-[11px] text-stone-400 dark:text-stone-400">
-                                Nomor Izin Berusaha {NIB} · © {new Date().getFullYear()}
-                            </p>
+                {/* ============ FOOTER ============
+                    Rata kiri dan terbagi kolom: identitas sekolah, tautan
+                    bagian halaman, dan kontak. Semua teks tetap dari profil
+                    (nama, yayasan, NIB, kontak, alamat) — tidak ada kalimat
+                    baru. Di HP kolom-kolomnya bertumpuk, tetap rata kiri. */}
+                <footer className="relative z-10 border-t border-stone-200/70 bg-white/50 dark:border-[#3B4235] dark:bg-[#232720]">
+                    <div className="mx-auto max-w-6xl px-4 pb-8 pt-12 sm:px-6 sm:pt-14">
+                        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1.2fr] lg:gap-12">
+                            {/* Identitas */}
+                            <div>
+                                <a href="#" onClick={(e) => keBagian(e, '#')} className="inline-flex items-center gap-2.5">
+                                    <AppLogo className="h-10 w-10 shrink-0" />
+                                    <span className="leading-tight">
+                                        <span className="tq-judul block text-[17px] font-bold text-stone-800 dark:text-stone-100">TK Attauhid</span>
+                                        <span className="block text-[12px] font-semibold" style={{ color: 'var(--tq-hijau)' }}>Mendidik dengan Tauhid</span>
+                                    </span>
+                                </a>
+                                <dl className="mt-5 space-y-2.5 text-[13px]">
+                                    <div>
+                                        <dt className="text-[10.5px] font-bold uppercase tracking-wider text-stone-400">Di bawah</dt>
+                                        <dd className="mt-0.5 font-semibold text-stone-600 dark:text-stone-300">{YAYASAN}</dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-[10.5px] font-bold uppercase tracking-wider text-stone-400">Nomor Izin Berusaha</dt>
+                                        <dd className="mt-0.5 font-semibold tabular-nums text-stone-600 dark:text-stone-300">{NIB}</dd>
+                                    </div>
+                                </dl>
+                            </div>
+
+                            {/* Tautan bagian halaman */}
+                            <div>
+                                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-stone-400">Jelajahi</p>
+                                <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-1 lg:grid-cols-2">
+                                    {NAV.map(([href, label]) => (
+                                        <li key={href}>
+                                            <a href={href} onClick={(e) => keBagian(e, href)} className="tq-link-nav text-[13.5px] font-semibold text-stone-600 dark:text-stone-400">
+                                                {label}
+                                            </a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            {/* Kontak */}
+                            <div className="sm:col-span-2 lg:col-span-1">
+                                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-stone-400">Kontak</p>
+                                <ul className="mt-4 space-y-3 text-[13.5px]">
+                                    <li>
+                                        <a href={KONTAK_WA} target="_blank" rel="noopener noreferrer" className="group flex items-start gap-3">
+                                            <span className="tq-ikon-hijau flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"><WaIcon className="h-4 w-4" /></span>
+                                            <span className="pt-1.5 font-semibold text-stone-600 transition group-hover:text-stone-900 dark:text-stone-300 dark:group-hover:text-white">{KONTAK_WA_TAMPIL}</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href={`mailto:${KONTAK_EMAIL}`} className="group flex items-start gap-3">
+                                            <span className="tq-ikon-biru flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"><MailIcon className="h-4 w-4" /></span>
+                                            <span className="min-w-0 break-all pt-1.5 font-semibold text-stone-600 transition group-hover:text-stone-900 dark:text-stone-300 dark:group-hover:text-white">{KONTAK_EMAIL}</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href={ALAMAT_MAPS} target="_blank" rel="noopener noreferrer" className="group flex items-start gap-3">
+                                            <span className="tq-ikon-oranye flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"><PinIcon className="h-4 w-4" /></span>
+                                            <span className="pt-1 leading-relaxed text-stone-500 transition group-hover:text-stone-800 dark:text-stone-400 dark:group-hover:text-stone-200">{ALAMAT}</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
-                        <Link
-                            href={route('login')}
-                            className="text-[12px] font-semibold text-stone-400 underline-offset-4 transition hover:underline dark:text-stone-400"
-                        >
-                            Masuk sistem sekolah
-                        </Link>
+
+                        {/* Baris bawah */}
+                        <div className="mt-10 flex flex-col gap-3 border-t border-stone-200/70 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-[#3B4235]">
+                            <p className="text-[12px] text-stone-400">
+                                © {new Date().getFullYear()} TK Attauhid · {YAYASAN}
+                            </p>
+                            <Link
+                                href={route('login')}
+                                className="group inline-flex items-center gap-1.5 self-start text-[12.5px] font-semibold text-stone-500 transition hover:text-stone-800 sm:self-auto dark:text-stone-400 dark:hover:text-stone-200"
+                            >
+                                Masuk sistem sekolah
+                                <ArrowIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                            </Link>
+                        </div>
                     </div>
                 </footer>
             </div>
@@ -947,6 +1070,29 @@ export default function Landing() {
 }
 
 /* ===================== KOMPONEN ===================== */
+
+/* Saklar tema hijau (tampilan saja — yang bisa diketuk adalah seluruh
+   baris di menu HP). Warnanya sama dengan toggle di panel sistem:
+   jalur hijau muda di mode terang, hijau penuh di mode gelap. */
+function SaklarTema({ dark }) {
+    return (
+        <span
+            aria-hidden="true"
+            className="relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors duration-300"
+            style={{
+                background: dark ? 'var(--tq-hijau)' : 'rgba(126,184,66,.2)',
+                boxShadow: 'inset 0 0 0 1px rgba(126,184,66,.35)',
+            }}
+        >
+            <span
+                className={`mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white shadow transition-transform duration-300 ${dark ? 'translate-x-[22px]' : 'translate-x-0.5'}`}
+                style={{ color: 'var(--tq-hijau-gelap)' }}
+            >
+                {dark ? <MoonIcon className="h-3 w-3" /> : <SunIcon className="h-3 w-3" />}
+            </span>
+        </span>
+    );
+}
 
 function Eyebrow({ latin }) {
     return (

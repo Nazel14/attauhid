@@ -72,6 +72,39 @@ const FILTERS = ['semua', 'terbuka', 'dibalas', 'selesai'];
 // bukan status laporan, melainkan penanda lawan bicara sedang diblokir.
 const SEMUA_STATUS = ['terbuka', 'dibalas', 'selesai', 'dibisukan'];
 
+/* Contoh isi (placeholder) per jenis masalah, untuk tiap arah pesan.
+   Kunci '' dipakai sebelum jenis masalah dipilih. */
+const CONTOH = {
+    guruKeAdmin: {
+        '': 'Contoh: siswa atas nama Ahmad belum terdaftar di kelas saya.',
+        data_master: 'Contoh: siswa atas nama Ahmad belum terdaftar di kelas saya.',
+        lainnya: 'Tuliskan pesan untuk admin…',
+    },
+    guruKeSiswa: {
+        '': 'Tuliskan pesan untuk siswa…',
+        pengingat_setoran: 'Contoh: setoran hafalan minggu ini belum masuk, mohon disetorkan sebelum hari Jumat.',
+        pengingat_murajaah: 'Contoh: jangan lupa murajaah surat An-Naba sebelum setoran berikutnya.',
+        teguran_presensi: 'Contoh: kamu sudah tiga kali tidak hadir minggu ini, ada kendala apa?',
+        klarifikasi_data: 'Contoh: mohon konfirmasi, apakah nama lengkapmu sudah benar di rapor?',
+        lainnya: 'Tuliskan pesan untuk siswa…',
+    },
+    adminKeGuru: {
+        '': 'Tuliskan pesan untuk guru…',
+        koordinasi: 'Contoh: rapat evaluasi tahfizh dipindah ke hari Kamis pukul 13.00.',
+        data_master: 'Contoh: mohon cek kembali data setoran Kelompok A tanggal 12 November, ada yang belum tercatat.',
+        lainnya: 'Tuliskan pesan untuk guru…',
+    },
+    siswaKeGuru: {
+        '': 'Contoh: nama saya tertulis Yasir Zaenur, seharusnya Yasir Zainur.',
+        nama_salah: 'Contoh: nama saya tertulis Yasir Zaenur, seharusnya Yasir Zainur.',
+        gender_salah: 'Contoh: jenis kelamin saya tertulis perempuan, seharusnya laki-laki.',
+        nis_salah: 'Contoh: NIS saya tertulis 2024015, seharusnya 2024051.',
+        kelas_salah: 'Contoh: saya tercatat di Kelompok A, seharusnya Kelompok B.',
+        lainnya: 'Jelaskan data yang salah dan seharusnya seperti apa…',
+    },
+};
+const contohDari = (peta) => (kategori) => peta[kategori] ?? peta[''];
+
 const fmtTgl = (d) => {
     try { return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }); }
     catch { return d; }
@@ -448,6 +481,7 @@ export default function Index({ laporan, filter, kategori, guruList = [], santri
                     judul="Hubungi Admin"
                     konteks="Pesan ke Admin"
                     kategoriOptions={{ data_master: 'Data Master', lainnya: 'Lainnya' }}
+                    contohIsi={contohDari(CONTOH.guruKeAdmin)}
                 />
             )}
             {modalSantri && isGuru && (
@@ -464,6 +498,7 @@ export default function Index({ laporan, filter, kategori, guruList = [], santri
                         klarifikasi_data: 'Klarifikasi Data',
                         lainnya: 'Lainnya',
                     }}
+                    contohIsi={contohDari(CONTOH.guruKeSiswa)}
                 />
             )}
             {modalAdmin && isAdmin && (
@@ -478,6 +513,7 @@ export default function Index({ laporan, filter, kategori, guruList = [], santri
                         data_master: 'Data Setoran / Presensi Perlu Dicek',
                         lainnya: 'Lainnya',
                     }}
+                    contohIsi={contohDari(CONTOH.adminKeGuru)}
                 />
             )}
             {modalAdmin && isSantri && (
@@ -493,6 +529,7 @@ export default function Index({ laporan, filter, kategori, guruList = [], santri
                         kelas_salah: 'Kelas Salah',
                         lainnya: 'Lainnya',
                     }}
+                    contohIsi={contohDari(CONTOH.siswaKeGuru)}
                 />
             )}
         </Layout>

@@ -29,13 +29,13 @@ function ThemeToggle({ dark, onToggle }) {
             type="button"
             onClick={onToggle}
             aria-label="Ganti tema"
-            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-300 ${dark ? 'bg-claude-500' : 'bg-stone-300'}`}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full ring-1 transition-colors duration-300 ${dark ? 'bg-claude-500 ring-claude-500' : 'bg-claude-500/20 ring-claude-500/30'}`}
         >
             <span className={`pointer-events-none mt-0.5 inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow transition-transform duration-300 ${dark ? 'translate-x-[22px]' : 'translate-x-0.5'}`}>
                 {dark ? (
                     <svg className="h-3 w-3 text-claude-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>
                 ) : (
-                    <svg className="h-3 w-3 text-amber-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path strokeLinecap="round" d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
+                    <svg className="h-3 w-3 text-claude-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path strokeLinecap="round" d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
                 )}
             </span>
         </button>
@@ -48,7 +48,7 @@ function NavItem({ href, active, icon, children, onClick, collapsed, badge = 0 }
             href={href}
             onClick={onClick}
             title={collapsed ? children : undefined}
-            className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${collapsed ? 'justify-center' : ''} ${
+            className={`group relative flex items-center gap-3 rounded-xl text-sm font-medium transition ${collapsed ? 'mx-auto h-11 w-11 justify-center' : 'px-3 py-2.5'} ${
                 active
                     ? 'bg-gradient-to-r from-claude-500 to-claude-600 text-white shadow-lg shadow-claude-500/25'
                     : 'text-stone-500 hover:bg-cream-200 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-coal-600/60 dark:hover:text-white'
@@ -78,11 +78,11 @@ function SidebarBody({ isMini = false, user, laporan, keuangan, akun, dark, setD
     return (
         <div className="flex h-full flex-col">
             {/* Logo + tombol collapse */}
-            <div className={`flex h-16 items-center px-3 ${isMini ? 'justify-center' : 'justify-between'}`}>
+            <div className={`relative flex h-16 shrink-0 items-center border-b border-cream-300/70 px-3 dark:border-coal-600/70 ${isMini ? 'justify-center' : 'justify-between'}`}>
                 <div className={`flex items-center gap-2.5 ${isMini ? '' : 'pl-2'}`}>
-                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-cream-200 ring-1 ring-cream-300 dark:bg-coal-600 dark:ring-coal-500">
-                        <AppLogo className="h-5 w-5" />
-                    </div>
+                    {/* Logo tanpa kotak pembungkus, ukurannya sama dengan
+                        logo di header HP supaya tampilan desktop dan HP seragam. */}
+                    <AppLogo className="h-9 w-9 flex-shrink-0" />
                     {!isMini && (
                         <div className="leading-tight">
                             <p className="text-sm font-bold text-stone-800 dark:text-cream-50">{NAMA_APP}</p>
@@ -90,34 +90,30 @@ function SidebarBody({ isMini = false, user, laporan, keuangan, akun, dark, setD
                         </div>
                     )}
                 </div>
-                {!isMini && (
-                    <button
-                        onClick={() => setCollapsed(true)}
-                        title="Ciutkan sidebar"
-                        className="hidden h-8 w-8 items-center justify-center rounded-lg text-stone-400 transition hover:bg-cream-200 hover:text-stone-600 lg:flex dark:text-stone-500 dark:hover:bg-coal-600 dark:hover:text-stone-300"
-                    >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
-                    </button>
-                )}
+                {/* Tombol ciutkan/lebarkan — bulatan kecil yang menempel di tepi
+                    kanan sidebar (desktop saja). Menggantikan tombol « di sebelah
+                    logo dan tombol » terpisah di mode sempit, yang membuat logo
+                    dan menu jadi tidak sejajar. */}
+                <button
+                    type="button"
+                    onClick={() => setCollapsed(!isMini)}
+                    title={isMini ? 'Lebarkan sidebar' : 'Ciutkan sidebar'}
+                    aria-label={isMini ? 'Lebarkan sidebar' : 'Ciutkan sidebar'}
+                    className="absolute -right-3 top-1/2 z-10 hidden h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-cream-300 bg-white text-stone-400 shadow-sm transition hover:border-claude-500/50 hover:text-claude-600 lg:flex dark:border-coal-500 dark:bg-coal-600 dark:text-stone-400 dark:hover:text-claude-300"
+                >
+                    <svg className={`h-3.5 w-3.5 transition-transform duration-300 ${isMini ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                </button>
             </div>
 
-            {isMini && (
-                <div className="flex justify-center pb-1">
-                    <button
-                        onClick={() => setCollapsed(false)}
-                        title="Lebarkan sidebar"
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 transition hover:bg-cream-200 hover:text-stone-600 dark:text-stone-500 dark:hover:bg-coal-600 dark:hover:text-stone-300"
-                    >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
-                    </button>
-                </div>
-            )}
-
             {/* Nav */}
-            <nav className={`sidebar-scroll flex-1 space-y-1 overflow-y-auto py-3 ${isMini ? 'px-2' : 'px-3'}`}>
+            {/* Menu memudar halus di tepi atas & bawah saat digulir (mask-image),
+                jadi item tidak lagi terlihat terpotong tajam di bawah logo.
+                min-h-0 wajib: tanpa itu <nav> di dalam flex kolom tidak mau
+                menyusut dan area gulirnya bisa melewati batas sidebar. */}
+            <nav className={`sidebar-scroll min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain py-3 [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,#000_14px,#000_calc(100%-14px),transparent_100%)] [mask-image:linear-gradient(to_bottom,transparent_0,#000_14px,#000_calc(100%-14px),transparent_100%)] ${isMini ? 'px-2' : 'px-3'}`}>
                 <NavItem href={r('santri.dashboard')} active={cur('santri.dashboard')} icon={I.dash} onClick={closeNav} collapsed={isMini}>Dashboard</NavItem>
 
-                {isMini ? <div className="mx-2 my-2 h-px bg-cream-300 dark:bg-coal-600" /> : (
+                {isMini ? <div className="mx-auto my-2.5 h-px w-6 bg-cream-300 dark:bg-coal-600" /> : (
                     <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-600">Laporan</p>
                 )}
                 {laporan.map((m) => (
@@ -126,7 +122,7 @@ function SidebarBody({ isMini = false, user, laporan, keuangan, akun, dark, setD
 
                 {keuangan.length > 0 && (
                     <>
-                        {isMini ? <div className="mx-2 my-2 h-px bg-cream-300 dark:bg-coal-600" /> : (
+                        {isMini ? <div className="mx-auto my-2.5 h-px w-6 bg-cream-300 dark:bg-coal-600" /> : (
                             <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-600">Keuangan</p>
                         )}
                         {keuangan.map((m) => (
@@ -137,7 +133,7 @@ function SidebarBody({ isMini = false, user, laporan, keuangan, akun, dark, setD
 
                 {akun.length > 0 && (
                     <>
-                        {isMini ? <div className="mx-2 my-2 h-px bg-cream-300 dark:bg-coal-600" /> : (
+                        {isMini ? <div className="mx-auto my-2.5 h-px w-6 bg-cream-300 dark:bg-coal-600" /> : (
                             <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-600">Akun</p>
                         )}
                         {akun.map((m) => (
@@ -150,7 +146,7 @@ function SidebarBody({ isMini = false, user, laporan, keuangan, akun, dark, setD
             {/* Bottom */}
             <div className={`space-y-3 border-t border-cream-300 py-3 dark:border-coal-600 ${isMini ? 'px-2' : 'px-3'}`}>
                 {isMini ? (
-                    <div className="flex flex-col items-center gap-2">
+                    <div className="flex flex-col items-center gap-1.5">
                         <TombolInstall mini />
                         {/* Ikon menunjukkan tema yang SEDANG aktif, bukan aksinya —
                             supaya sama dengan baris "Dark Mode / Light Mode" di
@@ -159,7 +155,7 @@ function SidebarBody({ isMini = false, user, laporan, keuangan, akun, dark, setD
                         <button
                             onClick={() => setDark((d) => !d)}
                             title={dark ? 'Dark Mode' : 'Light Mode'}
-                            className="flex h-9 w-9 items-center justify-center rounded-xl text-stone-400 transition hover:bg-cream-200 hover:text-stone-600 dark:text-stone-500 dark:hover:bg-coal-600 dark:hover:text-stone-300"
+                            className="flex h-10 w-10 items-center justify-center rounded-xl text-stone-400 transition hover:bg-cream-200 hover:text-stone-600 dark:text-stone-500 dark:hover:bg-coal-600 dark:hover:text-stone-300"
                         >
                             {dark ? (
                                 <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>
@@ -175,7 +171,7 @@ function SidebarBody({ isMini = false, user, laporan, keuangan, akun, dark, setD
                                 {user?.name?.charAt(0)?.toUpperCase()}
                             </span>
                         )}
-                        <LogoutButton title="Keluar" className="flex h-9 w-9 items-center justify-center rounded-xl text-stone-400 transition hover:bg-red-50 hover:text-red-600 dark:text-stone-500 dark:hover:bg-red-500/10 dark:hover:text-red-400">
+                        <LogoutButton title="Keluar" className="flex h-10 w-10 items-center justify-center rounded-xl text-stone-400 transition hover:bg-red-50 hover:text-red-600 dark:text-stone-500 dark:hover:bg-red-500/10 dark:hover:text-red-400">
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                         </LogoutButton>
                     </div>
@@ -276,7 +272,8 @@ export default function SantriAuthenticatedLayout({ header, children }) {
         <div className="min-h-screen bg-cream-50 text-stone-900 dark:bg-coal-800 dark:text-cream-50">
             {open && <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden" onClick={closeNav} />}
 
-            <aside className={`fixed inset-y-0 left-0 z-50 w-64 border-r border-cream-300 bg-cream-100 transition-transform duration-300 lg:hidden dark:border-coal-600 dark:bg-coal-700 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+            {/* Drawer HP terbuka dari KANAN, searah dengan tombol ☰ di header. */}
+            <aside className={`fixed inset-y-0 right-0 z-50 w-64 border-l border-cream-300 bg-cream-100 shadow-2xl transition-transform duration-300 lg:hidden dark:border-coal-600 dark:bg-coal-700 ${open ? 'translate-x-0' : 'translate-x-full'}`}>
                 <SidebarBody isMini={false} {...sidebarProps} />
             </aside>
 
@@ -285,16 +282,25 @@ export default function SantriAuthenticatedLayout({ header, children }) {
             </aside>
 
             <div className={`transition-all duration-300 ${collapsed ? 'lg:pl-[76px]' : 'lg:pl-64'}`}>
-                <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-cream-300 bg-cream-100/80 px-4 backdrop-blur-xl lg:hidden dark:border-coal-600 dark:bg-coal-700/80">
-                    <button onClick={() => setOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-600 hover:bg-cream-200 dark:text-stone-400 dark:hover:bg-coal-600">
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
-                    </button>
-                    {/* Judul ini dan judul di sidebar harus selalu sama. */}
-                    <span className="truncate text-sm font-bold">{NAMA_APP}</span>
+                {/* Header HP: merek (logo + nama) di kiri, aksi di kanan.
+                    Tombol ☰ di kanan supaya logo tidak berdempetan dengan
+                    garis tiga, dan menu ikut terbuka dari kanan. Judul ini
+                    dan judul di sidebar harus selalu sama (NAMA_APP). */}
+                <header className="sticky top-0 z-30 flex min-h-[4rem] items-center justify-between gap-3 border-b border-cream-300 bg-cream-100/80 px-4 py-2 backdrop-blur-xl lg:hidden dark:border-coal-600 dark:bg-coal-700/80">
+                    <Link href={r('santri.dashboard') ?? '/'} className="flex min-w-0 items-center gap-2.5">
+                        <AppLogo className="h-9 w-9 flex-shrink-0" />
+                        <span className="min-w-0 break-words text-[15px] font-bold leading-tight text-stone-800 dark:text-cream-50">{NAMA_APP}</span>
+                    </Link>
 
-                    {/* Toggle tema mobile */}
-                    <div className="ml-auto flex items-center">
+                    <div className="flex flex-shrink-0 items-center gap-2.5">
                         <ThemeToggle dark={dark} onToggle={() => setDark((d) => !d)} />
+                        <button
+                            onClick={() => setOpen(true)}
+                            aria-label="Buka menu"
+                            className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-stone-600 shadow-sm ring-1 ring-cream-300 transition active:scale-95 dark:bg-coal-600 dark:text-stone-300 dark:ring-coal-500"
+                        >
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h16M10 17h10" /></svg>
+                        </button>
                     </div>
                 </header>
 

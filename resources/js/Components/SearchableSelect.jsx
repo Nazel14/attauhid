@@ -18,8 +18,14 @@ import { createPortal } from 'react-dom';
 export default function SearchableSelect({ options = [], value, onChange, placeholder = '-- Pilih --' }) {
     const [open, setOpen] = useState(false);
     const [cari, setCari] = useState('');
-    const [posisi, setPosisi] = useState({ top: 0, left: 0, width: 0, maxHeight: 260, keAtas: false });
+    const [posisi, setPosisi] = useState({ top: 0, bottom: 'auto', left: 0, width: 0, maxHeight: 260, keAtas: false });
     const btnRef = useRef(null);
+
+    // Kolom "Cari..." hanya langsung fokus di perangkat bermouse. Di HP,
+    // fokus otomatis memunculkan keyboard yang menutupi daftar pilihan —
+    // padahal biasanya pengguna cuma ingin mengetuk salah satu pilihan.
+    const fokusOtomatis = typeof window !== 'undefined'
+        && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     const panelRef = useRef(null);
 
     const hitungPosisi = () => {
@@ -37,8 +43,13 @@ export default function SearchableSelect({ options = [], value, onChange, placeh
         const keAtas = ruangBawah < MIN_TINGGI && ruangAtas > ruangBawah;
         const maxHeight = Math.max(MIN_TINGGI, Math.min(260, keAtas ? ruangAtas : ruangBawah));
 
+        // Saat membuka ke ATAS, panel ditambatkan lewat `bottom`, bukan `top`.
+        // maxHeight hanya batas atas: bila pilihannya sedikit, panel lebih
+        // pendek dari maxHeight, dan rumus lama (top = r.top - maxHeight)
+        // menyisakan celah kosong di antara panel dan tombol.
         setPosisi({
-            top: keAtas ? r.top - JARAK - maxHeight : r.bottom + JARAK,
+            top: keAtas ? 'auto' : r.bottom + JARAK,
+            bottom: keAtas ? window.innerHeight - r.top + JARAK : 'auto',
             left: r.left,
             width: r.width,
             maxHeight,
@@ -113,13 +124,14 @@ export default function SearchableSelect({ options = [], value, onChange, placeh
                     style={{
                         position: 'fixed',
                         top: posisi.top,
+                        bottom: posisi.bottom,
                         left: posisi.left,
                         width: posisi.width,
                         maxHeight: posisi.maxHeight,
                     }}
                     className="z-[9999] flex flex-col overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-stone-200 dark:bg-coal-800 dark:ring-coal-600">
                     <div className="shrink-0 border-b border-stone-100 p-2 dark:border-coal-600">
-                        <input type="text" value={cari} onChange={(e) => setCari(e.target.value)} placeholder="Cari..." autoFocus
+                        <input type="text" value={cari} onChange={(e) => setCari(e.target.value)} placeholder="Cari..." autoFocus={fokusOtomatis}
                             className="w-full rounded-lg border-0 bg-stone-50 px-3 py-1.5 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-claude-500 dark:bg-coal-900 dark:text-cream-100" />
                     </div>
 

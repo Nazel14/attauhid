@@ -59,9 +59,33 @@ const SNAPSHOT_LABEL = {
     nilai: 'Nilai', kategori_setoran: 'Kategori', sesi: 'Sesi', status: 'Status',
 };
 
+// Sama dengan halaman daftar (Index.jsx), supaya status tidak tampil
+// sebagai kata mentah "terbuka"/"dibalas".
+const STATUS_LABEL = {
+    terbuka: 'Belum Dibalas',
+    dibalas: 'Sudah Dibalas',
+    selesai: 'Selesai',
+};
+const STATUS_BADGE = {
+    terbuka: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+    dibalas: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
+    selesai: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400',
+};
+
+// Nilai snapshot berupa tanggal (2026-11-12 atau 2026-11-12T00:00:00Z)
+// ditampilkan dalam format Indonesia; nilai lain apa adanya.
+const fmtNilai = (k, v) => {
+    if (v === null || v === undefined || v === '') return '–';
+    if (k === 'tanggal' || /^\d{4}-\d{2}-\d{2}/.test(String(v))) {
+        const d = new Date(v);
+        if (!isNaN(d)) return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+    return String(v);
+};
+
 export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = false, batasEditMenit = 15 }) {
     const { auth, flash = {} } = usePage().props;
-    const bottomRef = useRef(null);
+    const threadRef = useRef(null);
     const [editId, setEditId] = useState(null);
     const [editIsi, setEditIsi] = useState('');
 
@@ -94,10 +118,14 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
             router.reload({ only: ['laporan'] });
         }, 10000);
         return () => clearInterval(t);
-    }, [laporan.status]);
+    }, [laporan.status, laporan.dibisukan_at]);
 
+    // Gulir ke pesan terbaru di dalam KOTAK pesan saja. Sebelumnya memakai
+    // scrollIntoView, yang ikut menggulir seluruh halaman — di HP header
+    // konteks laporan jadi terdorong keluar layar setiap ada pesan baru.
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        const el = threadRef.current;
+        if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
     }, [laporan.pesan.length]);
 
     const kirim = (e) => {
@@ -154,7 +182,11 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
             <Head title="Detail Komplain" />
             <Toast notif={notif} onClose={() => setNotif(null)} duration={NOTIF_DURATION} />
 
-            <div className="mx-auto flex h-[calc(100dvh-2.5rem)] max-w-6xl flex-col px-3 sm:px-4 py-5">
+            {/* Tinggi = layar dikurangi header HP (4rem) dan padding <main> di
+                layout (py-6 = 3rem). Sebelumnya hanya dikurangi 2.5rem, jadi
+                di HP kolom balasan terdorong ke bawah layar. Di desktop
+                header HP tidak ada, jadi cukup dikurangi padding saja. */}
+            <div className="mx-auto flex h-[calc(100dvh-7rem)] max-w-6xl flex-col px-0 sm:px-4 lg:h-[calc(100dvh-3rem)]">
                 {/* Kembali — mobile saja */}
                 <Link href={rp('index')}
                     className="mb-4 self-start shrink-0 sm:hidden inline-flex items-center gap-1.5 rounded-xl border border-cream-300 dark:border-coal-600 bg-white dark:bg-coal-600/40 px-3 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 shadow-sm transition hover:bg-cream-200 dark:hover:bg-coal-600 active:scale-95">
@@ -170,18 +202,19 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
                 {/* Konteks data yang dikomplain */}
                 <div className="mb-4 rounded-2xl bg-claude-100 p-4 ring-1 ring-claude-200 dark:bg-claude-500/10 dark:ring-claude-500/20">
                     <div className="flex items-start justify-between gap-3">
-                        <div>
-                            <p className="text-sm font-medium text-stone-800 dark:text-cream-100">
+                        <div className="min-w-0">
+                            <p className="break-words text-sm font-medium text-stone-800 dark:text-cream-100">
                                 {laporan.pelapor.name} → {laporan.penerima.name}
                             </p>
-                            <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
-                                Status:{' '}
-                                <span className="font-medium capitalize">{laporan.status}</span>
+                            <p className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
+                                <span className={`rounded-full px-2.5 py-0.5 font-medium ${STATUS_BADGE[laporan.status] ?? ''}`}>
+                                    {STATUS_LABEL[laporan.status] ?? laporan.status}
+                                </span>
                                 {laporan.selesai_at &&
-                                    ` · ditutup ${new Date(laporan.selesai_at).toLocaleDateString('id-ID')}`}
+                                    <span>ditutup {new Date(laporan.selesai_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>}
                             </p>
                         </div>
-                        <div className="flex shrink-0 gap-2">
+                        <div className="flex shrink-0 flex-wrap justify-end gap-2">
                             {bisaBisukan && (
                                 <button
                                     onClick={toggleBisukan}
@@ -219,7 +252,7 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
                                     <p className="text-[11px] uppercase tracking-wide text-stone-400 dark:text-stone-500">
                                         {SNAPSHOT_LABEL[k] ?? k}
                                     </p>
-                                    <p className="text-sm text-stone-700 dark:text-cream-100">{String(v)}</p>
+                                    <p className="break-words text-sm text-stone-700 dark:text-cream-100">{fmtNilai(k, v)}</p>
                                 </div>
                             ))}
                         </div>
@@ -227,7 +260,7 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
                 </div>
 
                 {/* Thread pesan */}
-                <div className="mb-4 flex-1 space-y-3 overflow-y-auto overscroll-contain pr-1">
+                <div ref={threadRef} className="mb-4 min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pr-1">
                     {laporan.pesan.map((p) => {
                         const milikku = p.user_id === auth.user.id;
                         const dihapus = !!p.dihapus_at;
@@ -254,7 +287,11 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
                             <div key={p.id} className={`group flex items-center gap-2 ${milikku ? 'justify-end' : 'justify-start'}`}>
                                 {/* Aksi muncul saat hover, di sisi luar bubble */}
                                 {milikku && !sedangEdit && bisaBalas && (
-                                    <div className="flex shrink-0 gap-1 opacity-0 transition group-hover:opacity-100">
+                                    /* Di HP tidak ada "hover", jadi dulu tombol edit/hapus
+                                       tidak pernah bisa ditekan. Sekarang: selalu tampil
+                                       samar di layar sentuh, dan muncul saat disorot di
+                                       perangkat bermouse. */
+                                    <div className="flex shrink-0 gap-1 opacity-60 transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-within:opacity-100">
                                         {masihBisaEdit(p) && (
                                             <button
                                                 onClick={() => mulaiEdit(p)}
@@ -333,12 +370,12 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
                             </div>
                         );
                     })}
-                    <div ref={bottomRef} />
                 </div>
 
                 {/* Form balas / status terkunci */}
                 {bisaBalas ? (
                     <form onSubmit={kirim} className="flex shrink-0 items-end gap-2">
+                        <div className="relative flex-1">
                         <textarea
                             value={data.isi}
                             onChange={(e) => setData('isi', e.target.value)}
@@ -351,8 +388,14 @@ export default function Show({ laporan, bisaBalas, bisaTutup, bisaBisukan = fals
                             rows={2}
                             maxLength={2000}
                             placeholder="Tulis balasan… (Enter kirim, Shift+Enter baris baru)"
-                            className="flex-1 resize-none rounded-2xl border-0 bg-white px-4 py-3 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:ring-2 focus:ring-claude-500 dark:bg-coal-700 dark:text-cream-100 dark:ring-coal-600"
+                            className="block w-full resize-none rounded-2xl border-0 bg-white px-4 py-3 pb-6 text-sm text-stone-800 ring-1 ring-cream-300 placeholder:text-stone-400 focus:ring-2 focus:ring-claude-500 dark:bg-coal-700 dark:text-cream-100 dark:ring-coal-600 dark:placeholder:text-stone-500"
                         />
+                        {data.isi.length > 0 && (
+                            <span className="pointer-events-none absolute bottom-1.5 right-3 text-[10px] tabular-nums text-stone-400 dark:text-stone-500">
+                                {data.isi.length}/2000
+                            </span>
+                        )}
+                        </div>
                         <button
                             type="submit"
                             disabled={processing || !data.isi.trim()}

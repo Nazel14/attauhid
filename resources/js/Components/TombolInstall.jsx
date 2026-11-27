@@ -8,6 +8,16 @@ import { useEffect, useState } from 'react';
  * jadi di sana yang ditampilkan hanya petunjuk manual — tanpa petunjuk,
  * hampir tidak ada wali yang menemukan menu "Add to Home Screen".
  */
+
+// iPad sejak iPadOS 13 mengaku sebagai "Macintosh" di userAgent, jadi
+// pengecekan /ipad/ saja tidak menangkapnya. Mac sungguhan tidak punya
+// layar sentuh, sehingga maxTouchPoints > 1 membedakan keduanya.
+const deteksiIos = () => {
+    const ua = window.navigator.userAgent;
+    return /iphone|ipad|ipod/i.test(ua)
+        || (/Macintosh/.test(ua) && window.navigator.maxTouchPoints > 1);
+};
+
 export default function TombolInstall({ mini = false }) {
     const [prompt, setPrompt] = useState(null);
     const [iosPetunjuk, setIosPetunjuk] = useState(false);
@@ -20,9 +30,7 @@ export default function TombolInstall({ mini = false }) {
 
         if (terpasang) return;
 
-        const ios = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-
-        if (ios) {
+        if (deteksiIos()) {
             setIosPetunjuk(true);
             setTampil(true);
             return;
@@ -33,9 +41,10 @@ export default function TombolInstall({ mini = false }) {
             setPrompt(e);
             setTampil(true);
         };
+        const onTerpasang = () => setTampil(false);
 
         window.addEventListener('beforeinstallprompt', onPrompt);
-        window.addEventListener('appinstalled', () => setTampil(false));
+        window.addEventListener('appinstalled', onTerpasang);
 
         // Chrome menahan `beforeinstallprompt` sampai ia menganggap pengguna
         // cukup berinteraksi — kadang baru di kunjungan kedua. Tanpa cadangan
@@ -43,8 +52,12 @@ export default function TombolInstall({ mini = false }) {
         // ditampilkan, hanya saja isinya petunjuk manual.
         const timer = setTimeout(() => setTampil(true), 3000);
 
+        // Kedua listener dilepas saat komponen dibongkar. Sebelumnya
+        // 'appinstalled' tertinggal, dan karena layout dipasang ulang setiap
+        // pindah halaman, listener-nya menumpuk satu per halaman.
         return () => {
             window.removeEventListener('beforeinstallprompt', onPrompt);
+            window.removeEventListener('appinstalled', onTerpasang);
             clearTimeout(timer);
         };
     }, []);
@@ -54,8 +67,8 @@ export default function TombolInstall({ mini = false }) {
     const pasang = async () => {
         if (iosPetunjuk) {
             alert(
-                'Untuk memasang aplikasi di iPhone:\n\n' +
-                '1. Ketuk tombol Bagikan di bawah layar\n' +
+                'Untuk memasang aplikasi di iPhone/iPad:\n\n' +
+                '1. Ketuk tombol Bagikan (kotak dengan panah ke atas)\n' +
                 '2. Pilih "Tambahkan ke Layar Utama"\n' +
                 '3. Ketuk "Tambah"'
             );
@@ -88,8 +101,10 @@ export default function TombolInstall({ mini = false }) {
     if (mini) {
         return (
             <button
+                type="button"
                 onClick={pasang}
                 title="Pasang Aplikasi"
+                aria-label="Pasang Aplikasi"
                 className="flex h-9 w-9 items-center justify-center rounded-xl text-claude-600 transition hover:bg-claude-100 dark:text-claude-400 dark:hover:bg-claude-500/15"
             >
                 {ikon}
@@ -99,6 +114,7 @@ export default function TombolInstall({ mini = false }) {
 
     return (
         <button
+            type="button"
             onClick={pasang}
             className="flex w-full items-center gap-2 rounded-xl bg-claude-100 px-3 py-2.5 text-sm font-medium text-claude-700 transition hover:bg-claude-200 dark:bg-claude-500/15 dark:text-claude-300 dark:hover:bg-claude-500/25"
         >

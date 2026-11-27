@@ -73,36 +73,51 @@ export default function LaporanNotifier({ href }) {
 
     if (!toast || !href) return null;
 
+    // Posisi & gaya disamakan dengan toast lain di aplikasi (kanan atas,
+    // kartu dengan bayangan). Animasi memakai @keyframes sendiri: kelas
+    // animate-in/fade-in sebelumnya milik plugin tailwindcss-animate yang
+    // tidak terpasang, jadi toast muncul tanpa gerakan apa pun.
     return (
-        <div className="fixed bottom-4 right-4 z-[60] animate-in fade-in slide-in-from-bottom-2">
-            <Link
-                href={href}
-                onClick={() => setToast(0)}
-                className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-lg ring-1 ring-stone-200 transition hover:ring-claude-500/40 dark:bg-coal-800 dark:ring-coal-700 dark:hover:ring-claude-500/40"
+        <>
+            <div
+                className="fixed left-4 right-4 top-4 z-[290] sm:left-auto sm:right-4 sm:w-96"
+                style={{ animation: 'notifLaporanIn .3s cubic-bezier(.21,1.02,.73,1)' }}
+                role="status"
             >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-claude-500/10 ring-1 ring-claude-500/20">
-                    <svg className="h-4 w-4 text-claude-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                    </svg>
-                </div>
-                <div className="min-w-0">
-                    <p className="text-sm font-semibold text-stone-800 dark:text-cream-100">
-                        Pesan laporan baru
-                    </p>
-                    <p className="mt-0.5 text-xs text-stone-500 dark:text-coal-300">
-                        {toast} pesan belum dibaca · klik untuk membuka
-                    </p>
-                </div>
-                <button
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setToast(0); }}
-                    className="ml-1 shrink-0 rounded-lg p-1 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-coal-700 dark:hover:text-stone-300"
+                <Link
+                    href={href}
+                    onClick={() => setToast(0)}
+                    className="flex items-start gap-3 rounded-2xl border border-cream-300 bg-white/95 p-3.5 shadow-2xl backdrop-blur-md transition hover:border-claude-500/40 dark:border-coal-600 dark:bg-coal-700/95 dark:hover:border-claude-500/40"
                 >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </Link>
-        </div>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-claude-100 text-claude-600 dark:bg-claude-500/20 dark:text-claude-300">
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                    </span>
+                    <div className="min-w-0 flex-1 pt-0.5">
+                        <p className="text-xs font-bold text-claude-700 dark:text-claude-300">
+                            Pesan laporan baru
+                        </p>
+                        <p className="mt-0.5 text-sm text-stone-600 dark:text-stone-300">
+                            {toast} pesan belum dibaca · ketuk untuk membuka
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        aria-label="Tutup notifikasi"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setToast(0); }}
+                        className="shrink-0 rounded-lg p-1 text-stone-400 transition hover:bg-cream-200 hover:text-stone-600 dark:hover:bg-coal-600 dark:hover:text-stone-200"
+                    >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </Link>
+            </div>
+            <style>{`
+                @keyframes notifLaporanIn { from { opacity: 0; transform: translateY(-14px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+                @media (prefers-reduced-motion: reduce) { [style*="notifLaporanIn"] { animation: none !important; } }
+            `}</style>
+        </>
     );
 }
